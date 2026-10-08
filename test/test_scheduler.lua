@@ -1,5 +1,9 @@
 -- Scheduler: the frame-clock contract, the two-phase pipeline and tickers.
 
+-- See the note in test_widget.lua: the `std.class` / optional-ownership
+-- diagnostics are disabled across the suite.
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+
 local F = require('framework')
 local std = require('elxlibs.std')
 

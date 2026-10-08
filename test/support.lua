@@ -41,6 +41,7 @@ function S.bootstrap(test_dir)
     }, ';')
 
     -- normally defined by elxlib's init.lua
+    ---@diagnostic disable-next-line: global-in-non-module
     _G.debug_msg = _G.debug_msg or function() end
     return osc_root
 end

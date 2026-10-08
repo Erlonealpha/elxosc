@@ -80,18 +80,20 @@ function RenderGesture:on_pointer(event, point, data)
     local h = self.handlers
     if event == 'down' then
         self.pressed = true
-        if h.on_down then
+        if h.on_down and point ~= nil then
             h.on_down(self, point)
         end
         return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil
     elseif event == 'up' then
         local was_pressed = self.pressed
         self.pressed = false
-        if h.on_up then
-            h.on_up(self, point)
-        end
-        if was_pressed and h.on_tap then
-            h.on_tap(self, point)
+        if point ~= nil then
+            if h.on_up then
+                h.on_up(self, point)
+            end
+            if was_pressed and h.on_tap then
+                h.on_tap(self, point)
+            end
         end
         return was_pressed
     elseif event == 'wheel' then
@@ -114,7 +116,7 @@ function RenderGesture:on_pointer(event, point, data)
         end
         return false
     elseif event == 'move' then
-        if h.on_move then
+        if h.on_move and point ~= nil then
             h.on_move(self, point)
         end
         return false

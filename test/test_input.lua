@@ -1,5 +1,9 @@
 -- Pointer routing: path resolution, gesture dispatch and hover tracking.
 
+-- See the note in test_widget.lua: the `std.class` / optional-ownership
+-- diagnostics are disabled across the suite.
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+
 local F = require('framework')
 
 local geometry = require('foundation.geometry')

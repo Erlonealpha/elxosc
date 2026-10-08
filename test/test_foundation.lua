@@ -1,6 +1,10 @@
 -- Foundation layer: geometry value types, colour, paint, path and the canvas
 -- contract. Pure Lua -- nothing here touches mpv.
 
+-- See the note in test_widget.lua: the `std.class` / optional-ownership
+-- diagnostics are disabled across the suite.
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+
 local F = require('framework')
 local std = require('elxlibs.std')
 

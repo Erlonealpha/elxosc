@@ -51,6 +51,7 @@ function MpFrameClock:__init(delay)
     self._last_frame = nil
 end
 
+---@diagnostic disable-next-line: unused
 function MpFrameClock:now()
     return mp.get_time()
 end

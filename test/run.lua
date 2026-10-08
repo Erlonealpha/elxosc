@@ -27,7 +27,10 @@ local files = {
     'test_scheduler',
     'test_layout',
     'test_input',
+    'test_widget',
+    'test_bind',
     'test_ass',
+    'test_layering',
 }
 
 print('elxosc test-suite (lua ' .. _VERSION .. ', ' .. (jit and jit.version or 'no jit') .. ')')

@@ -74,6 +74,7 @@ end
 ---@param event string
 ---@param data any?
 function MpInput:_dispatch(event, data)
+    debug_msgf('MpInput:_dispatch(%s)', event)
     if event == 'down' then
         self:_refresh_position()
     end
@@ -87,7 +88,7 @@ function MpInput:_bind_keys()
         { 'mbtn_right', function() self:_dispatch('up') end, function() self:_dispatch('down') end },
         { 'wheel_up', function() self:_dispatch('wheel', 1) end },
         { 'wheel_down', function() self:_dispatch('wheel', -1) end },
-    }, BINDING_GROUP)
+    }, BINDING_GROUP, 'force')
     mp.disable_key_bindings(BINDING_GROUP)
 end
 
@@ -103,8 +104,10 @@ function MpInput:_decide_bindings()
     end
     self._enabled = want
     if want then
+        debug_msg('enable_key_bindings')
         mp.enable_key_bindings(BINDING_GROUP, BINDING_FLAGS)
     else
+        debug_msg('disable_key_bindings')
         mp.disable_key_bindings(BINDING_GROUP)
     end
 end

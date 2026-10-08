@@ -15,6 +15,20 @@ luajit test/run.lua geometry    # only matching files
 
 Exit code is `0` when everything passes, `1` otherwise.
 
+## Static analysis
+
+The project is also checked with the EmmyLua analyzer; run it from the project
+root so `.emmyrc.json` (library paths, `runtime.special.raise`, ...) applies:
+
+```sh
+emmylua_check.exe .
+```
+
+Both gates are expected to be clean: `No issues found` and `ALL GOOD`.
+The framework directories are meant to stay free of *all* diagnostics; the
+test files disable the codes that stem from limits of the `std.class` model
+(see the header in `test_widget.lua`).
+
 ## Layout
 
 | File | Contents |
@@ -27,7 +41,10 @@ Exit code is `0` when everything passes, `1` otherwise.
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_layout.lua` | Constraints, the box set, owner driving, paint + hit test |
 | `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
+| `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds |
+| `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
 | `test_ass.lua` | ASS colour encoding, drawing emission, estimating text layout |
+| `test_layering.lua` | Guard: only `host/` (and the entry points) may require `mp` |
 
 Nothing here is loaded by mpv: the directory has no `main.lua`, so mpv's script
 auto-loader ignores it.

@@ -78,6 +78,47 @@ function RenderObject:remove_child(child)
     end
 end
 
+--- Replace the whole child list, keeping the given order and detaching the
+--- children that were dropped. A no-op (and no relayout) when the list is
+--- already identical, which is what makes repeated builds cheap.
+---@param list RenderObject[]
+function RenderObject:set_children(list)
+    local current = self._children
+    if #current == #list then
+        local same = true
+        for i = 1, #list do
+            if current[i] ~= list[i] then
+                same = false
+                break
+            end
+        end
+        if same then
+            return
+        end
+    end
+    for _, child in ipairs(current) do
+        local kept = false
+        for i = 1, #list do
+            if list[i] == child then
+                kept = true
+                break
+            end
+        end
+        if not kept then
+            child.parent = nil
+            child:_set_owner(nil)
+        end
+    end
+    local next_children = {}
+    for i, child in ipairs(list) do
+        child.parent = self
+        child:_set_owner(self.owner)
+        next_children[i] = child
+    end
+    self._children = next_children
+    self:mark_needs_layout()
+end
+
 ---@param owner RenderOwner?
 function RenderObject:_set_owner(owner)
     self.owner = owner
@@ -200,6 +241,7 @@ end
 ---@param point Offset?
 ---@param data any? wheel delta
 ---@return boolean handled
+---@diagnostic disable-next-line: unused
 function RenderObject:on_pointer(event, point, data)
     return false
 end
@@ -208,6 +250,7 @@ end
 --- mpv key bindings to enable while the cursor is over this subtree.
 ---@param event string
 ---@return boolean
+---@diagnostic disable-next-line: unused
 function RenderObject:wants_pointer(event)
     return false
 end

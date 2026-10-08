@@ -1,6 +1,10 @@
 -- Layout + render tree: the constraint protocol, the box set, the owner and
 -- painting through a recording canvas.
 
+-- See the note in test_widget.lua: the `std.class` / optional-ownership
+-- diagnostics are disabled across the suite.
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+
 local F = require('framework')
 local std = require('elxlibs.std')
 
@@ -167,7 +171,7 @@ F.section('render: paint + hit test')
 F.test('paints through a canvas with absolute coordinates', function()
     local canvas = RecordCanvas()
     local child = RenderCustomPaint(function(c, offset, size)
-        c:draw_rect(Rect.from_offset_size(offset, size), nil)
+        c:draw_rect(Rect.from_offset_size(offset, size), nil --[[@as Paint]])
     end, { preferred_size = Size(10, 10) })
     local root = RenderPadding(EdgeInsets.all(5), child)
     root:layout(Constraints.expand())

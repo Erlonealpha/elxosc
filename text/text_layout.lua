@@ -21,6 +21,22 @@ local max = math.max
 ---@class elxtextlayout
 local M = {}
 
+-- The engine stand-in: a single ambient measurer, like the engine's paragraph
+-- builder in Flutter. Hosts install one (`AssTextLayout` in mpv); widgets that
+-- need text measurement fall back to it.
+---@type TextLayout?
+local default_layout = nil
+
+---@param layout TextLayout?
+function M.set_default(layout)
+    default_layout = layout
+end
+
+---@return TextLayout?
+function M.get_default()
+    return default_layout
+end
+
 ---@param text string
 ---@return string[]
 local function split_hard_lines(text)
@@ -71,6 +87,7 @@ local TextLayout = std.class.new('TextLayout')
 ---@param line string
 ---@param style TextStyle
 ---@return number
+---@diagnostic disable-next-line: unused
 function TextLayout:line_width(line, style)
     raise(std.NotImplementedError('TextLayout:line_width must be implemented by a text backend'))
 end

@@ -85,6 +85,7 @@ end
 ---@overload fun(): AssTextLayout
 local AssTextLayout = std.class.new('AssTextLayout', { TextLayout })
 
+---@diagnostic disable-next-line: unused
 function AssTextLayout:line_width(line, style)
     local width = 0
     local count = 0

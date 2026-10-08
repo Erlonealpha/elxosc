@@ -18,8 +18,15 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
+-- Every method below declares the backend contract; the base implementation
+-- intentionally ignores its parameters (it just raises).
+---@diagnostic disable: unused
+
 ---@class elxcanvas
 local M = {}
+
+--- An opaque, backend provided image handle (Flutter's `ui.Image`).
+---@class Image
 
 ---@param method string
 local function abstract(method)
@@ -98,7 +105,7 @@ function Canvas:draw_text(paragraph, offset)
     abstract('draw_text')
 end
 
----@param image Image
+---@param image Image?
 ---@param rect Rect destination rectangle
 function Canvas:draw_image(image, rect)
     abstract('draw_image')

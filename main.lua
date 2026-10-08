@@ -5,7 +5,27 @@
 -- input layer can be eyeballed in mpv. Replace `build()` with a real widget
 -- tree as the framework grows.
 
+local mp = require 'mp'
+
 require 'elxlib_load' -- sets up elxlibs.*
+
+
+local dbg = true
+
+function debug_msg(arg0, ...)
+    if dbg then
+        if type(arg0) == "function" then
+            mp.msg.info('DEBUG', arg0())
+        else
+            mp.msg.info('DEBUG', arg0, ...)
+        end
+    end
+end
+function debug_msgf(arg0, ...)
+    if dbg then
+        mp.msg.info('DEBUG', string.format(arg0, ...))
+    end
+end
 
 local geometry = require 'foundation.geometry'
 local color = require 'foundation.color'
