@@ -40,6 +40,7 @@ local Column = layout_widgets.Column
 local Center = layout_widgets.Center
 local SizedBox = layout_widgets.SizedBox
 local Container = layout_widgets.Container
+local Button = basic_widgets.Button
 local Text = basic_widgets.Text
 
 -- Seconds the define window stays open. Long enough for every script to have
@@ -99,8 +100,10 @@ function DemoState:init_state()
     mp.register_script_message('elxosc-demo', function()
         self:set_state(function()
             self.count = self.count + 1
+            mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
         end)
     end)
+    mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
 end
 
 function DemoState:dispose()
@@ -109,19 +112,28 @@ end
 
 ---@param context BuildContext
 function DemoState:build(context)
-    return Container{
-        alignment = Offset(0.5, 0.5),
+    local content = Container{
         padding = EdgeInsets.all(20),
-        margin = EdgeInsets.only{left = 10, top = 10},
         color = Color.rgba255(0x20, 0x20, 0x20, 0xC0),
         radius = 6,
         child = Container{
-            alignment = Offset(0.5, 0.5),
             padding = EdgeInsets.all(5),
             child = Text(string.format('elxosc  %d', self.count), {
                 style = TextStyle(20, { color = Color.rgba255(0xF0, 0xF0, 0xF0) }),
             })
         },
+    }
+    return Container{
+        margin = EdgeInsets.only{left = 10, top = 10},
+        child = Button{
+            child = content,
+            on_click = function()
+                self:set_state(function()
+                    self.count = self.count + 1
+                    mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
+                end)
+            end,
+        }
     }
 end
 

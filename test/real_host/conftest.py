@@ -124,6 +124,25 @@ def _running_host(tmp_path, extra_args=()):
 
     config = tmp_path / "config"
     config.mkdir()
+    # elxlib_load.lua resolves the shared runtime from the isolated config's
+    # scripts directory. Copy only that sibling library; the elxosc script
+    # itself is loaded from the checkout so the test exercises current source.
+    source_elxlib = Path(__file__).parents[3] / "elxlib"
+    if source_elxlib.is_dir():
+        shutil.copytree(source_elxlib, config / "scripts" / "elxlib")
+    staged_args = []
+    for argument in extra_args:
+        if argument.startswith("--script="):
+            script = Path(argument.removeprefix("--script="))
+            if script.name == "main.lua" and script.is_file():
+                source_elxosc = script.parent
+                staged_elxosc = config / "scripts" / "elxosc"
+                shutil.copytree(source_elxosc, staged_elxosc)
+                loader = source_elxosc / "elxlib_load.lua"
+                if loader.is_file():
+                    shutil.copy2(loader, config / "scripts" / "elxlib_load.lua")
+                argument = f"--script={staged_elxosc / 'main.lua'}"
+        staged_args.append(argument)
     if os.name == "nt":
         address = rf"\\.\pipe\elxosc-test-{uuid.uuid4().hex}"
     else:
@@ -132,7 +151,7 @@ def _running_host(tmp_path, extra_args=()):
     with log.open("wb") as output:
         process = subprocess.Popen(
             [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no",
-             f"--input-ipc-server={address}", *extra_args],
+             f"--input-ipc-server={address}", *staged_args],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
             start_new_session=(os.name != "nt"),
         )
@@ -152,14 +171,14 @@ def _running_host(tmp_path, extra_args=()):
                 pytest.fail(f"host IPC did not become available; log: {log.read_text(errors='replace')[-2000:]}")
             if process.poll() is not None:
                 pytest.fail(f"host exited ({process.returncode}); log: {log.read_text(errors='replace')[-2000:]}")
-            yield client, config, process
+            yield client, config, process, log
         finally:
             owned.cleanup(lambda: client.command("quit", timeout=2), timeout=5)
 
 
 @pytest.fixture
 def real_host(tmp_path):
-    with _running_host(tmp_path) as (client, config, _):
+    with _running_host(tmp_path) as (client, config, _, _):
         yield client, config
 
 
