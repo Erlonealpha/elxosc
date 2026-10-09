@@ -26,9 +26,12 @@ local RenderOwner = std.class.new('RenderOwner')
 
 function RenderOwner:__init(root)
     self.root = nil
-    self.viewport = Constraints.expand()
+    -- A host that never calls `set_viewport` gets an unbounded box (Flutter's
+    -- default `BoxConstraints()`), not a tightly infinite one.
+    self.viewport = Constraints.unbounded()
     self.on_dirty = nil
     self._needs_layout = false
+    self._needs_paint = false
     ---@type table<RenderObject, true>
     self._hovered = {}
     if root then
@@ -51,18 +54,27 @@ end
 
 function RenderOwner:mark_needs_layout()
     self._needs_layout = true
+    self._needs_paint = true
     if self.on_dirty then
         self.on_dirty()
     end
 end
 
 function RenderOwner:mark_needs_paint()
-    self:mark_needs_layout()
+    self._needs_paint = true
+    if self.on_dirty then
+        self.on_dirty()
+    end
 end
 
 ---@return boolean
 function RenderOwner:needs_layout()
     return self._needs_layout
+end
+
+---@return boolean
+function RenderOwner:needs_paint()
+    return self._needs_paint
 end
 
 --- Lay the tree out when the viewport changed or anything was marked dirty.
@@ -75,13 +87,15 @@ function RenderOwner:layout()
         return
     end
     self._needs_layout = false
+    self._needs_paint = true
     root:layout(self.viewport)
 end
 
 ---@param canvas Canvas
 function RenderOwner:paint(canvas)
-    if self.root then
+    if self.root and self._needs_paint then
         self.root:paint(canvas, Offset.zero())
+        self._needs_paint = false
     end
 end
 

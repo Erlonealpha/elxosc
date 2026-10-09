@@ -15,6 +15,8 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local table = table
 local ipairs = ipairs
+local huge = math.huge
+local raise = std.raise
 
 ---@class elxrender
 local M = {}
@@ -23,6 +25,7 @@ local M = {}
 ---@class BoxParentData
 ---@field offset Offset
 ---@field flex number? main-axis flex weight (see RenderFlex)
+---@field fit "tight" | "loose"? flex fit (see RenderFlex)
 
 ---@class RenderObject : std.object
 ---@field parent RenderObject?
@@ -140,7 +143,17 @@ function RenderObject:layout(constraints)
     self.needs_layout = false
     self.needs_paint = true
     self:__perform_layout(constraints)
-    self.size = constraints:constrain_size(self.size)
+    local size = constraints:constrain_size(self.size)
+    -- Flutter cannot render infinite geometry; the doc's Example 16 (an
+    -- unbounded `Container(width: infinity)`) and Example 22 (`FittedBox` of an
+    -- infinite child) both surface this as an error.
+    if size.width == huge or size.width ~= size.width then
+        raise(std.RuntimeError('BoxConstraints forces an infinite width'))
+    end
+    if size.height == huge or size.height ~= size.height then
+        raise(std.RuntimeError('BoxConstraints forces an infinite height'))
+    end
+    self.size = size
 end
 
 --- Subclasses set `self.size` here (and lay out their children).

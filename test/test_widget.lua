@@ -123,6 +123,27 @@ F.test('a changed key forces a new element, an equal key does not', function()
     F.ok(binding.root_element == relocated, 'equal key -> reused')
 end)
 
+F.test('the same widget instance skips rebuilding its subtree', function()
+    local builds = 0
+    local Probe = std.class.new('test.IdentityProbe', { widget_mod.StatelessWidget })
+    function Probe:build()
+        builds = builds + 1
+        return Text('identity')
+    end
+
+    local child = Probe()
+    local Host = std.class.new('test.IdentityHost', { widget_mod.StatelessWidget })
+    function Host:build()
+        return child
+    end
+
+    local owner, binding = mount(Host())
+    F.eq(builds, 1, 'initial child build')
+    binding:set_root_widget(Host())
+    F.eq(builds, 1, 'identical child widget is reused')
+    owner:layout()
+end)
+
 --== multi child ===========================================================
 
 F.section('widget: multi-child')
@@ -144,6 +165,42 @@ F.test('keeps render children in order across rebuilds', function()
     F.close(owner.root:children()[3].size.width, 30, 'order preserved')
 end)
 
+F.test('keyed children keep their Element state when reordered', function()
+    local ItemState = std.class.new('test.KeyedItemState', { state_mod.State })
+    function ItemState:init_state()
+        self.initial_label = self.widget.label
+    end
+    function ItemState:build()
+        return Text(self.initial_label)
+    end
+
+    local Item = std.class.new('test.KeyedItem', { widget_mod.StatefulWidget })
+    function Item:__init(options)
+        self.key = options and options.key
+        self.label = options.label
+    end
+    function Item:create_state()
+        return ItemState()
+    end
+
+    local owner, binding = mount(Column({
+        children = {
+            Item({ key = Key('a'), label = 'A' }),
+            Item({ key = Key('b'), label = 'B' }),
+        },
+    }), Constraints.loose(100, 100))
+    binding:set_root_widget(Column({
+        children = {
+            Item({ key = Key('b'), label = 'B2' }),
+            Item({ key = Key('a'), label = 'A2' }),
+        },
+    }))
+    owner:layout()
+    local children = owner.root:children()
+    F.eq(children[1].paragraph.text, 'B', 'B state moved with key')
+    F.eq(children[2].paragraph.text, 'A', 'A state moved with key')
+end)
+
 F.test('Expanded contributes parent data to its child render object', function()
     local owner = mount(Row({
         children = { Text('a'), Expanded(Text('b')), Text('c') },
@@ -159,6 +216,15 @@ F.test('Stack overlays and aligns children', function()
         children = { SizedBox({ width = 40, height = 40 }), SizedBox({ width = 10, height = 10 }) },
     }), Constraints.loose(100, 100))
     F.ok(owner.root.size == Size(40, 40), 'sized to the biggest child')
+    -- `Stack.alignment` defaults to topStart, not centre.
+    F.ok(owner.root:children()[2].parent_data.offset == Offset(0, 0), 'smaller child at topStart')
+end)
+
+F.test('Stack honours an explicit alignment', function()
+    local owner = mount(Stack({
+        alignment = Offset(0.5, 0.5),
+        children = { SizedBox({ width = 40, height = 40 }), SizedBox({ width = 10, height = 10 }) },
+    }), Constraints.loose(100, 100))
     F.ok(owner.root:children()[2].parent_data.offset == Offset(15, 15), 'smaller child centered')
 end)
 
@@ -248,4 +314,27 @@ F.test('unmounting disposes state', function()
     local owner, binding = mount(W())
     binding:set_root_widget(SizedBox({ width = 1, height = 1 }))
     F.ok(disposed, 'state disposed on replacement')
+end)
+
+F.test('set_state refuses an unmounted State', function()
+    ---@type State?
+    local state
+    local UnmountedState = std.class.new('test.UnmountedState', { state_mod.State })
+    function UnmountedState:build()
+        return Text('x')
+    end
+    local W = std.class.new('test.UnmountedStateWidget', { widget_mod.StatefulWidget })
+    function W:create_state()
+        state = UnmountedState()
+        return state
+    end
+
+    local _, binding = mount(W())
+    binding:set_root_widget(SizedBox({ width = 1, height = 1 }))
+    assert(state)
+    local changed = state:set_state(function()
+        state.changed = true
+    end)
+    F.ok(not changed, 'disposed state rejected')
+    F.ok(not state.changed, 'callback was not run')
 end)

@@ -269,6 +269,11 @@ function AssCanvas:draw_text(paragraph, offset)
     tags[#tags + 1] = '\\1c&H' .. M.ass_rgb(style.color) .. '&'
     tags[#tags + 1] = '\\1a&H' .. M.ass_alpha(style.color) .. '&'
     tags[#tags + 1] = '\\bord0\\shad0'
+    -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
+    -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.
+    if self._sx ~= 1 or self._sy ~= 1 then
+        tags[#tags + 1] = format('\\fscx%s\\fscy%s', ri(self._sx * 100), ri(self._sy * 100))
+    end
     if self._clip then
         tags[#tags + 1] = self._clip
     end

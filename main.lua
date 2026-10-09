@@ -110,13 +110,13 @@ end
 ---@param context BuildContext
 function DemoState:build(context)
     return Container{
-        -- alignment = Offset(0.5, 0.5),
+        alignment = Offset(0.5, 0.5),
         padding = EdgeInsets.all(20),
         margin = EdgeInsets.only{left = 10, top = 10},
         color = Color.rgba255(0x20, 0x20, 0x20, 0xC0),
         radius = 6,
         child = Container{
-            -- alignment = Offset(0.5, 0.5),
+            alignment = Offset(0.5, 0.5),
             padding = EdgeInsets.all(5),
             child = Text(string.format('elxosc  %d', self.count), {
                 style = TextStyle(20, { color = Color.rgba255(0xF0, 0xF0, 0xF0) }),

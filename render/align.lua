@@ -34,15 +34,20 @@ end
 
 function RenderAlign:__perform_layout(constraints)
     local child = self._children[1]
+    -- Mirror `RenderPositionedBox`: shrink-wrap an axis when a factor forces it
+    -- or the incoming constraint on that axis is unbounded.
+    local shrink_wrap_width = self.width_factor ~= nil or constraints.max_width == math.huge
+    local shrink_wrap_height = self.height_factor ~= nil or constraints.max_height == math.huge
     if child == nil then
+        self.size = constraints:constrain_size(Size(
+            shrink_wrap_width and 0 or math.huge,
+            shrink_wrap_height and 0 or math.huge))
         return
     end
     child:layout(constraints:loosen())
-    local width = self.width_factor and (child.size.width * self.width_factor)
-        or (constraints:has_bounded_width() and constraints.max_width or child.size.width)
-    local height = self.height_factor and (child.size.height * self.height_factor)
-        or (constraints:has_bounded_height() and constraints.max_height or child.size.height)
-    self.size = constraints:constrain_size(Size(width, height))
+    self.size = constraints:constrain_size(Size(
+        shrink_wrap_width and child.size.width * (self.width_factor or 1) or math.huge,
+        shrink_wrap_height and child.size.height * (self.height_factor or 1) or math.huge))
     child.parent_data.offset = Offset(
         (self.size.width - child.size.width) * self.alignment.x,
         (self.size.height - child.size.height) * self.alignment.y)

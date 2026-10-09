@@ -3,6 +3,9 @@
 
 -- Multi-child box that overlays its children in paint order (Flutter's
 -- `RenderStack`). Children are aligned by a single shared fraction.
+--
+-- The default alignment is the top-left corner, matching `Stack`'s
+-- `AlignmentDirectional.topStart`, not the centre.
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
@@ -30,7 +33,7 @@ local RenderStack = std.class.new('RenderStack', { RenderObject })
 function RenderStack:__init(options)
     RenderObject.__init(self)
     options = options or {}
-    self.alignment = options.alignment or Offset(0.5, 0.5)
+    self.alignment = options.alignment or Offset(0, 0)
     for _, child in ipairs(options.children or {}) do
         self:adopt_child(child)
     end

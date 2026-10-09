@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline: **0 diagnostics / 408 checks**.
+Current baseline: **0 diagnostics / 521 checks**.
 
 ## Layout
 
@@ -51,6 +51,8 @@ Current baseline: **0 diagnostics / 408 checks**.
 | `test_host_app.lua` | `App`: frame clock, overlay, `WidgetBinding`, the define window (`mp` stubbed) |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour encoding, drawing emission, estimating text layout |
+| `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |
+| `test_constraints_examples.lua` | The 29 `flutter/constraints` examples: raw `ass-events` vs expected |
 | `test_layering.lua` | Guard: only `host/` (and the entry points) may require `mp` |
 
 Nothing here is loaded by mpv: the directory has no `main.lua`, so mpv's script

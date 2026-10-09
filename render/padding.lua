@@ -30,6 +30,9 @@ end
 function RenderPadding:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
+        -- With no child we are just the insets (Flutter's `RenderPadding`).
+        self.size = constraints:constrain_size(Size(
+            self.padding:horizontal(), self.padding:vertical()))
         return
     end
     child:layout(constraints:deflate(self.padding))

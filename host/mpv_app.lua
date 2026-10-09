@@ -198,7 +198,10 @@ function App:_update_display()
     end
     self.display.width, self.display.height = width, height
     self.display.initialized = true
-    self.owner:set_viewport(Constraints.loose(width, height))
+    -- The root gets tight constraints (Flutter's `RenderView` forces the
+    -- application's child to exactly fill the viewport), which is what makes
+    -- the doc's Example 1/2 fill the screen.
+    self.owner:set_viewport(Constraints.tight(width, height))
 end
 
 function App:_update_delay()
@@ -215,6 +218,9 @@ function App:render()
     end
     self.binding:flush_build()
     self.owner:layout()
+    if not self.owner:needs_paint() then
+        return
+    end
     self.canvas:reset()
     self.owner:paint(self.canvas)
     self.presenter:present(self.canvas, self.display.width, self.display.height)

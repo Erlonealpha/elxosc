@@ -34,6 +34,7 @@ local files = {
     'test_host_define',
     'test_host_app',
     'test_ass',
+    'test_constraints_examples',
     'test_layering',
 }
 

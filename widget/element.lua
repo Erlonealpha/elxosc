@@ -171,6 +171,12 @@ function Element:update_child(previous, widget)
         end
         return nil
     end
+    -- Widgets are immutable descriptions. Reusing the exact same instance is
+    -- stronger than can_update(): the subtree is already the desired result,
+    -- so no Element update/build is necessary (Flutter's identity fast path).
+    if previous and previous.widget == widget then
+        return previous
+    end
     if previous and can_update(previous.widget, widget) then
         previous:update(widget)
         return previous
@@ -457,11 +463,39 @@ function MultiChildRenderObjectElement:rebuild()
     local previous = self.children
     local widgets = self.widget.children or {}
     local children = {}
-    for i, widget in ipairs(widgets) do
-        children[i] = self:update_child(previous[i], widget)
+
+    -- Match keyed children by identity rather than by array position. This is
+    -- intentionally small, but preserves the important Flutter guarantee that
+    -- a keyed Element (and its State/RenderObject) follows its logical item
+    -- when siblings are inserted, removed, or reordered.
+    local used = {}
+    local function find_keyed(key)
+        for i, old_child in ipairs(previous) do
+            if not used[old_child] and old_child.widget.key ~= nil
+                and old_child.widget.key == key then
+                return old_child, i
+            end
+        end
+        return nil, nil
     end
-    for i = #widgets + 1, #previous do
-        previous[i]:unmount()
+
+    for i, widget in ipairs(widgets) do
+        local candidate = nil
+        if widget.key ~= nil then
+            candidate = find_keyed(widget.key)
+        elseif previous[i] and previous[i].widget.key == nil
+            and not used[previous[i]] then
+            candidate = previous[i]
+        end
+        children[i] = self:update_child(candidate, widget)
+        if candidate then
+            used[candidate] = true
+        end
+    end
+    for _, old_child in ipairs(previous) do
+        if not used[old_child] then
+            old_child:unmount()
+        end
     end
     self.children = children
     self:sync_render_children()

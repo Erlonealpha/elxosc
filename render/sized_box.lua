@@ -3,6 +3,12 @@
 
 -- Single-child box that overrides its constraints (Flutter's
 -- `RenderConstrainedBox` as used by `SizedBox`).
+--
+-- The widget's `width`/`height` become *additional* constraints: they are
+-- combined with the incoming constraints through `enforce` (intersection), so a
+-- `SizedBox` can never talk its child into a size its parent forbade — this is
+-- the rule behind the "Why is my SizedBox ignored?" note in the SizedBox docs.
+-- With no child the missing axes are treated as zero, again after `enforce`.
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
@@ -34,24 +40,19 @@ end
 
 function RenderSizedBox:__perform_layout(constraints)
     local child = self._children[1]
-    local inner = constraints
-    if self.width then
-        inner = Constraints(self.width, self.width, inner.min_height, inner.max_height)
-    end
-    if self.height then
-        inner = Constraints(inner.min_width, inner.max_width, self.height, self.height)
-    end
+    -- `BoxConstraints.tightFor(width, height)`: null means 0..infinity.
+    local additional = Constraints.tight_for({ width = self.width, height = self.height })
+    -- Impose the additional constraints *on top of* the parent's, never
+    -- replacing them.
+    local inner = additional:enforce(constraints)
 
     if child then
         child:layout(inner)
         child.parent_data.offset = Offset.zero()
-        self.size = Size(
-            self.width or child.size.width,
-            self.height or child.size.height)
+        self.size = child.size
     else
-        local width = self.width or (constraints:has_bounded_width() and constraints.max_width or 0)
-        local height = self.height or (constraints:has_bounded_height() and constraints.max_height or 0)
-        self.size = Size(width, height)
+        -- No child: null axes are zero, then constrained.
+        self.size = inner:constrain_size(Size(0, 0))
     end
 end
 

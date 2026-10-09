@@ -46,6 +46,7 @@ elxosc/
   elxlib_load.lua           补 package.path(scripts + 脚本目录)并 require 'elxlib'
   DESIGN.md                 与 Flutter 的对照、扩展形态讨论
   DESIGN_PATH.md            本文件
+  DESIGN_CONSTRAINTS.md     约束模型对齐 Flutter 的修复记录(+ 对标测试说明)
   dev/feat_example.lua      设计草图(不可运行,见 §7.4)
   dev/feat_example_meta/    LuaLS 用的 DSL meta 桩(on_event/on_prop/Container…)
 
@@ -68,7 +69,10 @@ elxosc/
   render/align.lua          RenderAlign(PositionedBox)
   render/flex.lua           RenderFlex(Row/Column,支持 flex 权重)
   render/stack.lua          RenderStack
-  render/sized_box.lua      RenderSizedBox(ConstrainedBox)
+  render/sized_box.lua      RenderSizedBox(BoxConstraints.tightFor + enforce)
+  render/constrained_box.lua RenderConstrainedBox / RenderLimitedBox
+  render/overflow_box.lua   RenderUnconstrainedBox / RenderOverflowBox
+  render/fitted_box.lua     RenderFittedBox(缩放适配)
   render/decorated_box.lua  Decoration + RenderDecoratedBox
   render/text.lua           RenderText(Paragraph 叶子)
   render/custom_paint.lua   RenderCustomPaint(回调绘制)
@@ -86,8 +90,10 @@ elxosc/
   widget/build_owner.lua    脏 element 队列
   widget/binding.lua        WidgetBinding(Widget 树 ⇄ RenderOwner)
   widget/init.lua           `require 'widget'` 聚合入口
-  widget/widgets/layout.lua Padding Align Center SizedBox DecoratedBox Flex
-                            Row Column Stack Flexible Expanded Spacer Container
+  widget/widgets/layout.lua Padding Align Center SizedBox DecoratedBox
+                            ConstrainedBox LimitedBox UnconstrainedBox OverflowBox
+                            FittedBox Flex Row Column Stack Flexible Expanded
+                            Spacer Container
   widget/widgets/basic.lua  Text CustomPaint GestureDetector
 
   libs/sandbox.lua          无状态原语:load_chunk 兼容 shim + new_env(受限 env)
@@ -129,9 +135,18 @@ libs(sandbox/define)依赖 widget,被 host 使用
 ### 4.1 约束协议(`layout/constraints.lua`)
 
 - `Constraints(min_width, max_width, min_height, max_height)`,构造器默认 `0..inf`。
-- 静态:`tight(w,h)`、`tight_size(size)`、`loose(w,h)`、`expand()`。
-- 实例:`constrain_width/height/size`、`has_bounded_width/height`、`is_tight`、
-  `is_normalized`、`deflate(insets)`、`loosen()`;`__eq` 按四值比较。
+- 静态:`tight(w,h)`、`tight_size(size)`、`tight_for{width,height}`、`loose(w,h)`、
+  `unbounded()`(即 Flutter 的默认 `BoxConstraints()`,0..inf)、`expand(w,h)`
+  (**紧无穷**,Flutter 的 `BoxConstraints.expand`)。
+- 实例:`constrain_width/height/size`、`has_bounded_width/height`、
+  `has_infinite_width/height`、`has_tight_width/height`、`is_tight`、
+  `is_normalized`、`is_satisfied_by(size)`、`biggest()`/`smallest()`、
+  `enforce(other)`(取交集)、`tighten{width,height}`、`normalize()`、
+  `deflate(insets)`、`loosen()`、
+  `constrain_size_and_attempt_to_preserve_aspect_ratio(size)`;`__eq` 按四值比较。
+- 术语与 Flutter 一致:bounded = `max < inf`;loose = `min == 0`;tight =
+  `min == max`;expanding = 紧无穷;infinite = `min == inf`。
+  完整对齐记录见 `DESIGN_CONSTRAINTS.md`。
 
 ### 4.2 RenderObject(`render/render_object.lua`)
 
@@ -271,12 +286,17 @@ Element                       mount/unmount/update/rebuild/mark_dirty/update_chi
 
 ### 5.6 组件库
 
-- `widget/widgets/layout.lua`:Padding / Align / Center / SizedBox / DecoratedBox /
-  Flex / Row / Column / Stack / Flexible / Expanded / Spacer / **Container**。
+- `widget/widgets/layout.lua`:Padding / Align / Center / SizedBox(含
+  `expand/shrink/from_size`)/ DecoratedBox / ConstrainedBox / LimitedBox /
+  UnconstrainedBox / OverflowBox / FittedBox / Flex / Row / Column / Stack /
+  Flexible / Expanded / Spacer / **Container**。
   `Row`/`Column`/`Center`/`Expanded`/`Spacer` 是**普通函数**(返回 `Flex`/`Flexible`),
   复用判定只看返回 widget 的类。
-  `Container` 是 `StatelessWidget`,`build` 里按 margin→sized→decoration→align→
-  padding 组合;它自己暴露 `child_widgets()`/`bind_target()='child'`。
+  `Flexible` 带 `fit`(`loose`;`Expanded` 传 `tight`),`Flex` 带 `main_axis_size`。
+  `Container` 是 `StatelessWidget`,`build` 按 Flutter 顺序组合:无子时
+  `LimitedBox(0,0)+ConstrainedBox(expand())`,有子时 align→padding→decoration→
+  constraints→margin;`width/height` 折叠进 `constraints`。它自己暴露
+  `child_widgets()`/`bind_target()='child'`。
 - `widget/widgets/basic.lua`:Text / CustomPaint / GestureDetector。
 - 所有内置 widget 的 `__init` 都从 `options` 取 `key` 与 `id`。
 
@@ -541,6 +561,8 @@ E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
 | `test_host_define.lua` | `MpDefine`:`mp` 模块、消息路由、窗口/计数(`mp` 用桩) |
 | `test_host_app.lua` | `App`:帧时钟、overlay、`WidgetBinding`、定义窗口接线(`mp` 用桩) |
 | `test_ass.lua` | ASS 颜色/图元/文本/变换/裁剪 |
+| `constraints_examples.lua` | 素材:29 个 flutter/constraints 示例对应的 widget 树 |
+| `test_constraints_examples.lua` | 29 个示例的原始 `ass-events` 输出逐字对标(400×670) |
 | `test_layering.lua` | 守护:框架目录不得 `require 'mp'` |
 
 约定:**框架目录要求 0 诊断**;测试文件在文件头统一禁用
@@ -554,13 +576,13 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 | 阶段 | 内容 | 状态 |
 | --- | --- | --- |
 | 基础 | geometry/color/paint/path/canvas 契约 | 完成 |
-| 布局 | Constraints + Padding/Align/Flex/Stack/SizedBox/DecoratedBox/Text | 完成 |
+| 布局 | Constraints(enforce/tighten/expand/unbounded...) + Padding/Align/Flex/Stack/SizedBox/ConstrainedBox/LimitedBox/UnconstrainedBox/OverflowBox/FittedBox/DecoratedBox/Text | 完成(对齐 flutter/constraints) |
 | 渲染树 | RenderObject/RenderOwner + 脏标记 + 指针路由 + set_children | 完成 |
 | 调度 | FrameClock/Scheduler/Ticker | 完成 |
 | 文本 | TextStyle/Paragraph/TextLayout + 环境默认测量器 | 完成(测量为估算) |
 | 后端 | AssCanvas/AssTextLayout/RecordCanvas | 完成(ASS 已实机验证) |
 | Widget | Widget/Element/State/BuildOwner/WidgetBinding | 完成 |
-| 组件 | Container/Padding/Align/Flex/Row/Column/Stack/Text/CustomPaint/GestureDetector | 完成(子集) |
+| 组件 | Container/Padding/Align/Flex/Row/Column/Stack/ConstrainedBox/LimitedBox/UnconstrainedBox/OverflowBox/FittedBox/SizedBox/Text/CustomPaint/GestureDetector | 完成(子集) |
 | 数据下行 | InheritedWidget + `depend_on_inherited` | 完成(基础) |
 | 绑定 | `Widget.id` + `BindRegistry` + `bind`(define 期写入) | 完成 |
 | 定义期 | `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua` + `libs/dsl.lua` | 完成 |

@@ -4,9 +4,25 @@
 -- Multi-child box that lays children out along one axis (Flutter's
 -- `RenderFlex`: `Row`, `Column`).
 --
--- A child carrying `parent_data.flex > 0` shares the leftover main-axis space
--- with the other flex children, exactly like `Expanded`/`Flexible`. Flex is
--- ignored on an unbounded main axis (where nothing is left to share).
+-- This is a faithful port of `RenderFlex.performLayout` (see
+-- https://raw.githubusercontent.com/flutter/flutter/master/packages/flutter/lib/src/rendering/flex.dart):
+--
+--   1. Non-flex children are laid out with an *unbounded main axis* and the
+--      incoming cross-axis constraints (tight on the cross axis when
+--      `cross_alignment == 'stretch'`).
+--   2. The remaining main-axis space is divided among the flex children by
+--      their `parent_data.flex` weight. A child whose `parent_data.fit` is
+--      `'tight'` (Expanded) is forced to fill its share; `'loose'` (Flexible)
+--      may be smaller.
+--   3. The cross extent is the largest child cross extent; the main extent is
+--      the incoming max when it is bounded and `main_axis_size == 'max'`, else
+--      the sum of the children.
+--   4. Children are positioned by `main_alignment` / `cross_alignment`.
+--
+-- A non-zero flex on an unbounded main axis is an error (the doc's "you can't
+-- use Expanded when the flex box is inside another flex box or a scrollable"),
+-- exactly like Flutter's debug assertion. `main_axis_size == 'min'` with loose
+-- fits is the supported way to shrink-wrap such a box.
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
@@ -21,19 +37,22 @@ local math = math
 local max = math.max
 local huge = math.huge
 local ipairs = ipairs
+local raise = std.raise
 
 ---@class elxflex
 local M = {}
 
 ---@class FlexOpts
 ---@field children RenderObject[]?
----@field main_alignment "start" | "center" | "end" | "space_between"?
----@field cross_alignment "start" | "center" | "end"?
+---@field main_alignment "start" | "center" | "end" | "space_between" | "space_around" | "space_evenly"?
+---@field main_axis_size "max" | "min"?
+---@field cross_alignment "start" | "center" | "end" | "stretch" | "baseline"?
 ---@field spacing number?
 
 ---@class RenderFlex : RenderObject
 ---@field direction "row" | "column"
 ---@field main_alignment string
+---@field main_axis_size string
 ---@field cross_alignment string
 ---@field spacing number
 ---@overload fun(direction: "row" | "column", options: FlexOpts?): RenderFlex
@@ -44,7 +63,8 @@ function RenderFlex:__init(direction, options)
     options = options or {}
     self.direction = direction or 'row'
     self.main_alignment = options.main_alignment or 'start'
-    self.cross_alignment = options.cross_alignment or 'start'
+    self.main_axis_size = options.main_axis_size or 'max'
+    self.cross_alignment = options.cross_alignment or 'center'
     self.spacing = options.spacing or 0
     for _, child in ipairs(options.children or {}) do
         self:adopt_child(child)
@@ -52,101 +72,200 @@ function RenderFlex:__init(direction, options)
 end
 
 ---@param horizontal boolean
----@return Constraints
-local function axis(horizontal, main_min, main_max, cross_min, cross_max)
-    if horizontal then
-        return Constraints(main_min, main_max, cross_min, cross_max)
-    end
-    return Constraints(cross_min, cross_max, main_min, main_max)
+---@param size Size
+---@return number
+local function main_extent(horizontal, size)
+    return horizontal and size.width or size.height
 end
 
----@param alignment string
----@return number 0..1
-local function factor(alignment)
-    if alignment == 'center' then
-        return 0.5
-    elseif alignment == 'end' then
-        return 1
+---@param horizontal boolean
+---@param size Size
+---@return number
+local function cross_extent(horizontal, size)
+    return horizontal and size.height or size.width
+end
+
+---@param horizontal boolean
+---@param main number
+---@param cross number
+---@return Size
+local function axis_size(horizontal, main, cross)
+    return horizontal and Size(main, cross) or Size(cross, main)
+end
+
+---@param horizontal boolean
+---@param stretch boolean
+---@param constraints Constraints
+---@return Constraints
+local function non_flex_constraints(horizontal, stretch, constraints)
+    if horizontal then
+        if stretch then
+            return Constraints.tight_for({ height = constraints.max_height })
+        end
+        return Constraints(0, huge, 0, constraints.max_height)
     end
+    if stretch then
+        return Constraints.tight_for({ width = constraints.max_width })
+    end
+    return Constraints(0, constraints.max_width, 0, huge)
+end
+
+---@param horizontal boolean
+---@param stretch boolean
+---@param constraints Constraints
+---@param min_extent number
+---@param max_extent number
+---@return Constraints
+local function flex_child_constraints(horizontal, stretch, constraints, min_extent, max_extent)
+    if horizontal then
+        return Constraints(min_extent, max_extent,
+            stretch and constraints.max_height or 0, constraints.max_height)
+    end
+    return Constraints(stretch and constraints.max_width or 0, constraints.max_width,
+        min_extent, max_extent)
+end
+
+--- `MainAxisAlignment._distributeSpace` for a left-to-right / top-to-bottom
+--- (non-flipped) flex.
+---@param alignment string
+---@param free number
+---@param count integer
+---@param spacing number
+---@return number leading
+---@return number between
+local function distribute_space(alignment, free, count, spacing)
+    if alignment == 'center' then
+        return free / 2, spacing
+    elseif alignment == 'end' then
+        return free, spacing
+    elseif alignment == 'space_between' then
+        if count < 2 then
+            return 0, spacing
+        end
+        return 0, free / (count - 1) + spacing
+    elseif alignment == 'space_around' then
+        if count == 0 then
+            return 0, spacing
+        end
+        return free / count / 2, free / count + spacing
+    elseif alignment == 'space_evenly' then
+        return free / (count + 1), free / (count + 1) + spacing
+    end
+    -- 'start'
+    return 0, spacing
+end
+
+--- `CrossAxisAlignment._getChildCrossAxisOffset` (non-flipped).
+---@param alignment string
+---@param free number
+---@return number
+local function cross_offset(alignment, free)
+    if alignment == 'center' then
+        return free / 2
+    elseif alignment == 'end' then
+        return free
+    end
+    -- 'start', 'stretch' and 'baseline' both sit at the cross-axis origin.
     return 0
+end
+
+---@param child RenderObject
+---@return number
+local function flex_of(child)
+    return child.parent_data.flex or 0
+end
+
+---@param child RenderObject
+---@return string
+local function fit_of(child)
+    return child.parent_data.fit or 'tight'
 end
 
 function RenderFlex:__perform_layout(constraints)
     local horizontal = self.direction == 'row'
     local children = self._children
     local n = #children
-    if n == 0 then
-        self.size = Size(0, 0)
-        return
-    end
+    local stretch = self.cross_alignment == 'stretch'
 
-    local main_max = horizontal and constraints.max_width or constraints.max_height
-    local cross_max = horizontal and constraints.max_height or constraints.max_width
+    local max_main = main_extent(horizontal, constraints:biggest())
+    local can_flex = max_main < huge
 
-    local total_flex = 0
-    for _, child in ipairs(children) do
-        local flex = child.parent_data.flex or 0
-        if flex > 0 then
-            total_flex = total_flex + flex
-        end
-    end
-    local has_flex = total_flex > 0 and main_max < huge
-
-    local spacing_total = (n - 1) * self.spacing
-    local used_main = 0
-    local cross_size = 0
-
-    for _, child in ipairs(children) do
-        if not has_flex or (child.parent_data.flex or 0) <= 0 then
-            child:layout(axis(horizontal, 0, main_max, 0, cross_max))
-            used_main = used_main + (horizontal and child.size.width or child.size.height)
-            cross_size = max(cross_size, horizontal and child.size.height or child.size.width)
-        end
-    end
-
-    if has_flex then
-        local free = max(0, main_max - used_main - spacing_total)
+    -- Non-zero flex on an unbounded main axis is an error (Flutter asserts).
+    if not can_flex then
         for _, child in ipairs(children) do
-            local flex = child.parent_data.flex or 0
-            if flex > 0 then
-                local extent = free * flex / total_flex
-                child:layout(axis(horizontal, extent, extent, 0, cross_max))
-                used_main = used_main + extent
-                cross_size = max(cross_size, horizontal and child.size.height or child.size.width)
+            if flex_of(child) > 0
+                and (self.main_axis_size == 'max' or fit_of(child) == 'tight') then
+                local dimension = horizontal and 'width' or 'height'
+                raise(std.RuntimeError(string.format(
+                    'RenderFlex children have non-zero flex but incoming %s constraints are unbounded',
+                    dimension)))
             end
         end
     end
 
-    local content_main = used_main + spacing_total
-    local own_main = has_flex and main_max or content_main
-    self.size = constraints:constrain_size(
-        horizontal and Size(own_main, cross_size) or Size(cross_size, own_main))
+    local non_flex = non_flex_constraints(horizontal, stretch, constraints)
 
-    local main_size = horizontal and self.size.width or self.size.height
-    local own_cross = horizontal and self.size.height or self.size.width
-    local free_main = max(0, main_size - content_main)
+    -- Spacing between children is part of the accumulated main extent.
+    local accumulated_main = self.spacing * (n - 1)
+    local accumulated_cross = 0
+    local total_flex = 0
 
-    local leading, gap_extra = 0, 0
-    if self.main_alignment == 'center' then
-        leading = free_main / 2
-    elseif self.main_alignment == 'end' then
-        leading = free_main
-    elseif self.main_alignment == 'space_between' and n > 1 then
-        gap_extra = free_main / (n - 1)
+    -- Pass 1: lay out the inflexible children (and every child when the main
+    -- axis is unbounded, where flex has no space to share).
+    for _, child in ipairs(children) do
+        local flex = can_flex and flex_of(child) or 0
+        if flex > 0 then
+            total_flex = total_flex + flex
+        else
+            child:layout(non_flex)
+            accumulated_main = accumulated_main + main_extent(horizontal, child.size)
+            accumulated_cross = max(accumulated_cross, cross_extent(horizontal, child.size))
+        end
     end
 
-    local cross_factor = factor(self.cross_alignment)
+    -- Pass 2: divide the free main-axis space among the flexible children.
+    if total_flex > 0 then
+        local free = max(0, max_main - accumulated_main)
+        local space_per_flex = free / total_flex
+        for _, child in ipairs(children) do
+            local flex = flex_of(child)
+            if flex > 0 then
+                local max_child_extent = space_per_flex * flex
+                local min_child_extent = fit_of(child) == 'tight' and max_child_extent or 0
+                child:layout(flex_child_constraints(horizontal, stretch, constraints,
+                    min_child_extent, max_child_extent))
+                accumulated_main = accumulated_main + main_extent(horizontal, child.size)
+                accumulated_cross = max(accumulated_cross, cross_extent(horizontal, child.size))
+            end
+        end
+    end
+
+    -- Main extent: fill the incoming max when bounded and main_axis_size is
+    -- 'max'; otherwise shrink-wrap the children.
+    local ideal_main
+    if self.main_axis_size == 'max' and can_flex then
+        ideal_main = max_main
+    else
+        ideal_main = accumulated_main
+    end
+    local size = constraints:constrain_size(axis_size(horizontal, ideal_main, accumulated_cross))
+    self.size = size
+
+    local own_main = main_extent(horizontal, size)
+    local own_cross = cross_extent(horizontal, size)
+    local remaining = max(0, own_main - accumulated_main)
+    local leading, between = distribute_space(self.main_alignment, remaining, n, self.spacing)
+
     local cursor = leading
     for _, child in ipairs(children) do
-        local child_cross = horizontal and child.size.height or child.size.width
-        local cross_offset = (own_cross - child_cross) * cross_factor
+        local child_cross = cross_extent(horizontal, child.size)
+        local child_cross_offset = cross_offset(self.cross_alignment, own_cross - child_cross)
         if horizontal then
-            child.parent_data.offset = Offset(cursor, cross_offset)
+            child.parent_data.offset = Offset(cursor, child_cross_offset)
         else
-            child.parent_data.offset = Offset(cross_offset, cursor)
+            child.parent_data.offset = Offset(child_cross_offset, cursor)
         end
-        cursor = cursor + (horizontal and child.size.width or child.size.height)
-            + self.spacing + gap_extra
+        cursor = cursor + main_extent(horizontal, child.size) + between
     end
 end
 

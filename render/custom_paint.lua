@@ -42,13 +42,16 @@ end
 function RenderCustomPaint:__perform_layout(constraints)
     local child = self._children[1]
     if child then
-        child:layout(constraints:loosen())
+        -- `RenderProxyBox`: hand the incoming constraints down unchanged and
+        -- match the child's size (a loosened box would let the child shrink
+        -- below a tight parent).
+        child:layout(constraints)
         child.parent_data.offset = Offset.zero()
         self.size = child.size
     else
-        local base = self.preferred_size
-            or Size(constraints.max_width, constraints.max_height)
-        self.size = base
+        -- No child: our preferred size, constrained. Defaults to `Size.zero`
+        -- (Flutter's `CustomPaint.size`), not "as big as possible".
+        self.size = constraints:constrain_size(self.preferred_size or Size(0, 0))
     end
 end
 

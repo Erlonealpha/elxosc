@@ -49,13 +49,22 @@ end
 --- Apply a change and schedule a rebuild. `apply` may be omitted when the
 --- caller already mutated the state.
 ---@param apply fun()?
+---@return boolean scheduled
 function State:set_state(apply)
+    -- Do not silently mutate a disposed State. Flutter reports this as a
+    -- lifecycle error; returning false keeps the Lua API usable by callers
+    -- while making the invalid transition observable and side-effect free.
+    if not self:is_mounted() then
+        return false
+    end
     if apply then
         apply()
     end
-    if self.context then
-        self.context:mark_dirty()
+    local context = self.context
+    if context then
+        context:mark_dirty()
     end
+    return true
 end
 
 M.State = State
