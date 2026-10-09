@@ -34,9 +34,11 @@ Current baseline: **0 diagnostics / 533 checks**.
 ## Real host (Python + uv, first stage)
 
 `test/real_host/` starts a **real** mpv.net/mpv process in a temporary, empty
-`--config-dir` and queries its JSON IPC endpoint. It does not load the user's
-portable configuration or the elxosc Lua entry point yet. Existing Lua host
-tests above still use an `mp` stub; these Python tests do not.
+`--config-dir` and queries its JSON IPC endpoint. The fixture owns the complete
+process tree: it sends IPC `quit` first, then uses a Windows Job Object (or a
+POSIX process group) as a bounded fallback. It never searches for or kills
+processes by image name. Existing Lua host tests above still use an `mp` stub;
+these Python tests do not.
 
 From this repository root:
 
@@ -54,8 +56,12 @@ host explicitly; otherwise the search is `mpvnet.com`, `mpv.com`, `mpv.exe`.
 The isolated host creates a unique temporary IPC socket/named pipe, is stopped
 after the test, and has no user scripts. Missing executables, hosts that exit,
 and unavailable IPC report **SKIPPED** with a reason; once IPC is ready,
-unexpected command or assertion failures fail the test. Passing this probe
-proves process launch and IPC, not elxosc rendering or integration yet.
+unexpected command or assertion failures fail the test.
+
+The suite also includes a first elxosc integration smoke test. It loads
+`main.lua`, sends `elxosc-demo`, checks that the host remains alive, and reads
+back `osd-dimensions`. This proves script loading and the basic IPC path; it is
+not yet a pixel-level OSD or real mouse-click assertion.
 
 ## Layout
 

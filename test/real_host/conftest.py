@@ -8,9 +8,12 @@ import socket
 import subprocess
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
+
+from lifecycle import OwnedProcess
 
 
 def find_host():
@@ -41,15 +44,31 @@ class IpcClient:
                 conn.connect(self.address)
                 conn.sendall(payload)
                 response = b""
-                while b"\n" not in response:
+                while not self._contains_reply(response):
                     chunk = conn.recv(65536)
                     if not chunk:
                         raise ConnectionError("mpv IPC closed before replying")
                     response += chunk
-        message = json.loads(response.split(b"\n", 1)[0])
-        assert message["request_id"] == self.request_id, message
+        # mpv may send unsolicited events before the command reply.
+        message = None
+        for line in response.splitlines():
+            candidate = json.loads(line)
+            if candidate.get("request_id") == self.request_id:
+                message = candidate
+                break
+        if message is None:
+            raise RuntimeError(f"mpv IPC reply missing request_id {self.request_id}: {response!r}")
         assert message["error"] == "success", message
         return message.get("data")
+
+    def _contains_reply(self, response):
+        for line in response.splitlines():
+            try:
+                if json.loads(line).get("request_id") == self.request_id:
+                    return True
+            except json.JSONDecodeError:
+                continue
+        return False
 
     def _windows_request(self, payload, timeout):
         # mpv uses Windows named pipes here; Python's socket module cannot open them.
@@ -64,6 +83,9 @@ class IpcClient:
                                            ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32),
                                            ctypes.c_void_p]
         kernel32.ReadFile.argtypes = kernel32.WriteFile.argtypes
+        kernel32.ReadFile.restype = ctypes.c_int
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+        kernel32.CloseHandle.restype = ctypes.c_int
         handle = kernel32.CreateFileW(self.address, 0xC0000000, 0, None, 3, 0, None)
         if handle == ctypes.c_void_p(-1).value:
             raise OSError(ctypes.get_last_error(), "opening mpv named pipe")
@@ -75,7 +97,7 @@ class IpcClient:
             assert written.value == len(payload)
             deadline = time.monotonic() + timeout
             response = b""
-            while b"\n" not in response:
+            while not self._contains_reply(response):
                 available = ctypes.c_uint32()
                 if not kernel32.PeekNamedPipe(handle, None, 0, None, ctypes.byref(available), None):
                     raise OSError(ctypes.get_last_error(), "reading mpv named pipe")
@@ -94,8 +116,8 @@ class IpcClient:
             kernel32.CloseHandle(handle)
 
 
-@pytest.fixture
-def real_host(tmp_path):
+@contextmanager
+def _running_host(tmp_path, extra_args=()):
     executable = find_host()
     if not executable:
         pytest.skip("no mpvnet.com/mpv executable available (ELXOSC_MPV_BINARY may override)")
@@ -110,9 +132,11 @@ def real_host(tmp_path):
     with log.open("wb") as output:
         process = subprocess.Popen(
             [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no",
-             f"--input-ipc-server={address}"],
+             f"--input-ipc-server={address}", *extra_args],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
+            start_new_session=(os.name != "nt"),
         )
+        owned = OwnedProcess(process)
         client = IpcClient(address)
         try:
             deadline = time.monotonic() + 10
@@ -122,18 +146,26 @@ def real_host(tmp_path):
                 try:
                     client.command("get_property", "mpv-version", timeout=0.5)
                     break
-                except (OSError, ConnectionError, TimeoutError):
+                except (OSError, ConnectionError, TimeoutError, RuntimeError):
                     time.sleep(0.1)
             else:
-                pytest.skip(f"host IPC did not become available; log: {log.read_text(errors='replace')[-2000:]}")
+                pytest.fail(f"host IPC did not become available; log: {log.read_text(errors='replace')[-2000:]}")
             if process.poll() is not None:
-                pytest.skip(f"host exited ({process.returncode}); log: {log.read_text(errors='replace')[-2000:]}")
-            yield client, config
+                pytest.fail(f"host exited ({process.returncode}); log: {log.read_text(errors='replace')[-2000:]}")
+            yield client, config, process
         finally:
-            if process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait(timeout=5)
+            owned.cleanup(lambda: client.command("quit", timeout=2), timeout=5)
+
+
+@pytest.fixture
+def real_host(tmp_path):
+    with _running_host(tmp_path) as (client, config, _):
+        yield client, config
+
+
+@pytest.fixture
+def real_host_factory(tmp_path):
+    """Start an isolated host with extra command-line options when needed."""
+    def start(*extra_args):
+        return _running_host(tmp_path, extra_args)
+    return start
