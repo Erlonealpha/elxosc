@@ -17,6 +17,19 @@ local widget_mod = require('widget.widget')
 local state_mod = require('widget.state')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
+local text_widgets = require('widget.widgets.text')
+local custom_paint_widgets = require('widget.widgets.custom_paint')
+local gesture_widgets = require('widget.widgets.gesture_detector')
+local button_widgets = require('widget.widgets.button')
+local padding_widgets = require('widget.widgets.padding')
+local align_widgets = require('widget.widgets.align')
+local sized_box_widgets = require('widget.widgets.sized_box')
+local decorated_box_widgets = require('widget.widgets.decorated_box')
+local flex_widgets = require('widget.widgets.flex')
+local stack_widgets = require('widget.widgets.stack')
+local constraints_widgets = require('widget.widgets.constraints')
+local overflow_widgets = require('widget.widgets.overflow')
+local container_widgets = require('widget.widgets.container')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -73,6 +86,31 @@ F.test('builtins exposes the widget library', function()
     F.ok(b.Slot ~= nil, 'Slot')
     F.ok(b.Column ~= nil, 'Column')
     F.ok(b.Button ~= nil, 'Button')
+end)
+
+F.test('basic widget module remains a compatibility aggregate', function()
+    F.eq(basic_widgets.Text, text_widgets.Text, 'Text')
+    F.eq(basic_widgets.CustomPaint, custom_paint_widgets.CustomPaint, 'CustomPaint')
+    F.eq(basic_widgets.GestureDetector, gesture_widgets.GestureDetector, 'GestureDetector')
+    F.eq(basic_widgets.Button, button_widgets.Button, 'Button')
+end)
+
+F.test('layout modules and aggregate preserve class identity', function()
+    local widget_api = require('widget')
+    local expected = {
+        Padding = padding_widgets.Padding, Align = align_widgets.Align, Center = align_widgets.Center,
+        SizedBox = sized_box_widgets.SizedBox, DecoratedBox = decorated_box_widgets.DecoratedBox,
+        Flexible = flex_widgets.Flexible, Expanded = flex_widgets.Expanded, Spacer = flex_widgets.Spacer,
+        Flex = flex_widgets.Flex, Row = flex_widgets.Row, Column = flex_widgets.Column,
+        Stack = stack_widgets.Stack, ConstrainedBox = constraints_widgets.ConstrainedBox,
+        LimitedBox = constraints_widgets.LimitedBox, UnconstrainedBox = overflow_widgets.UnconstrainedBox,
+        OverflowBox = overflow_widgets.OverflowBox, FittedBox = overflow_widgets.FittedBox,
+        Container = container_widgets.Container,
+    }
+    for name, value in pairs(expected) do
+        F.eq(layout_widgets[name], value, name .. ' aggregate')
+        F.eq(widget_api[name], value, name .. ' widget API')
+    end
 end)
 
 F.test('builtins exposes the value types', function()

@@ -7,11 +7,13 @@
 -- the top-left, because the doc's point is that the Scaffold hands its child
 -- *loose* constraints ("it can be any size it wants, but not bigger than the
 -- screen").
+---@diagnostic disable: undefined-field, call-non-callable, need-check-nil
 
 local geometry = require 'foundation.geometry'
 local color = require 'foundation.color'
 local text_style = require 'text.text_style'
 local constraints_mod = require 'layout.constraints'
+---@type elxwidgets_layout
 local lay = require 'widget.widgets.layout'
 local basic = require 'widget.widgets.basic'
 

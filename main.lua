@@ -10,6 +10,7 @@
 --
 -- `bind` writes into the widget tree *before* it is mounted (DESIGN.md §4.4), so
 -- the re-mount builds a fresh scaffold rather than mutating the live one.
+---@diagnostic disable: undefined-field, call-non-callable, need-check-nil
 
 local mp = require 'mp'
 
@@ -22,6 +23,7 @@ local geometry = require 'foundation.geometry'
 local text_style = require 'text.text_style'
 local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
+---@type elxwidgets_layout
 local layout_widgets = require 'widget.widgets.layout'
 local basic_widgets = require 'widget.widgets.basic'
 local bind_mod = require 'widget.bind'

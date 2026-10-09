@@ -3,7 +3,7 @@
 -- LuaLS cannot model `std.class` field injection, the optional
 -- `RenderOwner.root`, or anonymous test stubs, so the diagnostics that stem
 -- from those patterns are disabled for the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable
 
 local F = require('framework')
 local std = require('elxlibs.std')
