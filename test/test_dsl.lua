@@ -72,6 +72,7 @@ F.test('builtins exposes the widget library', function()
     F.ok(b.Container ~= nil, 'Container')
     F.ok(b.Slot ~= nil, 'Slot')
     F.ok(b.Column ~= nil, 'Column')
+    F.ok(b.Button ~= nil, 'Button')
 end)
 
 F.test('builtins exposes the value types', function()

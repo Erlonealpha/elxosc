@@ -37,6 +37,7 @@ local Stack = layout_widgets.Stack
 local Container = layout_widgets.Container
 local Expanded = layout_widgets.Expanded
 local Text = basic_widgets.Text
+local Button = basic_widgets.Button
 
 -- Deterministic measurer: half the font size per character.
 local FixedLayout = std.class.new('test.FixedLayout', { text_layout.TextLayout })
@@ -67,6 +68,15 @@ F.test('the aggregate module exposes the public api', function()
     F.ok(api.Container ~= nil, 'Container')
     F.ok(api.Text ~= nil, 'Text')
     F.ok(api.Row ~= nil, 'Row')
+    F.ok(api.Button ~= nil, 'Button')
+end)
+
+F.test('Button renders and invokes its click callback', function()
+    local clicks = 0
+    local owner = mount(Button({ label = 'Play', on_click = function() clicks = clicks + 1 end }))
+    owner:dispatch_pointer('down', Offset(5, 5))
+    owner:dispatch_pointer('up', Offset(5, 5))
+    F.eq(clicks, 1, 'button click')
 end)
 
 F.test('mounts a widget tree and paints it', function()

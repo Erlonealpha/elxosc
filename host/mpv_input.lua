@@ -16,6 +16,8 @@ local geometry = require 'foundation.geometry'
 
 local Offset = geometry.Offset
 local math = math
+local debug_msgf = rawget(_G, 'debug_msgf') or function(...) end
+local debug_msg = rawget(_G, 'debug_msg') or function(...) end
 
 ---@class elxinput
 local M = {}
@@ -34,6 +36,7 @@ function MpInput:__init(app)
     self.x, self.y = math.huge, math.huge
     self.hover = false
     self._enabled = false
+    self._pressed = false
     self:_bind_mouse()
     self:_bind_keys()
 end
@@ -78,14 +81,20 @@ function MpInput:_dispatch(event, data)
     if event == 'down' then
         self:_refresh_position()
     end
-    self.app.owner:dispatch_pointer(event, self:_point(), data)
+    local handled = self.app.owner:dispatch_pointer(event, self:_point(), data)
+    if event == 'down' and data == 'left' then
+        self._pressed = handled
+    elseif event == 'up' and data == 'left' then
+        self._pressed = false
+    end
+    self:_decide_bindings()
     self.app:request_frame()
 end
 
 function MpInput:_bind_keys()
     mp.set_key_bindings({
-        { 'mbtn_left', function() self:_dispatch('up') end, function() self:_dispatch('down') end },
-        { 'mbtn_right', function() self:_dispatch('up') end, function() self:_dispatch('down') end },
+        { 'mbtn_left', function() self:_dispatch('up', 'left') end, function() self:_dispatch('down', 'left') end },
+        { 'mbtn_right', function() self:_dispatch('up', 'right') end, function() self:_dispatch('down', 'right') end },
         { 'wheel_up', function() self:_dispatch('wheel', 1) end },
         { 'wheel_down', function() self:_dispatch('wheel', -1) end },
     }, BINDING_GROUP, 'force')
@@ -96,7 +105,7 @@ end
 --- so clicks elsewhere keep their normal mpv meaning.
 function MpInput:_decide_bindings()
     local point = self:_point()
-    local want = self.hover and (
+    local want = self._pressed or self.hover and (
         self.app.owner:wants_pointer('down', point)
         or self.app.owner:wants_pointer('wheel', point)) or false
     if want == self._enabled then

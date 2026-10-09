@@ -136,3 +136,13 @@ F.test('expand grows the hit area beyond the child', function()
     owner:dispatch_pointer('up', Offset(-3, -3))
     F.eq(hits, 1, 'tapped inside the expanded area')
 end)
+
+F.test('a press cancelled outside does not tap', function()
+    local taps = 0
+    local owner = laid_out(RenderGesture(box(40, 20), {
+        on_tap = function() taps = taps + 1 end,
+    }))
+    owner:dispatch_pointer('down', Offset(5, 5))
+    owner:dispatch_pointer('up', Offset(500, 500))
+    F.eq(taps, 0, 'outside release cancels')
+end)

@@ -34,6 +34,8 @@ function RenderOwner:__init(root)
     self._needs_paint = false
     ---@type table<RenderObject, true>
     self._hovered = {}
+    ---@type RenderObject?
+    self._pressed = nil
     if root then
         self:set_root(root)
     end
@@ -41,6 +43,10 @@ end
 
 ---@param root RenderObject
 function RenderOwner:set_root(root)
+    self:cancel_pointer()
+    if self.root then
+        self.root:_set_owner(nil)
+    end
     self.root = root
     root:_set_owner(self)
     self:mark_needs_layout()
@@ -138,12 +144,41 @@ function RenderOwner:dispatch_pointer(event, point, data)
         end
         return #path > 0
     end
+    if event == 'down' then
+        self:cancel_pointer()
+    elseif event == 'up' then
+        local pressed = self._pressed
+        self._pressed = nil
+        if pressed then
+            local found = false
+            for _, entry in ipairs(path) do
+                if entry.node == pressed then
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                pressed:on_pointer('cancel', nil, data)
+            end
+        end
+    end
     for _, entry in ipairs(path) do
         if entry.node:on_pointer(event, entry.point, data) then
+            if event == 'down' then
+                self._pressed = entry.node
+            end
             return true
         end
     end
     return false
+end
+
+--- Cancel a pending press when the host loses the pointer or the root changes.
+function RenderOwner:cancel_pointer()
+    if self._pressed then
+        self._pressed:on_pointer('cancel', nil)
+        self._pressed = nil
+    end
 end
 
 --- Mark every currently hovered node as left (pointer left the window).

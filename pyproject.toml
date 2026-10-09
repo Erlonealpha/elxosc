@@ -1,0 +1,12 @@
+[project]
+name = "elxosc-real-host-tests"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+test = ["pytest>=8,<10"]
+
+[tool.pytest.ini_options]
+testpaths = ["test/real_host"]
+markers = ["real_host: requires a working mpv/mpv.net executable and IPC"]

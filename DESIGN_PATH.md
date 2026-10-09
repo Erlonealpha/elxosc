@@ -76,7 +76,7 @@ elxosc/
   render/decorated_box.lua  Decoration + RenderDecoratedBox
   render/text.lua           RenderText(Paragraph 叶子)
   render/custom_paint.lua   RenderCustomPaint(回调绘制)
-  render/gesture.lua        RenderGesture(tap/wheel/hover)
+   render/gesture.lua        RenderGesture(click/tap/wheel/hover)
 
   scheduler/frame_clock.lua FrameClock 契约(now / request_frame)
   scheduler/scheduler.lua   Scheduler(transient → persistent → post-frame)
@@ -184,8 +184,15 @@ libs(sandbox/define)依赖 widget,被 host 使用
 - `on_dirty` 是宿主接帧时钟的钩子(宿主把它接到 `scheduler:schedule_frame()`)。
 - 指针:`pointer_path` / `wants_pointer` / `dispatch_pointer(event, point, data)` /
   `clear_hover`。
-  - `move` **冒泡**:驱动 `enter`/`leave`(owner 记 `_hovered`)后依次下发 `move`。
-  - 其它事件(down/up/wheel)**在第一个返回真的节点处停止**。
+- `move` **冒泡**:驱动 `enter`/`leave`(owner 记 `_hovered`)后依次下发 `move`。
+- 其它事件(down/up/wheel)**在第一个返回真的节点处停止**。
+
+第一阶段事件 API 约定：`RenderObject` 只提供命中路径和事件钩子，
+`RenderOwner` 负责路径分发、hover 与按下状态，宿主只把 mpv 输入转换为
+`down/up/wheel/move`。`RenderGesture` 暴露 `on_down`、`on_up`、`on_click`、
+`on_move`、`on_enter`、`on_leave`、`on_wheel`；`on_click` 仅在同一命中目标
+按下并释放时触发，移出后释放会取消。`Button` 是基于 `GestureDetector` 的
+基础 Widget，使用 `on_click` 回调；禁用或无回调时不声明可交互区域。
 
 ### 4.4 Canvas 契约(`painting/canvas.lua`)
 

@@ -31,6 +31,32 @@ test files disable the codes that stem from limits of the `std.class` model
 
 Current baseline: **0 diagnostics / 521 checks**.
 
+## Real host (Python + uv, first stage)
+
+`test/real_host/` starts a **real** mpv.net/mpv process in a temporary, empty
+`--config-dir` and queries its JSON IPC endpoint. It does not load the user's
+portable configuration or the elxosc Lua entry point yet. Existing Lua host
+tests above still use an `mp` stub; these Python tests do not.
+
+From this repository root:
+
+```sh
+uv run --group test python -m pytest -q test/real_host
+# or, if pytest is already installed in your Python:
+python -m pytest -q test/real_host
+```
+
+`uv` resolves the declared pytest test dependency into the ignored local
+`.venv` (the first run may need a package index). To use an already cached
+dependency without network access, add `--offline` before `run`. Set
+`ELXOSC_MPV_BINARY` to a full executable path (or a name on PATH) to select a
+host explicitly; otherwise the search is `mpvnet.com`, `mpv.com`, `mpv.exe`.
+The isolated host creates a unique temporary IPC socket/named pipe, is stopped
+after the test, and has no user scripts. Missing executables, hosts that exit,
+and unavailable IPC report **SKIPPED** with a reason; once IPC is ready,
+unexpected command or assertion failures fail the test. Passing this probe
+proves process launch and IPC, not elxosc rendering or integration yet.
+
 ## Layout
 
 | File | Contents |

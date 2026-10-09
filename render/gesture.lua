@@ -28,6 +28,7 @@ local M = {}
 ---@field on_down fun(self: RenderGesture, point: Offset)?
 ---@field on_up fun(self: RenderGesture, point: Offset)?
 ---@field on_tap fun(self: RenderGesture, point: Offset)?
+---@field on_click fun(self: RenderGesture, point: Offset)? alias for on_tap
 ---@field on_wheel (fun(self: RenderGesture, delta: number): boolean?)?
 
 ---@class RenderGesture : RenderObject
@@ -67,7 +68,7 @@ end
 function RenderGesture:wants_pointer(event)
     local h = self.handlers
     if event == 'down' or event == 'up' then
-        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil
+        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
     elseif event == 'wheel' then
         return h.on_wheel ~= nil
     elseif event == 'move' then
@@ -79,12 +80,18 @@ end
 function RenderGesture:on_pointer(event, point, data)
     local h = self.handlers
     if event == 'down' then
+        if data == 'right' then
+            return false
+        end
         self.pressed = true
         if h.on_down and point ~= nil then
             h.on_down(self, point)
         end
-        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil
+        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
     elseif event == 'up' then
+        if data == 'right' then
+            return false
+        end
         local was_pressed = self.pressed
         self.pressed = false
         if point ~= nil then
@@ -94,8 +101,14 @@ function RenderGesture:on_pointer(event, point, data)
             if was_pressed and h.on_tap then
                 h.on_tap(self, point)
             end
+            if was_pressed and h.on_click then
+                h.on_click(self, point)
+            end
         end
         return was_pressed
+    elseif event == 'cancel' then
+        self.pressed = false
+        return false
     elseif event == 'wheel' then
         if h.on_wheel then
             return h.on_wheel(self, data) ~= false

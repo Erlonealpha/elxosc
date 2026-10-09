@@ -5,10 +5,13 @@
 
 local std = require 'elxlibs.std'
 local text_style = require 'text.text_style'
+local geometry = require 'foundation.geometry'
+local color_mod = require 'foundation.color'
 local text_mod = require 'render.text'
 local custom_paint_mod = require 'render.custom_paint'
 local gesture_mod = require 'render.gesture'
 local widget_mod = require 'widget.widget'
+local layout_widgets = require 'widget.widgets.layout'
 
 local TextStyle = text_style.TextStyle
 local RenderText = text_mod.RenderText
@@ -16,6 +19,10 @@ local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local RenderGesture = gesture_mod.RenderGesture
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
+local StatelessWidget = widget_mod.StatelessWidget
+local Container = layout_widgets.Container
+local EdgeInsets = geometry.EdgeInsets
+local Color = color_mod.Color
 
 ---@class elxwidgets_basic
 local M = {}
@@ -88,11 +95,59 @@ end
 
 function GestureDetector:update_render_object(render_object)
     render_object.handlers = self.handlers
+    if not render_object:wants_pointer('down') then
+        render_object.pressed = false
+    end
     render_object:mark_needs_paint()
+end
+
+--- A basic clickable control. A nil callback or enabled=false leaves mpv's
+--- ordinary mouse bindings available. Custom content may replace the label.
+---@class Button : StatelessWidget
+---@field label string | number?
+---@field child Widget?
+---@field on_click fun()?
+---@field enabled boolean
+---@overload fun(options: { label: string | number?, child: Widget?, on_click: fun()?, enabled: boolean?, key: any?, id: string? }): Button
+local Button = std.class.new('Button', { StatelessWidget })
+
+function Button:__init(options)
+    options = options or {}
+    self.key = options.key
+    self.id = options.id
+    self.label = options.label
+    self.child = options.child
+    self.on_click = options.on_click
+    self.enabled = options.enabled ~= false
+end
+
+function Button:build()
+    local content = self.child or Text(self.label or '', {
+        style = TextStyle(16, { color = Color.rgba255(255, 255, 255) }),
+    })
+    local body = Container({
+        child = content,
+        padding = EdgeInsets.symmetric(12, 6),
+        color = self.enabled and Color.rgba255(55, 95, 160) or Color.rgba255(85, 85, 85),
+        radius = 4,
+    })
+    if self.enabled and self.on_click then
+        return GestureDetector(body, { on_click = function() self.on_click() end })
+    end
+    return body
+end
+
+function Button:child_widgets()
+    return self.child and { self.child } or {}
+end
+
+function Button:bind_target()
+    return 'child'
 end
 
 M.Text = Text
 M.CustomPaint = CustomPaint
 M.GestureDetector = GestureDetector
+M.Button = Button
 
 return M

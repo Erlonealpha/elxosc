@@ -31,6 +31,7 @@ local State = state_mod.State
 local StatefulWidget = widget_mod.StatefulWidget
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
+local Button = basic_widgets.Button
 
 ---@return Widget
 local function scaffold()
@@ -129,6 +130,23 @@ F.test('a set_state rebuild lands in the next frame', function()
     app.binding:flush_build()
     app.owner:layout()
     F.eq(app.owner.root:children()[1].paragraph.text, 'v7', 'rebuilt with the new state')
+end)
+
+F.test('host input bindings deliver a left click to Button', function()
+    mp_stub.reset()
+    local clicks = 0
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() clicks = clicks + 1 end }))
+    app:render()
+    fake.mouse = { x = 5, y = 5, hover = true }
+    for _, event in ipairs(fake.events) do
+        if event.name == 'mouse-pos' then
+            event.cb(nil, fake.mouse)
+        end
+    end
+    F.ok(fake.bindings_enabled ~= nil, 'button enables mouse bindings')
+    fake.bindings.list[1][3]()
+    fake.bindings.list[1][2]()
+    F.eq(clicks, 1, 'host delivered click')
 end)
 
 --== the whole entry point =================================================

@@ -250,7 +250,7 @@ end
 --- Hook invoked by `RenderOwner:dispatch_pointer`. `point` is in this node's
 --- local space. Return truthy to mark the event handled, which stops
 --- propagation to ancestors (`move` always bubbles).
----@param event string "down" | "up" | "move" | "enter" | "leave" | "wheel"
+---@param event string "down" | "up" | "cancel" | "move" | "enter" | "leave" | "wheel"
 ---@param point Offset?
 ---@param data any? wheel delta
 ---@return boolean handled
