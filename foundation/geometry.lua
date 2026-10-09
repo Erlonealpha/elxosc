@@ -98,7 +98,6 @@ function Offset:distance(other)
     return sqrt(dx * dx + dy * dy)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@return Offset
 function Offset.zero()
     return Offset(0, 0)
@@ -165,13 +164,11 @@ function Size:is_empty()
     return self.width <= 0 or self.height <= 0
 end
 
----@diagnostic disable-next-line: inject-field
 ---@return Size
 function Size.zero()
     return Size(0, 0)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param extent number
 ---@return Size
 function Size.square(extent)
@@ -294,7 +291,6 @@ function Rect:intersect(other)
     return Rect(left, top, right, bottom)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param left number
 ---@param top number
 ---@param width number
@@ -304,7 +300,6 @@ function Rect.from_ltwh(left, top, width, height)
     return Rect(left, top, left + width, top + height)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param left number
 ---@param top number
 ---@param right number
@@ -314,7 +309,6 @@ function Rect.from_ltrb(left, top, right, bottom)
     return Rect(left, top, right, bottom)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param a Offset
 ---@param b Offset
 ---@return Rect
@@ -322,7 +316,6 @@ function Rect.from_points(a, b)
     return Rect(min(a.x, b.x), min(a.y, b.y), max(a.x, b.x), max(a.y, b.y))
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param offset Offset
 ---@param size Size
 ---@return Rect
@@ -396,14 +389,12 @@ function EdgeInsets:deflate_rect(rect)
         rect.right - self.right, rect.bottom - self.bottom)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param value number
 ---@return EdgeInsets
 function EdgeInsets.all(value)
     return EdgeInsets(value, value, value, value)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param horizontal number
 ---@param vertical number
 ---@return EdgeInsets
@@ -411,7 +402,6 @@ function EdgeInsets.symmetric(horizontal, vertical)
     return EdgeInsets(horizontal, vertical, horizontal, vertical)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param options { left?: number, top?: number, right?: number, bottom?: number }
 ---@return EdgeInsets
 function EdgeInsets.only(options)
@@ -419,7 +409,6 @@ function EdgeInsets.only(options)
     return EdgeInsets(options.left or 0, options.top or 0, options.right or 0, options.bottom or 0)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@return EdgeInsets
 function EdgeInsets.zero()
     return EdgeInsets(0, 0, 0, 0)

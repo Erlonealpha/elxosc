@@ -80,7 +80,6 @@ end
 
 --- Direct child elements, in render order.
 ---@return Element[]
----@diagnostic disable-next-line: unused
 function Element:element_children()
     return {}
 end
@@ -88,19 +87,16 @@ end
 --- The topmost render object this element contributes to its nearest
 --- render-object ancestor.
 ---@return RenderObject?
----@diagnostic disable-next-line: unused
 function Element:first_render_object()
     return nil
 end
 
 ---@return boolean
----@diagnostic disable-next-line: unused
 function Element:is_inherited_element()
     return false
 end
 
 ---@return boolean
----@diagnostic disable-next-line: unused
 function Element:is_render_object_element()
     return false
 end
@@ -324,7 +320,6 @@ function InheritedElement:__init(widget)
     self.dependents = {}
 end
 
----@diagnostic disable-next-line: unused
 function InheritedElement:is_inherited_element()
     return true
 end
@@ -378,13 +373,11 @@ function RenderObjectElement:first_render_object()
     return self.render_object
 end
 
----@diagnostic disable-next-line: unused
 function RenderObjectElement:is_render_object_element()
     return true
 end
 
 ---@return RenderObject[]
----@diagnostic disable-next-line: unused
 function RenderObjectElement:render_children()
     return {}
 end
@@ -483,42 +476,34 @@ end
 -- `widget/widget.lua` cannot reference the element classes (Lua's `require`
 -- has no cycles), so the mapping is installed here, once.
 
----@diagnostic disable-next-line: inject-field
 function StatelessWidget:create_element()
     return StatelessElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function StatefulWidget:create_element()
     return StatefulElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function ProxyWidget:create_element()
     return ProxyElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function ParentDataWidget:create_element()
     return ParentDataElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function InheritedWidget:create_element()
     return InheritedElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function LeafRenderObjectWidget:create_element()
     return LeafRenderObjectElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function SingleChildRenderObjectWidget:create_element()
     return SingleChildRenderObjectElement(self)
 end
 
----@diagnostic disable-next-line: inject-field
 function MultiChildRenderObjectWidget:create_element()
     return MultiChildRenderObjectElement(self)
 end

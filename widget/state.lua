@@ -31,20 +31,16 @@ function State:is_mounted()
 end
 
 --- Called once, right after the element is mounted.
----@diagnostic disable-next-line: unused
 function State:init_state() end
 
 ---@param old_widget StatefulWidget
----@diagnostic disable-next-line: unused
 function State:did_update_widget(old_widget) end
 
 --- Called when the element is discarded; release listeners/timers here.
----@diagnostic disable-next-line: unused
 function State:dispose() end
 
 ---@param context BuildContext
 ---@return Widget?
----@diagnostic disable-next-line: unused
 function State:build(context)
     raise(std.NotImplementedError(
         string.format('%s must implement build', tostring(self))))

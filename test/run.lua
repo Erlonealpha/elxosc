@@ -29,6 +29,10 @@ local files = {
     'test_input',
     'test_widget',
     'test_bind',
+    'test_define',
+    'test_dsl',
+    'test_host_define',
+    'test_host_app',
     'test_ass',
     'test_layering',
 }

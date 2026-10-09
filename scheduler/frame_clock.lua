@@ -22,14 +22,12 @@ local FrameClock = std.class.new('FrameClock')
 
 --- Current time in seconds (monotonic where the host allows it).
 ---@return number
----@diagnostic disable-next-line: unused
 function FrameClock:now()
     raise(std.NotImplementedError('FrameClock:now must be implemented by a host backend'))
 end
 
 --- Ask the host to deliver exactly one frame. When it is due the host must
 --- call `_emit`, which invokes the registered handler.
----@diagnostic disable-next-line: unused
 function FrameClock:request_frame()
     raise(std.NotImplementedError('FrameClock:request_frame must be implemented by a host backend'))
 end

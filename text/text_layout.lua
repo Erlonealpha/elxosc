@@ -87,7 +87,6 @@ local TextLayout = std.class.new('TextLayout')
 ---@param line string
 ---@param style TextStyle
 ---@return number
----@diagnostic disable-next-line: unused
 function TextLayout:line_width(line, style)
     raise(std.NotImplementedError('TextLayout:line_width must be implemented by a text backend'))
 end

@@ -153,7 +153,6 @@ function Slot:child_widgets()
     return self.child and { self.child } or {}
 end
 
----@diagnostic disable-next-line: unused
 function Slot:bind_target()
     return 'child'
 end

@@ -20,9 +20,11 @@ elxosc/
                                 Flex Row Column Stack Flexible Expanded
                                 Spacer Container)
                 widgets/basic(Text CustomPaint GestureDetector)
+  libs/         sandbox(受限 env) · modules(模块表) · define(协议) · dsl(DSL 面)
   backends/     ass_canvas · ass_text_layout · record
-  host/         mpv_app(帧循环/显示/overlay) · mpv_input(指针/按键)
-  main.lua      入口:装配 host + 后端 + demo 树
+  host/         mpv_app(帧循环/显示/overlay) · mpv_define(定义期) · mpv_input(指针/按键)
+  dev/          feat_example(设计草图) · feat_example_meta(DSL meta 桩)
+  main.lua      入口:装配 host + 后端 + scaffold + 定义窗口
 ```
 
 **解耦约束(可回归)**:框架层不得依赖 mpv。目前只有 `main.lua`、
@@ -66,20 +68,22 @@ elxosc/
 | `WidgetsBinding` | `widget/binding.lua` | 完成(精简,无 host 依赖) |
 | `InheritedWidget`(主题/MediaQuery) | `widget/widget.lua` · `widget/element.lua` | 完成(基础) |
 | `bind`(把 widget 挂到命名目标节点) | `widget/bind.lua`(`BindRegistry` + `bind`) | 完成 |
+| 插件扩展协议(Flutter 无对应) | `libs/sandbox.lua` · `libs/modules.lua` · `libs/define.lua` | 完成(协议核心;宿主服务/传输层待接) |
 | `AnimationController` / `Tween` / `Curve` | — | 计划(Phase 4) |
 | `RepaintBoundary` / 图层缓存 | — | 计划(Phase 4) |
 | `Viewport` / Sliver(虚拟列表) | — | 计划(Phase 4) |
 | Semantics | — | 不适用 |
 
-**结论**:渲染层(rendering / painting / layout / scheduler)已与 Flutter 对齐;
-**缺 Widgets 层与 Animation 层**,这也正是扩展形态依赖的一层。
+**结论**:渲染层(rendering / painting / layout / scheduler)与 Widgets 层均已与
+Flutter 对齐;**缺 Animation 层与 Viewport/Sliver/RepaintBoundary**。此外多了一层
+Flutter 没有的**定义期协议**(`libs/`),供其他脚本声明界面。
 
 ---
 
 ## 3. 与 Flutter 的结构性差异(有意取舍)
 
-1. **当前只有一棵 RenderObject 树**(命令式);Flutter 是 Widget→Element→RenderObject。
-   Phase 1 要补上。
+1. **Widget→Element→RenderObject 三棵树已就位**(Phase 1/2);宿主仍可绕过
+   Widget 层直接命令式地构 RenderObject(§9.1 的过渡形态,不是最终形态)。
 2. **脏标记传播到根**;Flutter 有 relayout/repaint boundary 截断。功能正确,性能待优化。
 3. **命中测试返回节点路径**,无逐级变换、无手势竞技场 → 点击/拖拽无法消歧。
 4. **文本测量是后端职责**(ASS 无法测量),ASS 后端目前是估算。
@@ -104,7 +108,10 @@ elxosc/
 
 ---
 
-## 4. 扩展形态(参考 `feat_example.lua`,已定方向)
+## 4. 扩展形态(方向已定,协议核心已实现)
+
+实现见 `libs/sandbox.lua` + `libs/define.lua`;本节保留设计推演与坑的记录,
+与现状的差异以 `DESIGN_PATH.md` §7.3 为准。历史草图在 `dev/feat_example.lua`。
 
 其他脚本通过 `script-message-to elxosc` 发送:
 
@@ -146,11 +153,14 @@ Widget→Element→RenderObject 三棵树与 type/key 复用是硬需求,而不�
 
 ### 4.3 沙箱环境
 
-`env = setmetatable(locals, env_mt)`:
+`env` 是一张普通表,metatable 的 `__index` 指向 `api`、`__newindex` 守卫后
+`rawset`(`libs/sandbox.new_env`):
 
-- 读:落到 `env_mt`,暴露 `new_state` / `new_widget` / `import` / `mod` / `bind` /
-  `on_prop` / `on_message` / `on_event` / `print`,以及受保护的只读名;
-- 写:落进 `locals`,即该 scope 的"模块级变量"(`MyState`、`MyWidget`);
+- 读:落到 `api`,即可读的名字。**框架只提供四个内建**
+  `import` / `require`(别名)/ `mod` / `bind`,其余全部由宿主注入 ——
+  `new_state` / `new_widget` / widget 构造器走 `builtins`,`on_prop` /
+  `on_message` 走 `mp` 模块;
+- 写:落进 env 自身,即该 scope 的"模块级变量"(`MyState`、`MyWidget`);
 - `import('mp')`:暴露的应是**受控 facade**,而非原始 `mp`;
 - 模块级 `local`(chunk 内的 `local x`)天然私有。
 
@@ -171,34 +181,45 @@ Widget→Element→RenderObject 三棵树与 type/key 复用是硬需求,而不�
 
 ### 4.5 模块共享 `mod` / `import`
 
-`mod(name)` 把当前 scope 的 `locals` 发布为具名模块;`import(name)` 把模块内容
-并入当前 env,并在导入时运行模块的 init 钩子(`mods_init[mod](env, scope_id)`,
-便于模块安装自己的 env 函数,如包装 `on_message`)。这是**跨 scope/跨脚本共享代码**
-的唯一通道 —— 因为 mpv 每个脚本是独立 Lua State,函数无法直接传递。
+注册表(`libs/modules.lua`)分两张表,对应脚本侧的两个名字:
+
+- `mods` 是**数据模块**:`import(name)` 把它的键值摊进当前 env;
+- `loaders` 是**安装器**:复制之后运行 `loader(env, scope_id)`,用于需要 scope
+  本身的函数(典型例子:`mp` 的 loader 安装 `on_message`);
+- `mod(name[, data])` 发布模块(缺省发布当前 env),`protect(name)` 可禁止覆盖。
+
+这是**跨 scope/跨脚本共享代码**的唯一通道 —— 因为 mpv 每个脚本是独立 Lua State,
+函数无法直接传递。
 
 ### 4.6 事件服务
 
 `on_prop(name, cb)` / `on_message(cb)` / `on_event(name, cb)` 把 mpv 的
 property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(...)`,
-触发对应子树重建。框架负责在 scope 销毁时统一解绑。
+触发对应子树重建。
 
-### 4.7 已核实的坑(需要改)
+**这属于宿主模块,不属于框架**:`on_prop` 是 `mp` 模块的数据,`on_message` 由
+`mp` 的 loader 装进 env;订阅、解绑、随脚本卸载的清理都由该模块自己负责。
+
+### 4.7 已核实的坑(实现时踩过 / 已处理)
 
 1. **`__newindex` 递归**:示例里 `__newindex = function(obj,k,v) obj[k]=v end`
-   会 `stack overflow`(已实测)。必须 `rawset(obj, k, v)`。
+   会 `stack overflow`(已实测)。必须 `rawset(obj, k, v)` —— 已照此实现。
 2. **`load(code, name, 't', env)` 的可移植性**:本机 LuaJIT 实测**支持** 5.2 签名
    (env 生效、无 `_G` 泄漏),但构建若未开 `LUA52COMPAT` 就会**静默忽略 env**
-   → 沙箱失效。建议写兼容 shim:有 `loadstring`+`setfenv` 走 5.1 路径,否则走
-   `load(..., 't', env)`。
-3. **`import` 的复制范围**:示例 `for k,v in pairs(mods)` 复制的是**全部**模块,
-   应改为复制 `mods[mod]`。
-4. **`import('mp')` 依赖预注册**:`mods['mp']` 必须由服务器预先登记(并且是 facade),
-   否则 `error('...')`。
-5. **命名不一致**:env 里写 `on_event`,示例里用 `on_prop`/`on_message`;
-   需要统一或都暴露。
+   → 沙箱失效。**已处理**:`libs/sandbox.load_chunk` 先 `load(...)`,再在
+   `setfenv` 存在时套一层(不依赖 `loadstring`)。
+3. **`import` 的复制范围**:示例 `for k,v in pairs(mods)` 复制的是**全部**模块。
+   **已处理**:按单个模块复制,并拆成 `mods`(数据)/ `loaders`(安装器)两张表。
+4. **`import('mp')` 依赖预注册**:`mods['mp']` 必须由宿主预先登记(并且是 facade),
+   否则 `ImportError`。宿主接线仍在 Phase 5。
+5. **命名不一致**:env 里写 `on_event`,示例里用 `on_prop`/`on_message`。
+   **已处理**:`on_prop` 归 `mp` 模块的数据,`on_message` 归其 loader,名字与
+   草图一致。
 6. **定义期超时是墙钟等待**,要保证不阻塞 mpv 启动太久(0.5s/1s 量级尚可),
-   且超时后要能继续而非卡死。
-7. **`bind` 尚未实现**(空函数),插槽机制见 4.4。
+   且超时后要能继续而非卡死。宿主侧待做(Phase 5)。
+7. **`bind`**:已实现(`widget/bind.lua`),插槽机制见 4.4。
+
+详见 `DESIGN_PATH.md` §7.3(现状与草图差异)。
 
 ---
 
@@ -234,13 +255,14 @@ property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(..
 - **不做 `GlobalKey`**:当前模型是"从 element 树收集子渲染对象",跨树搬运子树
   需要 detach/attach 渲染对象并维护 slot 记录,代价高且扩展协议用不到。
 
-### Phase 3 — 定义期 / 沙箱 / 模块(扩展协议)
+### Phase 3 — 定义期 / 沙箱 / 模块 ✅ 完成
 
-- `libs/sandbox.lua`:受限 env + 兼容 `load` shim + `rawset` 守卫 + 受保护名。
-- `define` 协议:`define_start` / `define(scope, code)` / `define_end`,超时兜底。
-- 模块注册表 `mod`/`import` + init 钩子。
-- 事件服务:`on_prop` / `on_message` / `on_event` → `set_state`,scope 销毁时统一解绑。
-- 版本化:env API 需带版本与兼容策略(第三方脚本依赖)。
+- `libs/sandbox.lua`:受限 env 原语 + 兼容 `load` shim + `rawset` 守卫(无状态)。
+- `libs/modules.lua`:模块注册表,数据模块与 loader 分表,`protect` 防覆盖。
+- `libs/define.lua`:`define_start` / `define(scope, code)` / `define_end`
+  (引用计数),`import`/`mod`/`bind` 内建,共享 `BindRegistry`。
+- `libs/dsl.lua`:`new_widget` / `new_state` / `builtins`。
+- 宿主接线见 Phase 5;待做:env API 版本化。
 
 ### Phase 4 — 能力补齐
 
@@ -248,9 +270,12 @@ property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(..
 `AnimationController`/`Tween`/`Curve`;`InheritedWidget`(主题/MediaQuery);
 `parentUsesSize` 与 relayout/repaint boundary;手势竞技场。
 
-### Phase 5 — 宿主扩展
+### Phase 5 — 宿主扩展(初步完成)
 
-mpv.net 后端四件套;未处理事件转发回 `input.conf`;`osd-margins` 自动调整。
+- ✅ `host/mpv_app.lua` 切到 `WidgetBinding`;`host/mpv_define.lua` 接
+  `script-message` + `mp` 模块 + 定义窗口;`main.lua` 装配 scaffold。
+- 待做:实机验证;mpv.net 后端四件套;未处理事件转发回 `input.conf`;
+  `osd-margins` 自动调整;文本度量升级;`libs/debug.lua`。
 
 ---
 
@@ -263,14 +288,15 @@ mpv.net 后端四件套;未处理事件转发回 `input.conf`;`osd-margins` 自�
 | 3 | 对外命名 | **Widget / State**(Flutter 同名);`RenderObject` 仅内部渲染层 |
 | 4 | 文本度量升级 | 待定(可参考 uosc `lib/text.lua` 的字体宽度表) |
 | 5 | 沙箱严格度 | 待定:纯 API 卫生,还是防恶意脚本(影响是否屏蔽 `_G`/`load`) |
-| 6 | 文本测量的传入方式 | 环境默认(`text_layout.set_default`)+ widget 可显式覆盖,替代尚未实现的 InheritedWidget |
-| 7 | 宿主接入 Widget 层的时机 | 已定:**框架先行**,`host/` 与 `main.lua` 暂不切换 |
+| 6 | 文本测量的传入方式 | 环境默认(`text_layout.set_default`)+ widget 可显式覆盖;`InheritedWidget` 已可用,但 Theme/MediaQuery 的具体 provider 属 Phase 4 |
+| 7 | 宿主接入 Widget 层的时机 | 已定并已执行:`host/mpv_app.lua` 走 `WidgetBinding`,`main.lua` 装配 scaffold + 定义窗口 |
 
 ## 7. 已知待清理
 
 - `host/mpv_input.lua` 依赖 `main.lua` 定义的全局 `debug_msgf`;调试工具应下沉为
   独立模块(如 `libs/debug.lua`),避免 host 依赖入口脚本的全局。
-- `feat_example.lua` 是设计草图(含占位 `error('...')`),不要当作可运行代码;
-  待 Phase 3 落地时改写为正式实现/文档。
-- `host/mpv_app.lua` 与 `main.lua` 目前仍直接构造 RenderObject,尚未通过
-  `WidgetBinding` 驱动 Widget 树(按约定 mpv 层稍后再写)。
+- `dev/feat_example.lua` 是早期设计草图(含占位 `error('...')`),不要当作可运行
+  代码;正式实现见 `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua`
+  + `libs/dsl.lua`(`DESIGN_PATH.md` §7.3)。
+- mpv 平台层**尚未实机验证**(`mp` 用桩测试);`on_prop` 的订阅没有随 scope
+  销毁解绑,当前归宿主模块自行负责(`DESIGN_PATH.md` §9.3、§12)。

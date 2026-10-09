@@ -101,7 +101,6 @@ function Constraints:loosen()
     return Constraints(0, self.max_width, 0, self.max_height)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param width number
 ---@param height number
 ---@return Constraints
@@ -109,14 +108,12 @@ function Constraints.tight(width, height)
     return Constraints(width, width, height, height)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param size Size
 ---@return Constraints
 function Constraints.tight_size(size)
     return Constraints(size.width, size.width, size.height, size.height)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param width number
 ---@param height number
 ---@return Constraints
@@ -124,7 +121,6 @@ function Constraints.loose(width, height)
     return Constraints(0, width or huge, 0, height or huge)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@return Constraints
 function Constraints.expand()
     return Constraints(0, huge, 0, huge)

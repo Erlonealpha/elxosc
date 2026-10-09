@@ -8,6 +8,11 @@
 --   * the overlay is only pushed when its data or resolution changed;
 --   * `mp.get_osd_size()` is the logical (1:1) coordinate space, so an
 --     `ass-events` overlay with matching `res_x`/`res_y` maps pixels 1:1.
+--
+-- Since the Widget layer landed, the app drives a `WidgetBinding` rather than a
+-- hand-built `RenderObject` tree (DESIGN_PATH.md §9.1): `build()` returns a
+-- Widget, the binding turns it into the render tree, and every frame flushes
+-- pending rebuilds before layout.
 
 local mp = require 'mp'
 
@@ -17,6 +22,9 @@ local frame_clock = require 'scheduler.frame_clock'
 local scheduler_mod = require 'scheduler.scheduler'
 local render_owner = require 'render.render_owner'
 local ass_canvas = require 'backends.ass_canvas'
+local ass_text_layout = require 'backends.ass_text_layout'
+local text_layout = require 'text.text_layout'
+local binding_mod = require 'widget.binding'
 local mpv_input = require 'host.mpv_input'
 
 local Constraints = constraints_mod.Constraints
@@ -24,6 +32,8 @@ local FrameClock = frame_clock.FrameClock
 local Scheduler = scheduler_mod.Scheduler
 local RenderOwner = render_owner.RenderOwner
 local AssCanvas = ass_canvas.AssCanvas
+local AssTextLayout = ass_text_layout.AssTextLayout
+local WidgetBinding = binding_mod.WidgetBinding
 local MpInput = mpv_input.MpInput
 
 local math = math
@@ -51,7 +61,6 @@ function MpFrameClock:__init(delay)
     self._last_frame = nil
 end
 
----@diagnostic disable-next-line: unused
 function MpFrameClock:now()
     return mp.get_time()
 end
@@ -117,19 +126,20 @@ end
 ---@field clock MpFrameClock
 ---@field scheduler Scheduler
 ---@field owner RenderOwner
+---@field binding WidgetBinding
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
----@overload fun(root: RenderObject, options: { z: number?, delay: number? }?): App
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry? }?): App
 local App = std.class.new('App')
 
-function App:__init(root, options)
+function App:__init(root_widget, options)
     options = options or {}
     ---@type Display
     self.display = { width = 1280, height = 720, initialized = false }
     self.clock = MpFrameClock(options.delay)
     self.scheduler = Scheduler(self.clock)
-    self.owner = RenderOwner(root)
+    self.owner = RenderOwner()
     self.canvas = AssCanvas()
     self.presenter = AssPresenter(options.z)
 
@@ -140,6 +150,14 @@ function App:__init(root, options)
         self:render()
     end)
 
+    -- the engine stand-in: `RenderText` falls back to this measurer
+    text_layout.set_default(AssTextLayout())
+
+    self.binding = WidgetBinding(root_widget, self.owner, options.binds)
+    self.binding.on_dirty = function()
+        self.scheduler:schedule_frame()
+    end
+
     self:_observe()
     self:_update_display()
     self:_update_delay()
@@ -149,6 +167,13 @@ end
 --- Force a redraw (e.g. after mutating the tree by hand).
 function App:request_frame()
     self.scheduler:schedule_frame()
+end
+
+--- Swap the root widget (the define phase finished, or a script re-declared).
+---@param root_widget Widget
+function App:set_root_widget(root_widget)
+    self.binding:set_root_widget(root_widget)
+    self:request_frame()
 end
 
 function App:_observe()
@@ -188,15 +213,16 @@ function App:render()
     if not self.display.initialized then
         return
     end
+    self.binding:flush_build()
     self.owner:layout()
     self.canvas:reset()
     self.owner:paint(self.canvas)
     self.presenter:present(self.canvas, self.display.width, self.display.height)
 end
 
---- Build a root render object and start rendering it.
----@param build fun(): RenderObject
----@param options { z: number?, delay: number? }?
+--- Build a root widget and start rendering it.
+---@param build fun(): Widget
+---@param options { z: number?, delay: number?, binds: BindRegistry? }?
 ---@return App
 function M.start(build, options)
     local app = App(build(), options)

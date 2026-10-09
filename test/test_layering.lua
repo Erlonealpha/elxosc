@@ -1,10 +1,10 @@
 -- Layering guard: the framework layers must stay host agnostic.
 --
 -- The whole point of elxosc is that foundation / painting / text / scheduler /
--- layout / render / backends stay mpv-free (so a mpv.net backend can reuse them
--- verbatim). This test fails the suite if one of those starts requiring mpv.
--- Everything else (host/, entry points, tests, examples/design sketches) is
--- free to use mpv.
+-- layout / render / widget / backends / libs stay mpv-free (so a mpv.net backend
+-- can reuse them verbatim). This test fails the suite if one of those starts
+-- requiring mpv. Everything else (host/, entry points, tests, examples/design
+-- sketches) is free to use mpv.
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.
@@ -68,6 +68,7 @@ local function is_framework(path)
         or path:match('/render/') ~= nil
         or path:match('/widget/') ~= nil
         or path:match('/backends/') ~= nil
+        or path:match('/libs/') ~= nil
 end
 
 --- Matches `require 'mp'`, `require("mp.utils")`, `require 'mp.assdraw'` ...

@@ -73,7 +73,6 @@ function Color:to_rgba255()
     return to_byte(self.r), to_byte(self.g), to_byte(self.b), to_byte(self.a)
 end
 
----@diagnostic disable-next-line: inject-field
 ---@param r number 0..255
 ---@param g number 0..255
 ---@param b number 0..255
@@ -84,7 +83,6 @@ function Color.rgba255(r, g, b, a)
 end
 
 --- 32 bit `0xAARRGGBB` (Flutter's `Color.value` / ARGB layout).
----@diagnostic disable-next-line: inject-field
 ---@param argb integer
 ---@return Color
 function Color.argb(argb)
@@ -97,7 +95,6 @@ end
 
 --- CSS style hex: `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA` (alpha defaults
 --- to opaque). The leading `#` is optional.
----@diagnostic disable-next-line: inject-field
 ---@param hex string
 ---@return Color
 function Color.hex(hex)

@@ -302,7 +302,6 @@ function Container:child_widgets()
     return self.child and { self.child } or {}
 end
 
----@diagnostic disable-next-line: unused
 function Container:bind_target()
     return 'child'
 end

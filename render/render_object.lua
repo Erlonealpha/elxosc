@@ -241,7 +241,6 @@ end
 ---@param point Offset?
 ---@param data any? wheel delta
 ---@return boolean handled
----@diagnostic disable-next-line: unused
 function RenderObject:on_pointer(event, point, data)
     return false
 end
@@ -250,7 +249,6 @@ end
 --- mpv key bindings to enable while the cursor is over this subtree.
 ---@param event string
 ---@return boolean
----@diagnostic disable-next-line: unused
 function RenderObject:wants_pointer(event)
     return false
 end

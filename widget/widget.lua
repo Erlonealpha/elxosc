@@ -39,7 +39,6 @@ end
 --- is still being assembled. Composite widgets that build their own subtree
 --- expose nothing.
 ---@return Widget[]
----@diagnostic disable-next-line: unused
 function Widget:child_widgets()
     return {}
 end
@@ -47,7 +46,6 @@ end
 --- Which child slot `bind` may write to: `'child'`, `'children'`, or `nil`
 --- when this widget cannot receive children.
 ---@return "child" | "children" | nil
----@diagnostic disable-next-line: unused
 function Widget:bind_target()
     return nil
 end
@@ -73,7 +71,6 @@ local StatelessWidget = std.class.new('StatelessWidget', { Widget })
 
 ---@param context BuildContext
 ---@return Widget?
----@diagnostic disable-next-line: unused
 function StatelessWidget:build(context)
     raise(std.NotImplementedError(
         string.format('%s must implement build', tostring(self))))
@@ -101,7 +98,6 @@ function ProxyWidget:child_widgets()
     return self.child and { self.child } or {}
 end
 
----@diagnostic disable-next-line: unused
 function ProxyWidget:bind_target()
     return 'child'
 end
@@ -112,7 +108,6 @@ end
 local ParentDataWidget = std.class.new('ParentDataWidget', { ProxyWidget })
 
 ---@param render_object RenderObject
----@diagnostic disable-next-line: unused
 function ParentDataWidget:apply_parent_data(render_object)
     raise(std.NotImplementedError(
         string.format('%s must implement apply_parent_data', tostring(self))))
@@ -130,7 +125,6 @@ local InheritedWidget = std.class.new('InheritedWidget', { ProxyWidget })
 --- Whether dependents must rebuild after this widget is replaced.
 ---@param old_widget InheritedWidget
 ---@return boolean
----@diagnostic disable-next-line: unused
 function InheritedWidget:update_should_notify(old_widget)
     return true
 end
@@ -149,7 +143,6 @@ function RenderObjectWidget:create_render_object()
 end
 
 ---@param render_object RenderObject
----@diagnostic disable-next-line: unused
 function RenderObjectWidget:update_render_object(render_object) end
 
 ---@class LeafRenderObjectWidget : RenderObjectWidget
@@ -164,7 +157,6 @@ function SingleChildRenderObjectWidget:child_widgets()
     return self.child and { self.child } or {}
 end
 
----@diagnostic disable-next-line: unused
 function SingleChildRenderObjectWidget:bind_target()
     return 'child'
 end
@@ -178,7 +170,6 @@ function MultiChildRenderObjectWidget:child_widgets()
     return self.children or {}
 end
 
----@diagnostic disable-next-line: unused
 function MultiChildRenderObjectWidget:bind_target()
     return 'children'
 end

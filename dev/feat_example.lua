@@ -7,21 +7,45 @@ local mp = require 'mp'
 -- Server defines example
 --
 
-local mods = {}
-local mods_init = {}
+-- can directly use without prefix
+local builtins = {
+    text = {},
+    button = {},
+    ...
+}
+local mods = {
+    mp = {
+        get_prop = function(name)
+        end,
+        on_prop = function(name, cb)
+        end,
+    },
+}
+local mods_loader = {
+    mp = function(scope, env)
+        function env.on_message(cb)
+        end
+    end,
+    ...
+}
 local protected_mods = {}
 ---@[lsp_optimization('delayed_definition')]
 local current_env
 local current_define
-local function import(mod)
-    if not mods[mod] then
+local function import(modname)
+    local mod
+    if mods[modname] then
+        mod = true
+        for k, v in pairs(mods[modname]) do
+            current_env[k] = v
+        end
+    end
+    if mods_loader[modname] then
+        mod = true
+        mods_loader[modname](current_env, current_define)
+    end
+    if not mod then
         error('...')
-    end
-    if mods_init[mod] then
-        mods_init[mod](current_env, current_define) -- wrap mp.on_message here
-    end
-    for k, v in pairs(mods[mod]) do
-        current_env[k] = v
     end
 end
 
@@ -48,6 +72,11 @@ local define_env_mt = {
     print = mp.msg.info,
     ...
 }
+for _, mod in pairs(builtins) do
+    for n, v in pairs(mod) do
+        define_env_mt[n] = v
+    end
+end
 local protected = {}
 define_env_mt.__index = define_env_mt
 define_env_mt.__newindex = function (obj, k, v)
@@ -59,7 +88,17 @@ end
 
 local function wait_define(wait_start_timeout, all_timeout)
     -- run light event loop
+    local allow_start = true
+    local define_ok = false
+    local start = mp.get_time()
+    local deadline_start = start + wait_start_timeout
+    local deadline = start + all_timeout
+
+    local function dispatch_event(ev)
+    end
     local function register_script_message(name, cb)
+    end
+    local function unregister()
     end
 
     -- id: scope id
@@ -84,10 +123,44 @@ local function wait_define(wait_start_timeout, all_timeout)
         current_env = nil
     end)
 
+    local define_start_count = 0
+
+    register_script_message('define_start', function()
+        if allow_start then
+            define_start_count = define_start_count + 1
+        end
+    end)
+
+    register_script_message('define_end', function()
+        define_start_count = define_start_count - 1
+        if not allow_start and define_start_count == 0 then
+            define_ok = true
+        end
+    end)
+
     -- target widget must has binded
     -- name: state {id.name}
-    register_script_message('state', function(name)
+    register_script_message('state', function(name, ...)
     end)
+
+    while true do
+        local curr = mp.get_time()
+        local next_deadline
+        if curr > deadline then
+            break
+        elseif curr > deadline_start then
+            allow_start = false
+            next_deadline = deadline
+        else
+            next_deadline = deadline_start
+        end
+        local ev = mp.wait_event(next_deadline - curr)
+        dispatch_event(ev)
+        if define_ok then
+            break
+        end
+    end
+    unregister()
 end
 
 local ev_loop = _G.mp_event_loop
@@ -116,7 +189,7 @@ import('mp')
 MyState = new_state('MyState')
 function MyState:__init()
     self.count = 0
-    self.pause = mp.get_prop('pause')
+    self.pause = get_prop('pause')
 
     on_prop('pause', function(_, puase)
         if pause ~= nil and ~= self.pause then
