@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline: **0 diagnostics / 521 checks**.
+Current baseline: **0 diagnostics / 533 checks**.
 
 ## Real host (Python + uv, first stage)
 
