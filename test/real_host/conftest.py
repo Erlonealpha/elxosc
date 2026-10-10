@@ -19,6 +19,9 @@ from lifecycle import OwnedProcess
 ELXOSC_SOURCE_DIRS = ("backends", "foundation", "host", "layout", "libs",
                        "painting", "render", "scheduler", "text", "widget")
 
+# Top-level runtime modules `main.lua` requires next to the package dirs.
+ELXOSC_ROOT_MODULES = ("main_layout.lua", "demo.lua")
+
 
 def _stage_lua_tree(source, destination):
     """Copy runtime Lua modules only, never checkout metadata or local secrets."""
@@ -36,6 +39,8 @@ def _stage_elxosc(source, destination, include_main=True):
     destination.mkdir(parents=True, exist_ok=True)
     for directory in ELXOSC_SOURCE_DIRS:
         _stage_lua_tree(source / directory, destination / directory)
+    for module in ELXOSC_ROOT_MODULES:
+        shutil.copy2(source / module, destination / module)
     if include_main:
         shutil.copy2(source / "main.lua", destination / "main.lua")
         shutil.copy2(source / "elxlib_load.lua", destination / "elxlib_load.lua")
