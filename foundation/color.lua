@@ -81,7 +81,7 @@ function Color.rgba255(r, g, b, a)
     return Color(r / 255, g / 255, b / 255, (a ~= nil and a or 255) / 255)
 end
 
---- 32 bit `0xAARRGGBB` (Flutter's `Color.value` / ARGB layout).
+--- 32 bit `0xAARRGGBB` (Flutter's `Color.value` / RGB layout).
 ---@param argb integer
 ---@return Color
 function Color.argb(argb)
@@ -89,6 +89,17 @@ function Color.argb(argb)
     local r = floor(argb / 0x10000) % 256
     local g = floor(argb / 0x100) % 256
     local b = argb % 256
+    return Color.rgba255(r, g, b, a)
+end
+
+--- 32 bit `0xRRGGBBAA`.
+---@param rgba integer
+---@return Color
+function Color.rgba(rgba)
+    local r = floor(rgba / 0x1000000) % 256
+    local g = floor(rgba / 0x10000) % 256
+    local b = floor(rgba / 0x100) % 256
+    local a = rgba % 256
     return Color.rgba255(r, g, b, a)
 end
 
