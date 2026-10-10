@@ -2,11 +2,13 @@ local std = require 'elxlibs.std'
 local base = require 'widget.widgets.button_base'
 local color = require 'foundation.color'
 local geometry = require 'foundation.geometry'
+
 local ButtonBase = base.ButtonBase
 local ButtonStyle = base.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
 local EdgeInsets = geometry.EdgeInsets
+
 ---@class _IconButtonOptions : _ButtonBaseOptions
 ---@field icon Widget?
 ---@field radius number?
@@ -28,4 +30,5 @@ function IconButton:__init(options)
     })
     ButtonBase.__init(self, config)
 end
+
 return { IconButton = IconButton }
