@@ -366,7 +366,7 @@ local binding = WidgetBinding(root_widget, render_owner, binds)   -- apply 在�
 
 ```
 define_start
-define(scope_id, lua_source) ...    -- 可多条,同一 scope 累加
+define(scope_id, lua_source) ...    -- 每个 scope 只接受初次 payload,重复则告警并忽略
 define_end
 ```
 
@@ -406,8 +406,9 @@ define_end
 
 **`libs/define.lua` —— 协议本身,刻意做薄**
 
-只持有三样东西:阶段机 + 消息路由、各 scope 的 env(`env_for(scope_id)` 首次
-创建、之后复用)、以及需要"当前 scope"的三个内建。
+只持有阶段机、各 scope 的 env（首次 payload 创建并执行，重复 payload 忽略）以及
+需要"当前 scope"的三个内建。Define 是启动阶段的 Widget 初始构建工具，不负责
+运行时 scope 关闭、解绑或 Widget 树重建。
 
 - `DefineSession({ builtins, modules, binds, protected_names })`:
   - `builtins` 是**每个 scope 都能直接读**的名字(widget 构造器、`print`……),
@@ -594,11 +595,11 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 | 文本 | TextStyle/Paragraph/TextLayout + 环境默认测量器 | 完成(测量为估算) |
 | 后端 | AssCanvas/AssTextLayout/RecordCanvas | 完成(ASS 已实机验证) |
 | Widget | Widget/Element/State/BuildOwner/WidgetBinding | 完成 |
-| 组件 | Container/Padding/Align/Flex/Row/Column/Stack/ConstrainedBox/LimitedBox/UnconstrainedBox/OverflowBox/FittedBox/SizedBox/Text/CustomPaint/GestureDetector | 完成(子集) |
+| 组件 | 布局组件、Text/CustomPaint/GestureDetector、Button/ElevatedButton/OutlinedButton/TextButton/IconButton | 完成(子集) |
 | 数据下行 | InheritedWidget + `depend_on_inherited` | 完成(基础) |
 | 绑定 | `Widget.id` + `BindRegistry` + `bind`(define 期写入) | 完成 |
-| 定义期 | `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua` + `libs/dsl.lua` | 完成 |
-| 宿主 | `host/mpv_app.lua`(WidgetBinding 帧循环)+ `host/mpv_define.lua`(定义期)+ `host/mpv_input.lua` | 初步完成(未实机验证;`mp` 桩覆盖) |
+| 定义期 | `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua` + `libs/dsl.lua`，scope 首次 define 规则 | 完成(初始化语义) |
+| 宿主 | `host/mpv_app.lua` + `host/mpv_define.lua` + `host/mpv_input.lua`，真实 mpv.net smoke/input 测试 | 初步完成 |
 
 已知限制(有意保留,写代码时不要"顺手修"成别的语义):
 
@@ -615,19 +616,20 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 
 ## 13. 未来路径
 
-### Phase 3 — 定义期 / 沙箱 / 模块 ✅ 完成
+### Phase 3 — 定义期 / 沙箱 / 模块 ✅ 完成（初始化模型）
 
 - `libs/sandbox.lua`:受限 env 原语 + `load` 兼容 shim + `rawset` 守卫。
 - `libs/modules.lua`:模块注册表(数据模块 + loader + `protect`)。
 - `libs/define.lua`:`define_start` / `define(scope, code)` / `define_end`
-  (引用计数),`import` / `mod` / `bind` 内建,共享 `BindRegistry`。
+  (引用计数),每个 scope 只接受首次 payload，`import` / `mod` / `bind` 内建,
+  共享 `BindRegistry`。
 - `libs/dsl.lua`:`new_widget` / `new_state` / `builtins`。
 - 宿主侧(§9.3):`host/mpv_define.lua` 的传输、`mp` 模块、窗口与超时兜底。
 
-待做:env API 版本化与兼容策略(第三方脚本依赖);`on_prop` 订阅的生命周期
-管理(当前由宿主模块自行负责)。
+待做:env API 版本化与兼容策略(第三方脚本依赖)。不做运行时 scope 关闭或
+Widget 树重建；用户脚本通过消息和自定义 StatefulWidget 管理运行时行为。
 
-### Phase 4 — 能力补齐
+### Phase 4 — 能力补齐（框架与控件）
 
 `Viewport` / Sliver 虚拟列表 → `RepaintBoundary` + `Picture` 缓存 →
 `AnimationController` / `Tween` / `Curve` → 用 `InheritedWidget` 封装 Theme /
@@ -638,10 +640,16 @@ MediaQuery → `parentUsesSize` 与 relayout/repaint boundary → 手势竞技�
 - ✅ `host/mpv_app.lua` 切到 `WidgetBinding`(§9.1)。
 - ✅ `host/mpv_define.lua`:`define` 消息 + `mp` 模块 + 定义窗口(§9.3)。
 - ✅ `main.lua`:scaffold + `Slot` + 定义窗口接线。
-- 待做:实机验证;mpv.net 后端(实现 `Canvas` + `TextLayout` + `FrameClock` +
-  输入源四件套即可,框架层不动);未处理的鼠标事件转发回 `input.conf`;
-  `osd-margins` 自动调整;文本度量升级(字宽表);env API 版本化;
-  调试工具下沉为 `libs/debug.lua`(去掉 `main.lua` 的全局 `debug_msgf`)。
+- 已有隔离 mpv.net smoke test、脚本加载测试和 Button pointer 注入测试。
+- 待做:keyboard/focus、未处理鼠标事件回退到 `input.conf`、`osd-margins` 自动调整、
+  文本度量升级(字宽表)、调试工具下沉为 `libs/debug.lua`。
+
+### Phase 6 — 页面声明与导航（规划）
+
+- 页面是声明式 Widget/root 模型，不是特殊 RenderObject。
+- 主页面是默认页面；未来 Navigator 2.0 风格 API 以页面列表/路径状态驱动。
+- 先完成 page/root 的静态声明、target 冲突诊断和测试，再实现导航状态。
+- 不改变 Define 的一次初始化语义，不添加 scope shutdown、runtime unbind 或 root rebuild。
 
 ### 待决策
 

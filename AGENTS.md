@@ -58,6 +58,10 @@ credentials, portable user configuration, or generated local environments.
 
 ## Design Scope
 
-Keep `MpDefine` changes separate from framework/widget work unless explicitly
-requested. Read `dev/design/` before changing the define protocol, bind
-semantics, or planned navigation model.
+Define is an initialization-time Widget construction tool, not a runtime tree
+manager. Each `scope_id` accepts only its first `define` payload; later payloads
+must warn and be ignored. Multiple binds from one scope remain allowed, and
+cross-scope conflicts follow target type and bind operation without priority
+rules. Do not add scope shutdown, runtime unbind, root rebuild, or Navigator
+APIs without an explicit design update. Read `dev/design/` before changing the
+define protocol, bind semantics, or planned navigation model.

@@ -6,6 +6,27 @@
 - [DESIGN.md](DESIGN.md)：Flutter 对照和扩展协议的历史设计推演。
 - [DESIGN_CONSTRAINTS.md](DESIGN_CONSTRAINTS.md)：约束模型修复及示例测试记录。
 
+## 当前状态摘要
+
+当前仓库已经具备可运行的 Flutter 风格框架核心：约束布局、RenderObject/Element/
+Widget 三棵树、State rebuild、key reconciliation、layout/paint dirty 分离、
+pointer event 与 capture、ASS/Record 后端，以及 Button 系列控件。控件实现按基础
+类型平铺，旧的 `basic.lua`/`layout.lua` 仅作为兼容聚合入口。
+
+宿主侧已具备 mpv.net 帧循环、ASS overlay、鼠标输入、隔离的真实宿主测试和
+Button 事件注入测试。当前 Lua 测试基线为 **640 checks**，静态检查目标为
+`No issues found`。
+
+## Define 当前语义
+
+Define 只在启动阶段用于构建一次初始 Widget 树，不是运行时 UI 管理器：
+
+- 每个 `scope_id` 只接受第一次 `define` payload；重复 payload 告警并忽略。
+- 同一 scope 对同一 target 多次 bind 允许，但不推荐；按现有 bind 顺序执行。
+- 不同 scope 的冲突由 target 类型和 bind 操作决定，不引入额外优先级。
+- 不存在 scope 关闭、运行时解绑、Widget 树回滚或 root 重建。
+- 用户脚本需要运行时行为时，使用消息系统驱动自定义 StatefulWidget。
+
 旧记录中的测试数量、实现清单和未来阶段不是实时状态；以当前代码和实际测试
 输出为准。代码规范以根目录 `codestyle.md` 为准，贡献流程见 `AGENTS.md`。
 
@@ -24,6 +45,18 @@ Define 仍然只用于启动阶段构建一次初始 Widget 树：同一个 `sco
 仍允许，但不额外引入优先级。不同 scope 的冲突继续由 target 类型和 bind 操作
 决定。没有运行时 scope 关闭、Widget 树重建或导航 API。
 
-下一切片仍需明确命名、顺序、冲突与完整生命周期，再调整现有 define/bind 协议。
-页面定义与导航状态分开；未来 Navigator 2.0 风格方案由声明式页面列表驱动，
-默认主页面也走相同页面模型。当前不新增未经实现验证的导航 API。
+下一切片聚焦声明冲突诊断、target 约束文档和页面声明的静态模型。页面定义与
+导航状态分开；未来 Navigator 2.0 风格方案由声明式页面列表驱动，默认主页面也
+走相同页面模型。当前不新增未经实现验证的导航 API。
+
+## 未来路线
+
+1. **宿主与控件**：keyboard/focus、Checkbox/Switch/Slider、更多样式控件和真实
+   mpv.net OSD/事件集成测试。
+2. **框架性能**：RepaintBoundary、relayout boundary、Picture 缓存、Viewport/
+   Sliver 和大列表虚拟化。
+3. **交互能力**：Gesture arena、动画控制器、Tween/Curve、Theme/MediaQuery。
+4. **页面模型**：先定义静态 page/root 声明和冲突诊断，再实现 Navigator 2.0 风格
+   的声明式页面列表；不改变一次初始化 Widget 树的 Define 语义。
+5. **宿主质量**：下沉 debug 工具、升级文本度量、处理 input.conf 回退和
+   `osd-margins`。
