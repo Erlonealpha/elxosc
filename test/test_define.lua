@@ -315,3 +315,31 @@ F.test('bind inside a chunk lands in the session registry', function()
     local owner = mount(Column({ children = { Slot('slot') } }), session.binds)
     F.eq(owner.root:children()[1].paragraph.text, 'hi', 'bound into the slot')
 end)
+
+F.test('define bind entries belong to their declaring scopes', function()
+    local session = DefineSession({ builtins = { Text = Text } })
+    session:define_start()
+    session:define('scope_a', "bind('a', Text('a'))")
+    session:define('scope_b', "bind('b', Text('b'))")
+
+    local entries_a = session.binds:entries('scope_a')
+    local entries_b = session.binds:entries('scope_b')
+    F.eq(#entries_a, 1, 'scope a entry')
+    F.eq(#entries_b, 1, 'scope b entry')
+    F.eq(entries_a[1].scope_id, 'scope_a', 'scope a recorded')
+    F.eq(entries_b[1].scope_id, 'scope_b', 'scope b recorded')
+end)
+
+F.test('removing one define scope leaves another scope bindable', function()
+    local session = DefineSession({ builtins = { Text = Text } })
+    session:define_start()
+    session:define('scope_a', "bind('a', Text('a'))")
+    session:define('scope_b', "bind('b', Text('b'))")
+    session.binds:remove_scope('scope_a')
+
+    local owner = mount(Column({
+        children = { Slot('a'), Slot('b') },
+    }), session.binds)
+    F.eq(#owner.root:children(), 1, 'only scope b rendered')
+    F.eq(owner.root:children()[1].paragraph.text, 'b', 'scope b remains')
+end)

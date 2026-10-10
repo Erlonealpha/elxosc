@@ -32,6 +32,12 @@ local M = {}
 ---@field op BindOp? defaults to "replace" for a `child` target, "append" for `children`
 ---@field position integer? 1-based index, used by "insert"
 
+---@class BindEntry
+---@field id string
+---@field widget Widget
+---@field opts BindOpts
+---@field scope_id string? scope that declared the binding, when declared by define
+
 ---@class BindRegistry : std.object
 ---@overload fun(): BindRegistry
 local BindRegistry = std.class.new('BindRegistry')
@@ -43,17 +49,23 @@ end
 ---@param id string
 ---@param widget Widget
 ---@param opts BindOpts?
-function BindRegistry:add(id, widget, opts)
+---@param scope_id string? scope that owns this binding
+function BindRegistry:add(id, widget, opts, scope_id)
     local entries = self._binds[id]
     if not entries then
         entries = {}
         self._binds[id] = entries
     end
-    entries[#entries + 1] = { id = id, widget = widget, opts = opts or {} }
+    entries[#entries + 1] = {
+        id = id,
+        widget = widget,
+        opts = opts or {},
+        scope_id = scope_id,
+    }
 end
 
 ---@param id string
----@return table[]
+---@return BindEntry[]
 function BindRegistry:get(id)
     return self._binds[id] or {}
 end
@@ -62,6 +74,47 @@ end
 ---@return boolean
 function BindRegistry:has(id)
     return self._binds[id] ~= nil
+end
+
+--- Return all pending bindings, optionally limited to one scope.
+--- The returned array is a snapshot and changing it does not change the registry.
+---@param scope_id string?
+---@return BindEntry[]
+function BindRegistry:entries(scope_id)
+    local result = {}
+    for _, entries in pairs(self._binds) do
+        for _, entry in ipairs(entries) do
+            if scope_id == nil or entry.scope_id == scope_id then
+                result[#result + 1] = entry
+            end
+        end
+    end
+    return result
+end
+
+--- Remove all pending bindings declared by `scope_id`.
+--- Bindings already applied to a widget tree are not reverted.
+---@param scope_id string
+function BindRegistry:remove_scope(scope_id)
+    for id, entries in pairs(self._binds) do
+        local kept = {}
+        for _, entry in ipairs(entries) do
+            if entry.scope_id ~= scope_id then
+                kept[#kept + 1] = entry
+            end
+        end
+        if #kept == 0 then
+            self._binds[id] = nil
+        else
+            self._binds[id] = kept
+        end
+    end
+end
+
+--- Alias for remove_scope, named for callers that manage a scope lifecycle.
+---@param scope_id string
+function BindRegistry:clear_scope(scope_id)
+    self:remove_scope(scope_id)
 end
 
 function BindRegistry:clear()
@@ -134,8 +187,9 @@ end
 ---@param id string
 ---@param widget Widget
 ---@param opts BindOpts?
-function M.bind(registry, id, widget, opts)
-    registry:add(id, widget, opts)
+---@param scope_id string?
+function M.bind(registry, id, widget, opts, scope_id)
+    registry:add(id, widget, opts, scope_id)
 end
 
 --- An empty place a script can fill: a node carrying an `id` and no children

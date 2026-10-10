@@ -77,7 +77,7 @@ function DefineSession:__init(options)
         self:_mod(name, data)
     end
     api['bind'] = function(id, widget, opts)
-        self.binds:add(id, widget, opts)
+        self.binds:add(id, widget, opts, self.current_define)
     end
     self.api = api
 end
