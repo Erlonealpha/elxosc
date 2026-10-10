@@ -95,7 +95,7 @@ elxosc/
                    constraints,overflow,container}.lua
                              基础布局控件的独立实现
    widget/widgets/basic.lua 兼容聚合入口
-   widget/widgets/{text,custom_paint,gesture_detector,button,
+   widget/widgets/{text,icon,custom_paint,gesture_detector,button,
                    button_base,button_style,elevated_button,outlined_button,
                    text_button,icon_button}.lua
                              基础展示、事件和按钮控件
@@ -595,7 +595,7 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 | 文本 | TextStyle/Paragraph/TextLayout + 环境默认测量器 | 完成(测量为估算) |
 | 后端 | AssCanvas/AssTextLayout/RecordCanvas | 完成(ASS 已实机验证) |
 | Widget | Widget/Element/State/BuildOwner/WidgetBinding | 完成 |
-| 组件 | 布局组件、Text/CustomPaint/GestureDetector、Button/ElevatedButton/OutlinedButton/TextButton/IconButton | 完成(子集) |
+| 组件 | 布局组件、Text/Icon/CustomPaint/GestureDetector、Button/ElevatedButton/OutlinedButton/TextButton/IconButton | 完成(子集) |
 | 数据下行 | InheritedWidget + `depend_on_inherited` | 完成(基础) |
 | 绑定 | `Widget.id` + `BindRegistry` + `bind`(define 期写入) | 完成 |
 | 定义期 | `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua` + `libs/dsl.lua`，scope 首次 define 规则 | 完成(初始化语义) |

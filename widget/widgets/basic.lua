@@ -4,6 +4,7 @@
 -- Compatibility aggregate for the original basic widget module.
 
 local text_widgets = require 'widget.widgets.text'
+local icon_widgets = require 'widget.widgets.icon'
 local custom_paint_widgets = require 'widget.widgets.custom_paint'
 local gesture_widgets = require 'widget.widgets.gesture_detector'
 local button_widgets = require 'widget.widgets.button'
@@ -15,6 +16,7 @@ local icon_button_widgets = require 'widget.widgets.icon_button'
 
 local M = {
     Text = text_widgets.Text,
+    Icon = icon_widgets.Icon,
     CustomPaint = custom_paint_widgets.CustomPaint,
     GestureDetector = gesture_widgets.GestureDetector,
     Button = button_widgets.Button,

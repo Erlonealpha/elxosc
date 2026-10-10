@@ -19,7 +19,7 @@ elxosc/
                 widgets/layout(Padding Align Center SizedBox DecoratedBox
                                 Flex Row Column Stack Flexible Expanded
                                 Spacer Container)
-                widgets/basic(Text CustomPaint GestureDetector)
+                widgets/basic(Text Icon CustomPaint GestureDetector)
   libs/         sandbox(受限 env) · modules(模块表) · define(协议) · dsl(DSL 面)
   backends/     ass_canvas · ass_text_layout · record
   host/         mpv_app(帧循环/显示/overlay) · mpv_define(定义期) · mpv_input(指针/按键)
