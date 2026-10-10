@@ -10,7 +10,6 @@
 
 local std = require 'elxlibs.std'
 
----@class elxticker
 local M = {}
 
 ---@class Ticker : std.object

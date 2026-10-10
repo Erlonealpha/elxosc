@@ -10,7 +10,7 @@
 --     `ass-events` overlay with matching `res_x`/`res_y` maps pixels 1:1.
 --
 -- Since the Widget layer landed, the app drives a `WidgetBinding` rather than a
--- hand-built `RenderObject` tree (DESIGN_PATH.md §9.1): `build()` returns a
+-- hand-built `RenderObject` tree (dev/design/DESIGN_PATH.md §9.1): `build()` returns a
 -- Widget, the binding turns it into the render tree, and every frame flushes
 -- pending rebuilds before layout.
 
@@ -38,7 +38,6 @@ local MpInput = mpv_input.MpInput
 
 local math = math
 
----@class elxhost
 local M = {}
 
 ---@class Display

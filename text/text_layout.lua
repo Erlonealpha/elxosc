@@ -18,7 +18,6 @@ local raise = std.raise
 local math = math
 local max = math.max
 
----@class elxtextlayout
 local M = {}
 
 -- The engine stand-in: a single ambient measurer, like the engine's paragraph

@@ -11,10 +11,12 @@ local color = require 'foundation.color'
 
 local Color = color.Color
 
----@class elxtextstyle
 local M = {}
 
----@alias TextAlign "left" | "center" | "right"
+---@alias TextAlign
+--- | 'left'
+--- | 'center'
+--- | 'right'
 
 M.Align = {
     LEFT = 'left',

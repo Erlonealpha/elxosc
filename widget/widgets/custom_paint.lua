@@ -10,7 +10,6 @@ local widget_mod = require 'widget.widget'
 local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
----@class elxwidget_custom_paint
 local M = {}
 
 ---@class CustomPaint : SingleChildRenderObjectWidget

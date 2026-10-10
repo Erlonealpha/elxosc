@@ -21,7 +21,6 @@ local math = math
 local debug_msgf = rawget(_G, 'debug_msgf') or function(...) end
 local debug_msg = rawget(_G, 'debug_msg') or function(...) end
 
----@class elxinput
 local M = {}
 
 local BINDING_GROUP = 'elxosc_mouse'

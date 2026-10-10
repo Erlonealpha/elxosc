@@ -13,7 +13,6 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxsandbox
 local M = {}
 
 --== load shim =============================================================

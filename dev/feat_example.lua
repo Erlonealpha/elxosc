@@ -1,4 +1,4 @@
--- Design sketch (DESIGN.md §4): not runnable code, kept for reference.
+-- Design sketch (dev/design/DESIGN.md §4): not runnable code, kept for reference.
 ---@diagnostic disable: unused, undefined-field, inject-field, undefined-global, global-in-non-module
 
 local mp = require 'mp'

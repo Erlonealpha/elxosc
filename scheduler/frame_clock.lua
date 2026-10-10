@@ -12,7 +12,6 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxclock
 local M = {}
 
 ---@class FrameClock : std.object

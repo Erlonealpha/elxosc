@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The define protocol (DESIGN_PATH.md §7): `define_start` → `define(scope, code)`
+-- The define protocol (dev/design/DESIGN_PATH.md §7): `define_start` → `define(scope, code)`
 -- (repeatable) → `define_end`.
 --
 -- Deliberately thin. It owns three things and nothing more:
@@ -23,7 +23,6 @@ local raise = std.raise
 local ModuleRegistry = modules_mod.ModuleRegistry
 local BindRegistry = bind_mod.BindRegistry
 
----@class elxdefine
 local M = {}
 
 ---@class DefineOptions
@@ -32,6 +31,11 @@ local M = {}
 ---@field binds BindRegistry? shared bind registry
 ---@field protected_names table<string, true>? names a chunk may not overwrite
 
+---@alias DefineSessionPhase
+--- |>'idle'
+--- | 'defining'
+--- | 'sealed'
+
 --- One define phase: the scopes it declared, plus the DSL builtins that need to
 --- know which scope is currently running.
 ---@class DefineSession : std.object
@@ -39,7 +43,7 @@ local M = {}
 ---@field binds BindRegistry
 ---@field api table<string, any>
 ---@field protected_names table<string, true>
----@field phase "idle" | "defining" | "sealed"
+---@field phase DefineSessionPhase
 ---@field current_define string?
 ---@field current_env table?
 ---@field on_error fun(scope_id: string, err: any)? called instead of raising when set

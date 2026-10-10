@@ -22,7 +22,6 @@ local raise = std.raise
 -- intentionally ignores its parameters (it just raises).
 ---@diagnostic disable: unused
 
----@class elxcanvas
 local M = {}
 
 --- An opaque, backend provided image handle (Flutter's `ui.Image`).

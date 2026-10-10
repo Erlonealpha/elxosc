@@ -9,7 +9,6 @@
 
 local std = require 'elxlibs.std'
 
----@class elxkey
 local M = {}
 
 ---@class Key : std.object

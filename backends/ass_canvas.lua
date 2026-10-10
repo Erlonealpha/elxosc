@@ -35,7 +35,6 @@ local format = string.format
 local concat = table.concat
 local ipairs = ipairs
 
----@class elxasscanvas
 local M = {}
 
 ---@param channel number 0..1

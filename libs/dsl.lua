@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The define DSL surface (DESIGN.md §4.2).
+-- The define DSL surface (dev/design/DESIGN.md §4.2).
 --
 -- Two factories and one default name table:
 --   * `new_widget` / `new_state` let a script declare a `StatefulWidget` +
@@ -20,7 +20,6 @@ local text_style = require 'text.text_style'
 local widget_mod = require 'widget.widget'
 local state_mod = require 'widget.state'
 
----@class elxdsl
 local M = {}
 
 --- A `StatefulWidget` subclass a script can complete with `create_state`.

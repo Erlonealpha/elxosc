@@ -22,11 +22,19 @@ local math = math
 local min = math.min
 local max = math.max
 
----@class elxfittedbox
 local M = {}
 
+---@alias FittedBoxOptsFit
+--- | 'contain'
+--- | 'cover'
+--- | 'fill'
+--- | 'fit_width'
+--- | 'fit_height'
+--- | 'none'
+--- | 'scale_down'
+
 ---@class FittedBoxOpts
----@field fit "contain" | "cover" | "fill" | "fit_width" | "fit_height" | "none" | "scale_down"?
+---@field fit FittedBoxOptsFit?
 ---@field alignment Offset?
 
 ---@class RenderFittedBox : RenderObject

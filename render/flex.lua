@@ -39,23 +39,45 @@ local huge = math.huge
 local ipairs = ipairs
 local raise = std.raise
 
----@class elxflex
 local M = {}
+
+---@alias MainAlignment
+--- | 'start'
+--- | 'center'
+--- | 'end'
+--- | 'space_between'
+--- | 'space_around'
+--- | 'space_evenly'
+
+---@alias MainAxisSize
+--- | 'max'
+--- | 'min'
+
+---@alias CrossAlignment
+--- | 'start'
+--- | 'center'
+--- | 'end'
+--- | 'stretch'
+--- | 'baseline'
 
 ---@class FlexOpts
 ---@field children RenderObject[]?
----@field main_alignment "start" | "center" | "end" | "space_between" | "space_around" | "space_evenly"?
----@field main_axis_size "max" | "min"?
----@field cross_alignment "start" | "center" | "end" | "stretch" | "baseline"?
+---@field main_alignment MainAlignment?
+---@field main_axis_size MainAxisSize?
+---@field cross_alignment CrossAlignment?
 ---@field spacing number?
 
+---@alias FlexDirection
+--- | 'row'
+--- | 'column'
+
 ---@class RenderFlex : RenderObject
----@field direction "row" | "column"
----@field main_alignment string
----@field main_axis_size string
----@field cross_alignment string
+---@field direction FlexDirection
+---@field main_alignment MainAlignment
+---@field main_axis_size MainAxisSize
+---@field cross_alignment CrossAlignment
 ---@field spacing number
----@overload fun(direction: "row" | "column", options: FlexOpts?): RenderFlex
+---@overload fun(direction: FlexDirection, options: FlexOpts?): RenderFlex
 local RenderFlex = std.class.new('RenderFlex', { RenderObject })
 
 function RenderFlex:__init(direction, options)

@@ -18,7 +18,6 @@ require 'widget.element'
 local BuildOwner = build_owner_mod.BuildOwner
 local can_update = widget_mod.can_update
 
----@class elxbinding
 local M = {}
 
 ---@class WidgetBinding : std.object

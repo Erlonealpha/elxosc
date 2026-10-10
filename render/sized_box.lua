@@ -20,7 +20,6 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 
----@class elxsizedbox
 local M = {}
 
 ---@class RenderSizedBox : RenderObject

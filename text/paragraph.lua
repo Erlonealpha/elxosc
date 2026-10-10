@@ -9,7 +9,6 @@
 
 local std = require 'elxlibs.std'
 
----@class elxparagraph
 local M = {}
 
 ---@class Paragraph : std.object

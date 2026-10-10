@@ -20,7 +20,6 @@ local min = math.min
 local max = math.max
 local format = string.format
 
----@class elxgeometry
 local M = {}
 
 --==========================================================================

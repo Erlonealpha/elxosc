@@ -19,11 +19,14 @@ local widget_mod = require 'widget.widget'
 local StatelessWidget = widget_mod.StatelessWidget
 local raise = std.raise
 
----@class elxbind
 local M = {}
 
 --- How a bound widget is written into its target node.
----@alias BindOp "replace" | "replace_if_empty" | "append" | "insert"
+---@alias BindOp
+--- |>'replace'
+--- | 'replace_if_empty'
+--- | 'append'
+--- | 'insert'
 
 ---@class BindOpts
 ---@field op BindOp? defaults to "replace" for a `child` target, "append" for `children`

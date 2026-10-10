@@ -16,11 +16,16 @@ local math = math
 local string = string
 local min = math.min
 
----@class elxpath
 local M = {}
 
 --- The drawing verbs a backend must understand.
----@alias PathVerb "move_to" | "line_to" | "quad_to" | "cubic_to" | "close"
+---@alias PathVerb
+--- | 'move_to'
+--- | 'line_to'
+--- | 'quad_to'
+--- | 'cubic_to'
+--- | 'close'
+
 M.Verb = {
     MOVE_TO = 'move_to',
     LINE_TO = 'line_to',

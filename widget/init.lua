@@ -13,7 +13,6 @@ local key_mod = require 'widget.key'
 local build_owner_mod = require 'widget.build_owner'
 local binding_mod = require 'widget.binding'
 
----@class elxwidgetapi
 local M = {}
 
 for _, mod in ipairs({ widget_mod, element_mod, state_mod, key_mod, build_owner_mod, binding_mod }) do

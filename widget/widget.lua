@@ -15,7 +15,6 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxwidget
 local M = {}
 
 ---@class Widget : std.object
@@ -43,9 +42,14 @@ function Widget:child_widgets()
     return {}
 end
 
+---@alias BindTarget
+--- | 'child'
+--- | 'children'
+--- | nil
+
 --- Which child slot `bind` may write to: `'child'`, `'children'`, or `nil`
 --- when this widget cannot receive children.
----@return "child" | "children" | nil
+---@return BindTarget
 function Widget:bind_target()
     return nil
 end

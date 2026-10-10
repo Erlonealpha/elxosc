@@ -13,7 +13,6 @@ local text_layout = require 'text.text_layout'
 
 local TextLayout = text_layout.TextLayout
 
----@class elxasstext
 local M = {}
 
 ---@param codepoint integer

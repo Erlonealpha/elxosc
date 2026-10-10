@@ -17,7 +17,6 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxgesture
 local M = {}
 
 ---@class GestureHandlers

@@ -14,7 +14,6 @@ local constraints_mod = require 'layout.constraints'
 local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
 
----@class elxrenderowner
 local M = {}
 
 ---@class RenderOwner : std.object

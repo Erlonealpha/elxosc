@@ -9,7 +9,6 @@
 
 local std = require 'elxlibs.std'
 
----@class elxbuildowner
 local M = {}
 
 ---@class BuildOwner : std.object

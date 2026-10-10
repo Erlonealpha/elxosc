@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The module registry behind `mod` / `import` (DESIGN_PATH.md §7).
+-- The module registry behind `mod` / `import` (dev/design/DESIGN_PATH.md §7).
 --
 -- Two tables, exactly the shape the define DSL expects:
 --   * `mods`    — data modules: `import(name)` copies these names into the scope;
@@ -17,7 +17,6 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxmodules
 local M = {}
 
 ---@class ModuleRegistry : std.object

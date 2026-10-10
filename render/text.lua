@@ -13,7 +13,6 @@ local text_layout = require 'text.text_layout'
 local RenderObject = render_object.RenderObject
 local raise = std.raise
 
----@class elxtext
 local M = {}
 
 ---@class RenderText : RenderObject

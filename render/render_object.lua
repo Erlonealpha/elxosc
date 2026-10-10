@@ -18,14 +18,17 @@ local ipairs = ipairs
 local huge = math.huge
 local raise = std.raise
 
----@class elxrender
 local M = {}
+
+---@alias FlexFit
+--- | 'tight'
+--- | 'loose'
 
 --- Per-child layout data written by the parent (Flutter's `BoxParentData`).
 ---@class BoxParentData
 ---@field offset Offset
 ---@field flex number? main-axis flex weight (see RenderFlex)
----@field fit "tight" | "loose"? flex fit (see RenderFlex)
+---@field fit FlexFit? flex fit (see RenderFlex)
 
 ---@class RenderObject : std.object
 ---@field parent RenderObject?
@@ -250,7 +253,7 @@ end
 --- Hook invoked by `RenderOwner:dispatch_pointer`. `point` is in this node's
 --- local space. Return truthy to mark the event handled, which stops
 --- propagation to ancestors (`move` always bubbles).
----@param event string "down" | "up" | "cancel" | "move" | "enter" | "leave" | "wheel"
+---@param event PointerEvents
 ---@param point Offset?
 ---@param data any? wheel delta
 ---@return boolean handled
@@ -260,7 +263,7 @@ end
 
 --- Whether this node cares about `event`; the host uses it to decide which
 --- mpv key bindings to enable while the cursor is over this subtree.
----@param event string
+---@param event PointerEvents
 ---@return boolean
 function RenderObject:wants_pointer(event)
     return false

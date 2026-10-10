@@ -25,7 +25,6 @@ local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 
----@class elxelement
 local M = {}
 
 --== base =================================================================

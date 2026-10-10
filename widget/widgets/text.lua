@@ -12,7 +12,6 @@ local TextStyle = text_style.TextStyle
 local RenderText = text_mod.RenderText
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 
----@class elxwidget_text
 local M = {}
 
 ---@class Text : LeafRenderObjectWidget

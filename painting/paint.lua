@@ -12,12 +12,19 @@ local color = require 'foundation.color'
 
 local Color = color.Color
 
----@class elxpaint
 local M = {}
 
----@alias PaintStyle "fill" | "stroke"
----@alias StrokeCap "butt" | "round" | "square"
----@alias StrokeJoin "miter" | "round" | "bevel"
+---@alias PaintStyle
+--- | 'fill'
+--- | 'stroke'
+---@alias StrokeCap
+--- | 'butt'
+--- | 'round'
+--- | 'square'
+---@alias StrokeJoin
+--- | 'miter'
+--- | 'round'
+--- | 'bevel'
 
 M.Style = {
     FILL = 'fill',

@@ -18,7 +18,6 @@ local math = math
 local max = math.max
 local ipairs = ipairs
 
----@class elxstack
 local M = {}
 
 ---@class StackOpts

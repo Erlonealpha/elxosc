@@ -7,8 +7,17 @@
 
 local std = require 'elxlibs.std'
 
----@class elxfoundationpointerevent
 local M = {}
+
+---@alias PointerEvents
+--- | 'down'
+--- | 'up'
+--- | 'cancel'
+--- | 'move'
+--- | 'enter'
+--- | 'leave'
+--- | 'wheel'
+--- | string
 
 ---@class _PointerEventFields
 ---@field type string

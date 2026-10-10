@@ -19,7 +19,6 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 
----@class elxoverflowbox
 local M = {}
 
 ---@class RenderUnconstrainedBox : RenderObject
@@ -48,12 +47,16 @@ function RenderUnconstrainedBox:__perform_layout(constraints)
         (self.size.height - child.size.height) * self.alignment.y)
 end
 
+---@alias OverflowBoxFit
+--- | 'max'
+--- | 'defer_to_child'
+
 ---@class OverflowBoxOpts
 ---@field min_width number?
 ---@field max_width number?
 ---@field min_height number?
 ---@field max_height number?
----@field fit "max" | "defer_to_child"?
+---@field fit OverflowBoxFit?
 ---@field alignment Offset?
 
 ---@class RenderOverflowBox : RenderObject

@@ -16,7 +16,6 @@ local Paint = paint_mod.Paint
 local Style = paint_mod.Style
 local RenderObject = render_object.RenderObject
 
----@class elxdecoration
 local M = {}
 
 ---@class Decoration

@@ -12,7 +12,6 @@
 
 local std = require 'elxlibs.std'
 
----@class elxscheduler
 local M = {}
 
 ---@param set table

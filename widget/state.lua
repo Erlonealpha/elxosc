@@ -11,7 +11,6 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxstate
 local M = {}
 
 ---@class State : std.object

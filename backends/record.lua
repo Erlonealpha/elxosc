@@ -12,7 +12,6 @@ local canvas = require 'painting.canvas'
 
 local Canvas = canvas.Canvas
 
----@class elxrecord
 local M = {}
 
 ---@class RecordCanvas : Canvas

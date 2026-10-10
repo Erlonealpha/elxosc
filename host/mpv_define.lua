@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The mpv side of the define protocol (DESIGN_PATH.md §7.3, §13).
+-- The mpv side of the define protocol (dev/design/DESIGN_PATH.md §7.3, §13).
 --
 -- The framework owns the protocol; this module owns the three things it
 -- deliberately does not:
@@ -22,7 +22,6 @@ local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
 local BindRegistry = bind_mod.BindRegistry
 
----@class elxhostdefine
 local M = {}
 
 --== the `mp` module =======================================================

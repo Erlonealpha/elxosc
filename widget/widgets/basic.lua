@@ -13,7 +13,6 @@ local outlined_widgets = require 'widget.widgets.outlined_button'
 local text_button_widgets = require 'widget.widgets.text_button'
 local icon_button_widgets = require 'widget.widgets.icon_button'
 
----@class elxwidgets_basic
 local M = {
     Text = text_widgets.Text,
     CustomPaint = custom_paint_widgets.CustomPaint,

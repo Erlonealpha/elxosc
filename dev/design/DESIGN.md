@@ -111,7 +111,7 @@ Flutter 没有的**定义期协议**(`libs/`),供其他脚本声明界面。
 ## 4. 扩展形态(方向已定,协议核心已实现)
 
 实现见 `libs/sandbox.lua` + `libs/define.lua`;本节保留设计推演与坑的记录,
-与现状的差异以 `DESIGN_PATH.md` §7.3 为准。历史草图在 `dev/feat_example.lua`。
+与现状的差异以 `dev/design/DESIGN_PATH.md` §7.3 为准。历史草图在 `dev/feat_example.lua`。
 
 其他脚本通过 `script-message-to elxosc` 发送:
 
@@ -219,7 +219,7 @@ property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(..
    且超时后要能继续而非卡死。宿主侧待做(Phase 5)。
 7. **`bind`**:已实现(`widget/bind.lua`),插槽机制见 4.4。
 
-详见 `DESIGN_PATH.md` §7.3(现状与草图差异)。
+详见 `dev/design/DESIGN_PATH.md` §7.3(现状与草图差异)。
 
 ---
 
@@ -297,6 +297,6 @@ property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(..
   独立模块(如 `libs/debug.lua`),避免 host 依赖入口脚本的全局。
 - `dev/feat_example.lua` 是早期设计草图(含占位 `error('...')`),不要当作可运行
   代码;正式实现见 `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua`
-  + `libs/dsl.lua`(`DESIGN_PATH.md` §7.3)。
+  + `libs/dsl.lua`(`dev/design/DESIGN_PATH.md` §7.3)。
 - mpv 平台层**尚未实机验证**(`mp` 用桩测试);`on_prop` 的订阅没有随 scope
-  销毁解绑,当前归宿主模块自行负责(`DESIGN_PATH.md` §9.3、§12)。
+  销毁解绑,当前归宿主模块自行负责(`dev/design/DESIGN_PATH.md` §9.3、§12)。

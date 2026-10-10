@@ -16,7 +16,6 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxcustompaint
 local M = {}
 
 ---@class CustomPaintOpts

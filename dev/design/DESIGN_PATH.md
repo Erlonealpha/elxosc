@@ -44,9 +44,9 @@ elxosc 是给 **mpv / mpv.net** 用的 UI 框架(同类参考 uosc)。核心目�
 elxosc/
   main.lua                  mpv 入口(scaffold + Slot + 定义窗口 + demo widget)
   elxlib_load.lua           补 package.path(scripts + 脚本目录)并 require 'elxlib'
-  DESIGN.md                 与 Flutter 的对照、扩展形态讨论
-  DESIGN_PATH.md            本文件
-  DESIGN_CONSTRAINTS.md     约束模型对齐 Flutter 的修复记录(+ 对标测试说明)
+   dev/design/DESIGN.md      与 Flutter 的对照、扩展形态讨论
+   dev/design/DESIGN_PATH.md 本文件
+   dev/design/DESIGN_CONSTRAINTS.md 约束模型对齐 Flutter 的修复记录(+ 对标测试说明)
   dev/feat_example.lua      设计草图(不可运行,见 §7.4)
   dev/feat_example_meta/    LuaLS 用的 DSL meta 桩(on_event/on_prop/Container…)
 
@@ -150,7 +150,7 @@ libs(sandbox/define)依赖 widget,被 host 使用
   `constrain_size_and_attempt_to_preserve_aspect_ratio(size)`;`__eq` 按四值比较。
 - 术语与 Flutter 一致:bounded = `max < inf`;loose = `min == 0`;tight =
   `min == max`;expanding = 紧无穷;infinite = `min == inf`。
-  完整对齐记录见 `DESIGN_CONSTRAINTS.md`。
+   完整对齐记录见 `dev/design/DESIGN_CONSTRAINTS.md`。
 
 ### 4.2 RenderObject(`render/render_object.lua`)
 
