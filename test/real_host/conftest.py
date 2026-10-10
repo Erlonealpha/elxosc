@@ -16,6 +16,31 @@ import pytest
 from lifecycle import OwnedProcess
 
 
+ELXOSC_SOURCE_DIRS = ("backends", "foundation", "host", "layout", "libs",
+                       "painting", "render", "scheduler", "text", "widget")
+
+
+def _stage_lua_tree(source, destination):
+    """Copy runtime Lua modules only, never checkout metadata or local secrets."""
+    if not source.is_dir():
+        return
+    for file in source.rglob("*.lua"):
+        if any(part.startswith(".") for part in file.relative_to(source).parts):
+            continue
+        target = destination / file.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(file, target)
+
+
+def _stage_elxosc(source, destination, include_main=True):
+    destination.mkdir(parents=True, exist_ok=True)
+    for directory in ELXOSC_SOURCE_DIRS:
+        _stage_lua_tree(source / directory, destination / directory)
+    if include_main:
+        shutil.copy2(source / "main.lua", destination / "main.lua")
+        shutil.copy2(source / "elxlib_load.lua", destination / "elxlib_load.lua")
+
+
 def find_host():
     """An explicit override wins; an invalid override must not fall back."""
     override = os.environ.get("ELXOSC_MPV_BINARY")
@@ -125,23 +150,35 @@ def _running_host(tmp_path, extra_args=()):
     config = tmp_path / "config"
     config.mkdir()
     # elxlib_load.lua resolves the shared runtime from the isolated config's
-    # scripts directory. Copy only that sibling library; the elxosc script
-    # itself is loaded from the checkout so the test exercises current source.
+    # scripts directory. Stage only the runtime modules (and native modules),
+    # excluding the sibling checkout's tests, metadata and unrelated files.
     source_elxlib = Path(__file__).parents[3] / "elxlib"
     if source_elxlib.is_dir():
-        shutil.copytree(source_elxlib, config / "scripts" / "elxlib")
+        staged_elxlib = config / "scripts" / "elxlib"
+        _stage_lua_tree(source_elxlib / "elxlibs", staged_elxlib / "elxlibs")
+        for name in ("init.lua", "main.lua", "version.lua"):
+            shutil.copy2(source_elxlib / name, staged_elxlib / name)
+        for file in (source_elxlib / "bin").rglob("*.dll"):
+            target = staged_elxlib / "bin" / file.relative_to(source_elxlib / "bin")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(file, target)
     staged_args = []
     for argument in extra_args:
         if argument.startswith("--script="):
             script = Path(argument.removeprefix("--script="))
-            if script.name == "main.lua" and script.is_file():
-                source_elxosc = script.parent
+            source_elxosc = Path(__file__).parents[2]
+            if script.is_file() and (script == source_elxosc / "main.lua" or
+                                     script == Path(__file__).parent / "button_input.lua"):
                 staged_elxosc = config / "scripts" / "elxosc"
-                shutil.copytree(source_elxosc, staged_elxosc)
-                loader = source_elxosc / "elxlib_load.lua"
-                if loader.is_file():
-                    shutil.copy2(loader, config / "scripts" / "elxlib_load.lua")
-                argument = f"--script={staged_elxosc / 'main.lua'}"
+                _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
+                if script.name == "main.lua":
+                    shutil.copy2(source_elxosc / "elxlib_load.lua", config / "scripts" / "elxlib_load.lua")
+                if script.name == "button_input.lua":
+                    fixture = staged_elxosc / "main.lua"
+                    shutil.copy2(script, fixture)
+                    argument = f"--script={fixture}"
+                else:
+                    argument = f"--script={staged_elxosc / script.name}"
         staged_args.append(argument)
     if os.name == "nt":
         address = rf"\\.\pipe\elxosc-test-{uuid.uuid4().hex}"

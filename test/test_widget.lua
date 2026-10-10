@@ -38,6 +38,11 @@ local Container = layout_widgets.Container
 local Expanded = layout_widgets.Expanded
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
+local ButtonStyle = basic_widgets.ButtonStyle
+local ElevatedButton = basic_widgets.ElevatedButton
+local OutlinedButton = basic_widgets.OutlinedButton
+local TextButton = basic_widgets.TextButton
+local IconButton = basic_widgets.IconButton
 
 -- Deterministic measurer: half the font size per character.
 local FixedLayout = std.class.new('test.FixedLayout', { text_layout.TextLayout })
@@ -69,6 +74,9 @@ F.test('the aggregate module exposes the public api', function()
     F.ok(api.Text ~= nil, 'Text')
     F.ok(api.Row ~= nil, 'Row')
     F.ok(api.Button ~= nil, 'Button')
+    F.ok(api.ButtonBase ~= nil and api.ButtonStyle ~= nil, 'button base/style')
+    F.ok(api.ElevatedButton ~= nil and api.OutlinedButton ~= nil, 'button variants')
+    F.ok(api.TextButton ~= nil and api.IconButton ~= nil, 'button variants')
 end)
 
 F.test('Button renders and invokes its click callback', function()
@@ -77,6 +85,22 @@ F.test('Button renders and invokes its click callback', function()
     owner:dispatch_pointer('down', Offset(5, 5))
     owner:dispatch_pointer('up', Offset(5, 5))
     F.eq(clicks, 1, 'button click')
+end)
+
+F.test('button variants share the public API and style states', function()
+    local variants = { ElevatedButton, OutlinedButton, TextButton, IconButton }
+    for _, Variant in ipairs(variants) do
+        local clicks = 0
+        local button = Variant({ label = 'x', on_click = function() clicks = clicks + 1 end })
+        F.ok(button.style ~= nil and button.enabled, 'style and enabled')
+        local owner, binding = mount(button)
+        owner:dispatch_pointer('down', Offset(2, 2))
+        owner:dispatch_pointer('up', Offset(2, 2))
+        F.eq(clicks, 1, 'variant click')
+        binding:flush_build()
+    end
+    local custom = ButtonStyle({ background_color = Color.rgba255(1, 2, 3) })
+    F.ok(custom:background_for('normal') == Color.rgba255(1, 2, 3), 'custom style')
 end)
 
 F.test('mounts a widget tree and paints it', function()

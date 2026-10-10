@@ -9,6 +9,7 @@ local F = require('framework')
 local geometry = require('foundation.geometry')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
+local pointer_event = require('foundation.pointer_event')
 local custom_paint = require('render.custom_paint')
 local gesture_mod = require('render.gesture')
 local padding_mod = require('render.padding')
@@ -16,6 +17,7 @@ local padding_mod = require('render.padding')
 local Offset, Size, EdgeInsets = geometry.Offset, geometry.Size, geometry.EdgeInsets
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
+local PointerEvent = pointer_event.PointerEvent
 local RenderCustomPaint = custom_paint.RenderCustomPaint
 local RenderGesture = gesture_mod.RenderGesture
 local RenderPadding = padding_mod.RenderPadding
@@ -145,4 +147,49 @@ F.test('a press cancelled outside does not tap', function()
     owner:dispatch_pointer('down', Offset(5, 5))
     owner:dispatch_pointer('up', Offset(500, 500))
     F.eq(taps, 0, 'outside release cancels')
+end)
+
+F.section('input: pointer events and capture')
+
+F.test('PointerEvent carries core and extension fields', function()
+    local event = PointerEvent('down', Offset(2, 3), 'left', { device = 'mouse' })
+    F.eq(event.type, 'down', 'type')
+    F.ok(event.point == Offset(2, 3), 'point')
+    F.eq(event.data, 'left', 'data')
+    F.eq(event.device, 'mouse', 'extension field')
+    local copied = PointerEvent({ type = 'move', point = Offset(4, 5), pressure = 0.5 })
+    F.eq(copied.type, 'move', 'table constructor type')
+    F.eq(copied.pressure, 0.5, 'table constructor extension')
+end)
+
+F.test('capture routes move and up outside the hit area', function()
+    local events = {}
+    local node = box(20, 20)
+    function node:wants_pointer(event)
+        return event == 'down'
+    end
+    function node:on_pointer(event, point)
+        events[#events + 1] = event == 'down' and 'down'
+            or event == 'move' and (point and 'move-point' or 'move-captured')
+            or event == 'up' and (point and 'up-point' or 'up-captured')
+        return event == 'down'
+    end
+    local owner = laid_out(node)
+    owner:dispatch_pointer(PointerEvent('down', Offset(5, 5))) --[[@as PointerEvent]]
+    owner:dispatch_pointer(PointerEvent('move', Offset(100, 100))) --[[@as PointerEvent]]
+    owner:dispatch_pointer(PointerEvent('up', Offset(100, 100))) --[[@as PointerEvent]]
+    F.eq(events[1], 'down', 'down delivered')
+    F.eq(events[2], 'move-captured', 'captured move delivered')
+    F.eq(events[3], 'up-captured', 'captured up delivered')
+end)
+
+F.test('clear_hover cancels and releases capture', function()
+    local node = RenderGesture(box(20, 20), {
+        on_tap = function() error('cancelled press tapped') end,
+    })
+    local owner = laid_out(node)
+    owner:dispatch_pointer('down', Offset(5, 5))
+    owner:clear_hover()
+    owner:dispatch_pointer('up', Offset(5, 5))
+    F.ok(not node.pressed, 'capture cancelled')
 end)

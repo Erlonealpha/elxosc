@@ -24,6 +24,9 @@ local M = {}
 ---@field radius number
 ---@field border_width number
 ---@field border_color Color?
+---@field shadow_color Color?
+---@field shadow_offset Offset?
+---@field shadow_radius number?
 ---@overload fun(options: { color: Color?, radius: number?, border_width: number?, border_color: Color? }?): Decoration
 local Decoration = std.class.new('Decoration')
 
@@ -33,6 +36,9 @@ function Decoration:__init(options)
     self.radius = options.radius or 0
     self.border_width = options.border_width or 0
     self.border_color = options.border_color
+    self.shadow_color = options.shadow_color
+    self.shadow_offset = options.shadow_offset or Offset(0, 2)
+    self.shadow_radius = options.shadow_radius or 0
 end
 
 ---@class RenderDecoratedBox : RenderObject
@@ -62,6 +68,18 @@ end
 function RenderDecoratedBox:__paint(canvas, offset)
     local decoration = self.decoration
     local rect = Rect.from_offset_size(offset, self.size)
+    if decoration.shadow_color then
+        local shadow_offset = decoration.shadow_offset or Offset(0, 2)
+        local shadow_radius = decoration.shadow_radius or 0
+        local shadow_rect = Rect.from_offset_size(
+            offset:translate(shadow_offset.x, shadow_offset.y), self.size)
+        local shadow = Paint(decoration.shadow_color)
+        if decoration.radius > 0 then
+            canvas:draw_rrect(shadow_rect, decoration.radius + shadow_radius, shadow)
+        else
+            canvas:draw_rect(shadow_rect, shadow)
+        end
+    end
     if decoration.color then
         local fill = Paint(decoration.color)
         if decoration.radius > 0 then

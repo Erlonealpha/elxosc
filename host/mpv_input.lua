@@ -13,8 +13,10 @@ local mp = require 'mp'
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
+local pointer_event = require 'foundation.pointer_event'
 
 local Offset = geometry.Offset
+local PointerEvent = pointer_event.PointerEvent
 local math = math
 local debug_msgf = rawget(_G, 'debug_msgf') or function(...) end
 local debug_msg = rawget(_G, 'debug_msg') or function(...) end
@@ -68,7 +70,7 @@ function MpInput:_bind_mouse()
         end
         self.x, self.y = mouse.x + 0.5, mouse.y + 0.5
         self.hover = true
-        self.app.owner:dispatch_pointer('move', self:_point())
+        self.app.owner:dispatch_pointer(PointerEvent('move', self:_point())) --[[@as PointerEvent]]
         self:_decide_bindings()
         self.app:request_frame()
     end)
@@ -81,7 +83,7 @@ function MpInput:_dispatch(event, data)
     if event == 'down' then
         self:_refresh_position()
     end
-    local handled = self.app.owner:dispatch_pointer(event, self:_point(), data)
+    local handled = self.app.owner:dispatch_pointer(PointerEvent(event, self:_point(), data)) --[[@as PointerEvent]]
     if event == 'down' and data == 'left' then
         self._pressed = handled
     elseif event == 'up' and data == 'left' then

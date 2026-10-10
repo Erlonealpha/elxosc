@@ -149,6 +149,25 @@ F.test('host input bindings deliver a left click to Button', function()
     F.eq(clicks, 1, 'host delivered click')
 end)
 
+F.test('host capture keeps the press routed after leaving the button', function()
+    mp_stub.reset()
+    local clicks = 0
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() clicks = clicks + 1 end }))
+    app:render()
+    fake.mouse = { x = 5, y = 5, hover = true }
+    for _, event in ipairs(fake.events) do
+        if event.name == 'mouse-pos' then event.cb(nil, fake.mouse) end
+    end
+    local bindings = fake.bindings.list
+    bindings[1][3]()
+    fake.mouse = { x = 5000, y = 5000, hover = true }
+    for _, event in ipairs(fake.events) do
+        if event.name == 'mouse-pos' then event.cb(nil, fake.mouse) end
+    end
+    bindings[1][2]()
+    F.eq(clicks, 0, 'release outside does not click')
+end)
+
 --== the whole entry point =================================================
 
 F.section('host app: define window over a live app')

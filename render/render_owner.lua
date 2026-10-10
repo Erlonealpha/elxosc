@@ -35,7 +35,8 @@ function RenderOwner:__init(root)
     ---@type table<RenderObject, true>
     self._hovered = {}
     ---@type RenderObject?
-    self._pressed = nil
+    ---@type RenderObject?
+    self._capture = nil
     if root then
         self:set_root(root)
     end
@@ -135,10 +136,25 @@ end
 ---@param point Offset
 ---@param data any?
 ---@return boolean handled
+---@overload fun(event: PointerEvent): boolean
 function RenderOwner:dispatch_pointer(event, point, data)
+    if type(event) == 'table' then
+        local pointer = event
+        event, point, data = pointer.type, pointer.point, pointer.data
+    end
     local path = self:pointer_path(point)
     if event == 'move' then
         self:_update_hover(path)
+        if self._capture then
+            for _, entry in ipairs(path) do
+                if entry.node == self._capture then
+                    self._capture:on_pointer('move', entry.point, data)
+                    return true
+                end
+            end
+            self._capture:on_pointer('move', nil, data)
+            return true
+        end
         for _, entry in ipairs(path) do
             entry.node:on_pointer('move', entry.point, data)
         end
@@ -146,26 +162,25 @@ function RenderOwner:dispatch_pointer(event, point, data)
     end
     if event == 'down' then
         self:cancel_pointer()
-    elseif event == 'up' then
-        local pressed = self._pressed
-        self._pressed = nil
-        if pressed then
-            local found = false
+    elseif event == 'up' or event == 'cancel' then
+        local captured = self._capture
+        self._capture = nil
+        if captured then
+            local local_point
             for _, entry in ipairs(path) do
-                if entry.node == pressed then
-                    found = true
+                if entry.node == captured then
+                    local_point = entry.point
                     break
                 end
             end
-            if not found then
-                pressed:on_pointer('cancel', nil, data)
-            end
+            captured:on_pointer(event, local_point, data)
+            return true
         end
     end
     for _, entry in ipairs(path) do
         if entry.node:on_pointer(event, entry.point, data) then
             if event == 'down' then
-                self._pressed = entry.node
+                self._capture = entry.node
             end
             return true
         end
@@ -175,14 +190,15 @@ end
 
 --- Cancel a pending press when the host loses the pointer or the root changes.
 function RenderOwner:cancel_pointer()
-    if self._pressed then
-        self._pressed:on_pointer('cancel', nil)
-        self._pressed = nil
+    if self._capture then
+        self._capture:on_pointer('cancel', nil)
+        self._capture = nil
     end
 end
 
 --- Mark every currently hovered node as left (pointer left the window).
 function RenderOwner:clear_hover()
+    self:cancel_pointer()
     for node in pairs(self._hovered) do
         node:on_pointer('leave', nil)
     end

@@ -39,10 +39,15 @@ local Slot = bind_mod.Slot
 local State = state_mod.State
 local StatefulWidget = widget_mod.StatefulWidget
 local Column = layout_widgets.Column
+local Row = layout_widgets.Row
 local Center = layout_widgets.Center
 local SizedBox = layout_widgets.SizedBox
 local Container = layout_widgets.Container
 local Button = basic_widgets.Button
+local ElevatedButton = basic_widgets.ElevatedButton
+local OutlinedButton = basic_widgets.OutlinedButton
+local TextButton = basic_widgets.TextButton
+local IconButton = basic_widgets.IconButton
 local Text = basic_widgets.Text
 
 -- Seconds the define window stays open. Long enough for every script to have
@@ -87,12 +92,14 @@ end
 
 ---@class DemoState : State
 ---@field count integer
+---@field selected string
 ---@overload fun(): DemoState
 local DemoState = std.class.new('DemoState', { State })
 
 function DemoState:__init()
     std.super(DemoState, self, State).__init(self)
     self.count = 0
+    self.selected = 'ready'
 end
 
 function DemoState:init_state()
@@ -102,14 +109,24 @@ function DemoState:init_state()
     mp.register_script_message('elxosc-demo', function()
         self:set_state(function()
             self.count = self.count + 1
+            self.selected = 'message'
             mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
+            mp.set_property('user-data/elxosc-demo-event', self.selected)
         end)
     end)
     mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
+    mp.set_property('user-data/elxosc-demo-event', self.selected)
 end
 
 function DemoState:dispose()
     mp.unregister_script_message('elxosc-demo')
+end
+
+function DemoState:_set_event(name)
+    self:set_state(function()
+        self.selected = name
+        mp.set_property('user-data/elxosc-demo-event', name)
+    end)
 end
 
 ---@param context BuildContext
@@ -127,15 +144,51 @@ function DemoState:build(context)
     }
     return Container{
         margin = EdgeInsets.only{left = 10, top = 10},
-        child = Button{
-            child = content,
-            on_click = function()
-                self:set_state(function()
-                    self.count = self.count + 1
-                    mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
-                end)
-            end,
-        }
+        child = Column({
+            cross_alignment = 'start',
+            spacing = 6,
+            children = {
+                content,
+                Text('event: ' .. self.selected, {
+                    style = TextStyle(14, { color = Color.rgba255(180, 190, 205) }),
+                }),
+                Row({
+                    spacing = 6,
+                    children = {
+                        ElevatedButton{
+                            label = 'Increment',
+                            on_click = function()
+                                self:set_state(function()
+                                    self.count = self.count + 1
+                                    self.selected = 'increment'
+                                    mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
+                                    mp.set_property('user-data/elxosc-demo-event', self.selected)
+                                end)
+                            end,
+                        },
+                        OutlinedButton{
+                            label = 'Reset',
+                            on_click = function()
+                                self:set_state(function()
+                                    self.count = 0
+                                    self.selected = 'reset'
+                                    mp.set_property('user-data/elxosc-demo-count', '0')
+                                    mp.set_property('user-data/elxosc-demo-event', self.selected)
+                                end)
+                            end,
+                        },
+                        TextButton{
+                            label = 'Ping',
+                            on_click = function() self:_set_event('ping') end,
+                        },
+                        IconButton{
+                            icon = Text('!'),
+                            on_click = function() self:_set_event('icon') end,
+                        },
+                    },
+                }),
+            },
+        }),
     }
 end
 
