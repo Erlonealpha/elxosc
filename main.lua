@@ -23,7 +23,6 @@ local geometry = require 'foundation.geometry'
 local text_style = require 'text.text_style'
 local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
----@type elxwidgets_layout
 local layout_widgets = require 'widget.widgets.layout'
 local basic_widgets = require 'widget.widgets.basic'
 local bind_mod = require 'widget.bind'

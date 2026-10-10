@@ -90,11 +90,15 @@ elxosc/
   widget/build_owner.lua    脏 element 队列
   widget/binding.lua        WidgetBinding(Widget 树 ⇄ RenderOwner)
   widget/init.lua           `require 'widget'` 聚合入口
-  widget/widgets/layout.lua Padding Align Center SizedBox DecoratedBox
-                            ConstrainedBox LimitedBox UnconstrainedBox OverflowBox
-                            FittedBox Flex Row Column Stack Flexible Expanded
-                            Spacer Container
-  widget/widgets/basic.lua  Text CustomPaint GestureDetector
+   widget/widgets/layout.lua 兼容聚合入口
+   widget/widgets/{padding,align,sized_box,decorated_box,flex,stack,
+                   constraints,overflow,container}.lua
+                             基础布局控件的独立实现
+   widget/widgets/basic.lua 兼容聚合入口
+   widget/widgets/{text,custom_paint,gesture_detector,button,
+                   button_base,button_style,elevated_button,outlined_button,
+                   text_button,icon_button}.lua
+                             基础展示、事件和按钮控件
 
   libs/sandbox.lua          无状态原语:load_chunk 兼容 shim + new_env(受限 env)
   libs/modules.lua          ModuleRegistry:mods(数据)+ loaders(安装器)+ protect
@@ -562,6 +566,7 @@ E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
 | `test_layout.lua` | Constraints、盒子、owner、绘制与命中 |
 | `test_input.lua` | pointer_path、gesture 分发、hover |
 | `test_widget.lua` | build→element→render、复用、set_state 重建 |
+| `test_button_contract.lua` | 按钮构造参数、样式复制、PointerEvent 契约 |
 | `test_bind.lua` | InheritedWidget、bind 的 op 与错误分支 |
 | `test_define.lua` | 沙箱 env/load shim、模块注册表(数据+loader)、define 协议 |
 | `test_dsl.lua` | `new_widget` / `new_state` / `builtins` |

@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline: **0 diagnostics / 533 checks**.
+Current baseline: **0 diagnostics / 628 checks**.
 
 ## Real host (Python + uv, first stage)
 
@@ -76,6 +76,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_layout.lua` | Constraints, the box set, owner driving, paint + hit test |
 | `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds |
+| `test_button_contract.lua` | Button options/style immutability and PointerEvent construction |
 | `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |

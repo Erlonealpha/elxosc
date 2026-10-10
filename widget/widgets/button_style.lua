@@ -2,12 +2,23 @@
 
 local std = require 'elxlibs.std'
 local color_mod = require 'foundation.color'
-local geometry = require 'foundation.geometry'
 
 local Color = color_mod.Color
-local Offset = geometry.Offset
 
----@class ButtonStyle
+---@class _ButtonStyleOptions
+---@field background_color Color?
+---@field color Color?
+---@field foreground_color Color?
+---@field hover_color Color?
+---@field pressed_color Color?
+---@field disabled_color Color?
+---@field border_color Color?
+---@field border_width number?
+---@field radius number?
+---@field padding EdgeInsets?
+---@field elevation number?
+
+---@class ButtonStyle : std.object
 ---@field background_color Color?
 ---@field foreground_color Color
 ---@field hover_color Color?
@@ -18,8 +29,11 @@ local Offset = geometry.Offset
 ---@field radius number
 ---@field padding EdgeInsets?
 ---@field elevation number
+---@overload fun(options: _ButtonStyleOptions?): ButtonStyle
 local ButtonStyle = std.class.new('ButtonStyle')
 
+---@param options _ButtonStyleOptions?
+---@return nil
 function ButtonStyle:__init(options)
     options = options or {}
     self.background_color = options.background_color or options.color
@@ -37,24 +51,38 @@ end
 ---@param state "normal"|"hover"|"pressed"|"disabled"
 ---@return Color?
 function ButtonStyle:background_for(state)
-    if state == 'disabled' then return self.disabled_color end
-    if state == 'pressed' then return self.pressed_color or self.hover_color or self.background_color end
-    if state == 'hover' then return self.hover_color or self.background_color end
+    if state == 'disabled' then
+        return self.disabled_color
+    end
+    if state == 'pressed' then
+        return self.pressed_color or self.hover_color or self.background_color
+    end
+    if state == 'hover' then
+        return self.hover_color or self.background_color
+    end
     return self.background_color
 end
 
+---@param options _ButtonStyleOptions?
+---@return ButtonStyle
 function ButtonStyle:copy_with(options)
     options = options or {}
     local values = {}
-    for key, value in pairs(self) do values[key] = value end
-    for key, value in pairs(options) do values[key] = value end
+    for key, value in pairs(self) do
+        values[key] = value
+    end
+    for key, value in pairs(options) do
+        values[key] = value
+    end
     return ButtonStyle(values)
 end
 
 ---@param elevation number
 ---@return Color?
 function ButtonStyle:shadow_for(elevation)
-    if elevation <= 0 then return nil end
+    if elevation <= 0 then
+        return nil
+    end
     return Color.rgba255(0, 0, 0, math.min(100, 18 + elevation * 8))
 end
 

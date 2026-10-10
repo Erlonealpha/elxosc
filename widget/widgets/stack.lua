@@ -1,20 +1,42 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
----@diagnostic disable: undefined-field, inject-field, generic-constraint-mismatch
-
 local std = require 'elxlibs.std'
-local Offset = require('foundation.geometry').Offset
-local RenderStack = require('render.stack').RenderStack
-local MultiChildRenderObjectWidget = require('widget.widget').MultiChildRenderObjectWidget
+local geometry = require 'foundation.geometry'
+local stack_mod = require 'render.stack'
+local widget_mod = require 'widget.widget'
 
+local Offset = geometry.Offset
+local RenderStack = stack_mod.RenderStack
+local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
+
+---@class _StackOptions
+---@field children? Widget[]
+---@field alignment? Offset
+---@field key? any
+---@field id? string
+
+---@class Stack : MultiChildRenderObjectWidget
+---@field children Widget[]
+---@field alignment Offset
+---@overload fun(options?: _StackOptions): Stack
 local Stack = std.class.new('Stack', { MultiChildRenderObjectWidget })
+
+---@param options? _StackOptions
 function Stack:__init(options)
     options = options or {}
-    self.key, self.id = options.key, options.id
-    self.children, self.alignment = options.children or {}, options.alignment or Offset(0, 0)
+    self.key = options.key
+    self.id = options.id
+    self.children = options.children or {}
+    -- `Stack.alignment` defaults to `AlignmentDirectional.topStart`.
+    self.alignment = options.alignment or Offset(0, 0)
 end
-function Stack:create_render_object() return RenderStack({ alignment = self.alignment }) end
+
+function Stack:create_render_object()
+    return RenderStack({ alignment = self.alignment })
+end
+
+---@param render_object RenderStack
 function Stack:update_render_object(render_object)
     render_object.alignment = self.alignment
     render_object:mark_needs_layout()

@@ -1,26 +1,40 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- std.class injects widget fields dynamically; keep the module's public class
--- shape consistent with the pre-split aggregate.
----@diagnostic disable: undefined-field, inject-field, generic-constraint-mismatch
-
 local std = require 'elxlibs.std'
-local EdgeInsets = require('foundation.geometry').EdgeInsets
-local RenderPadding = require('render.padding').RenderPadding
-local SingleChildRenderObjectWidget = require('widget.widget').SingleChildRenderObjectWidget
+local geometry = require 'foundation.geometry'
+local padding_mod = require 'render.padding'
+local widget_mod = require 'widget.widget'
+
+local EdgeInsets = geometry.EdgeInsets
+local RenderPadding = padding_mod.RenderPadding
+local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
+
+---@class _PaddingOptions
+---@field padding? EdgeInsets
+---@field key? any
+---@field id? string
 
 ---@class Padding : SingleChildRenderObjectWidget
----@overload fun(child: Widget?, options: { padding: EdgeInsets, key: any? }?): Padding
+---@field padding EdgeInsets
+---@overload fun(child: Widget?, options?: _PaddingOptions): Padding
 local Padding = std.class.new('Padding', { SingleChildRenderObjectWidget })
 
+---@param child Widget?
+---@param options? _PaddingOptions
 function Padding:__init(child, options)
     options = options or {}
-    self.key, self.id, self.child = options.key, options.id, child
+    self.key = options.key
+    self.id = options.id
+    self.child = child
     self.padding = options.padding or EdgeInsets.zero()
 end
 
-function Padding:create_render_object() return RenderPadding(self.padding) end
+function Padding:create_render_object()
+    return RenderPadding(self.padding)
+end
+
+---@param render_object RenderPadding
 function Padding:update_render_object(render_object)
     render_object.padding = self.padding
     render_object:mark_needs_layout()

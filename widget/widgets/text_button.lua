@@ -1,13 +1,26 @@
 local std = require 'elxlibs.std'
----@diagnostic disable: undefined-field, generic-constraint-mismatch, param-type-mismatch
 local base = require 'widget.widgets.button_base'
 local color = require 'foundation.color'
-local ButtonBase, ButtonStyle = base.ButtonBase, base.ButtonStyle
+local ButtonBase = base.ButtonBase
+local ButtonStyle = base.ButtonStyle
+local copy_options = base.copy_options
 local Color = color.Color
+---@class _TextButtonOptions : _ButtonBaseOptions
+
+---@class TextButton : ButtonBase
+---@overload fun(options: _TextButtonOptions?): TextButton
 local TextButton = std.class.new('TextButton', { ButtonBase })
+---@param options _TextButtonOptions?
+---@return nil
 function TextButton:__init(options)
     options = options or {}
-    options.style = options.style or ButtonStyle({ foreground_color = Color.rgba255(90, 165, 240), hover_color = Color.rgba255(30, 45, 65), pressed_color = Color.rgba255(40, 60, 85), padding = options.padding })
-    ButtonBase.__init(self, options)
+    local config = copy_options(options)
+    config.style = config.style or ButtonStyle({
+        foreground_color = Color.rgba255(90, 165, 240),
+        hover_color = Color.rgba255(30, 45, 65),
+        pressed_color = Color.rgba255(40, 60, 85),
+        padding = config.padding,
+    })
+    ButtonBase.__init(self, config)
 end
 return { TextButton = TextButton }

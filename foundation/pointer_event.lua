@@ -10,17 +10,28 @@ local std = require 'elxlibs.std'
 ---@class elxfoundationpointerevent
 local M = {}
 
+---@class _PointerEventFields
+---@field type string
+---@field point Offset?
+---@field data any?
+
 ---@class PointerEvent : std.object
 ---@field type string
 ---@field point Offset?
 ---@field data any?
 ---@overload fun(type: string, point: Offset?, data: any?, extra: table?): PointerEvent
----@overload fun(fields: table): PointerEvent
+---@overload fun(fields: _PointerEventFields): PointerEvent
 local PointerEvent = std.class.new('PointerEvent')
 
+---@param type string|_PointerEventFields
+---@param point Offset?
+---@param data any?
+---@param extra table?
+---@return nil
 function PointerEvent:__init(type, point, data, extra)
     if _G.type(type) == 'table' then
-        for key, value in pairs(type) do
+        local fields = type --[[@as _PointerEventFields]]
+        for key, value in pairs(fields) do
             self[key] = value
         end
         return

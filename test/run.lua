@@ -28,6 +28,7 @@ local files = {
     'test_layout',
     'test_input',
     'test_widget',
+    'test_button_contract',
     'test_bind',
     'test_define',
     'test_dsl',

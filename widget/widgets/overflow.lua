@@ -1,43 +1,124 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
----@diagnostic disable: undefined-field, inject-field, generic-constraint-mismatch
-
 local std = require 'elxlibs.std'
-local Offset = require('foundation.geometry').Offset
-local render = require 'render.overflow_box'
-local fitted = require 'render.fitted_box'
-local SingleChildRenderObjectWidget = require('widget.widget').SingleChildRenderObjectWidget
+local geometry = require 'foundation.geometry'
+local overflow_mod = require 'render.overflow_box'
+local fitted_mod = require 'render.fitted_box'
+local widget_mod = require 'widget.widget'
 
+local Offset = geometry.Offset
+local RenderUnconstrainedBox = overflow_mod.RenderUnconstrainedBox
+local RenderOverflowBox = overflow_mod.RenderOverflowBox
+local RenderFittedBox = fitted_mod.RenderFittedBox
+local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
+
+---@class _UnconstrainedBoxOptions
+---@field child? Widget
+---@field alignment? Offset
+---@field key? any
+---@field id? string
+
+---@class _OverflowBoxOptions
+---@field child? Widget
+---@field min_width? number
+---@field max_width? number
+---@field min_height? number
+---@field max_height? number
+---@field fit? 'max'|'defer_to_child'
+---@field alignment? Offset
+---@field key? any
+---@field id? string
+
+---@class _FittedBoxOptions
+---@field fit? 'contain'|'cover'|'fill'|'fit_width'|'fit_height'|'none'|'scale_down'
+---@field alignment? Offset
+---@field key? any
+---@field id? string
+
+---@class UnconstrainedBox : SingleChildRenderObjectWidget
+---@field alignment Offset
+---@overload fun(options?: _UnconstrainedBoxOptions): UnconstrainedBox
 local UnconstrainedBox = std.class.new('UnconstrainedBox', { SingleChildRenderObjectWidget })
+
+---@param options? _UnconstrainedBoxOptions
 function UnconstrainedBox:__init(options)
     options = options or {}
-    self.key, self.id, self.child = options.key, options.id, options.child
+    self.key = options.key
+    self.id = options.id
+    self.child = options.child
     self.alignment = options.alignment or Offset(0.5, 0.5)
 end
-function UnconstrainedBox:create_render_object() return render.RenderUnconstrainedBox(nil, self.alignment) end
-function UnconstrainedBox:update_render_object(r) r.alignment = self.alignment; r:mark_needs_layout() end
 
+function UnconstrainedBox:create_render_object()
+    return RenderUnconstrainedBox(nil, self.alignment)
+end
+
+---@param render_object RenderUnconstrainedBox
+function UnconstrainedBox:update_render_object(render_object)
+    render_object.alignment = self.alignment
+    render_object:mark_needs_layout()
+end
+
+---@class OverflowBox : SingleChildRenderObjectWidget
+---@field opts OverflowBoxOpts
+---@overload fun(options?: _OverflowBoxOptions): OverflowBox
 local OverflowBox = std.class.new('OverflowBox', { SingleChildRenderObjectWidget })
+
+---@param options? _OverflowBoxOptions
 function OverflowBox:__init(options)
     options = options or {}
-    self.key, self.id, self.child = options.key, options.id, options.child
-    self.opts = { min_width = options.min_width, max_width = options.max_width, min_height = options.min_height,
-        max_height = options.max_height, fit = options.fit, alignment = options.alignment }
-end
-function OverflowBox:create_render_object() return render.RenderOverflowBox(nil, self.opts) end
-function OverflowBox:update_render_object(r)
-    r.opts, r.alignment, r.fit = self.opts, self.opts.alignment or Offset(0.5, 0.5), self.opts.fit or 'max'
-    r:mark_needs_layout()
+    self.key = options.key
+    self.id = options.id
+    self.child = options.child
+    self.opts = {
+        min_width = options.min_width,
+        max_width = options.max_width,
+        min_height = options.min_height,
+        max_height = options.max_height,
+        fit = options.fit,
+        alignment = options.alignment,
+    }
 end
 
+function OverflowBox:create_render_object()
+    return RenderOverflowBox(nil, self.opts)
+end
+
+---@param render_object RenderOverflowBox
+function OverflowBox:update_render_object(render_object)
+    render_object.opts = self.opts
+    render_object.alignment = self.opts.alignment or Offset(0.5, 0.5)
+    render_object.fit = self.opts.fit or 'max'
+    render_object:mark_needs_layout()
+end
+
+---@class FittedBox : SingleChildRenderObjectWidget
+---@field fit 'contain'|'cover'|'fill'|'fit_width'|'fit_height'|'none'|'scale_down'
+---@field alignment Offset
+---@overload fun(child: Widget?, options?: _FittedBoxOptions): FittedBox
 local FittedBox = std.class.new('FittedBox', { SingleChildRenderObjectWidget })
+
+---@param child Widget?
+---@param options? _FittedBoxOptions
 function FittedBox:__init(child, options)
     options = options or {}
-    self.key, self.id, self.child = options.key, options.id, child
-    self.fit, self.alignment = options.fit or 'contain', options.alignment or Offset(0.5, 0.5)
+    self.key = options.key
+    self.id = options.id
+    self.child = child
+    self.fit = options.fit or 'contain'
+    self.alignment = options.alignment or Offset(0.5, 0.5)
 end
-function FittedBox:create_render_object() return fitted.RenderFittedBox(nil, { fit = self.fit, alignment = self.alignment }) end
-function FittedBox:update_render_object(r) r.fit, r.alignment = self.fit, self.alignment; r:mark_needs_layout() end
+
+function FittedBox:create_render_object()
+    return RenderFittedBox(nil, { fit = self.fit, alignment = self.alignment })
+end
+
+---@param render_object RenderFittedBox
+function FittedBox:update_render_object(render_object)
+    render_object.fit = self.fit
+    render_object.alignment = self.alignment
+    render_object:mark_needs_layout()
+end
 
 return { UnconstrainedBox = UnconstrainedBox, OverflowBox = OverflowBox, FittedBox = FittedBox }
