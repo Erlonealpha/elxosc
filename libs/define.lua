@@ -48,6 +48,7 @@ local M = {}
 ---@field current_env table?
 ---@field on_error fun(scope_id: string, err: any)? called instead of raising when set
 ---@field _scopes table<string, table>
+---@field _defined_scopes table<string, true> scopes with an accepted initial payload
 ---@overload fun(options: DefineOptions?): DefineSession
 local DefineSession = std.class.new('DefineSession')
 
@@ -61,6 +62,7 @@ function DefineSession:__init(options)
     self.current_env = nil
     self.on_error = nil
     self._scopes = {}
+    self._defined_scopes = {}
     self.protected_names = {}
     for name in pairs(options.protected_names or {}) do
         self.protected_names[name] = true
@@ -149,6 +151,13 @@ function DefineSession:define(scope_id, code)
     if type(code) ~= 'string' then
         raise(std.TypeError('define(...): the payload must be a string'))
     end
+    if self._defined_scopes[scope_id] then
+        if self.on_error ~= nil then
+            self.on_error(scope_id, std.RuntimeError(
+                string.format("define('%s'): duplicate scope ignored", scope_id)))
+        end
+        return self:env_for(scope_id)
+    end
     local env = self:env_for(scope_id)
     local chunk, err = sandbox.load_chunk(code, '@define:' .. scope_id, env)
     if chunk == nil then
@@ -160,6 +169,8 @@ function DefineSession:define(scope_id, code)
     self.current_define, self.current_env = nil, nil
     if not ok then
         self:_fail(scope_id, run_err)
+    else
+        self._defined_scopes[scope_id] = true
     end
     return env
 end

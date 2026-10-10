@@ -33,7 +33,6 @@ local Color = color_mod.Color
 local ButtonStyle = std.class.new('ButtonStyle')
 
 ---@param options _ButtonStyleOptions?
----@return nil
 function ButtonStyle:__init(options)
     options = options or {}
     self.background_color = options.background_color or options.color

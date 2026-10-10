@@ -40,7 +40,6 @@ local ButtonStyle = style_mod.ButtonStyle
 ---@field pressed boolean
 ---@overload fun(): ButtonState
 local ButtonState = std.class.new('ButtonState', { State })
----@return nil
 function ButtonState:init_state()
     self.hovered = false
     self.pressed = false
@@ -126,7 +125,6 @@ end
 ---@overload fun(options: _ButtonBaseOptions?): ButtonBase
 local ButtonBase = std.class.new('ButtonBase', { StatefulWidget })
 ---@param options _ButtonBaseOptions?
----@return nil
 function ButtonBase:__init(options)
     options = options or {}
     self.key = options.key

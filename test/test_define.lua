@@ -177,12 +177,12 @@ F.test('builtins are readable from every scope', function()
     F.ok(env.label ~= nil, 'builtin constructible')
 end)
 
-F.test('define accumulates into one scope and sees earlier values', function()
+F.test('a scope keeps its first payload only', function()
     local session = DefineSession()
     session:define_start()
     session:define('s', 'count = 1')
     session:define('s', 'count = count + 1')
-    F.eq(session:env_for('s').count, 2, 'second payload saw the first')
+    F.eq(session:env_for('s').count, 1, 'duplicate payload is ignored')
 end)
 
 F.test('the phase is refcounted: every starter must end', function()
@@ -342,4 +342,18 @@ F.test('removing one define scope leaves another scope bindable', function()
     }), session.binds)
     F.eq(#owner.root:children(), 1, 'only scope b rendered')
     F.eq(owner.root:children()[1].paragraph.text, 'b', 'scope b remains')
+end)
+
+F.test('a scope accepts only its first define payload', function()
+    local warnings = 0
+    local session = DefineSession({ builtins = { Text = Text } })
+    session.on_error = function()
+        warnings = warnings + 1
+    end
+    session:define_start()
+    session:define('scope_once', "first = 'accepted'")
+    session:define('scope_once', "first = 'rejected'")
+    session:define_end()
+    F.eq(warnings, 1, 'duplicate scope warning')
+    F.eq(session:env_for('scope_once').first, 'accepted', 'first payload retained')
 end)

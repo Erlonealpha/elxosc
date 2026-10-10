@@ -1,17 +1,18 @@
 local std = require 'elxlibs.std'
 local base = require 'widget.widgets.button_base'
 local color = require 'foundation.color'
+
 local ButtonBase = base.ButtonBase
 local ButtonStyle = base.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
+
 ---@class _ElevatedButtonOptions : _ButtonBaseOptions
 
 ---@class ElevatedButton : ButtonBase
----@overload fun(options: _ElevatedButtonOptions?): ElevatedButton
+---@overload fun(options: _ElevatedButtonOptions?): self
 local ElevatedButton = std.class.new('ElevatedButton', { ButtonBase })
 ---@param options _ElevatedButtonOptions?
----@return nil
 function ElevatedButton:__init(options)
     options = options or {}
     local config = copy_options(options)
@@ -23,4 +24,5 @@ function ElevatedButton:__init(options)
     })
     ButtonBase.__init(self, config)
 end
+
 return { ElevatedButton = ElevatedButton }

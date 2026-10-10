@@ -11,7 +11,6 @@ local Color = color.Color
 ---@overload fun(options: _TextButtonOptions?): TextButton
 local TextButton = std.class.new('TextButton', { ButtonBase })
 ---@param options _TextButtonOptions?
----@return nil
 function TextButton:__init(options)
     options = options or {}
     local config = copy_options(options)

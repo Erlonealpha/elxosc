@@ -15,7 +15,6 @@ local EdgeInsets = geometry.EdgeInsets
 ---@overload fun(options: _IconButtonOptions?): IconButton
 local IconButton = std.class.new('IconButton', { ButtonBase })
 ---@param options _IconButtonOptions?
----@return nil
 function IconButton:__init(options)
     options = options or {}
     local config = copy_options(options)
