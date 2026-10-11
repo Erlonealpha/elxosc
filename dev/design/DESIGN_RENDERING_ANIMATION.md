@@ -279,6 +279,9 @@ TextPaint 非法边界、复制/相等、默认兼容、paint-only 更新、长�
 九点映射以及真实 libass bounds 回归。宿主回归只证明事件被真实 libass 接收并产生
 非空 bounds，不把它当作精确字体 ink bounds 或光学居中证明。
 
+Demo 现在可直接展示这些成果：九宫格文本 anchor、固定 Icon box/optical offset、
+TextStyle 文本以及由 FrameClock 驱动、逐帧输出静态 ASS 的 OffsetBox 平移动画。
+
 2026-10-12 实际执行：
 
 | 命令 | 最终结果 |

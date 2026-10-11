@@ -58,6 +58,10 @@ function S.install()
         fake.props[name] = value
     end
 
+    function mp.set_property(name, value)
+        fake.props[name] = value
+    end
+
     function mp.get_property_number(name)
         if name == 'display-fps' or name == 'estimated-display-fps' then
             return fake.fps

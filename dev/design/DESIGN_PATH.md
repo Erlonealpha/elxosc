@@ -581,7 +581,7 @@ E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
 #    期望: "ALL GOOD: <N> checks passed",退出码 0
 ```
 
-当前基线(阶段 2):**0 诊断 / 956 checks**；真实 mpv.net 宿主测试 **6 passed**。
+当前基线(阶段 2):**0 诊断 / 960 checks**；真实 mpv.net 宿主测试 **6 passed**。
 
 测试文件与职责:
 

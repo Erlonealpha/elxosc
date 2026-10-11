@@ -17,6 +17,7 @@ local color = require('foundation.color')
 local text_style = require('text.text_style')
 local mpv_app = require('host.mpv_app')
 local mpv_define = require('host.mpv_define')
+local demo_mod = require('demo')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
 local bind_mod = require('widget.bind')
@@ -32,6 +33,7 @@ local StatefulWidget = widget_mod.StatefulWidget
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
+local Demo = demo_mod.Demo
 
 ---@return Widget
 local function scaffold()
@@ -81,6 +83,16 @@ F.test('the overlay carries the ASS text and the resolution', function()
     F.eq(fake.overlay.res_x, 1280, 'res_x from get_osd_size')
     F.eq(fake.overlay.res_y, 720, 'res_y from get_osd_size')
     F.ok(fake.overlay.data ~= nil and #fake.overlay.data > 0, 'ASS payload emitted')
+end)
+
+F.test('the demo exposes anchors, nominal icons and static animation output', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Demo())
+    app:render()
+    F.contains(fake.overlay.data, '\\an5', 'center text anchor')
+    F.contains(fake.overlay.data, '\\an3', 'bottom-right text anchor')
+    F.contains(fake.overlay.data, '\\fnMaterial Symbols Rounded', 'icon font')
+    F.contains(fake.overlay.data, 'Frame-clock OffsetBox', 'paint-only offset demo label')
 end)
 
 --== widget binding ========================================================
