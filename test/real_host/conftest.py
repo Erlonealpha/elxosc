@@ -176,14 +176,13 @@ def _running_host(tmp_path, extra_args=()):
                                      script == Path(__file__).parent / "button_input.lua"):
                 staged_elxosc = config / "scripts" / "elxosc"
                 _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
-                if script.name == "main.lua":
-                    shutil.copy2(source_elxosc / "elxlib_load.lua", config / "scripts" / "elxlib_load.lua")
                 if script.name == "button_input.lua":
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
-                    argument = f"--script={fixture}"
-                else:
-                    argument = f"--script={staged_elxosc / script.name}"
+                # Load the directory package, matching portable_config/scripts/elxosc.
+                # Loading main.lua as a standalone file omits the package search
+                # path and makes mp.get_script_directory() return nil.
+                argument = f"--script={staged_elxosc}"
         staged_args.append(argument)
     if os.name == "nt":
         address = rf"\\.\pipe\elxosc-test-{uuid.uuid4().hex}"
@@ -192,7 +191,7 @@ def _running_host(tmp_path, extra_args=()):
     log = tmp_path / "host.log"
     with log.open("wb") as output:
         process = subprocess.Popen(
-            [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no",
+            [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no", "--load-scripts=no",
              f"--input-ipc-server={address}", *staged_args],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
             start_new_session=(os.name != "nt"),

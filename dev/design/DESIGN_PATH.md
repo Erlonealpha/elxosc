@@ -4,6 +4,7 @@
 它描述的是"事实状态",不是愿望;凡与本文件冲突的代码,以代码为准,并回头修正本文件。
 
 配套文档:`DESIGN.md`(与 Flutter 的对照、扩展形态与坑的讨论)、
+`DESIGN_RENDERING_ANIMATION.md`(当前文本契约及渲染/动画路线)、
 `test/README.md`(测试与静态检查怎么跑)。
 
 ---
@@ -315,16 +316,24 @@ Element                       mount/unmount/update/rebuild/mark_dirty/update_chi
 
 ## 6. 文本
 
-- `TextStyle(font_size, options)`:color/font_family/bold/italic/letter_spacing/
-  line_height/align/wrap;`line_height_px()`、`copy_with()`。
-- `TextLayout`(契约):**只有 `line_width(line, style)` 是后端相关**;
+- `TextStyle(options)`:font_size/color/font_family/bold/italic/letter_spacing/
+  line_height/align/wrap/extra;`line_height_px()`、`copy_with()`。
+  旧的 `TextStyle(size, options)` 已迁移；字号是非负有限逻辑像素，可为小数。
+  复制可覆盖字号，并保留 false/0；extra 按不可变约定共享、按表身份比较。
+- `TextLayout`(契约):`line_width(line, style)` 必须由后端实现;
+  `line_height(style)` 默认使用字号×行距倍数，后端可覆盖统一逻辑行距。
   `layout(text, style, max_width)` 是通用实现(硬换行 + 贪心按词折行 + 段落尺寸),
   返回 `Paragraph{text, style, size, lines, line_height}`。
+- `Paragraph.size` 是自然逻辑尺寸；`RenderText.size` 是经过父约束的布局盒。
+  `Canvas:draw_text(paragraph, offset)` 接收左上角定位点，ASS 对应 `\an7`。
 - **环境默认测量器**:`text_layout.set_default(layout)` / `get_default()`。
   宿主启动时注入 `AssTextLayout()`;`RenderText` 未显式给测量器时用它。
   这是"引擎替身",也是暂无 `InheritedWidget` 主题体系时的过渡方案。
 - `AssTextLayout` 是**估算**:ASCII 按 0.5em、宽字符(CJK 等)按 1em,加字距。
   真实字宽表可参考 uosc `src/uosc/lib/text.lua`(未来升级点)。
+- ASS 多行 event 的真实行距由 libass 决定，当前逻辑行距不保证像素一致。
+  通用锚点、精确度量与动画分阶段设计见
+  [DESIGN_RENDERING_ANIMATION.md](DESIGN_RENDERING_ANIMATION.md)。
 
 ---
 

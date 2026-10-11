@@ -64,9 +64,12 @@ function ButtonState:build()
     local state = self:visual_state()
     local child = button.child
     if not child then
-        child = Text(button.label or '', { style = TextStyle(button.font_size or 16, {
-            color = style.foreground_color,
-        }) })
+        child = Text(button.label or '', {
+            style = TextStyle({
+                font_size = button.font_size or 16,
+                color = style.foreground_color,
+            }),
+        })
     end
     local decoration = Decoration({
         color = style:background_for(state),

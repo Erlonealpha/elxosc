@@ -59,19 +59,25 @@ end
 
 ---@param value number
 ---@return string
-local function ri(value)
+local function ris(value)
     return format('%d', floor(value + 0.5))
 end
 
----@param paint_ Paint
+---@param value number
+---@return int
+local function ri(value)
+    return floor(value + 0.5)
+end
+
+---@param paint Paint
 ---@param force_fill boolean?
 ---@return string
-local function paint_tags(paint_, force_fill)
-    local rgb = M.ass_rgb(paint_.color)
-    local alpha = M.ass_alpha(paint_.color)
-    if paint_.style == 'stroke' and not force_fill then
+local function paint_tags(paint, force_fill)
+    local rgb = M.ass_rgb(paint.color)
+    local alpha = M.ass_alpha(paint.color)
+    if paint.style == 'stroke' and not force_fill then
         return format('\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF',
-            paint_.stroke_width, rgb, alpha, rgb)
+            paint.stroke_width, rgb, alpha, rgb)
     end
     return format('\\bord0\\shad0\\1c&H%s&\\1a&H%s&', rgb, alpha)
 end
@@ -156,32 +162,32 @@ end
 function AssCanvas:clip_rect(rect)
     local x0, y0 = self:_apply(rect.left, rect.top)
     local x1, y1 = self:_apply(rect.right, rect.bottom)
-    self._clip = format('\\clip(%s,%s,%s,%s)', ri(x0), ri(y0), ri(x1), ri(y1))
+    self._clip = format('\\clip(%s,%s,%s,%s)', ris(x0), ris(y0), ris(x1), ris(y1))
 end
 
 --== primitives ===========================================================
 
 ---@param path Path
----@param paint_ Paint?
+---@param paint Paint?
 ---@param force_fill boolean?
-function AssCanvas:_emit_path(path, paint_, force_fill)
+function AssCanvas:_emit_path(path, paint, force_fill)
     local verbs = path:verbs()
     if #verbs == 0 then
         return
     end
-    paint_ = paint_ or Paint(Color.argb(0xFF000000))
+    paint = paint or Paint(Color.argb(0xFF000000))
 
     local k = 2 ^ (self.subpixel - 1)
     local sx, sy, tx, ty = self._sx, self._sy, self._tx, self._ty
     ---@param x number
     ---@return string
     local function ax(x)
-        return ri((x * sx + tx) * k)
+        return ris((x * sx + tx) * k)
     end
     ---@param y number
     ---@return string
     local function ay(y)
-        return ri((y * sy + ty) * k)
+        return ris((y * sy + ty) * k)
     end
 
     local parts = {}
@@ -211,29 +217,29 @@ function AssCanvas:_emit_path(path, paint_, force_fill)
     end
 
     self:_push(format('{\\pos(0,0)\\rDefault\\an7\\blur0%s%s}{\\p%d}%s{\\p0}',
-        paint_tags(paint_, force_fill), self._clip or '', self.subpixel, concat(parts, ' ')))
+        paint_tags(paint, force_fill), self._clip or '', self.subpixel, concat(parts, ' ')))
 end
 
-function AssCanvas:draw_rect(rect, paint_)
-    self:_emit_path(Path():add_rect(rect), paint_)
+function AssCanvas:draw_rect(rect, paint)
+    self:_emit_path(Path():add_rect(rect), paint)
 end
 
-function AssCanvas:draw_rrect(rect, radius, paint_)
-    self:_emit_path(Path():add_rrect(rect, radius), paint_)
+function AssCanvas:draw_rrect(rect, radius, paint)
+    self:_emit_path(Path():add_rrect(rect, radius), paint)
 end
 
-function AssCanvas:draw_path(path, paint_)
-    self:_emit_path(path, paint_)
+function AssCanvas:draw_path(path, paint)
+    self:_emit_path(path, paint)
 end
 
-function AssCanvas:draw_line(from, to, paint_)
-    paint_ = paint_ or Paint(Color.argb(0xFF000000))
+function AssCanvas:draw_line(from, to, paint)
+    paint = paint or Paint(Color.argb(0xFF000000))
     local dx, dy = to.x - from.x, to.y - from.y
     local len = sqrt(dx * dx + dy * dy)
     if len == 0 then
         return
     end
-    local half = (paint_.stroke_width or 1) / 2
+    local half = (paint.stroke_width or 1) / 2
     local nx, ny = -dy / len * half, dx / len * half
     local quad = Path()
         :move_to(from.x + nx, from.y + ny)
@@ -241,7 +247,7 @@ function AssCanvas:draw_line(from, to, paint_)
         :line_to(to.x - nx, to.y - ny)
         :line_to(from.x - nx, from.y - ny)
         :close()
-    self:_emit_path(quad, paint_, true)
+    self:_emit_path(quad, paint, true)
 end
 
 --== content ==============================================================
@@ -249,9 +255,12 @@ end
 function AssCanvas:draw_text(paragraph, offset)
     local style = paragraph.style
     local x, y = self:_apply(offset.x, offset.y)
+    -- The Canvas contract supplies a top-left position. Native text anchoring
+    -- is separate from TextStyle and does not imply exact glyph ink bounds.
     local tags = {
-        '{\\pos(', ri(x), ',', ri(y), ')\\rDefault\\an7\\blur0',
-        format('\\fs%g', style.font_size),
+        format(
+            '{\\pos(%d,%d)\\rDefault\\an7\\blur0\\fs%g',
+            ri(x), ri(y), style.font_size),
     }
     if style.font_family then
         tags[#tags + 1] = '\\fn' .. style.font_family
@@ -271,7 +280,7 @@ function AssCanvas:draw_text(paragraph, offset)
     -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
     -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.
     if self._sx ~= 1 or self._sy ~= 1 then
-        tags[#tags + 1] = format('\\fscx%s\\fscy%s', ri(self._sx * 100), ri(self._sy * 100))
+        tags[#tags + 1] = format('\\fscx%s\\fscy%s', ris(self._sx * 100), ris(self._sy * 100))
     end
     if self._clip then
         tags[#tags + 1] = self._clip
@@ -279,6 +288,7 @@ function AssCanvas:draw_text(paragraph, offset)
     tags[#tags + 1] = '}'
 
     local lines = {}
+    -- Paragraph.line_height is a logical advance; \N uses libass font metrics.
     for i, line in ipairs(paragraph.lines) do
         lines[i] = escape_text(line)
     end

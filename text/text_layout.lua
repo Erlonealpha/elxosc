@@ -3,8 +3,8 @@
 
 -- Text measurement contract + generic wrapping.
 --
--- Only `line_width` is backend specific: ASS has no real text metrics so its
--- backend estimates, while a mpv.net backend can ask the real font engine.
+-- `line_width` requires a backend; `line_height` has a logical default which a
+-- backend may override. ASS estimates; a native backend can use font metrics.
 -- Everything else -- hard line breaks, greedy word wrapping, the paragraph
 -- box -- is generic and therefore implemented once, here.
 
@@ -82,6 +82,13 @@ end
 ---@overload fun(): TextLayout
 local TextLayout = std.class.new('TextLayout')
 
+--- Uniform logical line advance for a paragraph, not a glyph ink height.
+---@param style TextStyle
+---@return number
+function TextLayout:line_height(style)
+    return style:line_height_px()
+end
+
 --- Abstract: natural width of one already wrapped line, in logical pixels.
 ---@param line string
 ---@param style TextStyle
@@ -96,7 +103,11 @@ end
 ---@param max_width number? unbounded when nil / math.huge
 ---@return Paragraph
 function TextLayout:layout(text, style, max_width)
-    local line_height = style:line_height_px()
+    local line_height = self:line_height(style)
+    if type(line_height) ~= 'number' or line_height ~= line_height
+        or line_height < 0 or line_height == math.huge then
+        raise(std.ValueError('TextLayout:line_height must return a non-negative finite number'))
+    end
     local bounds = max_width or math.huge
     local lines = {}
     if #text > 0 then

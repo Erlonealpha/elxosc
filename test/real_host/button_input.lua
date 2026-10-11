@@ -6,8 +6,8 @@ mp.set_property('user-data/elxosc-test-loaded', 'yes')
 local scripts = mp.command_native({ 'expand-path', '~~/scripts' })
 package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/init.lua'
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
--- mpv.net does not provide get_script_directory() for this test-only script;
--- initialize the real library entry point with its expected module name.
+-- Initialize the staged library entry point with its expected module name.
+-- The fixture disables automatic script loading and loads this directory once.
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
 
 local geometry = require 'foundation.geometry'

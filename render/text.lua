@@ -45,6 +45,8 @@ function RenderText:__perform_layout(constraints)
     local bounds = constraints:has_bounded_width() and constraints.max_width or math.huge
     local paragraph = self:measurer():layout(self.text, self.style, bounds)
     self.paragraph = paragraph
+    -- RenderObject:layout constrains our box. Keep the paragraph's natural
+    -- logical size intact; neither size promises exact backend ink bounds.
     self.size = paragraph.size
 end
 

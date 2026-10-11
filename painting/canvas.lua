@@ -99,7 +99,7 @@ end
 --- Draw a laid out text run. `paragraph` is produced by the text layer, not
 --- by the canvas, so backends never deal with raw strings here.
 ---@param paragraph Paragraph
----@param offset Offset
+---@param offset Offset logical top-left position; not an exact glyph ink origin
 function Canvas:draw_text(paragraph, offset)
     abstract('draw_text')
 end

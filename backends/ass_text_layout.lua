@@ -84,6 +84,8 @@ end
 ---@overload fun(): AssTextLayout
 local AssTextLayout = std.class.new('AssTextLayout', { TextLayout })
 
+-- Inherit the logical line advance. The actual spacing of a multi-line ASS
+-- event is controlled by libass; paint transforms do not alter logical metrics.
 function AssTextLayout:line_width(line, style)
     local width = 0
     local count = 0

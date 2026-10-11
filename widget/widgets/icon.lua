@@ -35,7 +35,7 @@ local DEFAULT_SIZE = 24
 ---@field id string?
 
 ---@class Icon : StatelessWidget
----@field name string
+---@field name FluentIconFontName
 ---@field size number
 ---@field color Color
 ---@field font_family FluentIconFontName
@@ -59,7 +59,8 @@ end
 ---@return Widget
 function Icon:build()
     return Text(self.name, {
-        style = TextStyle(self.size, {
+        style = TextStyle({
+            font_size = self.size,
             color = self.color,
             font_family = self.font_family,
             wrap = false,

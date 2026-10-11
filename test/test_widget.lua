@@ -121,8 +121,19 @@ F.test('mounts a widget tree and paints it', function()
 end)
 
 F.test('Text measures through the ambient TextLayout', function()
-    local owner = mount(Text('abcd', { style = TextStyle(10) }))
+    local owner = mount(Text('abcd', { style = TextStyle({ font_size = 10 }) }))
     F.close(owner.root.size.width, 20, '4 chars * 5px')
+end)
+
+F.test('Text keeps natural paragraph metrics separate from its constrained box', function()
+    local owner = mount(Text('abcd', { style = TextStyle({ font_size = 10 }) }), Constraints.tight(100, 40))
+    F.eq(owner.root.size, Size(100, 40), 'layout box obeys tight parent constraints')
+    F.eq(owner.root.paragraph.size, Size(20, 12), 'paragraph retains its natural logical size')
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(canvas.ops[1].name, 'draw_text', 'paragraph is painted')
+    F.eq(canvas.ops[1][1].size, Size(20, 12), 'painting receives the natural paragraph')
+    F.eq(canvas.ops[1][2], Offset.zero(), 'painting receives the logical top-left')
 end)
 
 --== element reuse =========================================================

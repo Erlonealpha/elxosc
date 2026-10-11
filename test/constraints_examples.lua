@@ -33,7 +33,7 @@ local green = Color.rgba255(0x00, 0xFF, 0x00)
 local blue = Color.rgba255(0x00, 0x00, 0xFF)
 
 local big = function(text)
-    return Text(text, { style = TextStyle(30) })
+    return Text(text, { style = TextStyle({ font_size = 30 }) })
 end
 
 -- A 70..150 box, as used by examples 9-12.

@@ -36,7 +36,7 @@ local Button = basic_widgets.Button
 ---@return Widget
 local function scaffold()
     return Column({ children = { Slot('slot'), Text('body', {
-        style = TextStyle(16, { color = Color.rgba255(0xFF, 0xFF, 0xFF) }),
+        style = TextStyle({ font_size = 16, color = Color.rgba255(0xFF, 0xFF, 0xFF) }),
     }) } })
 end
 

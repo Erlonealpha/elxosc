@@ -10,6 +10,7 @@ local std = require('elxlibs.std')
 local dsl = require('libs.dsl')
 
 local text_layout = require('text.text_layout')
+local text_style_mod = require 'text.text_style'
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
@@ -119,6 +120,10 @@ F.test('builtins exposes the value types', function()
     F.ok(b.EdgeInsets ~= nil, 'EdgeInsets')
     F.ok(b.Color ~= nil, 'Color')
     F.ok(b.TextStyle ~= nil, 'TextStyle')
+    F.ok(rawequal(b.TextStyle, text_style_mod.TextStyle), 'DSL and direct-module style class identity')
+    local style = b.TextStyle({ font_size = 12.5, wrap = false })
+    F.eq(style.font_size, 12.5, 'DSL constructor uses options')
+    F.eq(style.wrap, false, 'DSL constructor keeps false')
 end)
 
 F.test('builtins exposes the two factories', function()

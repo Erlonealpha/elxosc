@@ -7,9 +7,10 @@
 -- It never encodes a font file or an ASS override tag; backends translate it.
 
 local std = require 'elxlibs.std'
-local color = require 'foundation.color'
+local color_mod = require 'foundation.color'
 
-local Color = color.Color
+local Color = color_mod.Color
+local raise = std.raise
 
 local M = {}
 
@@ -24,21 +25,84 @@ M.Align = {
     RIGHT = 'right',
 }
 
----@param value any
----@param default any
-local function pick(value, default)
-    return value == nil and default or value
+--- Opaque backend extension data, immutable by convention and compared by identity.
+--- The built-in ASS backend does not currently consume these extensions.
+---@class TextStyleExtra : table<string,any>
+---@field type string
+
+---@class _TextStyleOptions
+---@field font_size number?         non-negative finite logical pixels; default 16
+---@field bold boolean?             default false
+---@field color Color?              default 0xFFFFFFFF
+---@field font_family string?
+---@field italic boolean?           default false
+---@field letter_spacing number?    finite extra px between glyphs; default 0
+---@field line_height number?       non-negative finite multiple of font_size; default 1.2
+---@field align TextAlign?          default 'left'
+---@field wrap boolean?             default true
+---@field extra TextStyleExtra?     immutable extension data for a supporting backend
+
+---@type table<string, boolean>
+local option_names = {
+    font_size = true,
+    color = true,
+    font_family = true,
+    bold = true,
+    italic = true,
+    letter_spacing = true,
+    line_height = true,
+    align = true,
+    wrap = true,
+    extra = true,
+}
+
+---@param options _TextStyleOptions?
+---@return _TextStyleOptions
+local function check_options(options)
+    if options == nil then
+        return {}
+    end
+    if type(options) ~= 'table' then
+        raise(std.TypeError('TextStyle expects an options table'))
+    end
+    for name in pairs(options) do
+        if not option_names[name] then
+            raise(std.ValueError('unsupported TextStyle option: ' .. tostring(name)))
+        end
+    end
+    return options
 end
 
----@class TextStyleOpts
----@field color Color?
----@field font_family string?
----@field bold boolean?
----@field italic boolean?
----@field letter_spacing number? extra px between glyphs
----@field line_height number? multiple of `font_size`
----@field align TextAlign?
----@field wrap boolean?
+---@generic T
+---@param value T?
+---@param default T
+---@return T
+local function pick(value, default)
+    if value == nil then
+        return default
+    end
+    return value
+end
+
+---@param name string
+---@param value number?
+---@return number
+local function check_finite(name, value)
+    if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
+        raise(std.ValueError('TextStyle.' .. name .. ' must be a finite number'))
+    end
+    return value
+end
+
+---@param name string
+---@param value boolean?
+---@return boolean
+local function check_boolean(name, value)
+    if type(value) ~= 'boolean' then
+        raise(std.TypeError('TextStyle.' .. name .. ' must be a boolean'))
+    end
+    return value
+end
 
 ---@class TextStyle : std.object
 ---@field font_size number
@@ -50,20 +114,42 @@ end
 ---@field line_height number multiple of `font_size`
 ---@field align TextAlign
 ---@field wrap boolean
----@overload fun(font_size: number?, options: TextStyleOpts?): TextStyle
+---@field extra TextStyleExtra?
+---@overload fun(options: _TextStyleOptions?): self
 local TextStyle = std.class.new('TextStyle')
 
-function TextStyle:__init(font_size, options)
-    options = options or {}
-    self.font_size = font_size or 16
-    self.color = options.color or Color.argb(0xFFFFFFFF)
+---@param options _TextStyleOptions?
+function TextStyle:__init(options)
+    options = check_options(options)
+    self.font_size = check_finite('font_size', pick(options.font_size, 16))
+    self.color = pick(options.color, Color.argb(0xFFFFFFFF))
     self.font_family = options.font_family
-    self.bold = options.bold or false
-    self.italic = options.italic or false
-    self.letter_spacing = options.letter_spacing or 0
-    self.line_height = options.line_height or 1.2
-    self.align = options.align or M.Align.LEFT
-    self.wrap = options.wrap ~= false
+    self.bold = check_boolean('bold', pick(options.bold, false))
+    self.italic = check_boolean('italic', pick(options.italic, false))
+    self.letter_spacing = check_finite('letter_spacing', pick(options.letter_spacing, 0))
+    self.line_height = check_finite('line_height', pick(options.line_height, 1.2))
+    self.align = pick(options.align, M.Align.LEFT)
+    self.wrap = check_boolean('wrap', pick(options.wrap, true))
+    self.extra = options.extra
+
+    if self.font_size < 0 or self.line_height < 0 then
+        raise(std.ValueError('TextStyle font_size and line_height must be non-negative'))
+    end
+    check_finite('line_height_px', self:line_height_px())
+    if not std.isinstance(self.color, Color) then
+        raise(std.TypeError('TextStyle.color must be a Color'))
+    end
+    if self.font_family ~= nil and type(self.font_family) ~= 'string' then
+        raise(std.TypeError('TextStyle.font_family must be a string'))
+    end
+    if self.align ~= M.Align.LEFT and self.align ~= M.Align.CENTER and self.align ~= M.Align.RIGHT then
+        raise(std.ValueError('TextStyle.align must be left, center or right'))
+    end
+    if self.extra ~= nil then
+        if type(self.extra) ~= 'table' or type(self.extra.type) ~= 'string' or self.extra.type == '' then
+            raise(std.TypeError('TextStyle.extra must be a table with a non-empty string type'))
+        end
+    end
 end
 
 function TextStyle:__tostring()
@@ -73,15 +159,16 @@ end
 ---@param other TextStyle
 ---@return boolean
 function TextStyle:__eq(other)
-    return self.font_size == other.font_size
-        and self.color == other.color
-        and self.font_family == other.font_family
-        and self.bold == other.bold
-        and self.italic == other.italic
-        and self.letter_spacing == other.letter_spacing
-        and self.line_height == other.line_height
-        and self.align == other.align
-        and self.wrap == other.wrap
+    return not (self.font_size ~= other.font_size
+        or self.color ~= other.color
+        or self.font_family ~= other.font_family
+        or self.bold ~= other.bold
+        or self.italic ~= other.italic
+        or self.letter_spacing ~= other.letter_spacing
+        or self.line_height ~= other.line_height
+        or self.align ~= other.align
+        or self.wrap ~= other.wrap
+        or not rawequal(self.extra, other.extra))
 end
 
 ---@return number
@@ -90,11 +177,12 @@ function TextStyle:line_height_px()
 end
 
 --- Derive a copy with a subset of fields replaced.
----@param options TextStyleOpts
+---@param options _TextStyleOptions?
 ---@return TextStyle
 function TextStyle:copy_with(options)
-    options = options or {}
-    return TextStyle(self.font_size, {
+    options = check_options(options)
+    return TextStyle({
+        font_size = pick(options.font_size, self.font_size),
         color = pick(options.color, self.color),
         font_family = pick(options.font_family, self.font_family),
         bold = pick(options.bold, self.bold),
@@ -103,6 +191,7 @@ function TextStyle:copy_with(options)
         line_height = pick(options.line_height, self.line_height),
         align = pick(options.align, self.align),
         wrap = pick(options.wrap, self.wrap),
+        extra = pick(options.extra, self.extra),
     })
 end
 

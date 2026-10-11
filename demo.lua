@@ -9,6 +9,7 @@ local geometry = require 'foundation.geometry'
 local text_style = require 'text.text_style'
 local basic_widgets = require 'widget.widgets.basic'
 local layout_widgets = require 'widget.widgets.layout'
+local icon_mod = require 'widget.widgets.icon'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
 
@@ -25,6 +26,7 @@ local ElevatedButton = basic_widgets.ElevatedButton
 local OutlinedButton = basic_widgets.OutlinedButton
 local TextButton = basic_widgets.TextButton
 local IconButton = basic_widgets.IconButton
+local Icon = icon_mod.Icon
 local Text = basic_widgets.Text
 
 local M = {}
@@ -81,7 +83,7 @@ function DemoState:build(context)
         child = Container{
             padding = EdgeInsets.all(5),
             child = Text(string.format('elxosc  %d', self.count), {
-                style = TextStyle(20, { color = Color.rgba255(0xF0, 0xF0, 0xF0) }),
+                style = TextStyle({ font_size = 20, color = Color.rgba255(0xF0, 0xF0, 0xF0) }),
             })
         },
     }
@@ -97,15 +99,17 @@ function DemoState:build(context)
                     padding = EdgeInsets.all(5),
                     color = Color.rgba(0x2020206C),
                     child = Text('event: ' .. self.selected, {
-                        style = TextStyle(14, { color = Color.rgba255(180, 190, 205) }),
+                        style = TextStyle({ font_size = 14, color = Color.rgba255(180, 190, 205) }),
                     })
                 },
                 Row({
                     spacing = 6,
                     main_alignment = 'center',
                     children = {
-                        ElevatedButton{
-                            label = 'Increment',
+                        IconButton{
+                            icon = Icon('add', {
+                                size = 24
+                            }),
                             on_click = function()
                                 self:set_state(function()
                                     self.count = self.count + 1

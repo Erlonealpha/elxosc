@@ -14,9 +14,9 @@ local M = {}
 ---@class Paragraph : std.object
 ---@field text string the original, unwrapped string
 ---@field style TextStyle
----@field size Size natural size of the whole paragraph
+---@field size Size natural logical size after wrapping, before parent constraints
 ---@field lines string[] the wrapped lines, in visual order
----@field line_height number px between consecutive baselines
+---@field line_height number uniform logical line advance, not an exact ASS baseline distance
 ---@overload fun(text: string, style: TextStyle, size: Size, lines: string[], line_height: number): Paragraph
 local Paragraph = std.class.new('Paragraph')
 

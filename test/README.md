@@ -29,12 +29,16 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline: **0 diagnostics / 628 checks**.
+Phase 0 verified baseline (2026-10-11): **0 diagnostics / 836 checks**;
+real mpv.net suite: **5 passed**. Commands and scope are recorded in
+[`dev/design/DESIGN_RENDERING_ANIMATION.md`](../dev/design/DESIGN_RENDERING_ANIMATION.md).
 
 ## Real host (Python + uv, first stage)
 
 `test/real_host/` starts a **real** mpv.net/mpv process in a temporary, empty
-`--config-dir` and queries its JSON IPC endpoint. The fixture owns the complete
+`--config-dir` and queries its JSON IPC endpoint. It stages and loads the elxosc
+directory package (rather than a standalone `main.lua`), with `--load-scripts=no`
+to avoid loading the staged scripts twice. The fixture owns the complete
 process tree: it sends IPC `quit` first, then uses a Windows Job Object (or a
 POSIX process group) as a bounded fallback. It never searches for or kills
 processes by image name. Existing Lua host tests above still use an `mp` stub;
@@ -54,9 +58,9 @@ dependency without network access, add `--offline` before `run`. Set
 `ELXOSC_MPV_BINARY` to a full executable path (or a name on PATH) to select a
 host explicitly; otherwise the search is `mpvnet.com`, `mpv.com`, `mpv.exe`.
 The isolated host creates a unique temporary IPC socket/named pipe, is stopped
-after the test, and has no user scripts. Missing executables, hosts that exit,
-and unavailable IPC report **SKIPPED** with a reason; once IPC is ready,
-unexpected command or assertion failures fail the test.
+after the test, and has no user scripts. A missing host executable reports
+**SKIPPED** with a reason. Hosts that exit, IPC startup timeouts, and unexpected
+command or assertion failures fail the test.
 
 The suite also includes a first elxosc integration smoke test. It loads
 `main.lua`, sends `elxosc-demo`, checks that the host remains alive, and reads
@@ -71,12 +75,13 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `support.lua` | Bootstrap: makes the elxosc modules / `elxlibs.*` require-able |
 | `framework.lua` | Tiny assertion/reporting helpers |
 | `test_foundation.lua` | Geometry value types, colour, paint, path, canvas contract |
-| `test_text.lua` | `TextStyle`, the `TextLayout` contract and wrapping |
+| `test_text.lua` | Options-only `TextStyle`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_layout.lua` | Constraints, the box set, owner driving, paint + hit test |
 | `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds |
 | `test_button_contract.lua` | Button options/style immutability and PointerEvent construction |
+| `test_icon.lua` | Icon options, font/style propagation, painting and aggregate identity |
 | `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
