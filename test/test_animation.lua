@@ -165,7 +165,7 @@ F.test('offset animation marks paint without relayout and detaches cleanly', fun
     local owner = layout_root(root)
     owner.on_dirty = function() end
     local controller = AnimationController(scheduler, { duration = 1 })
-    root:bind_offset_animation(controller, Tween(Offset.zero(), Offset(10, 0)))
+    root:bind_offset_animation(controller, Tween(Offset.zero(), Offset(10, 0))--[[@as Tween<Offset>]])
     controller:forward()
     clock:tick(0)
     owner._needs_layout = false

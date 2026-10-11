@@ -117,7 +117,7 @@ function RenderOffsetBox:pointer_path(point, out)
 end
 
 ---@param controller AnimationController
----@param tween Tween
+---@param tween Tween<Offset>
 ---@return self
 function RenderOffsetBox:bind_offset_animation(controller, tween)
     self:unbind_offset_animation()
