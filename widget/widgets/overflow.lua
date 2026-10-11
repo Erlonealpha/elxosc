@@ -12,6 +12,17 @@ local RenderUnconstrainedBox = overflow_mod.RenderUnconstrainedBox
 local RenderOverflowBox = overflow_mod.RenderOverflowBox
 local RenderFittedBox = fitted_mod.RenderFittedBox
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
+local raise = std.raise
+
+local FITS = {
+    contain = true,
+    cover = true,
+    fill = true,
+    fit_width = true,
+    fit_height = true,
+    none = true,
+    scale_down = true,
+}
 
 ---@class _UnconstrainedBoxOptions
 ---@field child? Widget
@@ -33,6 +44,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class _FittedBoxOptions
 ---@field fit? 'contain'|'cover'|'fill'|'fit_width'|'fit_height'|'none'|'scale_down'
 ---@field alignment? Offset
+---@field clip? boolean
 ---@field key? any
 ---@field id? string
 
@@ -108,16 +120,32 @@ function FittedBox:__init(child, options)
     self.child = child
     self.fit = options.fit or 'contain'
     self.alignment = options.alignment or Offset(0.5, 0.5)
+    if options.clip == nil then
+        self.clip = false
+    else
+        self.clip = options.clip
+    end
+    if not FITS[self.fit] then
+        raise(std.ValueError('FittedBox.fit is not supported: ' .. tostring(self.fit)))
+    end
+    if type(self.clip) ~= 'boolean' then
+        raise(std.TypeError('FittedBox.clip must be a boolean'))
+    end
 end
 
 function FittedBox:create_render_object()
-    return RenderFittedBox(nil, { fit = self.fit, alignment = self.alignment })
+    return RenderFittedBox(nil, {
+        fit = self.fit,
+        alignment = self.alignment,
+        clip = self.clip,
+    })
 end
 
 ---@param render_object RenderFittedBox
 function FittedBox:update_render_object(render_object)
     render_object.fit = self.fit
     render_object.alignment = self.alignment
+    render_object.clip = self.clip
     render_object:mark_needs_layout()
 end
 

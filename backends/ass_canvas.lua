@@ -24,6 +24,7 @@ local color_mod = require 'foundation.color'
 local paint_mod = require 'painting.paint'
 local anchor_mod = require 'foundation.anchor'
 local text_paint_mod = require 'painting.text_paint'
+local transform_mod = require 'foundation.transform'
 
 local Canvas = canvas.Canvas
 local Path = path_mod.Path
@@ -31,9 +32,12 @@ local Verb = path_mod.Verb
 local Color = color_mod.Color
 local Paint = paint_mod.Paint
 local Anchor = anchor_mod.Anchor
+local Matrix2D = transform_mod.Matrix2D
 local raise = std.raise
 local math = math
 local floor = math.floor
+local min = math.min
+local max = math.max
 local sqrt = math.sqrt
 local format = string.format
 local concat = table.concat
@@ -118,8 +122,7 @@ function AssCanvas:__init(subpixel)
     self.events = {}
     self.subpixel = subpixel or 4
     self._stack = {}
-    self._tx, self._ty = 0, 0
-    self._sx, self._sy = 1, 1
+    self._matrix = Matrix2D.identity()
     self._clip = nil
 end
 
@@ -127,8 +130,7 @@ end
 function AssCanvas:reset()
     self.events = {}
     self._stack = {}
-    self._tx, self._ty = 0, 0
-    self._sx, self._sy = 1, 1
+    self._matrix = Matrix2D.identity()
     self._clip = nil
 end
 
@@ -147,38 +149,77 @@ end
 ---@return number
 ---@return number
 function AssCanvas:_apply(x, y)
-    return x * self._sx + self._tx, y * self._sy + self._ty
+    local matrix = self._matrix
+    return matrix.a * x + matrix.c * y + matrix.tx,
+        matrix.b * x + matrix.d * y + matrix.ty
 end
 
 --== state ================================================================
 
 function AssCanvas:save()
     local stack = self._stack
-    stack[#stack + 1] = { self._tx, self._ty, self._sx, self._sy, self._clip }
+    stack[#stack + 1] = { self._matrix, self._clip }
 end
 
 function AssCanvas:restore()
     local frame = table.remove(self._stack)
     if frame then
-        self._tx, self._ty, self._sx, self._sy, self._clip =
-            frame[1], frame[2], frame[3], frame[4], frame[5]
+        self._matrix, self._clip = frame[1], frame[2]
     end
 end
 
+---@param name string
+---@param value any
+---@return number
+local function check_finite(name, value)
+    if type(value) ~= 'number' or value ~= value
+        or value == math.huge or value == -math.huge then
+        raise(std.ValueError('AssCanvas.' .. name .. ' must be a finite number'))
+    end
+    return value
+end
+
 function AssCanvas:translate(dx, dy)
-    self._tx = self._tx + dx
-    self._ty = self._ty + dy
+    dx, dy = check_finite('translate.x', dx), check_finite('translate.y', dy)
+    self._matrix = self._matrix:multiply(Matrix2D.translation(dx, dy))
 end
 
 function AssCanvas:scale(sx, sy)
-    self._sx = self._sx * sx
-    self._sy = self._sy * (sy or sx)
+    sy = sy == nil and sx or sy
+    sx, sy = check_finite('scale.x', sx), check_finite('scale.y', sy)
+    if sx <= 0 or sy <= 0 then
+        raise(std.ValueError('AssCanvas only supports positive axis scales'))
+    end
+    self._matrix = self._matrix:multiply(Matrix2D.scale(sx, sy))
 end
 
 function AssCanvas:clip_rect(rect)
     local x0, y0 = self:_apply(rect.left, rect.top)
     local x1, y1 = self:_apply(rect.right, rect.bottom)
-    self._clip = format('\\clip(%s,%s,%s,%s)', ris(x0), ris(y0), ris(x1), ris(y1))
+    local next_clip = {
+        left = min(x0, x1),
+        top = min(y0, y1),
+        right = max(x0, x1),
+        bottom = max(y0, y1),
+    }
+    local previous = self._clip
+    if previous then
+        next_clip.left = max(next_clip.left, previous.left)
+        next_clip.top = max(next_clip.top, previous.top)
+        next_clip.right = min(next_clip.right, previous.right)
+        next_clip.bottom = min(next_clip.bottom, previous.bottom)
+    end
+    self._clip = next_clip
+end
+
+---@return string
+function AssCanvas:_clip_tag()
+    local clip = self._clip
+    if not clip then
+        return ''
+    end
+    return format('\\clip(%s,%s,%s,%s)',
+        ris(clip.left), ris(clip.top), ris(clip.right), ris(clip.bottom))
 end
 
 --== primitives ===========================================================
@@ -194,16 +235,16 @@ function AssCanvas:_emit_path(path, paint, force_fill)
     paint = paint or Paint(Color.argb(0xFF000000))
 
     local k = 2 ^ (self.subpixel - 1)
-    local sx, sy, tx, ty = self._sx, self._sy, self._tx, self._ty
+    local matrix = self._matrix
     ---@param x number
     ---@return string
     local function ax(x)
-        return ris((x * sx + tx) * k)
+        return ris((matrix.a * x + matrix.tx) * k)
     end
     ---@param y number
     ---@return string
     local function ay(y)
-        return ris((y * sy + ty) * k)
+        return ris((matrix.d * y + matrix.ty) * k)
     end
 
     local parts = {}
@@ -233,7 +274,7 @@ function AssCanvas:_emit_path(path, paint, force_fill)
     end
 
     self:_push(format('{\\pos(0,0)\\rDefault\\an7\\blur0%s%s}{\\p%d}%s{\\p0}',
-        paint_tags(paint, force_fill), self._clip or '', self.subpixel, concat(parts, ' ')))
+        paint_tags(paint, force_fill), self:_clip_tag(), self.subpixel, concat(parts, ' ')))
 end
 
 function AssCanvas:draw_rect(rect, paint)
@@ -299,12 +340,11 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     tags[#tags + 1] = '\\bord0\\shad0'
     -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
     -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.
-    if self._sx ~= 1 or self._sy ~= 1 then
-        tags[#tags + 1] = format('\\fscx%s\\fscy%s', ris(self._sx * 100), ris(self._sy * 100))
+    if self._matrix.a ~= 1 or self._matrix.d ~= 1 then
+        tags[#tags + 1] = format('\\fscx%s\\fscy%s',
+            ris(self._matrix.a * 100), ris(self._matrix.d * 100))
     end
-    if self._clip then
-        tags[#tags + 1] = self._clip
-    end
+    tags[#tags + 1] = self:_clip_tag()
     tags[#tags + 1] = '}'
 
     local lines = {}

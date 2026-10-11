@@ -1,7 +1,7 @@
 # 渲染变换、动画与文本契约
 
-本文记录 ASS 后端约束下的重构决策。第零阶段、阶段 1 和阶段 2 已完成并通过验证；阶段
-3–5 的类名和接口仍是规划，不代表已有能力。阶段编号只属于本文，不沿用历史文档的
+本文记录 ASS 后端约束下的重构决策。第零阶段、阶段 1、阶段 2 和阶段 3 已完成并通过
+验证；阶段 4–5 的类名和接口仍是规划，不代表已有能力。阶段编号只属于本文，不沿用历史文档的
 Phase 编号。
 
 ## 1. 分层与宿主限制
@@ -170,24 +170,27 @@ FrameClock -> transient 动画采样 -> build -> layout -> paint -> present
 glyph 名称、Unicode 映射和合法连字需分别验证；不能将 glyph 列表直接当作
 全部可输入的连字。OSD/字体视觉行为需要真实宿主验证，字符串快照不足以证明。
 
-## 5. 阶段 3：ASS 有限缩放（规划）
+## 5. 阶段 3：ASS 有限缩放（已实现）
 
-当前后端的 `_sx/_sy/_tx/_ty` 和 FittedBox 只是局部缩放实现。后续统一矩阵
-组合、锚点、裁剪、输入坐标，再声明经过验证的支持范围：
+ASS 后端现在使用 `Matrix2D` 组合 Canvas 的平移/正轴向缩放，统一处理路径控制点、
+文本目标点、`\fscx/\fscy`、裁剪和保存/恢复。缩放值必须为有限正数；非有限、零值和
+负值在 ASS backend 边界拒绝。当前经过验证的支持范围是：
 
 | 变换 | 实施方向 |
 | --- | --- |
-| 平移 | 各绘制原语统一位置偏移，首先保证 |
-| 正的等比/轴向缩放 | 路径坐标变换 + 文本 `\fscx/\fscy`，逐项验证 |
+| 平移 | 矩阵组合作用于各绘制原语和文本目标 |
+| 正的等比/轴向缩放 | 路径坐标变换 + 文本 `\fscx/\fscy`，支持非等比正轴向缩放 |
 | 旋转/倾斜 | 几何路径可预变换；混合文本、描边和裁剪需另外证明兼容性 |
 | 任意仿射/透视 | 不以单个 ASS 标签近似成完整 Canvas 契约 |
 
-矩阵作用于所有路径控制点。描边、阴影、非等比缩放与旋转裁剪不能仅靠缩放
-几何坐标假定正确；组合能力必须覆盖整段绘制所使用的原语。不支持的组合应在
-后端边界明确拒绝。
+矩阵作用于所有路径控制点；文本使用轴向缩放标签。嵌套 `clip_rect` 在最终逻辑
+坐标中求交并随 `save/restore` 恢复。旋转、倾斜、负/零缩放没有被伪装成 ASS 支持，
+仍由未实现的 Canvas 能力或 backend 边界拒绝。
 
-FittedBox 是验证入口：父布局盒与子绘制缩放分开，修正嵌套变换顺序、命中和
-clip。缩放精度保留在逻辑浮点值，最后输出时才做必要量化。
+FittedBox 是验证入口：父布局盒与子绘制缩放分开，使用源/目标矩形的显式映射；
+`hit_test`/`pointer_path` 通过逆矩阵映射输入，`clip=true` 时裁剪到自身逻辑盒。
+默认不裁剪以保持原有 overflow 行为；缩放精度保留在逻辑浮点值，ASS 数值标签和
+路径坐标在最终输出时量化。
 
 ## 6. 阶段 4：影响布局的动画（规划）
 
@@ -289,3 +292,19 @@ TextStyle 文本以及由 FrameClock 驱动、逐帧输出静态 ASS 的 OffsetB
 | `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **956 checks passed** |
 | `emmylua_check.exe .` | **No issues found** |
 | `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **6 passed**，真实 mpv.net |
+
+### 阶段 3 完成记录
+
+已将 ASS Canvas 的局部 `_sx/_sy/_tx/_ty` 替换为 `Matrix2D` 组合，统一平移、正轴向
+缩放、文本 `\fscx/\fscy`、路径坐标和嵌套裁剪的变换顺序。FittedBox 现在保留显式
+源/目标映射，支持可选自身盒裁剪，并用逆矩阵处理命中测试和 pointer path；不支持的
+旋转、倾斜和非正缩放不会被静默近似。补充了变换顺序、轴向文字缩放、clip 求交、
+FittedBox crop/input 和真实 libass scale bounds 回归。
+
+2026-10-12 实际执行：
+
+| 命令 | 最终结果 |
+| --- | --- |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **978 checks passed** |
+| `emmylua_check.exe .` | **No issues found** |
+| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **7 passed**，真实 mpv.net |

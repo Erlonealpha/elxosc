@@ -15,8 +15,10 @@ local padding_mod = require('render.padding')
 local align_mod = require('render.align')
 local flex_mod = require('render.flex')
 local stack_mod = require('render.stack')
+local fitted_mod = require('render.fitted_box')
 local custom_paint_mod = require('render.custom_paint')
 local record_mod = require('backends.record')
+local ass_canvas = require('backends.ass_canvas')
 
 local Offset, Size, Rect, EdgeInsets = geometry.Offset, geometry.Size, geometry.Rect, geometry.EdgeInsets
 local Constraints = constraints_mod.Constraints
@@ -25,8 +27,10 @@ local RenderPadding = padding_mod.RenderPadding
 local RenderAlign = align_mod.RenderAlign
 local RenderFlex = flex_mod.RenderFlex
 local RenderStack = stack_mod.RenderStack
+local RenderFittedBox = fitted_mod.RenderFittedBox
 local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local RecordCanvas = record_mod.RecordCanvas
+local AssCanvas = ass_canvas.AssCanvas
 
 --- A fixed-size, non-drawing leaf.
 ---@param w number
@@ -134,6 +138,61 @@ F.test('align shrink-wraps on an unbounded axis', function()
     local node = RenderAlign(Offset(0.5, 0.5), child)
     node:layout(Constraints.unbounded())
     F.ok(node.size == Size(20, 10), 'sized to child')
+end)
+
+F.section('render: fitted box')
+
+F.test('composes fitted scale and crop translation consistently', function()
+    local child = RenderCustomPaint(function(canvas, offset, size)
+        canvas:draw_rect(Rect.from_offset_size(offset, size), nil --[[@as Paint]])
+    end, { preferred_size = Size(400, 200) })
+    local root = RenderFittedBox(child, { fit = 'cover' })
+    root:layout(Constraints.tight(100, 100))
+    local canvas = AssCanvas()
+    root:paint(canvas, Offset.zero())
+    F.contains(canvas:text(), 'm -400 0 l 1200 0 l 1200 800 l -400 800 c',
+        'cover maps the cropped source through scale and translation')
+end)
+
+F.test('fitted box input reverses scale and crop and honors letterbox bounds', function()
+    local cover_child = box(400, 200)
+    local cover = RenderFittedBox(cover_child, { fit = 'cover' })
+    cover:layout(Constraints.tight(100, 100))
+    local cover_path = cover:pointer_path(Offset(10, 10))
+    F.eq(cover_path[1].node, cover_child, 'cover point reaches child')
+    F.eq(cover_path[1].point, Offset(120, 20), 'cover point is inverse mapped')
+
+    local contain_child = box(200, 100)
+    local contain = RenderFittedBox(contain_child, { fit = 'contain' })
+    contain:layout(Constraints.tight(100, 100))
+    F.eq(#contain:pointer_path(Offset(10, 10)), 1, 'letterbox is not a child hit')
+    local contain_path = contain:pointer_path(Offset(10, 30))
+    F.eq(contain_path[1].node, contain_child, 'content area reaches child')
+    F.eq(contain_path[1].point, Offset(20, 10), 'contain point is inverse mapped')
+end)
+
+F.test('optional fitted clipping is emitted in the box coordinate space', function()
+    local child = RenderCustomPaint(function(canvas, offset, size)
+        canvas:draw_rect(Rect.from_offset_size(offset, size), nil --[[@as Paint]])
+    end, { preferred_size = Size(200, 100) })
+    local root = RenderFittedBox(child, { fit = 'none', clip = true })
+    root:layout(Constraints.tight(100, 100))
+    local canvas = AssCanvas()
+    root:paint(canvas, Offset.zero())
+    F.contains(canvas:text(), '\\clip(0,0,100,100)', 'clip follows the fitted box')
+end)
+
+F.test('rejects unsupported fitted options', function()
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        RenderFittedBox(nil, { fit = 'rotate' })
+    end,
+        'not supported', 'fit option')
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        RenderFittedBox(nil, { clip = 'yes' })
+    end,
+        'boolean', 'clip option')
 end)
 
 --== flex ==================================================================

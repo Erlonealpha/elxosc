@@ -6,7 +6,7 @@
 - [DESIGN.md](DESIGN.md)：Flutter 对照和扩展协议的历史设计推演。
 - [DESIGN_CONSTRAINTS.md](DESIGN_CONSTRAINTS.md)：约束模型修复及示例测试记录。
 - [DESIGN_RENDERING_ANIMATION.md](DESIGN_RENDERING_ANIMATION.md)：ASS 能力边界、
-  文本契约与变换/动画分阶段规划；第零阶段、阶段 1 和阶段 2 已完成。
+  文本契约与变换/动画分阶段规划；第零阶段、阶段 1、阶段 2 和阶段 3 已完成。
 
 ## 当前状态摘要
 
@@ -16,8 +16,8 @@ pointer event 与 capture、ASS/Record 后端，以及 Button 系列控件。控
 类型平铺，旧的 `basic.lua`/`layout.lua` 仅作为兼容聚合入口。
 
 宿主侧已具备 mpv.net 帧循环、ASS overlay、鼠标输入、隔离的真实宿主测试和
-Button 事件注入测试。阶段 2 当前验证基线为 **960 checks**、EmmyLua
-`No issues found`、真实 mpv.net 测试 **6 passed**；命令与范围见
+Button 事件注入测试。阶段 3 当前验证基线为 **978 checks**、EmmyLua
+`No issues found`、真实 mpv.net 测试 **7 passed**；命令与范围见
 [渲染与动画完成记录](DESIGN_RENDERING_ANIMATION.md)。
 
 文本接口统一为 `TextStyle({ font_size = ..., ... })`，`copy_with()` 可覆盖字号并
@@ -59,7 +59,7 @@ Define 仍然只用于启动阶段构建一次初始 Widget 树：同一个 `sco
 ## 未来路线
 
 当前渲染工作按 [渲染与动画规划](DESIGN_RENDERING_ANIMATION.md) 推进：文本契约、
-平移/动画基础、锚点与图标已完成，下一步是有限缩放和布局动画。mpv `osd-overlay`
+平移/动画基础、锚点与图标、ASS 有限缩放已完成，下一步是影响布局的动画。mpv `osd-overlay`
 中的 `\move`、`\t` 等 PTS 相关标签不可用于动画，统一由框架时钟逐帧驱动。
 
 1. **宿主与控件**：keyboard/focus、Checkbox/Switch/Slider、更多样式控件和真实

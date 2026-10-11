@@ -11,13 +11,16 @@
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local constraints_mod = require 'layout.constraints'
+local transform_mod = require 'foundation.transform'
 local render_object = require 'render.render_object'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Rect = geometry.Rect
 local Constraints = constraints_mod.Constraints
+local Matrix2D = transform_mod.Matrix2D
 local RenderObject = render_object.RenderObject
+local raise = std.raise
 local math = math
 local min = math.min
 local max = math.max
@@ -36,18 +39,49 @@ local M = {}
 ---@class FittedBoxOpts
 ---@field fit FittedBoxOptsFit?
 ---@field alignment Offset?
+---@field clip boolean? clip the transformed child to this box
 
 ---@class RenderFittedBox : RenderObject
 ---@field fit string
 ---@field alignment Offset
+---@field clip boolean
 ---@overload fun(child: RenderObject?, options: FittedBoxOpts?): RenderFittedBox
 local RenderFittedBox = std.class.new('RenderFittedBox', { RenderObject })
+
+---@class FittedBoxMapping
+---@field transform Matrix2D
+---@field inverse Matrix2D
+---@field source_rect Rect
+---@field dest_rect Rect
+---@field scale_x number
+---@field scale_y number
+
+local FITS = {
+    contain = true,
+    cover = true,
+    fill = true,
+    fit_width = true,
+    fit_height = true,
+    none = true,
+    scale_down = true,
+}
 
 function RenderFittedBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
     self.fit = options.fit or 'contain'
     self.alignment = options.alignment or Offset(0.5, 0.5)
+    if options.clip == nil then
+        self.clip = false
+    else
+        self.clip = options.clip
+    end
+    if not FITS[self.fit] then
+        raise(std.ValueError('RenderFittedBox.fit is not supported: ' .. tostring(self.fit)))
+    end
+    if type(self.clip) ~= 'boolean' then
+        raise(std.TypeError('RenderFittedBox.clip must be a boolean'))
+    end
     if child then
         self:adopt_child(child)
     end
@@ -114,25 +148,97 @@ function RenderFittedBox:fit_sizes(child_size, size)
     return child_size, Size(cw * s, ch * s)
 end
 
-function RenderFittedBox:__paint(canvas, offset)
+---@return FittedBoxMapping?
+function RenderFittedBox:_mapping()
     local child = self._children[1]
-    if child == nil or self.size.width == 0 or self.size.height == 0 then
-        return
-    end
-    if child.size.width == 0 or child.size.height == 0 then
-        return
+    if child == nil or self.size.width <= 0 or self.size.height <= 0
+        or child.size.width <= 0 or child.size.height <= 0 then
+        return nil
     end
     local source, destination = self:fit_sizes(child.size, self.size)
+    if source.width <= 0 or source.height <= 0
+        or destination.width <= 0 or destination.height <= 0 then
+        return nil
+    end
     local source_rect = inscribe(source, Rect.from_offset_size(Offset.zero(), child.size), self.alignment)
     local dest_rect = inscribe(destination, Rect.from_offset_size(Offset.zero(), self.size), self.alignment)
     local scale_x = destination.width / source.width
     local scale_y = destination.height / source.height
+    if scale_x <= 0 or scale_y <= 0
+        or scale_x == math.huge or scale_y == math.huge
+        or scale_x ~= scale_x or scale_y ~= scale_y then
+        return nil
+    end
+    local local_to_box = Matrix2D.translation(dest_rect.left, dest_rect.top)
+        :multiply(Matrix2D.scale(scale_x, scale_y))
+        :multiply(Matrix2D.translation(-source_rect.left, -source_rect.top))
+    local inverse = local_to_box:inverse()
+    if inverse == nil then
+        return nil
+    end
+    return {
+        transform = local_to_box,
+        inverse = inverse,
+        source_rect = source_rect,
+        dest_rect = dest_rect,
+        scale_x = scale_x,
+        scale_y = scale_y,
+    }
+end
+
+function RenderFittedBox:__paint(canvas, offset)
+    local child = self._children[1]
+    local mapping = self:_mapping()
+    if child == nil or mapping == nil then
+        return
+    end
     canvas:save()
-    canvas:translate(offset.x + dest_rect.left, offset.y + dest_rect.top)
-    canvas:scale(scale_x, scale_y)
-    canvas:translate(-source_rect.left, -source_rect.top)
+    if self.clip then
+        canvas:clip_rect(Rect.from_offset_size(offset, self.size))
+    end
+    canvas:translate(offset.x + mapping.dest_rect.left, offset.y + mapping.dest_rect.top)
+    canvas:scale(mapping.scale_x, mapping.scale_y)
+    canvas:translate(-mapping.source_rect.left, -mapping.source_rect.top)
     child:paint(canvas, Offset.zero())
     canvas:restore()
+end
+
+---@param position Offset
+---@return RenderObject?
+function RenderFittedBox:hit_test(position)
+    if not self:__hit_test_bounds(position) then
+        return nil
+    end
+    local child = self._children[1]
+    local mapping = self:_mapping()
+    if child and mapping then
+        local child_position = mapping.inverse:transform_point(position)
+        local hit = child:hit_test(child_position)
+        if hit then
+            return hit
+        end
+    end
+    return self
+end
+
+---@param point Offset
+---@param out {node: RenderObject, point: Offset}[]?
+---@return {node: RenderObject, point: Offset}[]
+function RenderFittedBox:pointer_path(point, out)
+    out = out or {}
+    if not self:__hit_test_bounds(point) then
+        return out
+    end
+    local child = self._children[1]
+    local mapping = self:_mapping()
+    if child and mapping then
+        local child_point = mapping.inverse:transform_point(point)
+        if child:__hit_test_bounds(child_point) then
+            child:pointer_path(child_point, out)
+        end
+    end
+    out[#out + 1] = { node = self, point = point }
+    return out
 end
 
 M.RenderFittedBox = RenderFittedBox

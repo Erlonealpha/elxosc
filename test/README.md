@@ -29,8 +29,8 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Phase 2 verified baseline (2026-10-12): **0 diagnostics / 960 checks**;
-real mpv.net suite: **6 passed**. Commands and scope are recorded in
+Phase 3 verified baseline (2026-10-12): **0 diagnostics / 978 checks**;
+real mpv.net suite: **7 passed**. Commands and scope are recorded in
 [`dev/design/DESIGN_RENDERING_ANIMATION.md`](../dev/design/DESIGN_RENDERING_ANIMATION.md).
 
 ## Real host (Python + uv, first stage)
@@ -78,7 +78,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_text.lua` | Options-only `TextStyle`/`TextPaint`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_animation.lua` | Matrix2D, paint-only OffsetBox, curves/tweens, controllers and State resource lifecycle |
-| `test_layout.lua` | Constraints, the box set, owner driving, paint + hit test |
+| `test_layout.lua` | Constraints, fitted scale/crop/input mapping, owner driving, paint + hit test |
 | `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds, constrained text anchors and paint-only updates |
 | `test_button_contract.lua` | Button options/style immutability and PointerEvent construction |
@@ -89,15 +89,15 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
 | `test_host_app.lua` | `App`: frame clock, overlay, `WidgetBinding`, demo output and the define window (`mp` stubbed) |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
-| `test_ass.lua` | ASS colour/anchor encoding, drawing emission, visual offsets and estimating text layout |
+| `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |
 | `test_constraints_examples.lua` | The 29 `flutter/constraints` examples: raw `ass-events` vs expected |
 | `test_layering.lua` | Guard: only `host/` (and the entry points) may require `mp` |
 
-The real-host suite also includes `test_text_anchor.py`, which stages
-`test/real_host/text_anchor.lua` and asks the actual host/libass to compute
-non-empty bounds for the text and Icon events. It checks ASS output and host
-consumption; it does not claim exact glyph ink metrics or optical-centre proof.
+The real-host suite also includes `test_text_anchor.py` and `test_scale.py`, which
+stage the corresponding Lua fixtures and ask the actual host/libass to compute
+non-empty bounds for the text, Icon and finite-scale events. It checks ASS output
+and host consumption; it does not claim exact glyph ink metrics or optical-centre proof.
 
 Nothing here is loaded by mpv: the directory has no `main.lua`, so mpv's script
 auto-loader ignores it.
