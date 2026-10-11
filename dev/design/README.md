@@ -16,7 +16,7 @@ pointer event 与 capture、ASS/Record 后端，以及 Button 系列控件。控
 类型平铺，旧的 `basic.lua`/`layout.lua` 仅作为兼容聚合入口。
 
 宿主侧已具备 mpv.net 帧循环、ASS overlay、鼠标输入、隔离的真实宿主测试和
-Button 事件注入测试。阶段 3 当前验证基线为 **978 checks**、EmmyLua
+Button 事件注入测试。阶段 3 当前验证基线为 **982 checks**、EmmyLua
 `No issues found`、真实 mpv.net 测试 **7 passed**；命令与范围见
 [渲染与动画完成记录](DESIGN_RENDERING_ANIMATION.md)。
 

@@ -299,12 +299,13 @@ TextStyle 文本以及由 FrameClock 驱动、逐帧输出静态 ASS 的 OffsetB
 缩放、文本 `\fscx/\fscy`、路径坐标和嵌套裁剪的变换顺序。FittedBox 现在保留显式
 源/目标映射，支持可选自身盒裁剪，并用逆矩阵处理命中测试和 pointer path；不支持的
 旋转、倾斜和非正缩放不会被静默近似。补充了变换顺序、轴向文字缩放、clip 求交、
-FittedBox crop/input 和真实 libass scale bounds 回归。
+FittedBox crop/input 和真实 libass scale bounds 回归。Demo 现在还展示 contain 缩放、
+cover crop、clip 以及可交互的缩放按钮。
 
 2026-10-12 实际执行：
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **978 checks passed** |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **982 checks passed** |
 | `emmylua_check.exe .` | **No issues found** |
 | `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **7 passed**，真实 mpv.net |

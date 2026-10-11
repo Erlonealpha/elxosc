@@ -27,6 +27,8 @@ local Column = layout_widgets.Column
 local Row = layout_widgets.Row
 local Container = layout_widgets.Container
 local OffsetBox = layout_widgets.OffsetBox
+local FittedBox = layout_widgets.FittedBox
+local SizedBox = layout_widgets.SizedBox
 local ElevatedButton = basic_widgets.ElevatedButton
 local OutlinedButton = basic_widgets.OutlinedButton
 local TextButton = basic_widgets.TextButton
@@ -166,6 +168,41 @@ function DemoState:build(context)
             },
         }),
     })
+    local scale_demo = Container({
+        padding = EdgeInsets.all(8),
+        color = Color.rgba(0x202020C0),
+        child = Row({
+            spacing = 6,
+            cross_alignment = 'center',
+            children = {
+                Text('FittedBox', {
+                    style = TextStyle({ font_size = 12, color = Color.rgba255(180, 190, 205) }),
+                }),
+                SizedBox({
+                    width = 86,
+                    height = 32,
+                    child = FittedBox(Text('scale', {
+                        style = TextStyle({ font_size = 28, wrap = false, bold = true }),
+                    }), { fit = 'contain', clip = true }),
+                }),
+                SizedBox({
+                    width = 86,
+                    height = 32,
+                    child = FittedBox(Text('cover crop', {
+                        style = TextStyle({ font_size = 20, wrap = false }),
+                    }), { fit = 'cover', clip = true }),
+                }),
+                SizedBox({
+                    width = 108,
+                    height = 34,
+                    child = FittedBox(OutlinedButton({
+                        label = 'Scale tap',
+                        on_click = function() self:_set_event('scaled tap') end,
+                    }), { fit = 'contain', clip = true }),
+                }),
+            },
+        }),
+    })
     return Container{
         alignment = Offset(0.5, 0.5),
         color = Color.rgba(0x63636372),
@@ -177,6 +214,7 @@ function DemoState:build(context)
                 anchor_demo,
                 icon_demo,
                 motion_demo,
+                scale_demo,
                 Container{
                     padding = EdgeInsets.all(5),
                     color = Color.rgba(0x2020206C),

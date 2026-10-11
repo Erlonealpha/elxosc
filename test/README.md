@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Phase 3 verified baseline (2026-10-12): **0 diagnostics / 978 checks**;
+Phase 3 verified baseline (2026-10-12): **0 diagnostics / 982 checks**;
 real mpv.net suite: **7 passed**. Commands and scope are recorded in
 [`dev/design/DESIGN_RENDERING_ANIMATION.md`](../dev/design/DESIGN_RENDERING_ANIMATION.md).
 
@@ -87,7 +87,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
-| `test_host_app.lua` | `App`: frame clock, overlay, `WidgetBinding`, demo output and the define window (`mp` stubbed) |
+| `test_host_app.lua` | `App`: frame clock, overlay, phase 0–3 demo output and the define window (`mp` stubbed) |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |
