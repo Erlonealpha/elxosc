@@ -52,6 +52,7 @@ elxosc/
   dev/feat_example_meta/    LuaLS 用的 DSL meta 桩(on_event/on_prop/Container…)
 
   foundation/geometry.lua   Offset · Size · Rect · EdgeInsets(值语义)
+  foundation/transform.lua  Matrix2D(二维仿射值语义)
   foundation/color.lua      Color(RGBA,0..1,后端无关)
 
   painting/canvas.lua       Canvas 抽象契约(渲染层的唯一边界)
@@ -71,6 +72,7 @@ elxosc/
   render/flex.lua           RenderFlex(Row/Column,支持 flex 权重)
   render/stack.lua          RenderStack
   render/sized_box.lua      RenderSizedBox(BoxConstraints.tightFor + enforce)
+  render/offset_box.lua     RenderOffsetBox(绘制平移 + 输入反向映射)
   render/constrained_box.lua RenderConstrainedBox / RenderLimitedBox
   render/overflow_box.lua   RenderUnconstrainedBox / RenderOverflowBox
   render/fitted_box.lua     RenderFittedBox(缩放适配)
@@ -81,7 +83,8 @@ elxosc/
 
   scheduler/frame_clock.lua FrameClock 契约(now / request_frame)
   scheduler/scheduler.lua   Scheduler(transient → persistent → post-frame)
-  scheduler/ticker.lua      Ticker(动画时间源)
+  scheduler/ticker.lua      Ticker(动画时间源, 每次 start 独立时间基准)
+  animation/                Curve · Tween · AnimationController(逐帧静态输出)
 
   widget/widget.lua         Widget 层级 + can_update
   widget/element.lua        Element 层级 + widget↔element 绑定
@@ -92,7 +95,7 @@ elxosc/
   widget/binding.lua        WidgetBinding(Widget 树 ⇄ RenderOwner)
   widget/init.lua           `require 'widget'` 聚合入口
    widget/widgets/layout.lua 兼容聚合入口
-   widget/widgets/{padding,align,sized_box,decorated_box,flex,stack,
+   widget/widgets/{padding,align,sized_box,offset_box,decorated_box,flex,stack,
                    constraints,overflow,container}.lua
                              基础布局控件的独立实现
    widget/widgets/basic.lua 兼容聚合入口

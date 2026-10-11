@@ -19,6 +19,7 @@ local paint = require 'painting.paint'
 local text_style = require 'text.text_style'
 local widget_mod = require 'widget.widget'
 local state_mod = require 'widget.state'
+local transform_mod = require 'foundation.transform'
 
 local M = {}
 
@@ -54,6 +55,7 @@ function M.builtins()
             Color = color.Color,
             Paint = paint.Paint,
             TextStyle = text_style.TextStyle,
+            Matrix2D = transform_mod.Matrix2D,
         },
     }
     for _, source in ipairs(sources) do

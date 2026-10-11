@@ -16,9 +16,9 @@ pointer event 与 capture、ASS/Record 后端，以及 Button 系列控件。控
 类型平铺，旧的 `basic.lua`/`layout.lua` 仅作为兼容聚合入口。
 
 宿主侧已具备 mpv.net 帧循环、ASS overlay、鼠标输入、隔离的真实宿主测试和
-Button 事件注入测试。第零阶段验证基线为 **836 checks**、EmmyLua
+Button 事件注入测试。阶段 1 验证基线为 **904 checks**、EmmyLua
 `No issues found`、真实 mpv.net 测试 **5 passed**；命令与范围见
-[完成记录](DESIGN_RENDERING_ANIMATION.md#第零阶段完成记录)。
+[渲染与动画完成记录](DESIGN_RENDERING_ANIMATION.md)。
 
 文本接口统一为 `TextStyle({ font_size = ..., ... })`，`copy_with()` 可覆盖字号并
 保留 false/0。`TextLayout:line_height(style)` 有默认逻辑行距；ASS 文本绘制目前
@@ -58,8 +58,8 @@ Define 仍然只用于启动阶段构建一次初始 Widget 树：同一个 `sco
 
 ## 未来路线
 
-当前渲染工作按 [渲染与动画规划](DESIGN_RENDERING_ANIMATION.md) 推进：先收敛
-文本契约，再实现平移/动画、锚点、有限缩放和布局动画。mpv `osd-overlay`
+当前渲染工作按 [渲染与动画规划](DESIGN_RENDERING_ANIMATION.md) 推进：文本契约和
+平移/动画基础已完成，下一步是锚点、有限缩放和布局动画。mpv `osd-overlay`
 中的 `\move`、`\t` 等 PTS 相关标签不可用于动画，统一由框架时钟逐帧驱动。
 
 1. **宿主与控件**：keyboard/focus、Checkbox/Switch/Slider、更多样式控件和真实

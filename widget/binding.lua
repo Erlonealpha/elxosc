@@ -25,12 +25,12 @@ local M = {}
 ---@field build_owner BuildOwner
 ---@field root_element Element?
 ---@field on_dirty fun()?
----@overload fun(root_widget: Widget, render_owner: RenderOwner, binds: BindRegistry?): WidgetBinding
+---@overload fun(root_widget: Widget, render_owner: RenderOwner, binds: BindRegistry?, scheduler: Scheduler?): WidgetBinding
 local WidgetBinding = std.class.new('WidgetBinding')
 
-function WidgetBinding:__init(root_widget, render_owner, binds)
+function WidgetBinding:__init(root_widget, render_owner, binds, scheduler)
     self.render_owner = render_owner
-    self.build_owner = BuildOwner(render_owner)
+    self.build_owner = BuildOwner(render_owner, scheduler)
     self.root_element = nil
     self.on_dirty = nil
     self.build_owner.on_dirty = function()

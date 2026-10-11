@@ -250,6 +250,7 @@ end
 function StatefulElement:unmount()
     if self.mounted then
         self.state:dispose()
+        self.state:_dispose_resources()
         self.state.context = nil
     end
     std.super(StatefulElement, self, Element).unmount(self)

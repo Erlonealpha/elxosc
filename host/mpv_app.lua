@@ -152,7 +152,7 @@ function App:__init(root_widget, options)
     -- the engine stand-in: `RenderText` falls back to this measurer
     text_layout.set_default(AssTextLayout())
 
-    self.binding = WidgetBinding(root_widget, self.owner, options.binds)
+    self.binding = WidgetBinding(root_widget, self.owner, options.binds, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end

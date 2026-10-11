@@ -14,17 +14,22 @@ local M = {}
 
 ---@class Ticker : std.object
 ---@field scheduler Scheduler
----@field on_tick fun(dt: number)
----@overload fun(scheduler: Scheduler, on_tick: fun(dt: number)): Ticker
+---@field on_tick fun(dt: number, time: number)
+---@field _last_time number?
+---@overload fun(scheduler: Scheduler, on_tick: fun(dt: number, time: number)): Ticker
 local Ticker = std.class.new('Ticker')
 
 function Ticker:__init(scheduler, on_tick)
     self.scheduler = scheduler
     self.on_tick = on_tick
     self._active = false
-    self._callback = function(dt)
+    self._last_time = nil
+    self._callback = function(_, time)
         if self._active then
-            self.on_tick(dt)
+            local last_time = self._last_time
+            local dt = last_time and (time - last_time) or 0
+            self._last_time = time
+            self.on_tick(dt, time)
         end
     end
 end
@@ -39,6 +44,7 @@ function Ticker:start()
         return
     end
     self._active = true
+    self._last_time = nil
     self.scheduler:add_transient(self._callback)
     self.scheduler:schedule_frame()
 end
@@ -48,6 +54,7 @@ function Ticker:stop()
         return
     end
     self._active = false
+    self._last_time = nil
     self.scheduler:remove_transient(self._callback)
 end
 

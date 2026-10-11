@@ -98,45 +98,56 @@ ASS 用 `\an7` 对应它。`RenderText` 始终传入该坐标，不将相同坐�
 阶段 2 再以独立绘制参数同时描述通用 anchor 和目标位置，避免把数字 `5`
 写进 TextStyle 后直接改变所有文本的定位语义。
 
-## 3. 阶段 1：平移与动画基础（规划）
+## 3. 阶段 1：平移与动画基础（已实现）
 
 ### 3.1 二维变换基础
 
-在 `foundation/transform.lua` 增加二维仿射矩阵值类型 `Matrix2D`，约定：
+`foundation/transform.lua` 已增加二维仿射矩阵值类型 `Matrix2D`，约定：
 
 ```text
 x' = a*x + c*y + tx
 y' = b*x + d*y + ty
 ```
 
-提供 identity、translation、scale、矩阵乘法、点/矩形变换和 inverse。
+提供 identity、translation、scale、矩阵乘法、点/矩形变换和 inverse；奇异矩阵的
+`inverse()` 返回 nil。
 采用列向量及 `CTM = CTM * local_transform` 的组合顺序，并用顺序测试固化；
 奇异矩阵显式返回不可逆结果。数学类型能表达某矩阵，不代表 ASS 已支持它。
 
-纯绘制平移 `RenderOffsetBox` 和对应 Widget 接收逻辑像素偏移：子节点布局和
+`render/offset_box.lua` 和 `widget/widgets/offset_box.lua` 提供纯绘制平移：子节点布局和
 对父节点报告的尺寸不因平移改变；更新偏移只标记 paint dirty。输入需要反向
 映射，覆盖 `hit_test`、`pointer_path`、capture 和嵌套偏移。必须明确祖先命中
 边界/裁剪对移出布局盒内容的影响，不承诺“画得到就一定能点到”。
 
+`RenderOffsetBox` 的 `bind_offset_animation(controller, tween)` 已把 controller
+监听接到 paint-only 属性；脱离 owner 时自动解除监听。输入路径反向减去 offset，
+但仍受 OffsetBox 自身布局盒约束，绘制到盒外的部分不会自动成为可点击区域。
+
 ### 3.2 动画核心
 
-计划新增 `animation/`：AnimationController、Tween、Curve 和监听契约，复用
-现有 Ticker/Scheduler。顺序是：
+`animation/` 已提供 AnimationController、Tween、Curve 和监听契约，复用现有
+Ticker/Scheduler。顺序是：
 
 ```text
 FrameClock -> transient 动画采样 -> build -> layout -> paint -> present
 ```
 
-- Controller 管理 forward/reverse/repeat/stop、当前值和状态；采样基于自己的
+- Controller 管理 forward/reverse/repeat_animation/stop、当前值和状态；采样基于自己的
   起始时间，避免把调度器长时间空闲后的 dt 计入刚启动的动画。
 - Tween 映射进度到 number、Offset 等值，Curve 处理插值进度。
 - RenderObject 的动画监听更新运行时属性；纯绘制属性只触发 paint dirty。
-- State 拥有 controller 时，在 dispose 释放；渲染节点脱离树时解绑监听。
+- State 可通过 `create_ticker()` / `create_animation_controller()` 创建由 State
+  所有的资源；Element 卸载时在用户 `dispose()` 后统一释放。渲染节点脱离树时解绑
+  OffsetBox 的监听。
 - 动画结束后停止持续请求帧；同帧多个更新合并为一次提交。
 - 必要的 Widget rebuild 仍可用 `set_state`，不要求简单平移逐帧重建子树。
 
-阶段验收包含假时钟、重启/取消/销毁、监听替换、paint-only 不重排、平移后的
-输入坐标、RecordCanvas 与 ASS 静态输出、模块加载和聚合 identity。
+阶段验收已覆盖假时钟、重启/取消/销毁、监听替换、paint-only 不重排、平移后的
+输入坐标、RecordCanvas 与 ASS 静态输出、State 生命周期、模块加载和聚合 identity。
+
+实现约束：动画只更新框架值并让下一帧重新绘制，绝不生成 `\move`、`\t` 或其他
+依赖 PTS 的 ASS 标签。`Ticker` 在每次 start 时重置自己的时间基准，避免调度器
+长期空闲后的时间差跳过新动画的首帧。
 
 ## 4. 阶段 2：锚点与图标（规划）
 
@@ -234,3 +245,20 @@ ink、阴影/描边溢出，也不提供通用父约束逆解。动画测量基�
 
 本轮三个检查均已运行，没有跳过项。真实宿主测试覆盖入口、IPC 和合成指针事件，
 不代表已验证精确字体像素边界或图标视觉居中。
+
+### 阶段 1 完成记录
+
+已实现 Matrix2D、OffsetBox、输入反向映射、Ticker 独立时间基准、Curve/Tween、
+AnimationController，以及 State 所有资源的卸载释放。OffsetBox 的绘制平移不
+改变布局尺寸，只触发 paint dirty；ASS 仍使用静态逐帧输出。
+
+2026-10-11 阶段 1 验证：
+
+| 命令 | 最终结果 |
+| --- | --- |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **904 checks passed** |
+| `emmylua_check.exe .` | **No issues found** |
+| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **5 passed**，真实 mpv.net |
+
+真实宿主夹具已将 `animation/` 纳入隔离 staging；入口 smoke test 等待 Demo
+State 注册后再发送消息，避免异步脚本启动竞态。

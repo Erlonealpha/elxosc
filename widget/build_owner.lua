@@ -13,12 +13,14 @@ local M = {}
 
 ---@class BuildOwner : std.object
 ---@field render_owner RenderOwner?
+---@field scheduler Scheduler?
 ---@field on_dirty fun()?
----@overload fun(render_owner: RenderOwner?): BuildOwner
+---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): BuildOwner
 local BuildOwner = std.class.new('BuildOwner')
 
-function BuildOwner:__init(render_owner)
+function BuildOwner:__init(render_owner, scheduler)
     self.render_owner = render_owner
+    self.scheduler = scheduler
     self.on_dirty = nil
     self._dirty = {}
     self._dirty_set = {}

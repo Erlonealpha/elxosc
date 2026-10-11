@@ -11,6 +11,7 @@ local dsl = require('libs.dsl')
 
 local text_layout = require('text.text_layout')
 local text_style_mod = require 'text.text_style'
+local transform_mod = require 'foundation.transform'
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
@@ -108,6 +109,7 @@ F.test('layout modules and aggregate preserve class identity', function()
         LimitedBox = constraints_widgets.LimitedBox, UnconstrainedBox = overflow_widgets.UnconstrainedBox,
         OverflowBox = overflow_widgets.OverflowBox, FittedBox = overflow_widgets.FittedBox,
         Container = container_widgets.Container,
+        OffsetBox = layout_widgets.OffsetBox,
     }
     for name, value in pairs(expected) do
         F.eq(layout_widgets[name], value, name .. ' aggregate')
@@ -120,6 +122,7 @@ F.test('builtins exposes the value types', function()
     F.ok(b.EdgeInsets ~= nil, 'EdgeInsets')
     F.ok(b.Color ~= nil, 'Color')
     F.ok(b.TextStyle ~= nil, 'TextStyle')
+    F.ok(rawequal(b.Matrix2D, transform_mod.Matrix2D), 'Matrix2D')
     F.ok(rawequal(b.TextStyle, text_style_mod.TextStyle), 'DSL and direct-module style class identity')
     local style = b.TextStyle({ font_size = 12.5, wrap = false })
     F.eq(style.font_size, 12.5, 'DSL constructor uses options')

@@ -25,6 +25,7 @@ local files = {
     'test_foundation',
     'test_text',
     'test_scheduler',
+    'test_animation',
     'test_layout',
     'test_input',
     'test_widget',

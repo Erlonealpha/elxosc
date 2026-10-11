@@ -8,20 +8,26 @@
 -- the next frame. That is exactly Flutter's `setState`.
 
 local std = require 'elxlibs.std'
+local ticker_mod = require 'scheduler.ticker'
+local controller_mod = require 'animation.controller'
 
 local raise = std.raise
+local Ticker = ticker_mod.Ticker
+local AnimationController = controller_mod.AnimationController
 
 local M = {}
 
 ---@class State : std.object
 ---@field widget StatefulWidget
 ---@field context Element?
+---@field _resources table[]
 ---@overload fun(): State
 local State = std.class.new('State')
 
 function State:__init()
     self.widget = nil
     self.context = nil
+    self._resources = {}
 end
 
 ---@return boolean
@@ -37,6 +43,53 @@ function State:did_update_widget(old_widget) end
 
 --- Called when the element is discarded; release listeners/timers here.
 function State:dispose() end
+
+---@param resource table
+---@return table
+function State:_own_resource(resource)
+    self._resources[#self._resources + 1] = resource
+    return resource
+end
+
+--- Create a ticker owned by this State. The WidgetBinding must be connected to
+--- a Scheduler for runtime animation; otherwise this is an explicit error.
+---@param on_tick fun(dt: number, time: number)
+---@return Ticker
+function State:create_ticker(on_tick)
+    local context = self.context
+    local owner = context and context.owner
+    local scheduler = owner and owner.scheduler
+    if not scheduler then
+        raise(std.RuntimeError('State needs a Scheduler to create a ticker'))
+    end
+    return self:_own_resource(Ticker(scheduler, on_tick)) --[[@as Ticker]]
+end
+
+--- Create an animation controller that is disposed with this State.
+---@param options _AnimationControllerOptions
+---@return AnimationController
+function State:create_animation_controller(options)
+    local context = self.context
+    local owner = context and context.owner
+    local scheduler = owner and owner.scheduler
+    if not scheduler then
+        raise(std.RuntimeError('State needs a Scheduler to create an animation controller'))
+    end
+    return self:_own_resource(AnimationController(scheduler, options)) --[[@as AnimationController]]
+end
+
+--- Internal lifecycle hook called after the user-visible dispose method.
+function State:_dispose_resources()
+    for i = #self._resources, 1, -1 do
+        local resource = self._resources[i]
+        if resource.dispose then
+            resource:dispose()
+        elseif resource.stop then
+            resource:stop()
+        end
+        self._resources[i] = nil
+    end
+end
 
 ---@param context BuildContext
 ---@return Widget?

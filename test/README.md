@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Phase 0 verified baseline (2026-10-11): **0 diagnostics / 836 checks**;
+Phase 1 verified baseline (2026-10-11): **0 diagnostics / 904 checks**;
 real mpv.net suite: **5 passed**. Commands and scope are recorded in
 [`dev/design/DESIGN_RENDERING_ANIMATION.md`](../dev/design/DESIGN_RENDERING_ANIMATION.md).
 
@@ -77,6 +77,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_foundation.lua` | Geometry value types, colour, paint, path, canvas contract |
 | `test_text.lua` | Options-only `TextStyle`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
+| `test_animation.lua` | Matrix2D, paint-only OffsetBox, curves/tweens, controllers and State resource lifecycle |
 | `test_layout.lua` | Constraints, the box set, owner driving, paint + hit test |
 | `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds |
