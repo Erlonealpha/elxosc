@@ -8,18 +8,22 @@ local F = require('framework')
 local std = require('elxlibs.std')
 
 local color = require('foundation.color')
+local geometry = require('foundation.geometry')
 local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local ass_canvas = require('backends.ass_canvas')
+local record = require('backends.record')
 local binding_mod = require('widget.binding')
 local basic_widgets = require('widget.widgets.basic')
 local icon_mod = require('widget.widgets.icon')
 
 local Color = color.Color
+local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local AssCanvas = ass_canvas.AssCanvas
+local RecordCanvas = record.RecordCanvas
 local WidgetBinding = binding_mod.WidgetBinding
 local Icon = icon_mod.Icon
 local IconButton = basic_widgets.IconButton
@@ -34,11 +38,12 @@ end
 text_layout.set_default(FixedLayout())
 
 ---@param widget Widget
+---@param constraints Constraints?
 ---@return RenderOwner
-local function mount(widget)
+local function mount(widget, constraints)
     local owner = RenderOwner()
     WidgetBinding(widget, owner)
-    owner:set_viewport(Constraints.loose(400, 400))
+    owner:set_viewport(constraints or Constraints.loose(400, 400))
     owner:layout()
     return owner
 end
@@ -73,11 +78,44 @@ F.section('icon: rendering')
 
 F.test('builds a text glyph carrying the icon font family', function()
     local owner = mount(Icon('play_arrow', { size = 20 }))
-    local paragraph = owner.root.paragraph
+    local glyph = owner.root:children()[1]:children()[1]
+    local paragraph = glyph.paragraph
     F.eq(paragraph.text, 'play_arrow', 'glyph name reaches the paragraph')
     F.eq(paragraph.style.font_family, ICON_FONT, 'icon font family')
     F.eq(paragraph.style.font_size, 20, 'size drives the font size')
     F.eq(paragraph.style.wrap, false, 'icon glyphs never wrap')
+end)
+
+F.test('uses the nominal box center even when the ligature name measures wider', function()
+    local owner = mount(Icon('play_arrow', { size = 20 }))
+    local glyph = owner.root:children()[1]:children()[1]
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(owner.root.size.width, 20, 'nominal width')
+    F.eq(owner.root.size.height, 20, 'nominal height')
+    F.eq(glyph.paragraph.size.width, 100, 'natural ligature-name width')
+    F.eq(canvas.ops[1][2], Offset(10, 10), 'paint target uses the constrained box center')
+    F.eq(canvas.ops[1][3].anchor, 'center', 'center paint anchor')
+end)
+
+F.test('optical offset is paint data and does not change the nominal box', function()
+    local owner = mount(Icon('play_arrow', {
+        size = 20,
+        optical_offset = Offset(1.5, -2),
+    }))
+    local glyph = owner.root:children()[1]:children()[1]
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(owner.root.size.width, 20, 'offset keeps width')
+    F.eq(owner.root.size.height, 20, 'offset keeps height')
+    F.eq(canvas.ops[1][3].offset, Offset(1.5, -2), 'offset reaches TextPaint')
+    F.eq(glyph.text_paint.anchor, 'center', 'icon anchor remains center')
+end)
+
+F.test('the nominal box remains subject to tighter parent constraints', function()
+    local owner = mount(Icon('play_arrow', { size = 24 }), Constraints.tight(10, 12))
+    F.eq(owner.root.size.width, 10, 'parent constrains width')
+    F.eq(owner.root.size.height, 12, 'parent constrains height')
 end)
 
 F.test('paints the glyph with the icon font override', function()

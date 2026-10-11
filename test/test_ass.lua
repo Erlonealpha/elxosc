@@ -9,16 +9,20 @@ local F = require('framework')
 
 local geometry = require('foundation.geometry')
 local color = require('foundation.color')
+local anchor_mod = require('foundation.anchor')
 local paint = require('painting.paint')
 local path_mod = require('painting.path')
+local text_paint_mod = require('painting.text_paint')
 local text_style = require('text.text_style')
 local ass_canvas = require('backends.ass_canvas')
 local ass_text = require('backends.ass_text_layout')
 
 local Offset, Size, Rect = geometry.Offset, geometry.Size, geometry.Rect
 local Color = color.Color
+local Anchor = anchor_mod.Anchor
 local Paint, Style = paint.Paint, paint.Style
 local Path = path_mod.Path
+local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
 local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text.AssTextLayout
@@ -115,6 +119,43 @@ F.test('text positioning uses the translated logical top-left', function()
     F.contains(canvas:text(), '\\b1\\i1', 'bold and italic have their own tags')
     F.contains(canvas:text(), '\\bord0\\shad0', 'bold does not create a border')
     F.eq(style, original, 'painting does not change style values')
+end)
+
+F.test('maps every backend-neutral anchor to the corresponding ASS anchor', function()
+    local paragraph = AssTextLayout():layout('x', TextStyle({ font_size = 10 }))
+    local expected = {
+        { Anchor.TOP_LEFT, 7 },
+        { Anchor.TOP_CENTER, 8 },
+        { Anchor.TOP_RIGHT, 9 },
+        { Anchor.CENTER_LEFT, 4 },
+        { Anchor.CENTER, 5 },
+        { Anchor.CENTER_RIGHT, 6 },
+        { Anchor.BOTTOM_LEFT, 1 },
+        { Anchor.BOTTOM_CENTER, 2 },
+        { Anchor.BOTTOM_RIGHT, 3 },
+    }
+    for _, case in ipairs(expected) do
+        local canvas = AssCanvas()
+        canvas:draw_text(paragraph, Offset(20, 30), TextPaint({ anchor = case[1] }))
+        F.contains(canvas:text(), '\\pos(20,30)\\rDefault\\an' .. case[2],
+            'anchor ' .. case[1])
+    end
+end)
+
+F.test('applies a text visual offset once in the active canvas transform', function()
+    local paragraph = AssTextLayout():layout('x', TextStyle({ font_size = 10 }))
+    local canvas = AssCanvas()
+    canvas:translate(10, 20)
+    canvas:scale(2)
+    canvas:draw_text(paragraph, Offset(5, 6), TextPaint({ offset = Offset(2, 3) }))
+    F.contains(canvas:text(), '\\pos(24,38)', 'offset is transformed with the target')
+end)
+
+F.test('the default text paint remains top-left compatible', function()
+    local paragraph = AssTextLayout():layout('x', TextStyle({ font_size = 10 }))
+    local canvas = AssCanvas()
+    canvas:draw_text(paragraph, Offset(4, 5))
+    F.contains(canvas:text(), '\\pos(4,5)\\rDefault\\an7', 'omitted paint')
 end)
 
 --== transforms / clipping =================================================

@@ -23,6 +23,10 @@ elxosc 是给 **mpv / mpv.net** 用的 UI 框架(同类参考 uosc)。核心目�
 见 §7.3)。**mpv 平台层已初步搭建**:宿主切到 Widget 层(§9.1),定义期接线到
 `script-message`(§9.3),`main.lua` 装配 scaffold + 定义窗口。
 
+渲染重构当前已完成文本契约、平移/动画基础以及阶段 2 的锚点与图标：文本使用
+后端无关 `Anchor`/`TextPaint`，Icon 使用 nominal box；有限缩放和影响布局的动画
+仍未实现。
+
 ---
 
 ## 1. 不变量(改代码前必须遵守)
@@ -52,12 +56,14 @@ elxosc/
   dev/feat_example_meta/    LuaLS 用的 DSL meta 桩(on_event/on_prop/Container…)
 
   foundation/geometry.lua   Offset · Size · Rect · EdgeInsets(值语义)
+  foundation/anchor.lua     九宫格 paint anchor 与盒内 fraction
   foundation/transform.lua  Matrix2D(二维仿射值语义)
   foundation/color.lua      Color(RGBA,0..1,后端无关)
 
   painting/canvas.lua       Canvas 抽象契约(渲染层的唯一边界)
   painting/paint.lua        Paint + Style/StrokeCap/StrokeJoin
   painting/path.lua         Path(5 种图元)+ Verb;形状在此降级
+  painting/text_paint.lua   TextPaint(anchor + visual offset)
 
   text/text_style.lua       TextStyle + Align
   text/paragraph.lua        Paragraph(布局结果)
@@ -206,7 +212,8 @@ libs(sandbox/define)依赖 widget,被 host 使用
 
 坐标是逻辑像素(OSD 像素);`save/restore/translate/scale/clip_rect` + 绘制方法:
 `draw_rect` / `draw_rrect(rect, radius, paint)` / `draw_path` / `draw_line` /
-`draw_text(paragraph, offset)` / `draw_image(image, rect)`。
+`draw_text(paragraph, position, text_paint?)` / `draw_image(image, rect)`。
+其中 `position` 是 anchor 的逻辑目标点，`TextPaint.offset` 只影响绘制位置。
 基类实现一律 `raise(NotImplementedError)`,**避免后端漏实现时静默不画**。
 
 ### 4.5 帧管线(`scheduler/`)
@@ -312,7 +319,9 @@ Element                       mount/unmount/update/rebuild/mark_dirty/update_chi
   `LimitedBox(0,0)+ConstrainedBox(expand())`,有子时 align→padding→decoration→
   constraints→margin;`width/height` 折叠进 `constraints`。它自己暴露
   `child_widgets()`/`bind_target()='child'`。
-- `widget/widgets/basic.lua`:Text / CustomPaint / GestureDetector。
+- `widget/widgets/basic.lua`:Text / Icon / CustomPaint / GestureDetector。
+  `Text` 使用 `TextPaint` 的 anchor/视觉偏移；`Icon` 以默认 24×24 nominal box
+  包住中心 anchor 的连字文本，`optical_offset` 不改变布局尺寸。
 - 所有内置 widget 的 `__init` 都从 `options` 取 `key` 与 `id`。
 
 ---
@@ -328,7 +337,10 @@ Element                       mount/unmount/update/rebuild/mark_dirty/update_chi
   `layout(text, style, max_width)` 是通用实现(硬换行 + 贪心按词折行 + 段落尺寸),
   返回 `Paragraph{text, style, size, lines, line_height}`。
 - `Paragraph.size` 是自然逻辑尺寸；`RenderText.size` 是经过父约束的布局盒。
-  `Canvas:draw_text(paragraph, offset)` 接收左上角定位点，ASS 对应 `\an7`。
+  `Canvas:draw_text(paragraph, position, text_paint?)` 接收 anchor 目标点，默认
+  左上角/零偏移，ASS 后端映射九宫格为 `\an7/8/9`、`\an4/5/6`、`\an1/2/3`。
+  `RenderText` 用受约束的 `self.size` 计算目标，不能用自然段落尺寸反向定位。
+  anchor 和视觉偏移是 paint-only；文本内容、样式、测量器变化才触发布局。
 - **环境默认测量器**:`text_layout.set_default(layout)` / `get_default()`。
   宿主启动时注入 `AssTextLayout()`;`RenderText` 未显式给测量器时用它。
   这是"引擎替身",也是暂无 `InheritedWidget` 主题体系时的过渡方案。
@@ -472,6 +484,8 @@ define_end
 - `\p=0` 表示关闭绘制;`draw_image` 未实现(基类抛 `NotImplementedError`)。
 - 每行 `data` 就是 `osd-overlay` 的 `ass-events` 的一个 `Dialogue` 的 `Text` 部分;
   `AssCanvas:text()` 用 `\n` 拼接。
+- `TextPaint.offset` 与逻辑目标先相加，再整体经过当前 Canvas 变换；ASS 不生成
+  依赖 PTS 的 `\move` / `\t` 标签。
 
 ### 8.2 Record(`backends/record.lua`)
 
@@ -489,7 +503,7 @@ define_end
 - `AssPresenter`:持有 `mp.create_osd_overlay('ass-events')`,`z = 2000`;
   `present(canvas, w, h)` 在 `data`/`res_x`/`res_y` 未变时**直接跳过更新**。
 - `App(root_widget, options)`:**已切到 Widget 层**。`_update_display()` 用
-  `mp.get_osd_size()` 设 `Constraints.loose(w,h)` 作为 viewport;构造时建
+  `mp.get_osd_size()` 设 `Constraints.tight(w,h)` 作为 viewport;构造时建
   `WidgetBinding(root_widget, owner, options.binds)` 并注入
   `text_layout.set_default(AssTextLayout())`;帧回调是
   `binding:flush_build(); owner:layout(); canvas:reset(); owner:paint(canvas);
@@ -567,28 +581,30 @@ E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
 #    期望: "ALL GOOD: <N> checks passed",退出码 0
 ```
 
-当前基线:**0 诊断 / 408 checks**。
+当前基线(阶段 2):**0 诊断 / 956 checks**；真实 mpv.net 宿主测试 **6 passed**。
 
 测试文件与职责:
 
 | 文件 | 内容 |
 | --- | --- |
 | `test_foundation.lua` | 几何/颜色/Paint/Path/Canvas 契约 |
-| `test_text.lua` | TextStyle、TextLayout 契约与换行 |
+| `test_text.lua` | TextStyle/TextPaint、TextLayout 契约与换行 |
 | `test_scheduler.lua` | FrameClock 契约、两阶段调度、Ticker |
 | `test_layout.lua` | Constraints、盒子、owner、绘制与命中 |
 | `test_input.lua` | pointer_path、gesture 分发、hover |
-| `test_widget.lua` | build→element→render、复用、set_state 重建 |
+| `test_widget.lua` | build→element→render、复用、set_state 重建、文本 anchor 与 paint-only 更新 |
 | `test_button_contract.lua` | 按钮构造参数、样式复制、PointerEvent 契约 |
+| `test_icon.lua` | Icon nominal box、中心 anchor、optical offset 与字体传播 |
 | `test_bind.lua` | InheritedWidget、bind 的 op 与错误分支 |
 | `test_define.lua` | 沙箱 env/load shim、模块注册表(数据+loader)、define 协议 |
 | `test_dsl.lua` | `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`:`mp` 模块、消息路由、窗口/计数(`mp` 用桩) |
 | `test_host_app.lua` | `App`:帧时钟、overlay、`WidgetBinding`、定义窗口接线(`mp` 用桩) |
-| `test_ass.lua` | ASS 颜色/图元/文本/变换/裁剪 |
+| `test_ass.lua` | ASS 颜色/图元/文本 anchor/变换/裁剪 |
 | `constraints_examples.lua` | 素材:29 个 flutter/constraints 示例对应的 widget 树 |
 | `test_constraints_examples.lua` | 29 个示例的原始 `ass-events` 输出逐字对标(400×670) |
 | `test_layering.lua` | 守护:框架目录不得 `require 'mp'` |
+| `test/real_host/test_text_anchor.py` | 真实 libass 的 anchor/Icon ASS 事件与非空 bounds |
 
 约定:**框架目录要求 0 诊断**;测试文件在文件头统一禁用
 `undefined-field, inject-field, need-check-nil, generic-constraint-mismatch,
@@ -604,10 +620,10 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 | 布局 | Constraints(enforce/tighten/expand/unbounded...) + Padding/Align/Flex/Stack/SizedBox/ConstrainedBox/LimitedBox/UnconstrainedBox/OverflowBox/FittedBox/DecoratedBox/Text | 完成(对齐 flutter/constraints) |
 | 渲染树 | RenderObject/RenderOwner + 脏标记 + 指针路由 + set_children | 完成 |
 | 调度 | FrameClock/Scheduler/Ticker | 完成 |
-| 文本 | TextStyle/Paragraph/TextLayout + 环境默认测量器 | 完成(测量为估算) |
+| 文本 | TextStyle/Paragraph/TextLayout + Anchor/TextPaint + 环境默认测量器 | 完成(测量为估算) |
 | 后端 | AssCanvas/AssTextLayout/RecordCanvas | 完成(ASS 已实机验证) |
 | Widget | Widget/Element/State/BuildOwner/WidgetBinding | 完成 |
-| 组件 | 布局组件、Text/Icon/CustomPaint/GestureDetector、Button/ElevatedButton/OutlinedButton/TextButton/IconButton | 完成(子集) |
+| 组件 | 布局组件、Text/Icon(含 nominal box/anchor)、CustomPaint/GestureDetector、Button/ElevatedButton/OutlinedButton/TextButton/IconButton | 完成(子集) |
 | 数据下行 | InheritedWidget + `depend_on_inherited` | 完成(基础) |
 | 绑定 | `Widget.id` + `BindRegistry` + `bind`(define 期写入) | 完成 |
 | 定义期 | `libs/sandbox.lua` + `libs/modules.lua` + `libs/define.lua` + `libs/dsl.lua`，scope 首次 define 规则 | 完成(初始化语义) |
@@ -618,7 +634,8 @@ preferred-local-alias, unused`(这些是 `std.class` 建模与可选字段带来
 1. **没有 GlobalKey**:不支持把子树搬到树的其他位置(当前模型"从 element 树收集
    子渲染对象",搬运代价高且扩展协议用不到)。
 2. **没有 RepaintBoundary / Viewport+Sliver**:大列表不可虚拟化。
-3. **没有 AnimationController/Tween/Curve**:只有底层 `Ticker`。
+3. 动画基础 `AnimationController/Tween/Curve` 已完成；影响布局的动画、缩放和复杂
+   变换仍未实现。
 4. **没有手势竞技场**:`RenderGesture` 是"谁在命中链上谁处理",点击/拖拽不可消歧。
 5. **`bind` 只能命中静态可遍历的节点**(见 §7.2)。
 6. `host/mpv_input.lua` 依赖 `main.lua` 的全局 `debug_msgf`;调试工具应下沉到

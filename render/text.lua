@@ -7,9 +7,13 @@
 -- render tree stays free of any font/backend assumption.
 
 local std = require 'elxlibs.std'
+local geometry = require 'foundation.geometry'
+local anchor_mod = require 'foundation.anchor'
+local text_paint_mod = require 'painting.text_paint'
 local render_object = require 'render.render_object'
 local text_layout = require 'text.text_layout'
 
+local Offset = geometry.Offset
 local RenderObject = render_object.RenderObject
 local raise = std.raise
 
@@ -20,14 +24,16 @@ local M = {}
 ---@field style TextStyle
 ---@field text_layout TextLayout?
 ---@field paragraph Paragraph?
----@overload fun(text: string, style: TextStyle, text_layout: TextLayout?): RenderText
+---@field text_paint TextPaint
+---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): RenderText
 local RenderText = std.class.new('RenderText', { RenderObject })
 
-function RenderText:__init(text, style, measurer)
+function RenderText:__init(text, style, measurer, text_paint)
     std.super(RenderText, self, RenderObject).__init(self)
     self.text = text
     self.style = style
     self.text_layout = measurer
+    self.text_paint = text_paint_mod.resolve(text_paint)
     self.paragraph = nil
 end
 
@@ -52,7 +58,14 @@ end
 
 function RenderText:__paint(canvas, offset)
     if self.paragraph then
-        canvas:draw_text(self.paragraph, offset)
+        -- Anchor within the constrained layout box, not the estimated natural
+        -- paragraph. In particular a ligature name may measure much wider than
+        -- the icon box while its native glyph still belongs at the box center.
+        local fraction = anchor_mod.fraction(self.text_paint.anchor)
+        local position = (offset + Offset(
+            self.size.width * fraction.x,
+            self.size.height * fraction.y)) --[[@as Offset]]
+        canvas:draw_text(self.paragraph, position, self.text_paint)
     end
     self:paint_children(canvas, offset)
 end

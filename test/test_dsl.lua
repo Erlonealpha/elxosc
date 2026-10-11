@@ -12,6 +12,8 @@ local dsl = require('libs.dsl')
 local text_layout = require('text.text_layout')
 local text_style_mod = require 'text.text_style'
 local transform_mod = require 'foundation.transform'
+local anchor_mod = require 'foundation.anchor'
+local text_paint_mod = require 'painting.text_paint'
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
@@ -124,6 +126,8 @@ F.test('builtins exposes the value types', function()
     F.ok(b.TextStyle ~= nil, 'TextStyle')
     F.ok(rawequal(b.Matrix2D, transform_mod.Matrix2D), 'Matrix2D')
     F.ok(rawequal(b.TextStyle, text_style_mod.TextStyle), 'DSL and direct-module style class identity')
+    F.ok(rawequal(b.Anchor, anchor_mod.Anchor), 'Anchor constants')
+    F.ok(rawequal(b.TextPaint, text_paint_mod.TextPaint), 'DSL and direct-module paint class identity')
     local style = b.TextStyle({ font_size = 12.5, wrap = false })
     F.eq(style.font_size, 12.5, 'DSL constructor uses options')
     F.eq(style.wrap, false, 'DSL constructor keeps false')

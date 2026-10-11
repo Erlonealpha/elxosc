@@ -1,7 +1,8 @@
 # 渲染变换、动画与文本契约
 
-本文记录 ASS 后端约束下的重构决策。第零阶段已完成并通过验证；阶段 1–5 的类名和接口
-是规划，不代表已有能力。阶段编号只属于本文，不沿用历史文档的 Phase 编号。
+本文记录 ASS 后端约束下的重构决策。第零阶段、阶段 1 和阶段 2 已完成并通过验证；阶段
+3–5 的类名和接口仍是规划，不代表已有能力。阶段编号只属于本文，不沿用历史文档的
+Phase 编号。
 
 ## 1. 分层与宿主限制
 
@@ -91,12 +92,15 @@ event 和相应基线/锚点协议。
 
 ### 2.3 绘制定位
 
-当前 `Canvas:draw_text(paragraph, offset)` 的 `offset` 是逻辑左上角定位点，
-ASS 用 `\an7` 对应它。`RenderText` 始终传入该坐标，不将相同坐标解释为中心。
-这只统一坐标语义，不保证 glyph 可见墨迹的左上角恰好落在这个点上。
+`Canvas:draw_text(paragraph, position, text_paint?)` 的 `position` 是绘制 anchor 的
+逻辑目标点，省略 `text_paint` 时保持左上角/零偏移兼容行为。`TextPaint` 独立携带
+后端无关的九宫格 anchor 和有限 `Offset` 视觉偏移；它们不进入 `TextStyle`、逻辑
+度量、布局约束或命中测试。`RenderText` 用受约束的 `self.size` 计算目标点，不能
+使用 `Paragraph.size` 反向改变布局盒。ASS 后端再将 `position + TextPaint.offset`
+一次性变换并映射为 `\an7/8/9`、`\an4/5/6`、`\an1/2/3`。
 
-阶段 2 再以独立绘制参数同时描述通用 anchor 和目标位置，避免把数字 `5`
-写进 TextStyle 后直接改变所有文本的定位语义。
+`\an5` 是 libass 的排版锚点，不保证 glyph 墨迹或视觉重心绝对居中；Icon 的
+`optical_offset` 是明确的绘制层修正，仍不影响 nominal box。
 
 ## 3. 阶段 1：平移与动画基础（已实现）
 
@@ -149,15 +153,18 @@ FrameClock -> transient 动画采样 -> build -> layout -> paint -> present
 依赖 PTS 的 ASS 标签。`Ticker` 在每次 start 时重置自己的时间基准，避免调度器
 长期空闲后的时间差跳过新动画的首帧。
 
-## 4. 阶段 2：锚点与图标（规划）
+## 4. 阶段 2：锚点与图标（已实现）
 
-Layout Align 仍负责逻辑盒位置。文本绘制 API 另外接收通用九宫格 anchor 和
-锚点目标坐标；后端映射为 ASS `\an7/8/9`、`\an4/5/6`、`\an1/2/3`。
-不得简单向整棵子树下发同一个 ASS 锚点：几何图形与复合节点有自己的布局盒。
+`foundation/anchor.lua` 提供九个后端无关的 anchor 名称及盒内 fraction；
+`painting/text_paint.lua` 提供默认左上角/零偏移的 `TextPaint` 值对象、复制和
+边界校验。Layout Align 仍负责逻辑盒位置，文本绘制 API 另外接收通用九宫格 anchor
+和锚点目标坐标；ASS 后端映射为 `\an7/8/9`、`\an4/5/6`、`\an1/2/3`。不得简单
+向整棵子树下发同一个 ASS 锚点：几何图形与复合节点有自己的布局盒。
 
-Icon 使用明确的 nominal box（例如 24×24），在盒中心用中心锚点绘制，避免
-用连字名称的字符数决定布局宽度。ASS `\an5` 对齐的是 libass 的排版锚点，
-不保证字形墨迹或视觉重心居中；必要时另加 optical offset。
+`Text` 的 anchor/视觉偏移更新只触发 paint dirty；文本内容、样式或测量器变化仍
+触发布局。Icon 使用明确的 nominal box（默认 24×24），在盒中心用中心锚点绘制，
+避免用连字名称的字符数决定布局宽度；父约束仍可压缩该逻辑盒。Icon 的
+`optical_offset` 只修正绘制目标，不改变布局尺寸。
 
 内置字体可离线生成 glyph advance/ink bounds。可变字体必须固定轴值，且
 glyph 名称、Unicode 映射和合法连字需分别验证；不能将 glyph 列表直接当作
@@ -262,3 +269,20 @@ AnimationController，以及 State 所有资源的卸载释放。OffsetBox 的�
 
 真实宿主夹具已将 `animation/` 纳入隔离 staging；入口 smoke test 等待 Demo
 State 注册后再发送消息，避免异步脚本启动竞态。
+
+### 阶段 2 完成记录
+
+已实现后端无关九宫格 anchor、`TextPaint` 的视觉偏移、ASS `\an` 映射和
+`RecordCanvas` 的第三绘制参数。`RenderText` 以受约束的 RenderObject 盒计算 anchor
+目标；Icon 使用固定 nominal square box、中心绘制和可选 `optical_offset`。补充了
+TextPaint 非法边界、复制/相等、默认兼容、paint-only 更新、长连字图标尺寸、ASS
+九点映射以及真实 libass bounds 回归。宿主回归只证明事件被真实 libass 接收并产生
+非空 bounds，不把它当作精确字体 ink bounds 或光学居中证明。
+
+2026-10-12 实际执行：
+
+| 命令 | 最终结果 |
+| --- | --- |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **956 checks passed** |
+| `emmylua_check.exe .` | **No issues found** |
+| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **6 passed**，真实 mpv.net |

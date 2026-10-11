@@ -10,6 +10,8 @@ local std = require('elxlibs.std')
 
 local geometry = require('foundation.geometry')
 local color = require('foundation.color')
+local anchor_mod = require('foundation.anchor')
+local text_paint_mod = require('painting.text_paint')
 local text_style = require('text.text_style')
 local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
@@ -23,7 +25,9 @@ local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
 
 local Offset, Size, EdgeInsets = geometry.Offset, geometry.Size, geometry.EdgeInsets
+local Anchor = anchor_mod.Anchor
 local Color = color.Color
+local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -134,6 +138,39 @@ F.test('Text keeps natural paragraph metrics separate from its constrained box',
     F.eq(canvas.ops[1].name, 'draw_text', 'paragraph is painted')
     F.eq(canvas.ops[1][1].size, Size(20, 12), 'painting receives the natural paragraph')
     F.eq(canvas.ops[1][2], Offset.zero(), 'painting receives the logical top-left')
+end)
+
+F.test('Text anchors against its constrained box, not natural paragraph size', function()
+    local owner = mount(Text('abcd', {
+        style = TextStyle({ font_size = 10 }),
+        text_paint = TextPaint({ anchor = Anchor.CENTER }),
+    }), Constraints.tight(100, 40))
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(canvas.ops[1][2], Offset(50, 20), 'center target uses the layout box')
+    F.eq(canvas.ops[1][3].anchor, Anchor.CENTER, 'paint anchor is preserved')
+end)
+
+F.test('changing only TextPaint marks paint without relayout', function()
+    local owner, binding = mount(Text('abcd', { style = TextStyle({ font_size = 10 }) }))
+    owner:paint(RecordCanvas())
+    binding:set_root_widget(Text('abcd', {
+        style = TextStyle({ font_size = 10 }),
+        text_paint = TextPaint({ anchor = Anchor.CENTER }),
+    }))
+    F.ok(not owner:needs_layout(), 'paint-only change avoids layout dirty')
+    F.ok(owner:needs_paint(), 'paint-only change is paint dirty')
+    owner:layout()
+    F.eq(owner.root.size, Size(20, 12), 'paint-only change keeps size')
+end)
+
+F.test('a rebuilt Text without paint options restores the default paint', function()
+    local owner, binding = mount(Text('x', {
+        text_paint = TextPaint({ anchor = Anchor.CENTER }),
+    }))
+    binding:set_root_widget(Text('x'))
+    F.eq(owner.root.text_paint.anchor, Anchor.TOP_LEFT, 'default anchor restored')
+    F.ok(not owner:needs_layout(), 'restoring paint does not relayout')
 end)
 
 --== element reuse =========================================================

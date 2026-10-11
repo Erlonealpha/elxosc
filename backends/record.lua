@@ -90,8 +90,8 @@ function RecordCanvas:draw_line(from, to, paint)
     self:_add('draw_line', from, to, paint)
 end
 
-function RecordCanvas:draw_text(paragraph, offset)
-    self:_add('draw_text', paragraph, offset)
+function RecordCanvas:draw_text(paragraph, position, text_paint)
+    self:_add('draw_text', paragraph, position, text_paint)
 end
 
 function RecordCanvas:draw_image(image, rect)

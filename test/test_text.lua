@@ -8,10 +8,16 @@ local F = require('framework')
 local std = require('elxlibs.std')
 
 local color = require('foundation.color')
+local geometry = require('foundation.geometry')
+local anchor_mod = require('foundation.anchor')
+local text_paint_mod = require('painting.text_paint')
 local text_style = require('text.text_style')
 local text_layout = require('text.text_layout')
 
 local Color = color.Color
+local Offset, Size = geometry.Offset, geometry.Size
+local Anchor = anchor_mod.Anchor
+local TextPaint = text_paint_mod.TextPaint
 local TextStyle, Align = text_style.TextStyle, text_style.Align
 local TextLayout = text_layout.TextLayout
 
@@ -170,6 +176,55 @@ F.test('rejects invalid style values at construction and copy boundaries', funct
             source:copy_with(case.options)
         end, case.error, 'copy boundary')
     end
+end)
+
+F.section('text: TextPaint')
+
+F.test('has a top-left zero-offset default', function()
+    local paint = TextPaint()
+    F.eq(paint.anchor, Anchor.TOP_LEFT, 'default anchor')
+    F.eq(paint.offset, Offset.zero(), 'default offset')
+end)
+
+F.test('copies paint values without mutating options or the source', function()
+    local offset = Offset(2.5, -1)
+    local options = { anchor = Anchor.CENTER, offset = offset }
+    local source = TextPaint(options)
+    local copy_options = { offset = Offset(4, 5) }
+    local copy = source:copy_with(copy_options)
+    F.eq(source.anchor, Anchor.CENTER, 'source anchor')
+    F.eq(source.offset, offset, 'source offset')
+    F.eq(copy.anchor, Anchor.CENTER, 'copy keeps omitted anchor')
+    F.eq(copy.offset, copy_options.offset, 'copy replaces offset')
+    F.eq(options.anchor, Anchor.CENTER, 'constructor options unchanged')
+    F.eq(options.offset, offset, 'constructor offset unchanged')
+    F.eq(copy_options.offset, Offset(4, 5), 'copy options unchanged')
+    F.ok(source ~= copy, 'different paint values are not equal')
+    F.ok(source == source:copy_with(), 'same paint values compare equal')
+end)
+
+F.test('rejects invalid paint options and offsets', function()
+    local cases = {
+        { options = false, error = 'options table' },
+        { options = { unknown = true }, error = 'unsupported TextPaint option' },
+        { options = { anchor = false }, error = 'anchor' },
+        { options = { anchor = 'middle' }, error = 'anchor' },
+        { options = { offset = false }, error = 'Offset' },
+        { options = { offset = Size(1, 2) }, error = 'Offset' },
+        { options = { offset = { x = 1, y = 2 } }, error = 'Offset' },
+        { options = { offset = Offset(math.huge, 0) }, error = 'finite number' },
+        { options = { offset = Offset(0 / 0, 0) }, error = 'finite number' },
+    }
+    for _, case in ipairs(cases) do
+        F.raises(function()
+            ---@diagnostic disable-next-line: param-type-mismatch
+            TextPaint(case.options)
+        end, case.error, 'constructor boundary')
+    end
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        TextPaint():copy_with({ unknown = true })
+    end, 'unsupported TextPaint option', 'copy boundary')
 end)
 
 F.section('text: TextLayout')

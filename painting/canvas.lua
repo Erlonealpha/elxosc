@@ -98,9 +98,12 @@ end
 
 --- Draw a laid out text run. `paragraph` is produced by the text layer, not
 --- by the canvas, so backends never deal with raw strings here.
+--- The backend places the chosen content reference at `position + offset`,
+--- then applies the Canvas transform. This is not an exact glyph ink origin.
 ---@param paragraph Paragraph
----@param offset Offset logical top-left position; not an exact glyph ink origin
-function Canvas:draw_text(paragraph, offset)
+---@param position Offset logical target point for the paint anchor
+---@param text_paint TextPaint? defaults to top-left with zero offset
+function Canvas:draw_text(paragraph, position, text_paint)
     abstract('draw_text')
 end
 

@@ -22,18 +22,34 @@ local canvas = require 'painting.canvas'
 local path_mod = require 'painting.path'
 local color_mod = require 'foundation.color'
 local paint_mod = require 'painting.paint'
+local anchor_mod = require 'foundation.anchor'
+local text_paint_mod = require 'painting.text_paint'
 
 local Canvas = canvas.Canvas
 local Path = path_mod.Path
 local Verb = path_mod.Verb
 local Color = color_mod.Color
 local Paint = paint_mod.Paint
+local Anchor = anchor_mod.Anchor
+local raise = std.raise
 local math = math
 local floor = math.floor
 local sqrt = math.sqrt
 local format = string.format
 local concat = table.concat
 local ipairs = ipairs
+
+local ASS_ANCHORS = {
+    [Anchor.TOP_LEFT] = 7,
+    [Anchor.TOP_CENTER] = 8,
+    [Anchor.TOP_RIGHT] = 9,
+    [Anchor.CENTER_LEFT] = 4,
+    [Anchor.CENTER] = 5,
+    [Anchor.CENTER_RIGHT] = 6,
+    [Anchor.BOTTOM_LEFT] = 1,
+    [Anchor.BOTTOM_CENTER] = 2,
+    [Anchor.BOTTOM_RIGHT] = 3,
+}
 
 local M = {}
 
@@ -252,15 +268,19 @@ end
 
 --== content ==============================================================
 
-function AssCanvas:draw_text(paragraph, offset)
+function AssCanvas:draw_text(paragraph, position, text_paint)
     local style = paragraph.style
-    local x, y = self:_apply(offset.x, offset.y)
-    -- The Canvas contract supplies a top-left position. Native text anchoring
-    -- is separate from TextStyle and does not imply exact glyph ink bounds.
+    text_paint = text_paint_mod.resolve(text_paint)
+    local visual_offset = text_paint.offset
+    local x, y = self:_apply(position.x + visual_offset.x, position.y + visual_offset.y)
+    local ass_anchor = ASS_ANCHORS[text_paint.anchor]
+    if not ass_anchor then
+        raise(std.ValueError('unsupported ASS text anchor: ' .. tostring(text_paint.anchor)))
+    end
     local tags = {
         format(
-            '{\\pos(%d,%d)\\rDefault\\an7\\blur0\\fs%g',
-            ri(x), ri(y), style.font_size),
+            '{\\pos(%d,%d)\\rDefault\\an%d\\blur0\\fs%g',
+            ri(x), ri(y), ass_anchor, style.font_size),
     }
     if style.font_family then
         tags[#tags + 1] = '\\fn' .. style.font_family
