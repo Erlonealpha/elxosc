@@ -1,5 +1,6 @@
 .emmyrc.json
 .vscode
+.VSCodeCounter
 .venv/
 .pytest_cache/
 __pycache__/
