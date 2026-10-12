@@ -92,7 +92,11 @@ event 和相应基线/锚点协议。
 ### 2.3 绘制定位
 
 `Canvas:draw_text(paragraph, position, text_paint?)` 的 `position` 是绘制 anchor 的
-逻辑目标点，省略 `text_paint` 时保持左上角/零偏移兼容行为。`TextPaint` 独立携带
+逻辑目标点。`TextStyle.align` 在 ASS 后端使用 `left -> \an4`、`center -> \an5`、
+`right -> \an6`，RenderText 相应把目标点放在布局盒的中左、中心或中右；显式
+`TextPaint.anchor` 仍可覆盖它，用于九宫格 anchor 和图标等特殊绘制。这样普通
+控件的文字和 Icon 的中心锚点共享垂直中线，不再用 `\an7` 伪装四边精确对齐。
+`TextPaint` 独立携带
 后端无关的九宫格 anchor 和有限 `Offset` 视觉偏移；它们不进入 `TextStyle`、逻辑
 度量、布局约束或命中测试。`RenderText` 用受约束的 `self.size` 计算目标点，不能
 使用 `Paragraph.size` 反向改变布局盒。ASS 后端再将 `position + TextPaint.offset`
@@ -138,7 +142,9 @@ FrameClock -> transient 动画采样 -> build -> layout -> paint -> present
 - Controller 管理 forward/reverse/repeat_animation/stop、当前值和状态；采样基于自己的
   起始时间，避免把调度器长时间空闲后的 dt 计入刚启动的动画。
 - Tween 映射进度到 number、Offset 等值，Curve 处理插值进度。
-- RenderObject 的动画监听更新运行时属性；纯绘制属性只触发 paint dirty。
+- RenderObject 的动画监听更新运行时属性；纯绘制属性只触发 paint dirty，布局属性
+  触发 layout + paint。`AnimationController` 本身不决定是否布局，目标 RenderObject
+  的 setter 决定失效类型。
 - State 可通过 `create_ticker()` / `create_animation_controller()` 创建由 State
   所有的资源；Element 卸载时在用户 `dispose()` 后统一释放。渲染节点脱离树时解绑
   OffsetBox 的监听。
@@ -322,12 +328,15 @@ cover crop、clip 以及可交互的缩放按钮。
 已实现纯绘制 `TransformBox` 和影响布局的 `LayoutScaleBox`，补齐正轴向约束逆映射、
 paint/layout dirty 分类、缩放动画 listener 生命周期、clip、命中测试和 pointer path
 逆映射。Widget/DSL 聚合入口、Demo 和真实宿主 fixture 均覆盖两种语义；仍明确不支持
-旋转、倾斜、负/零缩放和任意仿射布局求解。
+旋转、倾斜、负/零缩放和任意仿射布局求解。`TransformBox` Widget 可以直接接收
+`AnimationController` 与 `Tween<Size>`，动画 listener 在 RenderObject 上更新缩放，
+不需要逐帧重建 Widget；Demo 的 `Scale tap` 使用了这条 paint-only 路径。下一阶段
+再扩展更多不影响布局的颜色、透明度和视觉状态动画。
 
 2026-10-12 实际执行：
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **1025 checks passed** |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **1036 checks passed** |
 | `emmylua_check.exe .` | **No issues found** |
 | `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **8 passed**，真实 mpv.net |

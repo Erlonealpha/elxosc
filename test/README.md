@@ -29,9 +29,9 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Phase 4 verified baseline (2026-10-12): **0 diagnostics / 1025 checks**;
+Current verified baseline (2026-10-12): **0 diagnostics / 1036 checks**;
 real mpv.net suite: **8 passed**. Commands and scope are recorded in
-[`dev/design/DESIGN_RENDERING_ANIMATION.md`](../dev/design/DESIGN_RENDERING_ANIMATION.md).
+[`dev/design/TESTING.md`](../dev/design/TESTING.md).
 
 ## Real host (Python + uv, first stage)
 

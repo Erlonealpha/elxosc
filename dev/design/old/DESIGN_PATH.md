@@ -3,9 +3,8 @@
 本文档的目的:**让任何 AGENT 在不读完全部代码的情况下,完全对齐当前实现与未来方向**。
 它描述的是"事实状态",不是愿望;凡与本文件冲突的代码,以代码为准,并回头修正本文件。
 
-配套文档:`DESIGN.md`(与 Flutter 的对照、扩展形态与坑的讨论)、
-`DESIGN_RENDERING_ANIMATION.md`(当前文本契约及渲染/动画路线)、
-`test/README.md`(测试与静态检查怎么跑)。
+配套文档:`../DESIGN.md`(当前设计主文档)、`../RENDERING.md`(当前文本契约及
+渲染/动画路线)、`../../test/README.md`(测试与静态检查怎么跑)。
 
 ---
 
@@ -50,9 +49,9 @@ ASS 有限缩放以及阶段 4 的缩放盒：文本使用后端无关 `Anchor`/
 elxosc/
   main.lua                  mpv 入口(scaffold + Slot + 定义窗口 + demo widget)
   elxlib_load.lua           补 package.path(scripts + 脚本目录)并 require 'elxlib'
-   dev/design/DESIGN.md      与 Flutter 的对照、扩展形态讨论
-   dev/design/DESIGN_PATH.md 本文件
-   dev/design/DESIGN_CONSTRAINTS.md 约束模型对齐 Flutter 的修复记录(+ 对标测试说明)
+   dev/design/old/DESIGN.md      与 Flutter 的对照、扩展形态讨论
+   dev/design/old/DESIGN_PATH.md 本文件
+   dev/design/old/DESIGN_CONSTRAINTS.md 约束模型对齐 Flutter 的修复记录(+ 对标测试说明)
   dev/feat_example.lua      设计草图(不可运行,见 §7.4)
   dev/feat_example_meta/    LuaLS 用的 DSL meta 桩(on_event/on_prop/Container…)
 
@@ -163,7 +162,7 @@ libs(sandbox/define)依赖 widget,被 host 使用
   `constrain_size_and_attempt_to_preserve_aspect_ratio(size)`;`__eq` 按四值比较。
 - 术语与 Flutter 一致:bounded = `max < inf`;loose = `min == 0`;tight =
   `min == max`;expanding = 紧无穷;infinite = `min == inf`。
-   完整对齐记录见 `dev/design/DESIGN_CONSTRAINTS.md`。
+   完整对齐记录见 `dev/design/old/DESIGN_CONSTRAINTS.md`。
 
 ### 4.2 RenderObject(`render/render_object.lua`)
 
@@ -355,7 +354,7 @@ Element                       mount/unmount/update/rebuild/mark_dirty/update_chi
   真实字宽表可参考 uosc `src/uosc/lib/text.lua`(未来升级点)。
 - ASS 多行 event 的真实行距由 libass 决定，当前逻辑行距不保证像素一致。
   通用锚点、精确度量与动画分阶段设计见
-  [DESIGN_RENDERING_ANIMATION.md](DESIGN_RENDERING_ANIMATION.md)。
+  [旧渲染动画记录](DESIGN_RENDERING_ANIMATION.md)。
 
 ---
 
@@ -588,7 +587,7 @@ E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
 #    期望: "ALL GOOD: <N> checks passed",退出码 0
 ```
 
-当前基线(渲染阶段 4):**0 诊断 / 1025 checks**；真实 mpv.net 宿主测试 **8 passed**。
+当前基线(渲染阶段 4):**0 诊断 / 1036 checks**；真实 mpv.net 宿主测试 **8 passed**。
 
 测试文件与职责:
 

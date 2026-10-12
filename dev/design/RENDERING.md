@@ -1,0 +1,70 @@
+# 渲染、布局与动画
+
+本文负责约束布局、绘制契约、文本定位、ASS 限制、变换和 dirty 分类。
+
+## 约束布局
+
+布局遵循三个方向：**Constraints go down. Sizes go up. Parent sets position.**
+`Constraints` 的四个边界必须归一、有限（允许代表无界的 `math.huge`），RenderObject
+最终报告的尺寸必须有限并满足父约束。
+
+- `unbounded()` 表示 `0..∞`。
+- `expand()` 表示 Flutter 语义的紧无穷，只有与父约束合并后才会落地。
+- `enforce()` 取附加约束的交集；`tighten()` 只收紧已存在的边界。
+- 子节点的局部尺寸不因绘制偏移自动变大；父节点决定是否裁剪和是否扩大命中区域。
+
+`FittedBox` 使用源/目标盒映射；`TransformBox` 保留子节点原布局尺寸；
+`LayoutScaleBox` 把正轴向缩放纳入约束逆映射和最终报告尺寸。三者的区别是公共
+语义，不能通过一个通用 scale 属性模糊掉。
+
+## RenderObject 和 dirty
+
+RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择最小失效范围：
+
+| 属性 | 失效 |
+| --- | --- |
+| 平移、视觉偏移、颜色、纯绘制 scale、clip | paint |
+| 宽高、padding、约束、字号、行距、布局 scale | layout + paint |
+| Widget 子树结构 | build，再按结果 layout/paint |
+
+动画控制器不决定 dirty 类别；目标 RenderObject 的 setter 决定。动画监听在节点
+脱离 owner 时必须解除，替换 controller/tween 时必须移除旧监听。
+
+## Canvas 和文本
+
+`Canvas` 使用逻辑像素，负责 save/restore、平移、正轴向 scale、裁剪和图元绘制。
+`TextStyle` 只表达样式意图，`TextPaint` 负责九宫格 anchor 和视觉偏移；
+`Paragraph.size` 是自然文本尺寸，`RenderText.size` 是受约束的布局盒。
+
+普通文本定位规则：
+
+| `TextStyle.align` | RenderText 目标 | ASS |
+| --- | --- | --- |
+| `left` | 中左 | `\an4` |
+| `center` | 中心 | `\an5` |
+| `right` | 中右 | `\an6` |
+
+如果传入显式 `TextPaint({ anchor = ... })`，它覆盖样式对齐并允许 `\an1` 到
+`\an9` 的完整映射。`TextPaint.offset` 只进入绘制变换，不改变布局或 hit test。
+
+## ASS 后端边界
+
+ASS Canvas 将矩阵变换降低为静态事件：路径坐标经过平移/缩放，文本使用
+`\fscx`/`\fscy`，裁剪在最终逻辑坐标中求交。只接受有限正缩放；旋转、倾斜、
+零/负缩放和任意仿射布局不能静默近似。
+
+ASS `osd-overlay` 的 `ass-events` 不提供本框架需要的 PTS 动画推进，因此禁止
+生成 `\move`、`\t` 等标签。`AnimationController` 每帧更新框架值，下一帧重新输出
+静态 `\pos`、缩放或颜色参数。这样 UI 动画不依赖媒体播放状态。
+
+## 输入和绘制的变换
+
+绘制变换必须有对应的输入逆映射：`OffsetBox`、`TransformBox`、`FittedBox` 和
+缩放盒都要覆盖 `hit_test`/`pointer_path` 的局部坐标转换。内容画到布局盒外不自动
+意味着它可点击；clip 和父节点命中边界仍然有效。
+
+## 当前限制
+
+当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、离屏 group opacity、
+RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸、绘制溢出和输入区域
+的区别，再添加后端和真实宿主回归。

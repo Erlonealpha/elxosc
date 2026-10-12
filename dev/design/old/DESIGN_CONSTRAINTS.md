@@ -168,7 +168,7 @@ deflate / loosen`，缺少"只施加附加约束"的运算，是后面多个问�
 - **intrinsic 尺寸**：没有 `IntrinsicWidth/Height`、`AspectRatio`、
   `FractionallySizedBox`；Flutter 的 `RenderFlex` 在 intrinsic 阶段的行为未移植。
 - **布局性能**：`mark_needs_layout` 仍一路上传到根，没有 relayout/repaint
-  boundary；`parentUsesSize` 也没有断言（DESIGN_PATH 已记录）。
+  boundary；`parentUsesSize` 也没有断言（旧 DESIGN_PATH 已记录）。
 - **方向**：只实现 LTR + top-to-bottom，未做 RTL / `VerticalDirection.up`
   的轴向翻转（`flipMainAxis` / `flipCrossAxis` 恒为 false）。
 - **debug 溢出指示**：Flex / UnconstrainedBox 不画黄黑条纹，也不打印告警；
