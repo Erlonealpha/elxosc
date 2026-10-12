@@ -1,8 +1,7 @@
 # 渲染变换、动画与文本契约
 
-本文记录 ASS 后端约束下的重构决策。第零阶段、阶段 1、阶段 2 和阶段 3 已完成并通过
-验证；阶段 4–5 的类名和接口仍是规划，不代表已有能力。阶段编号只属于本文，不沿用历史文档的
-Phase 编号。
+本文记录 ASS 后端约束下的重构决策。第零阶段、阶段 1、阶段 2、阶段 3 和阶段 4
+已完成并通过验证；阶段 5 仍是规划。阶段编号只属于本文，不沿用历史文档的 Phase 编号。
 
 ## 1. 分层与宿主限制
 
@@ -192,9 +191,10 @@ FittedBox 是验证入口：父布局盒与子绘制缩放分开，使用源/目
 默认不裁剪以保持原有 overflow 行为；缩放精度保留在逻辑浮点值，ASS 数值标签和
 路径坐标在最终输出时量化。
 
-## 6. 阶段 4：影响布局的动画（规划）
+## 6. 阶段 4：影响布局的动画（已实现）
 
-统一 controller，不按后端再创建一套动画时间轴。目标属性决定失效类型：
+统一 controller，不按后端再创建一套动画时间轴。目标属性决定失效类型，当前两个
+缩放盒都使用同一套 `AnimationController`/`Tween<Size>` listener：
 
 | 变化 | 失效 |
 | --- | --- |
@@ -202,9 +202,16 @@ FittedBox 是验证入口：父布局盒与子绘制缩放分开，使用源/目
 | width/height、padding、约束、font size、逻辑行距 | layout + paint |
 | Widget 子树结构 | build，再由变化决定 layout/paint |
 
-`RenderTransform` 表达纯绘制变换；需要父节点预留变换后尺寸时，使用单独的
-layout-transform 盒子。优先定义正轴向缩放约束映射，处理零值、负值和无界
-约束；一般旋转的布局约束求解不直接套用轴向缩放算法。
+`RenderTransformBox`/`TransformBox` 表达纯绘制正轴向缩放：子节点沿用原布局尺寸，
+缩放只作用于 paint 和输入逆映射；`set_scale()` 只触发 paint dirty。需要父节点
+预留变换后尺寸时，使用 `RenderLayoutScaleBox`/`LayoutScaleBox`：它把父约束按
+缩放因子反向映射给子节点，再将子尺寸乘回并报告给父节点；`set_scale()` 触发
+layout + paint。两者都支持 0..1 的 alignment、可选自身盒 clip、hit-test/
+pointer-path 逆映射，并在脱离 owner 时解除动画 listener。
+
+缩放值必须是有限正数；零值、负值、NaN 和无穷值在 RenderObject 边界拒绝。布局
+缩放处理有界与无界正轴向约束，结果仍经过父约束收敛；一般旋转的布局约束求解不
+直接套用轴向缩放算法。
 
 以子逻辑矩形计算变换后 AABB：
 
@@ -309,3 +316,18 @@ cover crop、clip 以及可交互的缩放按钮。
 | `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **982 checks passed** |
 | `emmylua_check.exe .` | **No issues found** |
 | `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **7 passed**，真实 mpv.net |
+
+### 阶段 4 完成记录
+
+已实现纯绘制 `TransformBox` 和影响布局的 `LayoutScaleBox`，补齐正轴向约束逆映射、
+paint/layout dirty 分类、缩放动画 listener 生命周期、clip、命中测试和 pointer path
+逆映射。Widget/DSL 聚合入口、Demo 和真实宿主 fixture 均覆盖两种语义；仍明确不支持
+旋转、倾斜、负/零缩放和任意仿射布局求解。
+
+2026-10-12 实际执行：
+
+| 命令 | 最终结果 |
+| --- | --- |
+| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **1025 checks passed** |
+| `emmylua_check.exe .` | **No issues found** |
+| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **8 passed**，真实 mpv.net |

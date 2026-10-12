@@ -39,6 +39,8 @@ local Row = layout_widgets.Row
 local Column = layout_widgets.Column
 local Stack = layout_widgets.Stack
 local Container = layout_widgets.Container
+local TransformBox = layout_widgets.TransformBox
+local LayoutScaleBox = layout_widgets.LayoutScaleBox
 local Expanded = layout_widgets.Expanded
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
@@ -122,6 +124,20 @@ F.test('mounts a widget tree and paints it', function()
     owner:paint(canvas)
     F.eq(canvas.ops[1].name, 'draw_rrect', 'background first')
     F.eq(canvas.ops[2].name, 'draw_text', 'text on top')
+end)
+
+F.test('finite scale widgets expose paint-only and layout-affecting boxes', function()
+    local paint_owner = mount(TransformBox(SizedBox({ width = 20, height = 10 }), {
+        scale = Size(2, 2),
+    }))
+    F.eq(paint_owner.root.size, Size(20, 10), 'TransformBox keeps the child layout size')
+    F.eq(paint_owner.root.scale, Size(2, 2), 'TransformBox config reaches render object')
+
+    local layout_owner = mount(LayoutScaleBox(SizedBox({ width = 20, height = 10 }), {
+        scale = Size(2, 2),
+    }))
+    F.eq(layout_owner.root.size, Size(40, 20), 'LayoutScaleBox reports the scaled size')
+    F.eq(layout_owner.root.scale, Size(2, 2), 'LayoutScaleBox config reaches render object')
 end)
 
 F.test('Text measures through the ambient TextLayout', function()

@@ -69,13 +69,14 @@ elxosc/
 | `InheritedWidget`(主题/MediaQuery) | `widget/widget.lua` · `widget/element.lua` | 完成(基础) |
 | `bind`(把 widget 挂到命名目标节点) | `widget/bind.lua`(`BindRegistry` + `bind`) | 完成 |
 | 插件扩展协议(Flutter 无对应) | `libs/sandbox.lua` · `libs/modules.lua` · `libs/define.lua` | 完成(协议核心;宿主服务/传输层待接) |
-| `AnimationController` / `Tween` / `Curve` | — | 计划(Phase 4) |
+| `AnimationController` / `Tween` / `Curve` | `animation/*` | 完成 |
+| 正轴向 TransformBox / LayoutScaleBox | `render/*` · `widget/widgets/transform_box.lua` | 完成 |
 | `RepaintBoundary` / 图层缓存 | — | 计划(Phase 4) |
 | `Viewport` / Sliver(虚拟列表) | — | 计划(Phase 4) |
 | Semantics | — | 不适用 |
 
 **结论**:渲染层(rendering / painting / layout / scheduler)与 Widgets 层均已与
-Flutter 对齐;**缺 Animation 层与 Viewport/Sliver/RepaintBoundary**。此外多了一层
+Flutter 对齐;**仍缺 Viewport/Sliver/RepaintBoundary**。此外多了一层
 Flutter 没有的**定义期协议**(`libs/`),供其他脚本声明界面。
 
 ---
@@ -264,11 +265,12 @@ property/event/script-message 转成 state 更新:`cb` 里调 `self:set_state(..
 - `libs/dsl.lua`:`new_widget` / `new_state` / `builtins`。
 - 宿主接线见 Phase 5;待做:env API 版本化。
 
-### Phase 4 — 能力补齐
+### Phase 4 — 能力补齐（进行中）
 
-`Viewport`/Sliver 虚拟列表;`RepaintBoundary` + `Picture` 缓存;
-`AnimationController`/`Tween`/`Curve`;`InheritedWidget`(主题/MediaQuery);
-`parentUsesSize` 与 relayout/repaint boundary;手势竞技场。
+✅ `AnimationController`/`Tween`/`Curve` 与正轴向 `TransformBox`/`LayoutScaleBox`。
+待做:`Viewport`/`Sliver` 虚拟列表;`RepaintBoundary` + `Picture` 缓存;
+`InheritedWidget`(主题/MediaQuery);`parentUsesSize` 与 relayout/repaint boundary;
+手势竞技场。
 
 ### Phase 5 — 宿主扩展(初步完成)
 

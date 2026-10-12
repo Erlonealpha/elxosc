@@ -18,6 +18,7 @@ local widget_mod = require 'widget.widget'
 local Color = color.Color
 local Anchor = anchor_mod.Anchor
 local Offset = geometry.Offset
+local Size = geometry.Size
 local EdgeInsets = geometry.EdgeInsets
 local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
@@ -28,6 +29,8 @@ local Row = layout_widgets.Row
 local Container = layout_widgets.Container
 local OffsetBox = layout_widgets.OffsetBox
 local FittedBox = layout_widgets.FittedBox
+local TransformBox = layout_widgets.TransformBox
+local LayoutScaleBox = layout_widgets.LayoutScaleBox
 local SizedBox = layout_widgets.SizedBox
 local ElevatedButton = basic_widgets.ElevatedButton
 local OutlinedButton = basic_widgets.OutlinedButton
@@ -177,6 +180,18 @@ function DemoState:build(context)
             children = {
                 Text('FittedBox', {
                     style = TextStyle({ font_size = 12, color = Color.rgba255(180, 190, 205) }),
+                }),
+                TransformBox(Text('TransformBox', {
+                    style = TextStyle({ font_size = 12, wrap = false, bold = true }),
+                }), {
+                    scale = Size(1 + self.motion * 0.25, 1 + self.motion * 0.25),
+                    clip = true,
+                }),
+                LayoutScaleBox(Text('LayoutScaleBox', {
+                    style = TextStyle({ font_size = 11, wrap = false }),
+                }), {
+                    scale = Size(0.85, 1.15),
+                    clip = true,
                 }),
                 SizedBox({
                     width = 86,

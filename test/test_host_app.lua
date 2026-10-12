@@ -103,6 +103,8 @@ F.test('the demo exposes finite FittedBox scale, crop and clip output', function
     F.contains(fake.overlay.data, '\\fscx', 'finite text scale output')
     F.contains(fake.overlay.data, '\\clip', 'fitted box clip output')
     F.contains(fake.overlay.data, 'cover crop', 'cover example output')
+    F.contains(fake.overlay.data, 'TransformBox', 'paint-only transform output')
+    F.contains(fake.overlay.data, 'LayoutScaleBox', 'layout scale output')
 end)
 
 --== widget binding ========================================================

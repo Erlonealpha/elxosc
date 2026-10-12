@@ -16,6 +16,7 @@ local constraints_mod = require 'widget.widgets.constraints'
 local overflow_mod = require 'widget.widgets.overflow'
 local container_mod = require 'widget.widgets.container'
 local offset_box_mod = require 'widget.widgets.offset_box'
+local transform_box_mod = require 'widget.widgets.transform_box'
 
 ---@class elxwidgets_layout
 ---@field Padding Padding
@@ -37,6 +38,8 @@ local offset_box_mod = require 'widget.widgets.offset_box'
 ---@field FittedBox FittedBox
 ---@field Container Container
 ---@field OffsetBox OffsetBox
+---@field TransformBox TransformBox
+---@field LayoutScaleBox LayoutScaleBox
 local M = {}
 
 M.Padding = padding_mod.Padding
@@ -58,5 +61,7 @@ M.OverflowBox = overflow_mod.OverflowBox
 M.FittedBox = overflow_mod.FittedBox
 M.Container = container_mod.Container
 M.OffsetBox = offset_box_mod.OffsetBox
+M.TransformBox = transform_box_mod.TransformBox
+M.LayoutScaleBox = transform_box_mod.LayoutScaleBox
 
 return M

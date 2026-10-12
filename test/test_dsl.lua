@@ -91,6 +91,8 @@ F.test('builtins exposes the widget library', function()
     F.ok(b.Slot ~= nil, 'Slot')
     F.ok(b.Column ~= nil, 'Column')
     F.ok(b.Button ~= nil, 'Button')
+    F.ok(b.TransformBox ~= nil, 'TransformBox')
+    F.ok(b.LayoutScaleBox ~= nil, 'LayoutScaleBox')
 end)
 
 F.test('basic widget module remains a compatibility aggregate', function()
@@ -112,6 +114,8 @@ F.test('layout modules and aggregate preserve class identity', function()
         OverflowBox = overflow_widgets.OverflowBox, FittedBox = overflow_widgets.FittedBox,
         Container = container_widgets.Container,
         OffsetBox = layout_widgets.OffsetBox,
+        TransformBox = layout_widgets.TransformBox,
+        LayoutScaleBox = layout_widgets.LayoutScaleBox,
     }
     for name, value in pairs(expected) do
         F.eq(layout_widgets[name], value, name .. ' aggregate')

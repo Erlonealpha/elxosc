@@ -16,6 +16,8 @@ local align_mod = require('render.align')
 local flex_mod = require('render.flex')
 local stack_mod = require('render.stack')
 local fitted_mod = require('render.fitted_box')
+local transform_box_mod = require('render.transform_box')
+local layout_scale_box_mod = require('render.layout_scale_box')
 local custom_paint_mod = require('render.custom_paint')
 local record_mod = require('backends.record')
 local ass_canvas = require('backends.ass_canvas')
@@ -28,6 +30,8 @@ local RenderAlign = align_mod.RenderAlign
 local RenderFlex = flex_mod.RenderFlex
 local RenderStack = stack_mod.RenderStack
 local RenderFittedBox = fitted_mod.RenderFittedBox
+local RenderTransformBox = transform_box_mod.RenderTransformBox
+local RenderLayoutScaleBox = layout_scale_box_mod.RenderLayoutScaleBox
 local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_canvas.AssCanvas
@@ -193,6 +197,98 @@ F.test('rejects unsupported fitted options', function()
         RenderFittedBox(nil, { clip = 'yes' })
     end,
         'boolean', 'clip option')
+end)
+
+F.section('render: finite transform boxes')
+
+F.test('TransformBox preserves layout size and paints a positive axis scale', function()
+    local child = RenderCustomPaint(function(canvas, offset, size)
+        canvas:draw_rect(Rect.from_offset_size(offset, size), nil --[[@as Paint]])
+    end, { preferred_size = Size(10, 5) })
+    local root = RenderTransformBox(child, {
+        scale = Size(2, 1.5),
+        alignment = Offset(0, 0),
+        clip = true,
+    })
+    root:layout(Constraints.unbounded())
+    F.eq(root.size, Size(10, 5), 'paint-only scale preserves layout size')
+    F.eq(child.size, Size(10, 5), 'child keeps its natural size')
+
+    local canvas = AssCanvas()
+    root:paint(canvas, Offset.zero())
+    F.contains(canvas:text(), '\\clip(0,0,10,5)', 'TransformBox clip')
+    F.contains(canvas:text(), 'm 0 0 l 160 0 l 160 60', 'TransformBox scales geometry')
+end)
+
+F.test('TransformBox reverses input coordinates through its scale', function()
+    local child = box(10, 5)
+    local root = RenderTransformBox(child, {
+        scale = Size(2, 2),
+        alignment = Offset(0, 0),
+    })
+    root:layout(Constraints.unbounded())
+    local path = root:pointer_path(Offset(4, 2))
+    F.eq(path[1].node, child, 'scaled point reaches the child')
+    F.close(path[1].point.x, 2, 'inverse x scale')
+    F.close(path[1].point.y, 1, 'inverse y scale')
+    local outside = root:pointer_path(Offset(20, 2))
+    F.eq(#outside, 0, 'input remains clipped to the logical box')
+end)
+
+F.test('nested TransformBoxes compose paint and input mappings', function()
+    local leaf = box(10, 5)
+    local inner = RenderTransformBox(leaf, {
+        scale = Size(3, 2),
+        alignment = Offset(0, 0),
+    })
+    local outer = RenderTransformBox(inner, {
+        scale = Size(2, 4),
+        alignment = Offset(0, 0),
+    })
+    outer:layout(Constraints.unbounded())
+    local path = outer:pointer_path(Offset(6, 4))
+    F.eq(path[1].node, leaf, 'nested point reaches the leaf')
+    F.eq(path[1].point, Offset(1, 0.5), 'nested inverse scales compose')
+    F.eq(path[2].node, inner, 'inner transform is in the path')
+    F.eq(path[3].node, outer, 'outer transform is in the path')
+end)
+
+F.test('LayoutScaleBox maps constraints and reports the scaled child size', function()
+    local child = box(80, 40)
+    local root = RenderLayoutScaleBox(child, {
+        scale = Size(0.5, 2),
+        alignment = Offset(0, 1),
+    })
+    root:layout(Constraints.tight(100, 100))
+    F.eq(child.size, Size(200, 50), 'child receives inverse parent constraints')
+    F.eq(root.size, Size(100, 100), 'scaled child is constrained by the parent')
+
+    local path = root:pointer_path(Offset(25, 75))
+    F.eq(path[1].node, child, 'layout-scaled point reaches the child')
+    F.eq(path[1].point, Offset(50, 37.5), 'layout scale inverse mapping')
+end)
+
+F.test('LayoutScaleBox preserves natural sizing under unbounded constraints', function()
+    local child = box(30, 10)
+    local root = RenderLayoutScaleBox(child, { scale = Size(2, 0.5) })
+    root:layout(Constraints.unbounded())
+    F.eq(child.size, Size(30, 10), 'unbounded child keeps its natural size')
+    F.eq(root.size, Size(60, 5), 'unbounded box reports scaled natural size')
+end)
+
+F.test('finite transform boxes reject invalid scales and alignments', function()
+    F.raises(function()
+        RenderTransformBox(nil, { scale = Size(0, 1) })
+    end, 'positive finite', 'TransformBox rejects zero scale')
+    F.raises(function()
+        RenderLayoutScaleBox(nil, { scale = Size(-1, 1) })
+    end, 'positive finite', 'LayoutScaleBox rejects negative scale')
+    F.raises(function()
+        RenderTransformBox(nil, { alignment = Offset(0 / 0, 0.5) })
+    end, 'between 0 and 1', 'TransformBox rejects NaN alignment')
+    F.raises(function()
+        RenderLayoutScaleBox(nil, { alignment = Offset(0.5, math.huge) })
+    end, 'between 0 and 1', 'LayoutScaleBox rejects infinite alignment')
 end)
 
 --== flex ==================================================================

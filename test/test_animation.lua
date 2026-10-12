@@ -12,6 +12,8 @@ local constraints_mod = require 'layout.constraints'
 local render_owner_mod = require 'render.render_owner'
 local custom_paint_mod = require 'render.custom_paint'
 local offset_box_mod = require 'render.offset_box'
+local transform_box_mod = require 'render.transform_box'
+local layout_scale_box_mod = require 'render.layout_scale_box'
 local record_mod = require 'backends.record'
 local ass_canvas_mod = require 'backends.ass_canvas'
 local scheduler_mod = require 'scheduler.scheduler'
@@ -34,6 +36,8 @@ local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner_mod.RenderOwner
 local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local RenderOffsetBox = offset_box_mod.RenderOffsetBox
+local RenderTransformBox = transform_box_mod.RenderTransformBox
+local RenderLayoutScaleBox = layout_scale_box_mod.RenderLayoutScaleBox
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_canvas_mod.AssCanvas
 local FrameClock = frame_clock_mod.FrameClock
@@ -177,6 +181,72 @@ F.test('offset animation marks paint without relayout and detaches cleanly', fun
     root:_set_owner(nil)
     F.eq(root._offset_animation, nil, 'detaching removes animation listener')
     controller:dispose()
+end)
+
+F.test('transform scale animation is paint-only and detaches cleanly', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local child = box(20, 10)
+    local root = RenderTransformBox(child, { scale = Size(1, 1) })
+    local owner = layout_root(root)
+    owner:paint(RecordCanvas())
+    local controller = AnimationController(scheduler, { duration = 1 })
+    root:set_scale_animation(controller, Tween(Size(1, 1), Size(2, 2))--[[@as Tween<Size>]])
+    controller:forward()
+    clock:tick(0)
+    owner._needs_layout = false
+    owner._needs_paint = false
+    clock:tick(0.5)
+    F.ok(root.scale == Size(1.5, 1.5), 'TransformBox follows the size tween')
+    F.ok(not owner:needs_layout(), 'paint-only scale does not request layout')
+    F.ok(owner:needs_paint(), 'paint-only scale requests paint')
+    root:_set_owner(nil)
+    local scale = root.scale
+    clock:tick(0.25)
+    F.ok(root.scale == scale, 'detached TransformBox no longer listens')
+    controller:dispose()
+end)
+
+F.test('layout scale animation requests relayout', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local root = RenderLayoutScaleBox(box(20, 10), { scale = Size(1, 1) })
+    local owner = layout_root(root)
+    owner:paint(RecordCanvas())
+    local controller = AnimationController(scheduler, { duration = 1 })
+    root:set_scale_animation(controller, Tween(Size(1, 1), Size(2, 2))--[[@as Tween<Size>]])
+    controller:forward()
+    clock:tick(0)
+    owner._needs_layout = false
+    owner._needs_paint = false
+    clock:tick(0.5)
+    F.ok(root.scale == Size(1.5, 1.5), 'LayoutScaleBox follows the size tween')
+    F.ok(owner:needs_layout(), 'layout scale requests relayout')
+    F.ok(owner:needs_paint(), 'layout scale also requests paint')
+    root:_set_owner(nil)
+    controller:dispose()
+end)
+
+F.test('replacing a scale animation removes the old controller listener', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local root = RenderTransformBox(box(20, 10), { scale = Size(1, 1) })
+    layout_root(root)
+    local first = AnimationController(scheduler, { duration = 1 })
+    local second = AnimationController(scheduler, { duration = 1 })
+    root:set_scale_animation(first, Tween(Size(1, 1), Size(2, 2))--[[@as Tween<Size>]])
+    root:set_scale_animation(second, Tween(Size(1, 1), Size(3, 3))--[[@as Tween<Size>]])
+    first:forward()
+    second:forward()
+    clock:tick(0)
+    clock:tick(0.5)
+    F.ok(root.scale == Size(2, 2), 'replacement binding follows only the active controller')
+    root:set_scale_animation(nil, nil)
+    local scale = root.scale
+    clock:tick(0.25)
+    F.ok(root.scale == scale, 'nil binding removes the active listener')
+    first:dispose()
+    second:dispose()
 end)
 
 F.section('animation: curves and tweens')
