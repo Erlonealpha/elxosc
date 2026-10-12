@@ -19,6 +19,8 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field scale? Size positive axis scales; defaults to 1x1
 ---@field alignment? Offset 0..1 pivot inside the layout box
 ---@field clip? boolean clip transformed paint to the layout box
+---@field scale_controller? AnimationController
+---@field scale_tween? Tween<Size>
 ---@field key? any
 ---@field id? string
 
@@ -26,7 +28,9 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field scale Size
 ---@field alignment Offset
 ---@field clip boolean
----@overload fun(child: Widget?, options?: _TransformBoxOptions): TransformBox
+---@field scale_controller AnimationController?
+---@field scale_tween Tween<Size>?
+---@overload fun(child: Widget?, options?: _TransformBoxOptions): self
 local TransformBox = std.class.new('TransformBox', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?
@@ -38,6 +42,8 @@ function TransformBox:__init(child, options)
     self.child = child
     self.scale = options.scale == nil and Size(1, 1) or options.scale
     self.alignment = options.alignment == nil and Offset(0.5, 0.5) or options.alignment
+    self.scale_controller = options.scale_controller
+    self.scale_tween = options.scale_tween
     if options.clip == nil then
         self.clip = false
     else
@@ -46,18 +52,23 @@ function TransformBox:__init(child, options)
 end
 
 function TransformBox:create_render_object()
-    return RenderTransformBox(nil, {
+    local render_object = RenderTransformBox(nil, {
         scale = self.scale,
         alignment = self.alignment,
         clip = self.clip,
     })
+    render_object:set_scale_animation(self.scale_controller, self.scale_tween)
+    return render_object
 end
 
 ---@param render_object RenderTransformBox
 function TransformBox:update_render_object(render_object)
-    render_object:set_scale(self.scale)
     render_object:set_alignment(self.alignment)
     render_object:set_clip(self.clip)
+    render_object:set_scale_animation(self.scale_controller, self.scale_tween)
+    if self.scale_controller == nil or self.scale_tween == nil then
+        render_object:set_scale(self.scale)
+    end
 end
 
 ---@class _LayoutScaleBoxOptions
@@ -71,7 +82,7 @@ end
 ---@field scale Size
 ---@field alignment Offset
 ---@field clip boolean
----@overload fun(child: Widget?, options?: _LayoutScaleBoxOptions): LayoutScaleBox
+---@overload fun(child: Widget?, options?: _LayoutScaleBoxOptions): self
 local LayoutScaleBox = std.class.new('LayoutScaleBox', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?

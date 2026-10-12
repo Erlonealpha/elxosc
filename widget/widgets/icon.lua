@@ -51,7 +51,7 @@ local DEFAULT_SIZE = 24
 ---@field font_family FluentIconFontName
 ---@field text_layout TextLayout?
 ---@field optical_offset Offset
----@overload fun(name: FluentIconNames, options: _IconOptions?): Icon
+---@overload fun(name: FluentIconNames, options: _IconOptions?): self
 local Icon = std.class.new('Icon', { StatelessWidget })
 
 ---@param name FluentIconNames

@@ -27,7 +27,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field alignment Offset
 ---@field width_factor? number
 ---@field height_factor? number
----@overload fun(child: Widget?, options?: _AlignOptions): Align
+---@overload fun(child: Widget?, options?: _AlignOptions): self
 local Align = std.class.new('Align', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?

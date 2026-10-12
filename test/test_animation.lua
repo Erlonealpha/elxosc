@@ -16,6 +16,9 @@ local transform_box_mod = require 'render.transform_box'
 local layout_scale_box_mod = require 'render.layout_scale_box'
 local record_mod = require 'backends.record'
 local ass_canvas_mod = require 'backends.ass_canvas'
+local ass_text_layout_mod = require 'backends.ass_text_layout'
+local render_text_mod = require 'render.text'
+local text_style_mod = require 'text.text_style'
 local scheduler_mod = require 'scheduler.scheduler'
 local frame_clock_mod = require 'scheduler.frame_clock'
 local controller_mod = require 'animation.controller'
@@ -40,11 +43,17 @@ local RenderTransformBox = transform_box_mod.RenderTransformBox
 local RenderLayoutScaleBox = layout_scale_box_mod.RenderLayoutScaleBox
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_canvas_mod.AssCanvas
+local AssTextLayout = ass_text_layout_mod.AssTextLayout
+local RenderText = render_text_mod.RenderText
+local TextStyle = text_style_mod.TextStyle
+local Align = text_style_mod.Align
 local FrameClock = frame_clock_mod.FrameClock
 local Scheduler = scheduler_mod.Scheduler
 local AnimationController = controller_mod.AnimationController
 local Tween = tween_mod.Tween
 local OffsetBox = layout_widgets.OffsetBox
+local TransformBox = layout_widgets.TransformBox
+local SizedBox = layout_widgets.SizedBox
 local WidgetBinding = binding_mod.WidgetBinding
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
@@ -247,6 +256,46 @@ F.test('replacing a scale animation removes the old controller listener', functi
     F.ok(root.scale == scale, 'nil binding removes the active listener')
     first:dispose()
     second:dispose()
+end)
+
+F.test('TransformBox widget binds a paint-only scale animation', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AnimationController(scheduler, { duration = 1 })
+    local owner = RenderOwner()
+    WidgetBinding(TransformBox(SizedBox({ width = 20, height = 10 }), {
+        scale_controller = controller,
+        scale_tween = Tween(Size(1, 1), Size(2, 2))--[[@as Tween<Size>]],
+    }), owner, nil, scheduler)
+    owner:set_viewport(Constraints.loose(100, 100))
+    owner:layout()
+    owner:paint(RecordCanvas())
+    owner._needs_layout = false
+    owner._needs_paint = false
+    controller:forward()
+    clock:tick(0)
+    clock:tick(0.5)
+    F.eq(owner.root.scale, Size(1.5, 1.5), 'widget binding samples the scale tween')
+    F.ok(not owner:needs_layout(), 'widget scale animation remains paint-only')
+    F.ok(owner:needs_paint(), 'widget scale animation requests paint')
+    controller:dispose()
+end)
+
+F.test('center-aligned TransformBox keeps its text target fixed while scaling', function()
+    local child = RenderText('TransformBox', TextStyle({
+        font_size = 12,
+        wrap = false,
+        align = Align.CENTER,
+    }), AssTextLayout())
+    local root = RenderTransformBox(child, { scale = Size(1, 1) })
+    root:layout(Constraints.unbounded())
+    for _, scale in ipairs({ 1, 1.05, 1.1, 1.2 }) do
+        root:set_scale(Size(scale, scale))
+        local canvas = AssCanvas()
+        root:paint(canvas, Offset.zero())
+        F.contains(canvas:text(), '\\pos(36,7)\\rDefault\\an5',
+            'center target is stable at scale ' .. tostring(scale))
+    end
 end)
 
 F.section('animation: curves and tweens')

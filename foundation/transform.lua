@@ -30,8 +30,8 @@ local M = {}
 ---@field d number y basis y component
 ---@field tx number x translation
 ---@field ty number y translation
----@overload fun(a: number?, b: number?, c: number?, d: number?, tx: number?, ty: number?): Matrix2D
-local Matrix2D = std.class.new('Matrix2D')
+---@overload fun(a: number?, b: number?, c: number?, d: number?, tx: number?, ty: number?): self
+local Matrix2D = std.class.new('Matrix2D', {})
 
 ---@param a number?
 ---@param b number?

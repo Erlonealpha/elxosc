@@ -28,8 +28,8 @@ end
 
 ---@class Scheduler : std.object
 ---@field clock FrameClock
----@overload fun(clock: FrameClock): Scheduler
-local Scheduler = std.class.new('Scheduler')
+---@overload fun(clock: FrameClock): self
+local Scheduler = std.class.new('Scheduler', {})
 
 function Scheduler:__init(clock)
     self.clock = clock

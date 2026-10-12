@@ -28,7 +28,7 @@ local function is_finite(value)
     return value == value and value ~= huge and value ~= -huge
 end
 
----@class LayoutScaleBoxOpts
+---@class _RenderLayoutScaleBoxOptions
 ---@field scale Size? positive axis scales; defaults to 1x1
 ---@field alignment Offset? alignment for extra outer space; defaults to center
 ---@field clip boolean? clip transformed paint to the layout box; defaults false
@@ -38,7 +38,7 @@ end
 ---@field alignment Offset
 ---@field clip boolean
 ---@field _scale_animation table?
----@overload fun(child: RenderObject?, options?: LayoutScaleBoxOpts): RenderLayoutScaleBox
+---@overload fun(child: RenderObject?, options?: _RenderLayoutScaleBoxOptions): self
 local RenderLayoutScaleBox = std.class.new('RenderLayoutScaleBox', { RenderObject })
 
 ---@param scale Size
@@ -106,6 +106,8 @@ local function multiply_size(value, scale)
     return result
 end
 
+---@param child RenderObject?
+---@param options _RenderLayoutScaleBoxOptions?
 function RenderLayoutScaleBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
@@ -158,6 +160,7 @@ function RenderLayoutScaleBox:set_clip(clip)
     self:mark_needs_paint()
 end
 
+---@param constraints Constraints
 function RenderLayoutScaleBox:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
@@ -188,6 +191,8 @@ function RenderLayoutScaleBox:_mapping()
     return matrix, matrix:inverse()
 end
 
+---@param canvas Canvas
+---@param offset Offset
 function RenderLayoutScaleBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil or child.size.width <= 0 or child.size.height <= 0 then

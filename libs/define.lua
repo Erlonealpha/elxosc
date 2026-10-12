@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The define protocol (dev/design/DESIGN_PATH.md §7): `define_start` → `define(scope, code)`
+-- The define protocol (dev/design/HOST.md): `define_start` → `define(scope, code)`
 -- (repeatable) → `define_end`.
 --
 -- Deliberately thin. It owns three things and nothing more:
@@ -49,8 +49,8 @@ local M = {}
 ---@field on_error fun(scope_id: string, err: any)? called instead of raising when set
 ---@field _scopes table<string, table>
 ---@field _defined_scopes table<string, true> scopes with an accepted initial payload
----@overload fun(options: DefineOptions?): DefineSession
-local DefineSession = std.class.new('DefineSession')
+---@overload fun(options: DefineOptions?): self
+local DefineSession = std.class.new('DefineSession', {})
 
 function DefineSession:__init(options)
     options = options or {}

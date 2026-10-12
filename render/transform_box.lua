@@ -25,7 +25,7 @@ local function is_finite(value)
     return value == value and value ~= huge and value ~= -huge
 end
 
----@class TransformBoxOpts
+---@class _RenderTransformBoxOptions
 ---@field scale Size? positive axis scales; defaults to 1x1
 ---@field alignment Offset? 0..1 pivot inside the layout box; defaults to center
 ---@field clip boolean? clip transformed paint to the layout box; defaults false
@@ -35,7 +35,7 @@ end
 ---@field alignment Offset
 ---@field clip boolean
 ---@field _scale_animation table?
----@overload fun(child: RenderObject?, options?: TransformBoxOpts): RenderTransformBox
+---@overload fun(child: RenderObject?, options?: _RenderTransformBoxOptions): self
 local RenderTransformBox = std.class.new('RenderTransformBox', { RenderObject })
 
 ---@param scale Size
@@ -67,6 +67,8 @@ local function validate_alignment(alignment)
     return alignment
 end
 
+---@param child RenderObject?
+---@param options _RenderTransformBoxOptions?
 function RenderTransformBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
@@ -119,6 +121,7 @@ function RenderTransformBox:set_clip(clip)
     self:mark_needs_paint()
 end
 
+---@param constraints Constraints
 function RenderTransformBox:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
@@ -140,6 +143,8 @@ function RenderTransformBox:_mapping()
     return matrix, matrix:inverse() -- positive scales are always invertible
 end
 
+---@param canvas Canvas
+---@param offset Offset
 function RenderTransformBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil then

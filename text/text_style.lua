@@ -116,7 +116,7 @@ end
 ---@field wrap boolean
 ---@field extra TextStyleExtra?
 ---@overload fun(options: _TextStyleOptions?): self
-local TextStyle = std.class.new('TextStyle')
+local TextStyle = std.class.new('TextStyle', {})
 
 ---@param options _TextStyleOptions?
 function TextStyle:__init(options)

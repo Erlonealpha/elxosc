@@ -29,8 +29,8 @@ local Color = color_mod.Color
 ---@field radius number
 ---@field padding EdgeInsets?
 ---@field elevation number
----@overload fun(options: _ButtonStyleOptions?): ButtonStyle
-local ButtonStyle = std.class.new('ButtonStyle')
+---@overload fun(options: _ButtonStyleOptions?): self
+local ButtonStyle = std.class.new('ButtonStyle', {})
 
 ---@param options _ButtonStyleOptions?
 function ButtonStyle:__init(options)

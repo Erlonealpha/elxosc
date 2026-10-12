@@ -14,7 +14,7 @@ local EdgeInsets = geometry.EdgeInsets
 ---@field radius number?
 
 ---@class IconButton : ButtonBase
----@overload fun(options: _IconButtonOptions?): IconButton
+---@overload fun(options: _IconButtonOptions?): self
 local IconButton = std.class.new('IconButton', { ButtonBase })
 ---@param options _IconButtonOptions?
 function IconButton:__init(options)

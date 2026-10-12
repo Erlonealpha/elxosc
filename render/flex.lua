@@ -77,7 +77,7 @@ local M = {}
 ---@field main_axis_size MainAxisSize
 ---@field cross_alignment CrossAlignment
 ---@field spacing number
----@overload fun(direction: FlexDirection, options: FlexOpts?): RenderFlex
+---@overload fun(direction: FlexDirection, options: FlexOpts?): self
 local RenderFlex = std.class.new('RenderFlex', { RenderObject })
 
 function RenderFlex:__init(direction, options)

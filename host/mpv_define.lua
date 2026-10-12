@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The mpv side of the define protocol (dev/design/DESIGN_PATH.md §7.3, §13).
+-- The mpv side of the define protocol (dev/design/HOST.md).
 --
 -- The framework owns the protocol; this module owns the three things it
 -- deliberately does not:
@@ -59,6 +59,9 @@ function M.install_mp_module(modules, observe)
         on_prop = function(name, cb)
             observe(name, cb)
         end,
+        message_to = function(...)
+            mp.commandv('script-message-to', ...)
+        end
     })
 
     modules:add_loader('mp', function(env, scope_id)
@@ -90,8 +93,8 @@ end
 ---@field on_sealed fun()? called when the last `define_end` arrives
 ---@field _listening boolean
 ---@field _allow_start boolean
----@overload fun(options: MpDefineOptions?): MpDefine
-local MpDefine = std.class.new('MpDefine')
+---@overload fun(options: MpDefineOptions?): self
+local MpDefine = std.class.new('MpDefine', {})
 
 function MpDefine:__init(options)
     options = options or {}

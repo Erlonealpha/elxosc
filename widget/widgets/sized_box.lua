@@ -23,7 +23,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class SizedBox : SingleChildRenderObjectWidget
 ---@field width? number
 ---@field height? number
----@overload fun(options?: _SizedBoxOptions): SizedBox
+---@overload fun(options?: _SizedBoxOptions): self
 local SizedBox = std.class.new('SizedBox', { SingleChildRenderObjectWidget })
 
 ---@param options? _SizedBoxOptions

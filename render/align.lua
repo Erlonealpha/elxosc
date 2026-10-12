@@ -18,7 +18,7 @@ local M = {}
 ---@field alignment Offset (0,0)=top-left, (0.5,0.5)=center, (1,1)=bottom-right
 ---@field width_factor number?
 ---@field height_factor number?
----@overload fun(alignment: Offset?, child: RenderObject?, width_factor: number?, height_factor: number?): RenderAlign
+---@overload fun(alignment: Offset?, child: RenderObject?, width_factor: number?, height_factor: number?): self
 local RenderAlign = std.class.new('RenderAlign', { RenderObject })
 
 function RenderAlign:__init(alignment, child, width_factor, height_factor)

@@ -1,14 +1,16 @@
 local std = require 'elxlibs.std'
 local base = require 'widget.widgets.button_base'
 local color = require 'foundation.color'
+
 local ButtonBase = base.ButtonBase
 local ButtonStyle = base.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
+
 ---@class _OutlinedButtonOptions : _ButtonBaseOptions
 
 ---@class OutlinedButton : ButtonBase
----@overload fun(options: _OutlinedButtonOptions?): OutlinedButton
+---@overload fun(options: _OutlinedButtonOptions?): self
 local OutlinedButton = std.class.new('OutlinedButton', { ButtonBase })
 ---@param options _OutlinedButtonOptions?
 function OutlinedButton:__init(options)
@@ -23,4 +25,5 @@ function OutlinedButton:__init(options)
     })
     ButtonBase.__init(self, config)
 end
+
 return { OutlinedButton = OutlinedButton }

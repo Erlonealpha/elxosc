@@ -50,8 +50,8 @@ M.StrokeJoin = {
 ---@field stroke_cap StrokeCap
 ---@field stroke_join StrokeJoin
 ---@field antialias boolean hint for backends that support it
----@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): Paint
-local Paint = std.class.new('Paint')
+---@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): self
+local Paint = std.class.new('Paint', {})
 
 function Paint:__init(color_, style, stroke_width)
     self.color = color_ or Color.argb(0xFF000000)

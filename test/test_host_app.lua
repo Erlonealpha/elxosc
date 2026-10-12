@@ -95,16 +95,17 @@ F.test('the demo exposes anchors, nominal icons and static animation output', fu
     F.contains(fake.overlay.data, 'Frame-clock OffsetBox', 'paint-only offset demo label')
 end)
 
-F.test('the demo exposes finite FittedBox scale, crop and clip output', function()
+F.test('the demo exposes finite scale box and clip output', function()
     mp_stub.reset()
     local app = mpv_app.App(Demo())
     app:render()
-    F.contains(fake.overlay.data, 'FittedBox', 'fitted box demo label')
+    F.contains(fake.overlay.data, 'Scale boxes', 'scale box demo label')
     F.contains(fake.overlay.data, '\\fscx', 'finite text scale output')
     F.contains(fake.overlay.data, '\\clip', 'fitted box clip output')
     F.contains(fake.overlay.data, 'cover crop', 'cover example output')
     F.contains(fake.overlay.data, 'TransformBox', 'paint-only transform output')
     F.contains(fake.overlay.data, 'LayoutScaleBox', 'layout scale output')
+    F.contains(fake.overlay.data, 'Scale tap', 'animated scale button output')
 end)
 
 --== widget binding ========================================================

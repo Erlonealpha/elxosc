@@ -37,7 +37,7 @@ local M = {}
 ---@field mounted boolean
 ---@field dirty boolean
 ---@overload fun(widget: Widget):self
-local Element = std.class.new('Element')
+local Element = std.class.new('Element', {})
 
 --- `BuildContext` is Flutter's name for "the handle a build gets"; here the
 --- handle *is* the element itself.
@@ -318,7 +318,7 @@ end
 
 ---@class InheritedElement : ProxyElement
 ---@field dependents table<Element, true>
----@overload fun(widget: InheritedWidget): InheritedElement
+---@overload fun(widget: InheritedWidget): self
 local InheritedElement = std.class.new('InheritedElement', { ProxyElement })
 
 function InheritedElement:__init(widget)

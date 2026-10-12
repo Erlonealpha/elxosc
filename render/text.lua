@@ -10,11 +10,14 @@ local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local anchor_mod = require 'foundation.anchor'
 local text_paint_mod = require 'painting.text_paint'
+local text_style = require 'text.text_style'
 local render_object = require 'render.render_object'
 local text_layout = require 'text.text_layout'
 
 local Offset = geometry.Offset
+local Anchor = anchor_mod.Anchor
 local RenderObject = render_object.RenderObject
+local Align = text_style.Align
 local raise = std.raise
 
 local M = {}
@@ -25,9 +28,13 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field paragraph Paragraph?
 ---@field text_paint TextPaint
----@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): RenderText
+---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): self
 local RenderText = std.class.new('RenderText', { RenderObject })
 
+---@param text string
+---@param style TextStyle
+---@param measurer TextLayout?
+---@param text_paint TextPaint?
 function RenderText:__init(text, style, measurer, text_paint)
     std.super(RenderText, self, RenderObject).__init(self)
     self.text = text
@@ -61,11 +68,25 @@ function RenderText:__paint(canvas, offset)
         -- Anchor within the constrained layout box, not the estimated natural
         -- paragraph. In particular a ligature name may measure much wider than
         -- the icon box while its native glyph still belongs at the box center.
-        local fraction = anchor_mod.fraction(self.text_paint.anchor)
+        local anchor = self.text_paint.anchor
+        if not self.text_paint._anchor_explicit then
+            if self.style.align == Align.CENTER then
+                anchor = Anchor.CENTER
+            elseif self.style.align == Align.RIGHT then
+                anchor = Anchor.CENTER_RIGHT
+            else
+                anchor = Anchor.CENTER_LEFT
+            end
+        end
+        local fraction = anchor_mod.fraction(anchor)
         local position = (offset + Offset(
             self.size.width * fraction.x,
             self.size.height * fraction.y)) --[[@as Offset]]
-        canvas:draw_text(self.paragraph, position, self.text_paint)
+        local text_paint = self.text_paint
+        if anchor ~= self.text_paint.anchor then
+            text_paint = self.text_paint:copy_with({ anchor = anchor })
+        end
+        canvas:draw_text(self.paragraph, position, text_paint)
     end
     self:paint_children(canvas, offset)
 end

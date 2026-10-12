@@ -39,8 +39,8 @@ local M = {}
 ---@field scope_id string? scope that declared the binding, when declared by define
 
 ---@class BindRegistry : std.object
----@overload fun(): BindRegistry
-local BindRegistry = std.class.new('BindRegistry')
+---@overload fun(): self
+local BindRegistry = std.class.new('BindRegistry', {})
 
 function BindRegistry:__init()
     self._binds = {}
@@ -172,7 +172,7 @@ end
 ---@param widget Widget
 function BindRegistry:_visit(widget)
     local id = widget.id
-    if id ~= nil then
+    if id ~= nil and self:has(id) then
         for _, entry in ipairs(self:get(id)) do
             apply_binding(widget, entry)
         end
@@ -196,7 +196,7 @@ end
 --- of its own. Unbound it contributes nothing to the render tree.
 ---@class Slot : StatelessWidget
 ---@field child Widget?
----@overload fun(id: string, options: { key: any? }?): Slot
+---@overload fun(id: string, options: { key: any? }?): self
 local Slot = std.class.new('Slot', { StatelessWidget })
 
 function Slot:__init(id, options)

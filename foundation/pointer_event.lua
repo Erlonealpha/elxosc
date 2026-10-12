@@ -28,15 +28,14 @@ local M = {}
 ---@field type string
 ---@field point Offset?
 ---@field data any?
----@overload fun(type: string, point: Offset?, data: any?, extra: table?): PointerEvent
----@overload fun(fields: _PointerEventFields): PointerEvent
-local PointerEvent = std.class.new('PointerEvent')
+---@overload fun(type: string, point: Offset?, data: any?, extra: table?): self
+---@overload fun(fields: _PointerEventFields): self
+local PointerEvent = std.class.new('PointerEvent', {})
 
 ---@param type string|_PointerEventFields
 ---@param point Offset?
 ---@param data any?
 ---@param extra table?
----@return nil
 function PointerEvent:__init(type, point, data, extra)
     if _G.type(type) == 'table' then
         local fields = type --[[@as _PointerEventFields]]

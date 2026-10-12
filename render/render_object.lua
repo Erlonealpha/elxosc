@@ -39,8 +39,8 @@ local M = {}
 ---@field needs_layout boolean
 ---@field needs_paint boolean
 ---@field _children RenderObject[]
----@overload fun(): RenderObject
-local RenderObject = std.class.new('RenderObject')
+---@overload fun(): self
+local RenderObject = std.class.new('RenderObject', {})
 
 function RenderObject:__init()
     self.parent = nil

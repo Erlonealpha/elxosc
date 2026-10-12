@@ -16,8 +16,8 @@ local M = {}
 
 ---@class FrameClock : std.object
 ---@field handler fun(time: number)?
----@overload fun(): FrameClock
-local FrameClock = std.class.new('FrameClock')
+---@overload fun(): self
+local FrameClock = std.class.new('FrameClock', {})
 
 --- Current time in seconds (monotonic where the host allows it).
 ---@return number

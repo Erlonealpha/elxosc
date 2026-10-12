@@ -21,8 +21,8 @@ local M = {}
 ---@field widget StatefulWidget
 ---@field context Element?
 ---@field _resources table[]
----@overload fun(): State
-local State = std.class.new('State')
+---@overload fun(): self
+local State = std.class.new('State', {})
 
 function State:__init()
     self.widget = nil

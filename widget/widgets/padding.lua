@@ -17,7 +17,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class Padding : SingleChildRenderObjectWidget
 ---@field padding EdgeInsets
----@overload fun(child: Widget?, options?: _PaddingOptions): Padding
+---@overload fun(child: Widget?, options?: _PaddingOptions): self
 local Padding = std.class.new('Padding', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?

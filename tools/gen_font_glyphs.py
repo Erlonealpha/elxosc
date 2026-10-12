@@ -10,6 +10,7 @@ template = \
 
 ---@alias FluentIconNames
 {records}
+--- | string
 '''
 
 if __name__ == '__main__':

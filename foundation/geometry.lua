@@ -29,8 +29,8 @@ local M = {}
 ---@class Offset : std.object
 ---@field x number
 ---@field y number
----@overload fun(x: number?, y: number?): Offset
-local Offset = std.class.new('Offset')
+---@overload fun(x: number?, y: number?): self
+local Offset = std.class.new('Offset', {})
 
 function Offset:__init(x, y)
     self.x = x or 0
@@ -102,6 +102,82 @@ function Offset.zero()
     return Offset(0, 0)
 end
 
+---@class Point : std.object
+---@field x int
+---@field y int
+---@overload fun(x: int?, y: int?): self
+local Point = std.class.new('Point', {})
+
+function Point:__init(x, y)
+    self.x = x or 0
+    self.y = y or 0
+end
+
+function Point:__tostring()
+    return format('Point(%d, %d)', self.x, self.y)
+end
+
+---@param other Point
+---@return boolean
+function Point:__eq(other)
+    return self.x == other.x and self.y == other.y
+end
+
+---@param other Point
+---@return Point
+function Point:__add(other)
+    return Point(self.x + other.x, self.y + other.y)
+end
+
+---@param other Point
+---@return Point
+function Point:__sub(other)
+    return Point(self.x - other.x, self.y - other.y)
+end
+
+---@param factor int
+---@return Point
+function Point:__mul(factor)
+    return Point(self.x * factor, self.y * factor)
+end
+
+---@return Point
+function Point:__unm()
+    return Point(-self.x, -self.y)
+end
+
+---@param dx int
+---@param dy int
+---@return Point
+function Point:translate(dx, dy)
+    return Point(self.x + dx, self.y + dy)
+end
+
+---@param sx int
+---@param sy int? defaults to `sx`
+---@return Point
+function Point:scale(sx, sy)
+    return Point(self.x * sx, self.y * (sy or sx))
+end
+
+---@return number
+function Point:length()
+    return sqrt(self.x * self.x + self.y * self.y)
+end
+
+---@param other Point
+---@return number
+function Point:distance(other)
+    local dx = self.x - other.x
+    local dy = self.y - other.y
+    return sqrt(dx * dx + dy * dy)
+end
+
+---@return Point
+function Point.zero()
+    return Point(0, 0)
+end
+
 --==========================================================================
 -- Size
 --==========================================================================
@@ -109,8 +185,8 @@ end
 ---@class Size : std.object
 ---@field width number
 ---@field height number
----@overload fun(width: number?, height: number?): Size
-local Size = std.class.new('Size')
+---@overload fun(width: number?, height: number?): self
+local Size = std.class.new('Size', {})
 
 function Size:__init(width, height)
     self.width = width or 0
@@ -184,8 +260,8 @@ end
 ---@field top number
 ---@field right number
 ---@field bottom number
----@overload fun(left: number?, top: number?, right: number?, bottom: number?): Rect
-local Rect = std.class.new('Rect')
+---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
+local Rect = std.class.new('Rect', {})
 
 function Rect:__init(left, top, right, bottom)
     self.left = left or 0
@@ -331,8 +407,8 @@ end
 ---@field top number
 ---@field right number
 ---@field bottom number
----@overload fun(left: number?, top: number?, right: number?, bottom: number?): EdgeInsets
-local EdgeInsets = std.class.new('EdgeInsets')
+---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
+local EdgeInsets = std.class.new('EdgeInsets', {})
 
 function EdgeInsets:__init(left, top, right, bottom)
     self.left = left or 0
@@ -414,6 +490,7 @@ function EdgeInsets.zero()
 end
 
 M.Offset = Offset
+M.Point = Point
 M.Size = Size
 M.Rect = Rect
 M.EdgeInsets = EdgeInsets

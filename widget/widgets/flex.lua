@@ -13,7 +13,7 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 
 ---@class _FlexibleOptions
 ---@field flex? number
----@field fit? 'tight'|'loose'
+---@field fit? FlexFit
 ---@field key? any
 ---@field id? string
 
@@ -24,17 +24,17 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 
 ---@class _FlexOptions
 ---@field children? Widget[]
----@field main_alignment? 'start'|'center'|'end'|'space_between'|'space_around'|'space_evenly'
----@field main_axis_size? 'max'|'min'
----@field cross_alignment? 'start'|'center'|'end'|'stretch'|'baseline'
+---@field main_alignment? MainAlignment
+---@field main_axis_size? MainAxisSize
+---@field cross_alignment? CrossAlignment
 ---@field spacing? number
 ---@field key? any
 ---@field id? string
 
 ---@class Flexible : ParentDataWidget
 ---@field flex number
----@field fit 'tight'|'loose'
----@overload fun(child: Widget?, options?: _FlexibleOptions): Flexible
+---@field fit FlexFit
+---@overload fun(child: Widget?, options?: _FlexibleOptions): self
 local Flexible = std.class.new('Flexible', { ParentDataWidget })
 
 ---@param child Widget?
@@ -78,16 +78,16 @@ local function Spacer(options)
 end
 
 ---@class Flex : MultiChildRenderObjectWidget
----@field direction 'row'|'column'
+---@field direction FlexDirection
 ---@field children Widget[]
----@field main_alignment 'start'|'center'|'end'|'space_between'|'space_around'|'space_evenly'
----@field main_axis_size 'max'|'min'
----@field cross_alignment 'start'|'center'|'end'|'stretch'|'baseline'
+---@field main_alignment MainAlignment
+---@field main_axis_size MainAxisSize
+---@field cross_alignment CrossAlignment
 ---@field spacing number
----@overload fun(direction: 'row'|'column', options?: _FlexOptions): Flex
+---@overload fun(direction: FlexDirection, options?: _FlexOptions): self
 local Flex = std.class.new('Flex', { MultiChildRenderObjectWidget })
 
----@param direction 'row'|'column'
+---@param direction FlexDirection
 ---@param options? _FlexOptions
 function Flex:__init(direction, options)
     options = options or {}

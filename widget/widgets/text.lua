@@ -27,7 +27,7 @@ local M = {}
 ---@field style TextStyle
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
----@overload fun(text: string | number, options: _TextOptions?): Text
+---@overload fun(text: string | number, options: _TextOptions?): self
 local Text = std.class.new('Text', { LeafRenderObjectWidget })
 
 ---@param text string | number

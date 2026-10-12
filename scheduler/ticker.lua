@@ -16,8 +16,8 @@ local M = {}
 ---@field scheduler Scheduler
 ---@field on_tick fun(dt: number, time: number)
 ---@field _last_time number?
----@overload fun(scheduler: Scheduler, on_tick: fun(dt: number, time: number)): Ticker
-local Ticker = std.class.new('Ticker')
+---@overload fun(scheduler: Scheduler, on_tick: fun(dt: number, time: number)): self
+local Ticker = std.class.new('Ticker', {})
 
 function Ticker:__init(scheduler, on_tick)
     self.scheduler = scheduler

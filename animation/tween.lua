@@ -112,8 +112,8 @@ end
 ---@field begin_value TweenSupportedValue
 ---@field end_value TweenSupportedValue
 ---@field lerp fun(begin_value: T, end_value: T, t: number, typ: TweenSupportedTypes): T
----@overload fun(begin_value: T, end_value: T, lerp?: fun(begin_value: T, end_value: T, t: number, typ: TweenSupportedTypes): T): Tween<T>
-local Tween = std.class.new('Tween')
+---@overload fun(begin_value: T, end_value: T, lerp?: fun(begin_value: T, end_value: T, t: number, typ: TweenSupportedTypes): T): self
+local Tween = std.class.new('Tween', {})
 
 ---@param begin_value T
 ---@param end_value T

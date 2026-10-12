@@ -7,7 +7,6 @@
 -- the top-left, because the doc's point is that the Scaffold hands its child
 -- *loose* constraints ("it can be any size it wants, but not bigger than the
 -- screen").
----@diagnostic disable: undefined-field, call-non-callable, need-check-nil
 
 local geometry = require 'foundation.geometry'
 local color = require 'foundation.color'

@@ -101,7 +101,7 @@ F.test('draws a paragraph with size, colour and line breaks', function()
     canvas:draw_text(paragraph, Offset(5, 6))
     local ev = canvas.events[1]
     F.contains(ev, '\\pos(5,6)', 'anchored at the offset')
-    F.contains(ev, '\\rDefault\\an7', 'reset + top-left alignment')
+    F.contains(ev, '\\rDefault\\an4', 'left text uses a vertically centered anchor')
     F.contains(ev, '\\fs10', 'font size')
     F.contains(ev, '\\1c&HFFFFFF&', 'default white')
     F.contains(ev, 'a\\Nb', 'hard line break')
@@ -114,7 +114,8 @@ F.test('text positioning uses the translated logical top-left', function()
     local canvas = AssCanvas()
     canvas:translate(10, 20)
     canvas:draw_text(paragraph, Offset(5, 6))
-    F.contains(canvas:text(), '\\pos(15,26)\\rDefault\\an7\\blur0', 'top-left after translation')
+    F.contains(canvas:text(), '\\pos(15,26)\\rDefault\\an4\\blur0',
+        'left text keeps its translated target')
     F.contains(canvas:text(), '\\fs12.5', 'fractional font size is retained')
     F.contains(canvas:text(), '\\b1\\i1', 'bold and italic have their own tags')
     F.contains(canvas:text(), '\\bord0\\shad0', 'bold does not create a border')
@@ -177,11 +178,25 @@ F.test('applies a text visual offset once in the active canvas transform', funct
     F.contains(canvas:text(), '\\pos(24,38)', 'offset is transformed with the target')
 end)
 
-F.test('the default text paint remains top-left compatible', function()
-    local paragraph = AssTextLayout():layout('x', TextStyle({ font_size = 10 }))
+F.test('an explicit top-left paint overrides text alignment', function()
+    local paragraph = AssTextLayout():layout('x', TextStyle({ font_size = 10, align = 'center' }))
     local canvas = AssCanvas()
-    canvas:draw_text(paragraph, Offset(4, 5))
-    F.contains(canvas:text(), '\\pos(4,5)\\rDefault\\an7', 'omitted paint')
+    canvas:draw_text(paragraph, Offset(4, 5), TextPaint({ anchor = Anchor.TOP_LEFT }))
+    F.contains(canvas:text(), '\\pos(4,5)\\rDefault\\an7', 'explicit top-left paint')
+end)
+
+F.test('text alignment maps to ASS middle anchors', function()
+    local expected = {
+        { 'left', 4 },
+        { 'center', 5 },
+        { 'right', 6 },
+    }
+    for _, case in ipairs(expected) do
+        local paragraph = AssTextLayout():layout('x', TextStyle({ align = case[1] }))
+        local canvas = AssCanvas()
+        canvas:draw_text(paragraph, Offset(4, 5))
+        F.contains(canvas:text(), '\\an' .. case[2], case[1] .. ' alignment')
+    end
 end)
 
 --== transforms / clipping =================================================

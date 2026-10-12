@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- The module registry behind `mod` / `import` (dev/design/DESIGN_PATH.md §7).
+-- The module registry behind `mod` / `import` (dev/design/HOST.md).
 --
 -- Two tables, exactly the shape the define DSL expects:
 --   * `mods`    — data modules: `import(name)` copies these names into the scope;
@@ -23,8 +23,8 @@ local M = {}
 ---@field mods table<string, table<string, any>>
 ---@field loaders table<string, fun(env: table, scope_id: string)>
 ---@field protected_names table<string, true>
----@overload fun(): ModuleRegistry
-local ModuleRegistry = std.class.new('ModuleRegistry')
+---@overload fun(): self
+local ModuleRegistry = std.class.new('ModuleRegistry', {})
 
 function ModuleRegistry:__init()
     self.mods = {}

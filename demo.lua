@@ -14,6 +14,7 @@ local layout_widgets = require 'widget.widgets.layout'
 local icon_mod = require 'widget.widgets.icon'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
+local tween_mod = require 'animation.tween'
 
 local Color = color.Color
 local Anchor = anchor_mod.Anchor
@@ -22,8 +23,10 @@ local Size = geometry.Size
 local EdgeInsets = geometry.EdgeInsets
 local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
+local Align = text_style.Align
 local State = state_mod.State
 local StatefulWidget = widget_mod.StatefulWidget
+local Tween = tween_mod.Tween
 local Column = layout_widgets.Column
 local Row = layout_widgets.Row
 local Container = layout_widgets.Container
@@ -50,7 +53,9 @@ local M = {}
 ---@field selected string
 ---@field motion number frame-clock animation progress
 ---@field motion_controller AnimationController
----@overload fun(): DemoState
+---@field button_scale_controller AnimationController
+---@field button_scale_tween Tween<Size>
+---@overload fun(): self
 local DemoState = std.class.new('DemoState', { State })
 
 function DemoState:__init()
@@ -58,10 +63,14 @@ function DemoState:__init()
     self.count = 0
     self.selected = 'ready'
     self.motion = 0
+    self.button_scale_controller = nil
+    self.button_scale_tween = nil
 end
 
 function DemoState:init_state()
     self.motion_controller = self:create_animation_controller({ duration = 1.2 })
+    self.button_scale_controller = self:create_animation_controller({ duration = 0.24 })
+    self.button_scale_tween = Tween(Size(1, 1), Size(1.12, 1.12))
     self.motion_controller:add_listener(function(controller)
         self:set_state(function()
             self.motion = controller.value
@@ -92,6 +101,15 @@ function DemoState:_set_event(name)
         self.selected = name
         mp.set_property('user-data/elxosc-demo-event', name)
     end)
+end
+
+---@param name string
+function DemoState:_animate(name)
+    self:set_state(function()
+        self.selected = name
+    end)
+    self.motion_controller:repeat_animation({ reverse = true, count = 1 })
+    mp.set_property('user-data/elxosc-demo-event', name)
 end
 
 ---@param context BuildContext
@@ -155,16 +173,20 @@ function DemoState:build(context)
         padding = EdgeInsets.all(8),
         color = Color.rgba(0x18202AC0),
         child = Row({
-            spacing = 8,
+            spacing = 4,
             cross_alignment = 'center',
             children = {
                 Text('Frame-clock OffsetBox', {
                     style = TextStyle({ font_size = 12, color = Color.rgba255(180, 190, 205) }),
                 }),
-                OffsetBox({
-                    offset = Offset(self.motion * 32, 0),
-                    child = Icon('arrow_forward', { size = 22 }),
-                }),
+                Container{
+                    width = 64,
+                    alignment = Offset(0, 0.5),
+                    child = OffsetBox{
+                        offset = Offset(self.motion * 32, 0),
+                        child = Icon('arrow_forward', { size = 22 }),
+                    }
+                },
                 Text(string.format('%d%%', math.floor(self.motion * 100 + 0.5)), {
                     style = TextStyle({ font_size = 12, bold = true }),
                 }),
@@ -178,17 +200,22 @@ function DemoState:build(context)
             spacing = 6,
             cross_alignment = 'center',
             children = {
-                Text('FittedBox', {
+                Text('Scale boxes', {
                     style = TextStyle({ font_size = 12, color = Color.rgba255(180, 190, 205) }),
                 }),
                 TransformBox(Text('TransformBox', {
-                    style = TextStyle({ font_size = 12, wrap = false, bold = true }),
+                    style = TextStyle({
+                        font_size = 12,
+                        wrap = false,
+                        bold = true,
+                        align = Align.CENTER,
+                    }),
                 }), {
                     scale = Size(1 + self.motion * 0.25, 1 + self.motion * 0.25),
                     clip = true,
                 }),
                 LayoutScaleBox(Text('LayoutScaleBox', {
-                    style = TextStyle({ font_size = 11, wrap = false }),
+                    style = TextStyle({ font_size = 11, wrap = false, align = Align.CENTER }),
                 }), {
                     scale = Size(0.85, 1.15),
                     clip = true,
@@ -210,10 +237,18 @@ function DemoState:build(context)
                 SizedBox({
                     width = 108,
                     height = 34,
-                    child = FittedBox(OutlinedButton({
+                    child = FittedBox(TransformBox(OutlinedButton{
                         label = 'Scale tap',
-                        on_click = function() self:_set_event('scaled tap') end,
-                    }), { fit = 'contain', clip = true }),
+                        on_click = function()
+                            self:_set_event('scaled tap')
+                            self.button_scale_controller:repeat_animation({ reverse = true, count = 1 })
+                        end,
+                    }, {
+                        scale = Size(1, 1),
+                        alignment = Offset(0.5, 0.5),
+                        scale_controller = self.button_scale_controller,
+                        scale_tween = self.button_scale_tween,
+                    }), { fit = 'fill', clip = false }),
                 }),
             },
         }),
@@ -272,9 +307,7 @@ function DemoState:build(context)
                         TextButton{
                             label = 'Animate',
                             on_click = function()
-                                self.selected = 'animation'
-                                self.motion_controller:repeat_animation({ reverse = true, count = 1 })
-                                mp.set_property('user-data/elxosc-demo-event', self.selected)
+                                self:_animate('animation')
                             end,
                         },
                         IconButton{
@@ -289,7 +322,7 @@ function DemoState:build(context)
 end
 
 ---@class Demo : StatefulWidget
----@overload fun(): Demo
+---@overload fun(): self
 local Demo = std.class.new('Demo', { StatefulWidget })
 
 function Demo:create_state()

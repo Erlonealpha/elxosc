@@ -13,8 +13,8 @@ local M = {}
 
 ---@class Key : std.object
 ---@field value any
----@overload fun(value: any): Key
-local Key = std.class.new('Key')
+---@overload fun(value: any): self
+local Key = std.class.new('Key', {})
 
 function Key:__init(value)
     self.value = value

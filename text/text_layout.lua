@@ -79,8 +79,8 @@ local function wrap_line(line, max_width, width_of)
 end
 
 ---@class TextLayout : std.object
----@overload fun(): TextLayout
-local TextLayout = std.class.new('TextLayout')
+---@overload fun(): self
+local TextLayout = std.class.new('TextLayout', {})
 
 --- Uniform logical line advance for a paragraph, not a glyph ink height.
 ---@param style TextStyle

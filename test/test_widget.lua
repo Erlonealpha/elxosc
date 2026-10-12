@@ -153,7 +153,7 @@ F.test('Text keeps natural paragraph metrics separate from its constrained box',
     owner:paint(canvas)
     F.eq(canvas.ops[1].name, 'draw_text', 'paragraph is painted')
     F.eq(canvas.ops[1][1].size, Size(20, 12), 'painting receives the natural paragraph')
-    F.eq(canvas.ops[1][2], Offset.zero(), 'painting receives the logical top-left')
+    F.eq(canvas.ops[1][2], Offset(0, 20), 'left text uses the box middle-left target')
 end)
 
 F.test('Text anchors against its constrained box, not natural paragraph size', function()

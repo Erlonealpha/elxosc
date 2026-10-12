@@ -10,7 +10,7 @@
 --     `ass-events` overlay with matching `res_x`/`res_y` maps pixels 1:1.
 --
 -- Since the Widget layer landed, the app drives a `WidgetBinding` rather than a
--- hand-built `RenderObject` tree (dev/design/DESIGN_PATH.md §9.1): `build()` returns a
+-- hand-built `RenderObject` tree (dev/design/HOST.md): `build()` returns a
 -- Widget, the binding turns it into the render tree, and every frame flushes
 -- pending rebuilds before layout.
 
@@ -51,7 +51,7 @@ local M = {}
 --- the same rate limiting uosc applies via `render_delay`.
 ---@class MpFrameClock : FrameClock
 ---@field delay number minimum seconds between frames
----@overload fun(delay: number?): MpFrameClock
+---@overload fun(delay: number?): self
 local MpFrameClock = std.class.new('MpFrameClock', { FrameClock })
 
 function MpFrameClock:__init(delay)
@@ -87,8 +87,8 @@ end
 --- Pushes the canvas as an `ass-events` overlay, skipping identical frames.
 ---@class AssPresenter : std.object
 ---@field overlay table
----@overload fun(z: number?): AssPresenter
-local AssPresenter = std.class.new('AssPresenter')
+---@overload fun(z: number?): self
+local AssPresenter = std.class.new('AssPresenter', {})
 
 function AssPresenter:__init(z)
     self.overlay = mp.create_osd_overlay('ass-events')
@@ -129,8 +129,8 @@ end
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry? }?): App
-local App = std.class.new('App')
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry? }?): self
+local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
     options = options or {}

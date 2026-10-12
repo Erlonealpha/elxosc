@@ -24,6 +24,7 @@ local color_mod = require 'foundation.color'
 local paint_mod = require 'painting.paint'
 local anchor_mod = require 'foundation.anchor'
 local text_paint_mod = require 'painting.text_paint'
+local text_style = require 'text.text_style'
 local transform_mod = require 'foundation.transform'
 
 local Canvas = canvas.Canvas
@@ -32,6 +33,7 @@ local Verb = path_mod.Verb
 local Color = color_mod.Color
 local Paint = paint_mod.Paint
 local Anchor = anchor_mod.Anchor
+local Align = text_style.Align
 local Matrix2D = transform_mod.Matrix2D
 local raise = std.raise
 local math = math
@@ -53,6 +55,12 @@ local ASS_ANCHORS = {
     [Anchor.BOTTOM_LEFT] = 1,
     [Anchor.BOTTOM_CENTER] = 2,
     [Anchor.BOTTOM_RIGHT] = 3,
+}
+
+local ASS_TEXT_ALIGN_ANCHORS = {
+    [Align.LEFT] = 4,
+    [Align.CENTER] = 5,
+    [Align.RIGHT] = 6,
 }
 
 local M = {}
@@ -115,7 +123,7 @@ end
 ---@class AssCanvas : Canvas
 ---@field events string[] one ASS `Text` line per drawing call
 ---@field subpixel integer `\p` level (4 = 8x sub-pixel, the assdraw default)
----@overload fun(subpixel: integer?): AssCanvas
+---@overload fun(subpixel: integer?): self
 local AssCanvas = std.class.new('AssCanvas', { Canvas })
 
 function AssCanvas:__init(subpixel)
@@ -309,12 +317,24 @@ end
 
 --== content ==============================================================
 
+---@param paragraph Paragraph
+---@param position Offset
+---@param text_paint TextPaint?
 function AssCanvas:draw_text(paragraph, position, text_paint)
     local style = paragraph.style
     text_paint = text_paint_mod.resolve(text_paint)
     local visual_offset = text_paint.offset
     local x, y = self:_apply(position.x + visual_offset.x, position.y + visual_offset.y)
-    local ass_anchor = ASS_ANCHORS[text_paint.anchor]
+    local anchor = text_paint.anchor
+    if not text_paint._anchor_explicit then
+        anchor = style.align == Align.CENTER and Anchor.CENTER
+            or style.align == Align.RIGHT and Anchor.CENTER_RIGHT
+            or Anchor.CENTER_LEFT
+    end
+    local ass_anchor = ASS_ANCHORS[anchor]
+    if not text_paint._anchor_explicit then
+        ass_anchor = ASS_TEXT_ALIGN_ANCHORS[style.align]
+    end
     if not ass_anchor then
         raise(std.ValueError('unsupported ASS text anchor: ' .. tostring(text_paint.anchor)))
     end

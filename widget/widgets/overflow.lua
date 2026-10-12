@@ -36,13 +36,13 @@ local FITS = {
 ---@field max_width? number
 ---@field min_height? number
 ---@field max_height? number
----@field fit? 'max'|'defer_to_child'
+---@field fit? OverflowBoxFit
 ---@field alignment? Offset
 ---@field key? any
 ---@field id? string
 
 ---@class _FittedBoxOptions
----@field fit? 'contain'|'cover'|'fill'|'fit_width'|'fit_height'|'none'|'scale_down'
+---@field fit? FittedBoxFit
 ---@field alignment? Offset
 ---@field clip? boolean
 ---@field key? any
@@ -50,7 +50,7 @@ local FITS = {
 
 ---@class UnconstrainedBox : SingleChildRenderObjectWidget
 ---@field alignment Offset
----@overload fun(options?: _UnconstrainedBoxOptions): UnconstrainedBox
+---@overload fun(options?: _UnconstrainedBoxOptions): self
 local UnconstrainedBox = std.class.new('UnconstrainedBox', { SingleChildRenderObjectWidget })
 
 ---@param options? _UnconstrainedBoxOptions
@@ -74,7 +74,7 @@ end
 
 ---@class OverflowBox : SingleChildRenderObjectWidget
 ---@field opts OverflowBoxOpts
----@overload fun(options?: _OverflowBoxOptions): OverflowBox
+---@overload fun(options?: _OverflowBoxOptions): self
 local OverflowBox = std.class.new('OverflowBox', { SingleChildRenderObjectWidget })
 
 ---@param options? _OverflowBoxOptions
@@ -106,9 +106,9 @@ function OverflowBox:update_render_object(render_object)
 end
 
 ---@class FittedBox : SingleChildRenderObjectWidget
----@field fit 'contain'|'cover'|'fill'|'fit_width'|'fit_height'|'none'|'scale_down'
+---@field fit FittedBoxFit
 ---@field alignment Offset
----@overload fun(child: Widget?, options?: _FittedBoxOptions): FittedBox
+---@overload fun(child: Widget?, options?: _FittedBoxOptions): self
 local FittedBox = std.class.new('FittedBox', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?
@@ -149,4 +149,8 @@ function FittedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
-return { UnconstrainedBox = UnconstrainedBox, OverflowBox = OverflowBox, FittedBox = FittedBox }
+return {
+    UnconstrainedBox = UnconstrainedBox,
+    OverflowBox = OverflowBox,
+    FittedBox = FittedBox
+}

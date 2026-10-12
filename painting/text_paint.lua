@@ -23,8 +23,9 @@ local M = {}
 ---@class TextPaint : std.object
 ---@field anchor AnchorName
 ---@field offset Offset
----@overload fun(options?: _TextPaintOptions): TextPaint
-local TextPaint = std.class.new('TextPaint')
+---@field _anchor_explicit boolean
+---@overload fun(options?: _TextPaintOptions): self
+local TextPaint = std.class.new('TextPaint', {})
 
 local option_names = {
     anchor = true,
@@ -92,6 +93,7 @@ end
 ---@param options? _TextPaintOptions
 function TextPaint:__init(options)
     options = check_options(options)
+    self._anchor_explicit = options.anchor ~= nil
     self.anchor = options.anchor == nil and Anchor.TOP_LEFT or options.anchor
     self.offset = options.offset == nil and Offset.zero() or options.offset
     if not anchor_mod.is_valid(self.anchor) then
@@ -104,16 +106,19 @@ end
 ---@return TextPaint
 function TextPaint:copy_with(options)
     options = check_options(options)
-    return TextPaint({
+    local copy = TextPaint({
         anchor = options.anchor == nil and self.anchor or options.anchor,
         offset = options.offset == nil and self.offset or options.offset,
     })
+    copy._anchor_explicit = self._anchor_explicit or options.anchor ~= nil
+    return copy
 end
 
 ---@param other TextPaint
 ---@return boolean
 function TextPaint:__eq(other)
     return self.anchor == other.anchor and self.offset == other.offset
+        and self._anchor_explicit == other._anchor_explicit
 end
 
 M.TextPaint = TextPaint

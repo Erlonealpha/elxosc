@@ -6651,3 +6651,4 @@
 --- | 'digit_seven'
 --- | 'digit_eight'
 --- | 'digit_nine'
+--- | string

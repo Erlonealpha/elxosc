@@ -61,37 +61,37 @@ local EXPECTED = {
     ['15'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m -14400 2480 l 17600 2480 l 17600 2880 l -14400 2880 c{\p0}]==],
     ['16'] = false,
     ['17'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 1200 2280 l 2000 2280 l 2000 3080 l 1200 3080 c{\p0}]==],
-    ['18'] = [==[{\pos(0,308)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx148\fscy148}Some Example Text.]==],
-    ['19'] = [==[{\pos(65,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Some Example Text.]==],
-    ['20'] = [==[{\pos(0,330)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx28\fscy28}This is some very very very large text that is too big to fit a regular screen in a single line.]==],
-    ['21'] = [==[{\pos(20,263)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is some very very\Nvery large text that is\Ntoo big to fit a regular\Nscreen in a single line.]==],
+    ['18'] = [==[{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx148\fscy148}Some Example Text.]==],
+    ['19'] = [==[{\pos(65,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Some Example Text.]==],
+    ['20'] = [==[{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx28\fscy28}This is some very very very large text that is too big to fit a regular screen in a single line.]==],
+    ['21'] = [==[{\pos(20,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is some very very\Nvery large text that is\Ntoo big to fit a regular\Nscreen in a single line.]==],
     ['22'] = false,
     ['23'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 2536 l 720 2536 l 720 2824 l 0 2824 c{\p0}
-{\pos(0,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
+{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 720 2536 l 1680 2536 l 1680 2824 l 720 2824 c{\p0}
-{\pos(90,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(90,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['24'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 2536 l 5880 2536 l 5880 2824 l 0 2824 c{\p0}
-{\pos(0,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very long text that won't fit the line.
+{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very long text that won't fit the line.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 5880 2536 l 6840 2536 l 6840 2824 l 5880 2824 c{\p0}
-{\pos(735,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(735,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['25'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 280 2104 l 1960 2104 l 1960 3256 l 280 3256 c{\p0}
-{\pos(35,263)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very\Nlong text that\Nwon't fit the\Nline.
+{\pos(35,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very\Nlong text that\Nwon't fit the\Nline.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 2240 2536 l 3200 2536 l 3200 2824 l 2240 2824 c{\p0}
-{\pos(280,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(280,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['26'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 1960 l 1600 1960 l 1600 3400 l 0 3400 c{\p0}
-{\pos(0,245)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
+{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 1600 2536 l 3200 2536 l 3200 2824 l 1600 2824 c{\p0}
-{\pos(200,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(200,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['27'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 1960 l 1560 1960 l 1560 3400 l 0 3400 c{\p0}
-{\pos(0,245)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
+{\pos(0,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 1560 2536 l 2520 2536 l 2520 2824 l 1560 2824 c{\p0}
-{\pos(195,317)\rDefault\an7\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(195,335)\rDefault\an4\blur0\fs30\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['28'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&HFF0000&\1a&H00&}{\p4}m 0 0 l 512 0 l 512 5360 l 0 5360 c{\p0}
-{\pos(8,0)\rDefault\an7\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
-{\pos(0,19)\rDefault\an7\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(8,10)\rDefault\an4\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
+{\pos(0,29)\rDefault\an4\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['29'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&HFF0000&\1a&H00&}{\p4}m 0 0 l 3200 0 l 3200 5360 l 0 5360 c{\p0}
-{\pos(176,0)\rDefault\an7\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
-{\pos(168,19)\rDefault\an7\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+{\pos(176,10)\rDefault\an4\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
+{\pos(168,29)\rDefault\an4\blur0\fs16\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
 }
 
 --- Lay `widget` out on the fixed screen and paint it into an ASS canvas.

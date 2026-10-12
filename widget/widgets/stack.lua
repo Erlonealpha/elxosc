@@ -19,7 +19,7 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 ---@class Stack : MultiChildRenderObjectWidget
 ---@field children Widget[]
 ---@field alignment Offset
----@overload fun(options?: _StackOptions): Stack
+---@overload fun(options?: _StackOptions): self
 local Stack = std.class.new('Stack', { MultiChildRenderObjectWidget })
 
 ---@param options? _StackOptions

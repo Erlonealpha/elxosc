@@ -34,7 +34,7 @@ local M = {}
 ---@field handlers GestureHandlers
 ---@field hovered boolean
 ---@field pressed boolean
----@overload fun(child: RenderObject?, handlers: GestureHandlers?): RenderGesture
+---@overload fun(child: RenderObject?, handlers: GestureHandlers?): self
 local RenderGesture = std.class.new('RenderGesture', { RenderObject })
 
 function RenderGesture:__init(child, handlers)

@@ -45,7 +45,7 @@ local StatelessWidget = widget_mod.StatelessWidget
 ---@field alignment? Offset
 ---@field decoration? Decoration
 ---@field constraints? Constraints
----@overload fun(options?: _ContainerOptions): Container
+---@overload fun(options?: _ContainerOptions): self
 local Container = std.class.new('Container', { StatelessWidget })
 
 ---@param options? _ContainerOptions

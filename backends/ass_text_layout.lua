@@ -81,7 +81,7 @@ local function utf8_next(s, i)
 end
 
 ---@class AssTextLayout : TextLayout
----@overload fun(): AssTextLayout
+---@overload fun(): self
 local AssTextLayout = std.class.new('AssTextLayout', { TextLayout })
 
 -- Inherit the logical line advance. The actual spacing of a multi-line ASS

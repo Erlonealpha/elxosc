@@ -20,7 +20,6 @@ local raise = std.raise
 
 -- Every method below declares the backend contract; the base implementation
 -- intentionally ignores its parameters (it just raises).
----@diagnostic disable: unused
 
 local M = {}
 
@@ -34,8 +33,8 @@ local function abstract(method)
 end
 
 ---@class Canvas : std.object
----@overload fun(): Canvas
-local Canvas = std.class.new('Canvas')
+---@overload fun(): self
+local Canvas = std.class.new('Canvas', {})
 
 --== state ================================================================
 

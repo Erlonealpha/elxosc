@@ -23,7 +23,7 @@ local M = {}
 
 ---@class RenderConstrainedBox : RenderObject
 ---@field additional Constraints
----@overload fun(additional: Constraints, child: RenderObject?): RenderConstrainedBox
+---@overload fun(additional: Constraints, child: RenderObject?): self
 local RenderConstrainedBox = std.class.new('RenderConstrainedBox', { RenderObject })
 
 function RenderConstrainedBox:__init(additional, child)
@@ -49,7 +49,7 @@ end
 ---@class RenderLimitedBox : RenderObject
 ---@field max_width number
 ---@field max_height number
----@overload fun(max_width: number?, max_height: number?, child: RenderObject?): RenderLimitedBox
+---@overload fun(max_width: number?, max_height: number?, child: RenderObject?): self
 local RenderLimitedBox = std.class.new('RenderLimitedBox', { RenderObject })
 
 function RenderLimitedBox:__init(max_width, max_height, child)

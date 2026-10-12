@@ -38,7 +38,7 @@ local ButtonStyle = style_mod.ButtonStyle
 ---@field widget ButtonBase
 ---@field hovered boolean
 ---@field pressed boolean
----@overload fun(): ButtonState
+---@overload fun(): self
 local ButtonState = std.class.new('ButtonState', { State })
 function ButtonState:init_state()
     self.hovered = false
@@ -125,7 +125,7 @@ end
 ---@field enabled boolean
 ---@field style ButtonStyle
 ---@field font_size number?
----@overload fun(options: _ButtonBaseOptions?): ButtonBase
+---@overload fun(options: _ButtonBaseOptions?): self
 local ButtonBase = std.class.new('ButtonBase', { StatefulWidget })
 ---@param options _ButtonBaseOptions?
 function ButtonBase:__init(options)

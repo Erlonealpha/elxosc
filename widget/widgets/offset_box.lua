@@ -20,7 +20,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class OffsetBox : SingleChildRenderObjectWidget
 ---@field offset Offset
----@overload fun(options?: _OffsetBoxOptions): OffsetBox
+---@overload fun(options?: _OffsetBoxOptions): self
 local OffsetBox = std.class.new('OffsetBox', { SingleChildRenderObjectWidget })
 
 ---@param options? _OffsetBoxOptions

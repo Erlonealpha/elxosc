@@ -15,8 +15,8 @@ local M = {}
 ---@field render_owner RenderOwner?
 ---@field scheduler Scheduler?
 ---@field on_dirty fun()?
----@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): BuildOwner
-local BuildOwner = std.class.new('BuildOwner')
+---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): self
+local BuildOwner = std.class.new('BuildOwner', {})
 
 function BuildOwner:__init(render_owner, scheduler)
     self.render_owner = render_owner

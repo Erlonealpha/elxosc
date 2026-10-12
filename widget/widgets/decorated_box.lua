@@ -16,7 +16,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class DecoratedBox : SingleChildRenderObjectWidget
 ---@field decoration Decoration
----@overload fun(child: Widget?, options?: _DecoratedBoxOptions): DecoratedBox
+---@overload fun(child: Widget?, options?: _DecoratedBoxOptions): self
 local DecoratedBox = std.class.new('DecoratedBox', { SingleChildRenderObjectWidget })
 
 ---@param child Widget?

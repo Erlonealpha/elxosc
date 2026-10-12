@@ -49,8 +49,8 @@ end
 ---@field max_width number
 ---@field min_height number
 ---@field max_height number
----@overload fun(min_width: number?, max_width: number?, min_height: number?, max_height: number?): Constraints
-local Constraints = std.class.new('Constraints')
+---@overload fun(min_width: number?, max_width: number?, min_height: number?, max_height: number?): self
+local Constraints = std.class.new('Constraints', {})
 
 function Constraints:__init(min_width, max_width, min_height, max_height)
     self.min_width = min_width or 0

@@ -41,8 +41,8 @@ local M = {}
 ---@field upper_bound number
 ---@field value number
 ---@field status AnimationStatus
----@overload fun(scheduler: Scheduler, options: _AnimationControllerOptions): AnimationController
-local AnimationController = std.class.new('AnimationController')
+---@overload fun(scheduler: Scheduler, options: _AnimationControllerOptions): self
+local AnimationController = std.class.new('AnimationController', {})
 
 ---@param scheduler Scheduler
 ---@param options _AnimationControllerOptions

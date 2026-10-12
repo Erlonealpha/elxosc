@@ -27,7 +27,7 @@ local max = math.max
 
 local M = {}
 
----@alias FittedBoxOptsFit
+---@alias FittedBoxFit
 --- | 'contain'
 --- | 'cover'
 --- | 'fill'
@@ -37,7 +37,7 @@ local M = {}
 --- | 'scale_down'
 
 ---@class FittedBoxOpts
----@field fit FittedBoxOptsFit?
+---@field fit FittedBoxFit?
 ---@field alignment Offset?
 ---@field clip boolean? clip the transformed child to this box
 
@@ -45,7 +45,7 @@ local M = {}
 ---@field fit string
 ---@field alignment Offset
 ---@field clip boolean
----@overload fun(child: RenderObject?, options: FittedBoxOpts?): RenderFittedBox
+---@overload fun(child: RenderObject?, options: FittedBoxOpts?): self
 local RenderFittedBox = std.class.new('RenderFittedBox', { RenderObject })
 
 ---@class FittedBoxMapping

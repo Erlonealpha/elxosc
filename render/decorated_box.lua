@@ -18,7 +18,16 @@ local RenderObject = render_object.RenderObject
 
 local M = {}
 
----@class Decoration
+---@class _DecorationOptions
+---@field color Color?
+---@field radius number?
+---@field border_width number?
+---@field border_color Color?
+---@field shadow_color Color?
+---@field shadow_offset Offset?
+---@field shadow_radius number?
+
+---@class Decoration : std.object
 ---@field color Color?
 ---@field radius number
 ---@field border_width number
@@ -26,8 +35,8 @@ local M = {}
 ---@field shadow_color Color?
 ---@field shadow_offset Offset?
 ---@field shadow_radius number?
----@overload fun(options: { color: Color?, radius: number?, border_width: number?, border_color: Color? }?): Decoration
-local Decoration = std.class.new('Decoration')
+---@overload fun(options: _DecorationOptions?): self
+local Decoration = std.class.new('Decoration', {})
 
 function Decoration:__init(options)
     options = options or {}
@@ -42,7 +51,7 @@ end
 
 ---@class RenderDecoratedBox : RenderObject
 ---@field decoration Decoration
----@overload fun(decoration: Decoration, child: RenderObject?): RenderDecoratedBox
+---@overload fun(decoration: Decoration, child: RenderObject?): self
 local RenderDecoratedBox = std.class.new('RenderDecoratedBox', { RenderObject })
 
 function RenderDecoratedBox:__init(decoration, child)

@@ -29,8 +29,8 @@ local BINDING_FLAGS = 'allow-vo-dragging+allow-hide-cursor'
 ---@class MpInput : std.object
 ---@field app App
 ---@field hover boolean
----@overload fun(app: App): MpInput
-local MpInput = std.class.new('MpInput')
+---@overload fun(app: App): self
+local MpInput = std.class.new('MpInput', {})
 
 function MpInput:__init(app)
     self.app = app

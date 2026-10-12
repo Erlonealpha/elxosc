@@ -20,8 +20,8 @@ local M = {}
 ---@field root RenderObject?
 ---@field viewport Constraints
 ---@field on_dirty fun()?
----@overload fun(root: RenderObject?): RenderOwner
-local RenderOwner = std.class.new('RenderOwner')
+---@overload fun(root: RenderObject?): self
+local RenderOwner = std.class.new('RenderOwner', {})
 
 function RenderOwner:__init(root)
     self.root = nil
