@@ -39,6 +39,20 @@ runner。测试按层覆盖：
 聚合模块必须和直接模块返回同一类对象；新增公共 API 时要有加载测试，而非只测
 内部字段。无效输入、无限尺寸、零/负缩放和非法选项应在边界测试。
 
+阶段 6 的新增回归要求：
+
+- Define 是唯一扩展内容入口；重复 scope payload、bind 顺序和错误边界保持覆盖；
+- 配置/API 热更新验证 snapshot、Provider/State/setter 传播、订阅清理，并证明不会
+  重新执行扩展源代码或重复注册 class/host callback；
+- Pages/Main、3×3 grid 的全部稳定区域、`more`、扩展内容冲突和 ordered append；
+- `set_mouse_area` 坐标换算、passive/interactive/exclusive policy、双击拦截和背景
+  默认绑定透传；
+- input section 的 enable/disable、resize、hidden layer、root swap、capture 和
+  shutdown 清理；
+- 多 overlay 的创建、更新、移除、z 顺序、同 z 稳定排序、独立 presenter/cache 和
+  overlap input policy；
+- 顶层控件 visible/hidden、auto/always/never 和 modal 输入策略。
+
 ## EmmyLua
 
 框架生产目录要求零诊断。测试文件可以针对 `std.class` 模型和第三方 host stub
@@ -52,6 +66,10 @@ host 确实不可用时 skip；禁止使用按进程名杀 mpv 的清理命令�
 
 真实 libass bounds 证明事件可被宿主接收，不等价于精确字体 ink bounds 或光学居中
 证明；精确逻辑仍由离线 Canvas/Paragraph 测试覆盖。
+
+阶段 6 的 real-host fixture 还应使用真实用户 `mbtn_left_dbl` 绑定验证：交互控件
+区域不触发默认 fullscreen，背景区域仍保留该绑定，并覆盖 OSD resize 后的 mouse area
+坐标。多 overlay 需要验证真实 `overlay.z` 的视觉顺序和隐藏/移除后的清理行为。
 
 ## 改动后的检查顺序
 

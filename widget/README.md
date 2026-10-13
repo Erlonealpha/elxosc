@@ -16,4 +16,9 @@ binding, and the public widget library. It must remain independent of mpv.
 Widgets are immutable after construction. Runtime changes use State or explicit
 RenderObject setters. Bindings apply before mounting and do not manage a live tree.
 
-See [widgets](../dev/design/WIDGETS.md) and [host/Define](../dev/design/HOST.md).
+The planned Pages application layer composes Main, the extension 3x3 grid, and `more`.
+Extensions enter through Define; config/API hot updates only feed State/Provider or
+explicit setters. They do not mutate mounted Widgets or reload extension code.
+
+See [widgets](../dev/design/WIDGETS.md), [host/Define](../dev/design/HOST.md), and
+[player application](../dev/design/PLAYER.md).

@@ -11,8 +11,10 @@
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、依赖、三棵树和模块边界 |
 | [RENDERING.md](RENDERING.md) | 约束布局、绘制、文本、ASS、变换和动画 |
+| [INPUT.md](INPUT.md) | `set_mouse_area`、输入 section、默认行为和事件重构 |
 | [WIDGETS.md](WIDGETS.md) | Widget/Element/State、控件和绑定 |
 | [HOST.md](HOST.md) | mpv 帧循环、输入、Define 传输和宿主边界 |
+| [PLAYER.md](PLAYER.md) | Root/Pages/Main、扩展区域、配置热更新和多层 overlay |
 | [TESTING.md](TESTING.md) | 测试分层、命令、fixture 和回归要求 |
 | [ROADMAP.md](ROADMAP.md) | 已完成能力、已知限制和后续路线 |
 
@@ -84,11 +86,25 @@ libs provides sandbox/Define services and is consumed by host/entry assembly
 - `TextPaint.offset` 是绘制层视觉偏移，不改变布局尺寸或命中区域。
 - 不使用 PTS 相关的 `\move`、`\t` 生成动画。
 
-### Define
+### Define、Pages 和更新边界
 
-Define 只负责初始化时构造 Widget 树：每个 `scope_id` 只接受第一个 payload；
-绑定在 mount 前按注册顺序应用；不存在运行时解绑、scope 关闭、树回滚、root
-重建或 Navigator API。改变这些语义必须先更新本目录的设计和测试。
+Define 是用户扩展内容进入播放器的唯一入口。它负责 transport、sandbox、scope、
+模块和内容交付；扩展内容的页面行为、状态机、事件处理和更新策略由扩展自己决定。
+Pages 会提供受控接口，让 Define 内容把页面或 Widget 加入 `Main` 允许的区域、
+3×3 grid、`more` 或公开 overlay layer。
+
+当前 Define 仍是初始化期协议：每个 `scope_id` 只接受第一个 payload，绑定在 mount
+前按注册顺序应用；不存在运行时 unbind、scope 关闭、树回滚或通用 root rebuild。
+后续配置/API 热更新是数据和事件更新，不是第二条扩展内容入口，也不重新加载扩展
+Lua 源码。改变这些语义必须先更新本目录的设计和测试。
+
+### 播放器应用层
+
+播放器应用层计划采用 `Root → Pages → Main / 3x3 grid / more` 的组合。Main 负责
+标题栏、时间线、底部和两侧按钮等固定区域；扩展通过 Define 暴露的 Pages 接口
+提供内容。Pages 的组合布局与 host-level 多层 `osd_overlay` 分开；overlay 使用
+`overlay.z` 控制视觉层级，不改变 Widget reconciliation、bind priority 或 Define
+scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 

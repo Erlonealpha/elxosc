@@ -6,8 +6,10 @@
 - [DESIGN.md](DESIGN.md)：当前架构、公共契约、验证基线和决策规则。
 - [ARCHITECTURE.md](ARCHITECTURE.md)：分层、依赖和三棵运行时树。
 - [RENDERING.md](RENDERING.md)：约束、RenderObject、文本、ASS、变换和动画。
+- [INPUT.md](INPUT.md)：`set_mouse_area`、输入 section、默认行为和事件重构。
 - [WIDGETS.md](WIDGETS.md)：Widget/Element/State、控件、key 和 Define 绑定。
 - [HOST.md](HOST.md)：mpv 边界、帧循环、输入和 Define 协议。
+- [PLAYER.md](PLAYER.md)：Root/Pages/Main、扩展区域、配置热更新和多层 overlay。
 - [TESTING.md](TESTING.md)：离线测试、静态检查和真实宿主验证。
 - [ROADMAP.md](ROADMAP.md)：已完成能力、后续方向和明确非目标。
 

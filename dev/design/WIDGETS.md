@@ -49,6 +49,46 @@ build 中反复注册一次性宿主资源。
 表不提供回滚、运行时 unbind、scope shutdown 或 root rebuild。一个 scope 的多个
 绑定按注册顺序保留，不引入 priority。
 
+## Pages、Main 和扩展区域
+
+播放器应用层计划在 Widget 组合层提供：
+
+```text
+Root
+└── Pages
+    ├── Main
+    │   ├── title bar
+    │   ├── timeline
+    │   ├── bottom buttons
+    │   └── left/right buttons
+    ├── 3x3 grid
+    └── more
+```
+
+Main 的固定结构由播放器拥有；扩展通过 Define 暴露的 Pages/region 接口提供内容，
+而不是绕过 Widget 树直接写入 RenderObject。grid 和 more 的稳定区域 id、single/
+multi-child 规则、ordered append 和冲突诊断由 Pages API 明确规定。
+
+Define 仍是扩展内容的唯一入口。它只负责传入扩展内容，不规定扩展页面内部的行为；
+扩展可以在自己的 StatefulWidget 中处理状态、消息和配置/API 更新。配置/API 热更新
+是数据事件，不是第二条 Widget 注入路径，也不重新执行扩展源代码。
+
+Pages 是应用组合层，不是 Navigator，也不提供运行时 unbind、树回滚或外部直接修改
+mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩展自己的 State/build
+完成。
+
+## BuildContext、Provider 与播放器状态
+
+当前 `BuildContext` 是 `Element` 的类型别名，并已支持
+`depend_on_inherited(widget_class)`。播放器应用阶段继续完善稳定的
+`SomeProvider.of(context)` / `maybe_of(context)` 入口，例如 Theme、MediaQuery 和
+只读 PlayerSnapshot。
+
+Provider 的更新必须让依赖者走既有 dirty/build 管线；控件不能直接读取 `mp`，也不能
+在 `build()` 中注册一次性 property observer。播放器配置/API 热更新形成新 snapshot，
+由 Provider/State 或明确 RenderObject setter 消费；扩展通过 Define 获得允许的 provider
+和更新接口，更新本身不构成新的内容注入。
+
 ## 新控件检查表
 
 - 选项表有 `_TypeNameOptions` 类型，构造器不修改调用方表。

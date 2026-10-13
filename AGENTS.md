@@ -10,8 +10,8 @@ Read documentation in this order:
 
 1. `dev/design/DESIGN.md` — the current architecture, contracts, and roadmap.
 2. The direction document relevant to the change:
-   `ARCHITECTURE.md`, `RENDERING.md`, `WIDGETS.md`, `HOST.md`,
-   `TESTING.md`, or `ROADMAP.md`.
+   `ARCHITECTURE.md`, `RENDERING.md`, `INPUT.md`, `WIDGETS.md`, `HOST.md`,
+   `PLAYER.md`, `TESTING.md`, or `ROADMAP.md`.
 3. The README in the module being changed.
 4. `codestyle.md` for EmmyLua and Lua formatting rules.
 
@@ -103,10 +103,10 @@ return the same class objects as their direct modules.
 - ASS animation is frame-clock driven static output. Do not generate PTS-based
   `\move` or `\t` tags.
 
-### Define and bind
+### Define, Pages, and updates
 
-Define is an initialization-time Widget construction protocol, not a runtime
-tree manager:
+Define is the sole extension-content ingress and currently an initialization-time
+Widget construction protocol, not a runtime tree manager:
 
 - Each `scope_id` accepts only its first `define` payload; later payloads warn
   and are ignored.
@@ -116,6 +116,12 @@ tree manager:
   priority system.
 - Bindings are applied before mounting. They do not provide runtime unbind,
   scope shutdown, root rebuild, or tree rollback.
+- The planned `Pages` layer exposes controlled entry points for Define content to
+  contribute to `Main`, the 3x3 grid, `more`, and public overlay layers. Define
+  transports extension content; the extension owns its internal runtime behavior.
+- Configuration and public-API hot updates are data/event updates, not a second
+  content ingress and not Lua source/module hot reload. They flow through
+  snapshots, State/Provider, or explicit RenderObject setters.
 - Do not add Navigator APIs or change these semantics without updating the
   current design documents and tests first.
 

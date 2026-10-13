@@ -31,7 +31,10 @@ test files disable the codes that stem from limits of the `std.class` model
 
 Current verified baseline (2026-10-12): **0 diagnostics / 1036 checks**;
 real mpv.net suite: **8 passed**. Commands and scope are recorded in
-[`dev/design/TESTING.md`](../dev/design/TESTING.md).
+[`dev/design/TESTING.md`](../dev/design/TESTING.md). The next input and player
+application contracts are planned in [`dev/design/INPUT.md`](../dev/design/INPUT.md)
+and [`dev/design/PLAYER.md`](../dev/design/PLAYER.md); they are not implemented by
+the current baseline.
 
 ## Real host (Python + uv, first stage)
 

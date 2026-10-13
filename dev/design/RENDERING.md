@@ -63,6 +63,35 @@ ASS `osd-overlay` 的 `ass-events` 不提供本框架需要的 PTS 动画推进�
 缩放盒都要覆盖 `hit_test`/`pointer_path` 的局部坐标转换。内容画到布局盒外不自动
 意味着它可点击；clip 和父节点命中边界仍然有效。
 
+## Pages、Widget z-order 与 overlay z-order
+
+三种顺序必须分开：
+
+1. **Pages/布局顺序**决定 Main、3×3 grid 和 `more` 的区域位置，以及区域内 Widget
+   的父子关系；
+2. **Widget/Stack paint order**决定同一个 RenderObject tree 内的绘制先后；
+3. **host overlay.z** 决定不同 `osd_overlay` layer 的最终视觉层级。
+
+`overlay.z` 只属于 host presentation，不进入 Widget、Element、RenderObject 或
+BindRegistry。规划中的 OverlayHost 为每个命名 layer 保存独立的 root、RenderOwner、
+Canvas、presenter、dirty/cache、visible 和 input policy。较高 z 视觉上位于较低 z
+之上；相同 z 使用稳定注册顺序，不能依赖表遍历顺序。
+
+overlay layer 的输入按可见、interactive layer 的 z 倒序查询，选中 layer 后再使用
+其 RenderOwner 的 pointer path 和 capture 规则。passive layer 不因为 z 较高就吞掉
+背景输入；modal/exclusive layer 必须显式请求拦截。overlay 隐藏或移除时必须清掉
+自己的 ASS 输出、mouse area、hover 和 capture。
+
+每个 overlay 的输出仍是独立的静态 ASS 帧。overlay 的 z 不替代 `Canvas:save()`、
+`Stack` 或页面布局，也不允许使用 `\move`/`\t` 实现跨层动画。
+
+## 配置/API 更新与绘制
+
+播放器配置和公开 API 的热更新先转换成不可变 snapshot，再进入 Provider/State 或
+明确的 RenderObject setter。它可以触发正常 rebuild/layout/paint，但不得重新执行
+扩展源代码、改变 Widget class identity 或直接修改 mounted Widget。扩展内容仍只能
+通过 Define 进入 Pages；更新接口只是数据和事件流。
+
 ## 当前限制
 
 当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、离屏 group opacity、
