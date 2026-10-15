@@ -115,8 +115,9 @@ function RenderOwner:__init(root)
     end
 end
 
----@param root RenderObject
-function RenderOwner:set_root(root)
+---@param root RenderObject?
+---@param notify boolean? whether the replacement should schedule layout
+function RenderOwner:set_root(root, notify)
     -- Root replacement invalidates both sides of pointer state. Send leave and
     -- cancel while the old tree still has its owner, then detach it.
     self:clear_hover()
@@ -124,8 +125,15 @@ function RenderOwner:set_root(root)
         self.root:_set_owner(nil)
     end
     self.root = root
-    root:_set_owner(self)
-    self:mark_needs_layout()
+    if root then
+        root:_set_owner(self)
+    end
+    if notify == false then
+        self._needs_layout = false
+        self._needs_paint = false
+    else
+        self:mark_needs_layout()
+    end
 end
 
 ---@param constraints Constraints

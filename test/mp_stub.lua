@@ -18,6 +18,7 @@ local fake = {
     mouse_areas = {},
     binding_sections = {},
     bindings_enabled_sections = {},
+    unobserved = {},
 }
 
 S.fake = fake
@@ -35,14 +36,17 @@ function S.reset()
     fake.mouse_areas = {}
     fake.binding_sections = {}
     fake.bindings_enabled_sections = {}
+    fake.unobserved = {}
 end
 
 --- Run every timeout queued since the last call (one frame of the host loop).
 function S.pump()
     local queued = fake.timeouts
     fake.timeouts = {}
-    for _, cb in ipairs(queued) do
-        cb()
+    for _, timer in ipairs(queued) do
+        if not timer.killed then
+            timer.cb()
+        end
     end
 end
 
@@ -90,7 +94,9 @@ function S.install()
         fake.events[#fake.events + 1] = { name = name, cb = cb }
     end
 
-    function mp.unobserve_property() end
+    function mp.unobserve_property(cb)
+        fake.unobserved[#fake.unobserved + 1] = cb
+    end
 
     function mp.register_script_message(name, cb)
         fake.log[name] = cb
@@ -109,8 +115,12 @@ function S.install()
     function mp.wait_event() end
 
     function mp.add_timeout(_, cb)
-        fake.timeouts[#fake.timeouts + 1] = cb
-        return { cb = cb }
+        local timer = { cb = cb, killed = false }
+        function timer:kill()
+            self.killed = true
+        end
+        fake.timeouts[#fake.timeouts + 1] = timer
+        return timer
     end
 
     function mp.create_osd_overlay(format)

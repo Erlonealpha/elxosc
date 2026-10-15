@@ -36,6 +36,7 @@ local M = {}
 ---@field depth number
 ---@field mounted boolean
 ---@field dirty boolean
+---@field _inherited_dependencies table<InheritedElement, true>
 ---@overload fun(widget: Widget):self
 local Element = std.class.new('Element', {})
 
@@ -50,6 +51,7 @@ function Element:__init(widget)
     self.depth = 0
     self.mounted = false
     self.dirty = false
+    self._inherited_dependencies = {}
 end
 
 ---@param parent Element?
@@ -67,9 +69,12 @@ function Element:unmount()
     end
     self.mounted = false
     self.dirty = false
+    self:_clear_inherited_dependencies()
     for _, child in ipairs(self:element_children()) do
         child:unmount()
     end
+    self.parent = nil
+    self.owner = nil
 end
 
 ---@param new_widget Widget
@@ -129,7 +134,15 @@ function Element:depend_on_inherited(widget_class)
     end
     local inherited = element --[[@as InheritedElement]]
     inherited.dependents[self] = true
+    self._inherited_dependencies[inherited] = true
     return inherited.widget --[[@as InheritedWidget]]
+end
+
+function Element:_clear_inherited_dependencies()
+    for inherited in pairs(self._inherited_dependencies) do
+        inherited.dependents[self] = nil
+    end
+    self._inherited_dependencies = {}
 end
 
 ---@param widget_class std.Class
@@ -210,6 +223,7 @@ function StatelessElement:first_render_object()
 end
 
 function StatelessElement:rebuild()
+    self:_clear_inherited_dependencies()
     self.dirty = false
     self.child = self:update_child(self.child, self.widget:build(self))
     self:_sync_render_children_upwards()
@@ -265,6 +279,7 @@ function StatefulElement:first_render_object()
 end
 
 function StatefulElement:rebuild()
+    self:_clear_inherited_dependencies()
     self.dirty = false
     self.child = self:update_child(self.child, self.state:build(self))
     self:_sync_render_children_upwards()

@@ -23,6 +23,7 @@ local basic_widgets = require('widget.widgets.basic')
 local bind_mod = require('widget.bind')
 local state_mod = require('widget.state')
 local widget_mod = require('widget.widget')
+local player_context = require('widget.player_context')
 
 local Color = color.Color
 local TextStyle = text_style.TextStyle
@@ -34,6 +35,8 @@ local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
 local Demo = demo_mod.Demo
+local PlayerStore = player_context.PlayerStore
+local PlayerProvider = player_context.PlayerProvider
 
 ---@return Widget
 local function scaffold()
@@ -215,6 +218,22 @@ F.test('shutdown clears input sections and areas', function()
         'input area cleared on shutdown')
 end)
 
+F.test('shutdown removes App and mouse property observers', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() end }))
+    app:render()
+    local callbacks = {}
+    for _, event in ipairs(fake.events) do
+        callbacks[#callbacks + 1] = event.cb
+    end
+    app:shutdown()
+    F.eq(#fake.unobserved, #callbacks, 'all App and mouse observers are removed')
+    for _, callback in ipairs(callbacks) do
+        callback('stale', nil)
+    end
+    F.ok(not app.scheduler:is_frame_scheduled(), 'stale callbacks do not schedule frames')
+end)
+
 F.test('a new input instance clears old numbered sections', function()
     mp_stub.reset()
     local first = mpv_app.App(Column({
@@ -305,6 +324,43 @@ F.test('a set_state rebuild lands in the next frame', function()
     app.binding:flush_build()
     app.owner:layout()
     F.eq(app.owner.root:children()[1].paragraph.text, 'v7', 'rebuilt with the new state')
+end)
+
+F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
+    mp_stub.reset()
+    local Reader = std.class.new('test.hostApp.PlayerReader', { widget_mod.StatelessWidget })
+    function Reader:build(context)
+        return Text('v' .. PlayerProvider.snapshot_of(context).value)
+    end
+
+    local store = PlayerStore({ value = 1 })
+    local app = mpv_app.App(Reader(), { player_store = store })
+    app:render()
+    F.eq(app.owner.root.paragraph.text, 'v1', 'initial snapshot reaches the root')
+
+    store:replace({ value = 2 })
+    F.ok(#fake.timeouts > 0, 'store update schedules a frame')
+    mp_stub.pump()
+    F.eq(app.owner.root.paragraph.text, 'v2', 'next frame renders the new snapshot')
+end)
+
+F.test('shutdown unmounts PlayerScope subscriptions', function()
+    mp_stub.reset()
+    local Reader = std.class.new('test.hostApp.ShutdownPlayerReader', { widget_mod.StatelessWidget })
+    function Reader:build(context)
+        return Text('v' .. PlayerProvider.snapshot_of(context).value)
+    end
+
+    local store = PlayerStore({ value = 1 })
+    local app = mpv_app.App(Reader(), { player_store = store })
+    app:render()
+    local scope_state = app.binding.root_element.state
+    F.ok(scope_state.subscription and scope_state.subscription:is_active(), 'scope is subscribed')
+
+    fake.log['event:shutdown']()
+    F.ok(scope_state.subscription == nil, 'shutdown disposes the scope subscription')
+    store:replace({ value = 2 })
+    F.ok(not app.binding.build_owner:has_dirty(), 'disposed scope is not dirtied')
 end)
 
 F.test('host input bindings deliver a left click to Button', function()

@@ -12,10 +12,21 @@ local state_mod = require 'widget.state'
 local key_mod = require 'widget.key'
 local build_owner_mod = require 'widget.build_owner'
 local binding_mod = require 'widget.binding'
+local provider_mod = require 'widget.provider'
+local player_context_mod = require 'widget.player_context'
 
 local M = {}
 
-for _, mod in ipairs({ widget_mod, element_mod, state_mod, key_mod, build_owner_mod, binding_mod }) do
+for _, mod in ipairs({
+    widget_mod,
+    element_mod,
+    state_mod,
+    key_mod,
+    build_owner_mod,
+    binding_mod,
+    provider_mod,
+    player_context_mod,
+}) do
     for name, value in pairs(mod) do
         M[name] = value
     end

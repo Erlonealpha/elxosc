@@ -79,15 +79,22 @@ mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩�
 
 ## BuildContext、Provider 与播放器状态
 
-当前 `BuildContext` 是 `Element` 的类型别名，并已支持
-`depend_on_inherited(widget_class)`。播放器应用阶段继续完善稳定的
-`SomeProvider.of(context)` / `maybe_of(context)` 入口，例如 Theme、MediaQuery 和
-只读 PlayerSnapshot。
+当前 `BuildContext` 是 `Element` 的类型别名，并支持
+`depend_on_inherited(widget_class)`。`widget/provider.lua` 在此基础上提供稳定的
+`Provider.of(context)` / `Provider.maybe_of(context)` 入口；具体 Provider 可以通过
+`SomeProvider.of(context)` 和 `SomeProvider.maybe_of(context)` 查询最近的同类祖先。
+
+6.3 提供 `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和 `PlayerProvider`。Store
+只替换快照，不原地修改快照；订阅按注册顺序通知，并返回可幂等 `dispose()` 的句柄。
+`PlayerScope` 在挂载时订阅 Store，在 State dispose 时清理订阅，再通过
+`PlayerProvider` 通知依赖者。更新仍然进入 BuildOwner/Scheduler 管线，不直接修改
+已挂载 Widget。
 
 Provider 的更新必须让依赖者走既有 dirty/build 管线；控件不能直接读取 `mp`，也不能
 在 `build()` 中注册一次性 property observer。播放器配置/API 热更新形成新 snapshot，
 由 Provider/State 或明确 RenderObject setter 消费；扩展通过 Define 获得允许的 provider
-和更新接口，更新本身不构成新的内容注入。
+和更新接口，更新本身不构成新的内容注入。`PlayerProvider.of(context)` 找不到祖先时
+报错，`maybe_of` 返回 `nil`。
 
 ## 新控件检查表
 

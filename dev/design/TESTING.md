@@ -13,10 +13,9 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-15）：**1223 Lua checks passed**、Linux EmmyLua equivalent
-**No issues found**。本容器没有 mpv.net/mpv executable，real-host 为 **2 passed,
-7 skipped**；上一轮 Windows host baseline 为 **9 passed**。测试数量变化时，应在本
-文件和主设计文档同步更新。
+当前本地基线（2026-10-16）：**1297 Lua checks passed**、EmmyLua
+**No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主设计
+文档同步更新。
 
 ## Lua suite
 

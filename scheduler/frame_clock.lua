@@ -16,8 +16,14 @@ local M = {}
 
 ---@class FrameClock : std.object
 ---@field handler fun(time: number)?
+---@field _disposed boolean
 ---@overload fun(): self
 local FrameClock = std.class.new('FrameClock', {})
+
+function FrameClock:__init()
+    self.handler = nil
+    self._disposed = false
+end
 
 --- Current time in seconds (monotonic where the host allows it).
 ---@return number
@@ -28,12 +34,18 @@ end
 --- Ask the host to deliver exactly one frame. When it is due the host must
 --- call `_emit`, which invokes the registered handler.
 function FrameClock:request_frame()
+    if self._disposed then
+        return
+    end
     raise(std.NotImplementedError('FrameClock:request_frame must be implemented by a host backend'))
 end
 
 --- Register the single frame handler (normally the Scheduler).
----@param handler fun(time: number)
+---@param handler fun(time: number)?
 function FrameClock:set_handler(handler)
+    if self._disposed then
+        return
+    end
     self.handler = handler
 end
 
@@ -46,10 +58,19 @@ end
 --- `now()`.
 ---@param time number?
 function FrameClock:_emit(time)
+    if self._disposed then
+        return
+    end
     local handler = self.handler
     if handler then
         handler(time or self:now())
     end
+end
+
+--- Stop delivering frames and release the scheduler handler.
+function FrameClock:dispose()
+    self._disposed = true
+    self.handler = nil
 end
 
 M.FrameClock = FrameClock

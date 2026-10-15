@@ -42,20 +42,24 @@ function BuildOwner:has_dirty()
     return #self._dirty > 0
 end
 
---- Rebuild every dirty element that was not already refreshed by an ancestor.
-function BuildOwner:rebuild_dirty()
-    if #self._dirty == 0 then
-        return
-    end
-    local dirty = self._dirty
+function BuildOwner:clear_dirty()
     self._dirty = {}
     self._dirty_set = {}
-    table.sort(dirty, function(a, b)
-        return a.depth < b.depth
-    end)
-    for _, element in ipairs(dirty) do
-        if element.mounted and element.dirty then
-            element:rebuild()
+end
+
+--- Rebuild every dirty element that was not already refreshed by an ancestor.
+function BuildOwner:rebuild_dirty()
+    while #self._dirty > 0 do
+        local dirty = self._dirty
+        self._dirty = {}
+        self._dirty_set = {}
+        table.sort(dirty, function(a, b)
+            return a.depth < b.depth
+        end)
+        for _, element in ipairs(dirty) do
+            if element.mounted and element.dirty then
+                element:rebuild()
+            end
         end
     end
 end

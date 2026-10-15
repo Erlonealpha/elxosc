@@ -15,7 +15,7 @@
 | `render/` | 持久化渲染树 | `RenderObject`, `RenderOwner` 及 RenderBox |
 | `animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
 | `scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
-| `widget/` | 声明式 UI 和生命周期 | `Widget`, `Element`, `State`, `WidgetBinding` |
+| `widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetBinding`, `PlayerStore` |
 | `backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
 | `libs/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
 | `host/` | mpv 接线 | `App`, `MpFrameClock`, `MpInput`, `MpDefine` |
@@ -94,6 +94,10 @@ config/API snapshot, State/set_state or host input
     → paint(Canvas)
     → backend output / one or more host overlay presenters
 ```
+
+6.3 的 PlayerStore 位于 Widget 层但不依赖 mpv：宿主只负责将 property/API 数据
+校验后替换 Snapshot。`PlayerScope` 将 Store 更新转换为 State dirty，Provider
+依赖者再通过既有 BuildOwner 管线 rebuild。
 
 当前没有 RepaintBoundary 或 relayout boundary；dirty 会向根传播，ASS presenter 会
 跳过未变化的最终事件。性能优化不能改变公共布局和绘制契约。

@@ -26,6 +26,7 @@ local ass_text_layout = require 'backends.ass_text_layout'
 local text_layout = require 'text.text_layout'
 local binding_mod = require 'widget.binding'
 local mpv_input = require 'host.mpv_input'
+local player_context = require 'widget.player_context'
 
 local Constraints = constraints_mod.Constraints
 local FrameClock = frame_clock.FrameClock
@@ -35,6 +36,7 @@ local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetBinding = binding_mod.WidgetBinding
 local MpInput = mpv_input.MpInput
+local PlayerScope = player_context.PlayerScope
 
 local math = math
 
@@ -51,6 +53,7 @@ local M = {}
 --- the same rate limiting uosc applies via `render_delay`.
 ---@class MpFrameClock : FrameClock
 ---@field delay number minimum seconds between frames
+---@field _disposed boolean
 ---@overload fun(delay: number?): self
 local MpFrameClock = std.class.new('MpFrameClock', { FrameClock })
 
@@ -58,6 +61,7 @@ function MpFrameClock:__init(delay)
     self.delay = delay or (1 / 60)
     self._timer = nil
     self._last_frame = nil
+    self._disposed = false
 end
 
 function MpFrameClock:now()
@@ -70,6 +74,9 @@ function MpFrameClock:set_delay(delay)
 end
 
 function MpFrameClock:request_frame()
+    if self._disposed then
+        return
+    end
     if self._timer then
         return
     end
@@ -77,9 +84,27 @@ function MpFrameClock:request_frame()
     local since = last and (mp.get_time() - last) or math.huge
     self._timer = mp.add_timeout(math.max(0, self.delay - since), function()
         self._timer = nil
+        if self._disposed then
+            return
+        end
         self._last_frame = mp.get_time()
         self:_emit()
     end)
+end
+
+---@return boolean disposed
+function MpFrameClock:dispose()
+    if self._disposed then
+        return false
+    end
+    self._disposed = true
+    local timer = self._timer
+    self._timer = nil
+    if timer and timer.kill then
+        timer:kill()
+    end
+    self.handler = nil
+    return true
 end
 
 --== presenter =============================================================
@@ -129,11 +154,21 @@ end
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry? }?): self
+---@field player_store PlayerStore?
+---@field player_context MpPlayerContext?
+---@field _shutdown boolean
+---@field _property_callbacks fun(name: string, value: any)[]
+---@field _render_callback fun(dt: number, time: number)
+---@field _shutdown_callback fun()
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext? }?): self
 local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
     options = options or {}
+    self.player_store = options.player_store
+    self.player_context = options.player_context
+    self._shutdown = false
+    self._property_callbacks = {}
     ---@type Display
     self.display = { width = 1280, height = 720, initialized = false }
     self.clock = MpFrameClock(options.delay)
@@ -145,14 +180,15 @@ function App:__init(root_widget, options)
     self.owner.on_dirty = function()
         self.scheduler:schedule_frame()
     end
-    self.scheduler:add_persistent(function()
+    self._render_callback = function()
         self:render()
-    end)
+    end
+    self.scheduler:add_persistent(self._render_callback)
 
     -- the engine stand-in: `RenderText` falls back to this measurer
     text_layout.set_default(AssTextLayout())
 
-    self.binding = WidgetBinding(root_widget, self.owner, options.binds, self.scheduler)
+    self.binding = WidgetBinding(self:_wrap_root(root_widget), self.owner, options.binds, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end
@@ -163,40 +199,104 @@ function App:__init(root_widget, options)
     self.input = MpInput(self)
 end
 
+---@param root_widget Widget
+---@return Widget
+function App:_wrap_root(root_widget)
+    if self.player_store == nil then
+        return root_widget
+    end
+    return PlayerScope({
+        store = self.player_store,
+        child = root_widget,
+    })
+end
+
 --- Force a redraw (e.g. after mutating the tree by hand).
 function App:request_frame()
+    if self._shutdown then
+        return
+    end
     self.scheduler:schedule_frame()
 end
 
 --- Swap the root widget (the define phase finished, or a script re-declared).
 ---@param root_widget Widget
 function App:set_root_widget(root_widget)
+    if self._shutdown then
+        return
+    end
     if self.input then
         self.input:cancel_capture()
     end
-    self.binding:set_root_widget(root_widget)
+    self.binding:set_root_widget(self:_wrap_root(root_widget))
     self:request_frame()
 end
 
 function App:_observe()
-    mp.observe_property('osd-dimensions', 'native', function()
+    local dimensions_callback = function()
         self:_update_display()
-    end)
-    mp.observe_property('display-fps', 'native', function()
+    end
+    local display_fps_callback = function()
         self:_update_delay()
-    end)
-    mp.observe_property('estimated-display-fps', 'native', function()
+    end
+    local estimated_fps_callback = function()
         self:_update_delay()
-    end)
-    mp.register_event('shutdown', function()
-        if self.input then
-            self.input:shutdown()
-        end
+    end
+    mp.observe_property('osd-dimensions', 'native', dimensions_callback)
+    mp.observe_property('display-fps', 'native', display_fps_callback)
+    mp.observe_property('estimated-display-fps', 'native', estimated_fps_callback)
+    self._property_callbacks = {
+        dimensions_callback,
+        display_fps_callback,
+        estimated_fps_callback,
+    }
+    self._shutdown_callback = function()
+        self:shutdown()
+    end
+    mp.register_event('shutdown', self._shutdown_callback)
+end
+
+function App:shutdown()
+    if self._shutdown then
+        return false
+    end
+    self._shutdown = true
+    for _, callback in ipairs(self._property_callbacks) do
+        mp.unobserve_property(callback)
+    end
+    self._property_callbacks = {}
+    if self._shutdown_callback and mp.unregister_event then
+        mp.unregister_event(self._shutdown_callback)
+    end
+    if self.input then
+        self.input:shutdown()
+    end
+    if self.owner then
+        self.owner.on_dirty = nil
+    end
+    if self.binding then
+        self.binding:dispose()
+    end
+    if self.scheduler then
+        self.scheduler:remove_persistent(self._render_callback)
+        self.scheduler:dispose()
+    end
+    if self.clock then
+        self.clock:dispose()
+    end
+    if self.player_context then
+        self.player_context:dispose()
+    end
+    if self.presenter then
         self.presenter:remove()
-    end)
+    end
+    return true
 end
 
 function App:_update_display()
+    if self._shutdown then
+        return
+    end
     local width, height = mp.get_osd_size()
     if width <= 0 or height <= 0 then
         return
@@ -213,6 +313,9 @@ function App:_update_display()
 end
 
 function App:_update_delay()
+    if self._shutdown then
+        return
+    end
     local fps = mp.get_property_number('estimated-display-fps')
         or mp.get_property_number('display-fps')
     if fps and fps > 0 then
@@ -221,7 +324,7 @@ function App:_update_delay()
 end
 
 function App:render()
-    if not self.display.initialized then
+    if self._shutdown or not self.display.initialized then
         return
     end
     self.binding:flush_build()
@@ -237,7 +340,7 @@ end
 
 --- Build a root widget and start rendering it.
 ---@param build fun(): Widget
----@param options { z: number?, delay: number?, binds: BindRegistry? }?
+---@param options { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext? }?
 ---@return App
 function M.start(build, options)
     local app = App(build(), options)

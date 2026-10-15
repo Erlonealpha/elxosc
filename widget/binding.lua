@@ -25,6 +25,7 @@ local M = {}
 ---@field build_owner BuildOwner
 ---@field root_element Element?
 ---@field on_dirty fun()?
+---@field _disposed boolean
 ---@overload fun(root_widget: Widget, render_owner: RenderOwner, binds: BindRegistry?, scheduler: Scheduler?): self
 local WidgetBinding = std.class.new('WidgetBinding', {})
 
@@ -33,6 +34,7 @@ function WidgetBinding:__init(root_widget, render_owner, binds, scheduler)
     self.build_owner = BuildOwner(render_owner, scheduler)
     self.root_element = nil
     self.on_dirty = nil
+    self._disposed = false
     self.build_owner.on_dirty = function()
         if self.on_dirty then
             self.on_dirty()
@@ -47,6 +49,9 @@ end
 --- Replace the root widget (the old tree is discarded).
 ---@param widget Widget
 function WidgetBinding:set_root_widget(widget)
+    if self._disposed then
+        return
+    end
     local element = self.root_element
     if element and can_update(element.widget, widget) then
         element:update(widget)
@@ -83,8 +88,28 @@ end
 
 --- Run the pending rebuilds and re-point the render tree if the root changed.
 function WidgetBinding:flush_build()
+    if self._disposed then
+        return
+    end
     self.build_owner:rebuild_dirty()
     self:_sync_root()
+end
+
+--- Unmount the tree and detach its render root.
+function WidgetBinding:dispose()
+    if self._disposed then
+        return false
+    end
+    self._disposed = true
+    self.on_dirty = nil
+    self.build_owner:clear_dirty()
+    local element = self.root_element
+    if element then
+        element:unmount()
+        self.root_element = nil
+    end
+    self.render_owner:set_root(nil, false)
+    return true
 end
 
 M.WidgetBinding = WidgetBinding

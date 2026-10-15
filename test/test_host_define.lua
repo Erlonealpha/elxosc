@@ -14,6 +14,7 @@ local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
 local bind_mod = require('widget.bind')
+local player_context = require('widget.player_context')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
 
@@ -21,6 +22,7 @@ local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local Slot = bind_mod.Slot
+local PlayerStore = player_context.PlayerStore
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 
@@ -109,6 +111,40 @@ F.test('on_prop forwards to mp.observe_property', function()
     mp_env.on_prop('pause', function() end)
     F.eq(#fake.events, 1, 'observed once')
     F.eq(fake.events[1].name, 'pause', 'the requested property')
+end)
+
+F.test('on_prop returns a disposable observer', function()
+    reset_fake()
+    local define = MpDefine()
+    local mp_env = {}
+    define.session.modules:import_into('mp', mp_env, 'scope_a')
+    local callback = function() end
+    local subscription = mp_env.on_prop('pause', callback)
+    F.ok(subscription:is_active(), 'observer starts active')
+    F.ok(subscription:dispose(), 'observer disposes')
+    F.ok(not subscription:dispose(), 'observer disposal is idempotent')
+    F.eq(fake.unobserved[1], callback, 'the original callback is unobserved')
+end)
+
+F.section('host define: player module')
+
+F.test('player module exposes read-only snapshots and subscriptions', function()
+    reset_fake()
+    local store = PlayerStore({ value = 1 })
+    local define = MpDefine({ player_store = store })
+    local player_env = {}
+    define.session.modules:import_into('player', player_env, 'scope_a')
+
+    F.eq(player_env.get_snapshot().value, 1, 'current snapshot is readable')
+    local updates = 0
+    local subscription = player_env.on_update(function(snapshot, previous)
+        updates = updates + snapshot.value - previous.value
+    end)
+    store:replace({ value = 3 })
+    F.eq(updates, 2, 'subscription receives store updates')
+    subscription:dispose()
+    store:replace({ value = 4 })
+    F.eq(updates, 2, 'disposed subscription is silent')
 end)
 
 --== the window ============================================================

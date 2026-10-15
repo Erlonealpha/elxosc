@@ -17,10 +17,12 @@ local dsl = require 'libs.dsl'
 local define_mod = require 'libs.define'
 local modules_mod = require 'libs.modules'
 local bind_mod = require 'widget.bind'
+local player_context = require 'widget.player_context'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
 local BindRegistry = bind_mod.BindRegistry
+local PlayerStore = player_context.PlayerStore
 
 local M = {}
 
@@ -57,7 +59,29 @@ function M.install_mp_module(modules, observe)
         end,
         --- `cb(name, value)`, the same shape `mp.observe_property` uses.
         on_prop = function(name, cb)
+            if type(name) ~= 'string' or name == '' then
+                error('mp.on_prop expects a non-empty property name', 2)
+            end
+            if type(cb) ~= 'function' then
+                error('mp.on_prop expects a callback', 2)
+            end
             observe(name, cb)
+            local active = true
+            return {
+                is_active = function()
+                    return active
+                end,
+                dispose = function()
+                    if not active then
+                        return false
+                    end
+                    active = false
+                    if mp.unobserve_property then
+                        mp.unobserve_property(cb)
+                    end
+                    return true
+                end,
+            }
         end,
         message_to = function(...)
             mp.commandv('script-message-to', ...)
@@ -78,12 +102,27 @@ function M.install_mp_module(modules, observe)
     modules:protect('mp')
 end
 
+---@param modules ModuleRegistry
+---@param store PlayerStore
+function M.install_player_module(modules, store)
+    modules:add('player', {
+        get_snapshot = function()
+            return store:get()
+        end,
+        on_update = function(callback)
+            return store:subscribe(callback)
+        end,
+    })
+    modules:protect('player')
+end
+
 --== the session ===========================================================
 
 ---@class MpDefineOptions
 ---@field builtins table<string, any>? names on top of the DSL defaults
 ---@field binds BindRegistry? shared bind registry
 ---@field modules ModuleRegistry? shared module registry (gets the `mp` module)
+---@field player_store PlayerStore? host-independent player snapshot store
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
@@ -91,6 +130,7 @@ end
 ---@field session DefineSession
 ---@field binds BindRegistry
 ---@field on_sealed fun()? called when the last `define_end` arrives
+---@field player_store PlayerStore
 ---@field _listening boolean
 ---@field _allow_start boolean
 ---@overload fun(options: MpDefineOptions?): self
@@ -99,6 +139,7 @@ local MpDefine = std.class.new('MpDefine', {})
 function MpDefine:__init(options)
     options = options or {}
     self.binds = options.binds or BindRegistry()
+    self.player_store = options.player_store or PlayerStore()
     self.on_sealed = nil
     self._listening = false
     self._allow_start = true
@@ -113,6 +154,7 @@ function MpDefine:__init(options)
 
     local modules = options.modules or ModuleRegistry()
     M.install_mp_module(modules)
+    M.install_player_module(modules, self.player_store)
 
     self.session = DefineSession({
         builtins = builtins,

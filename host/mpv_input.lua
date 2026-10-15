@@ -52,6 +52,8 @@ local owned_sections = {}
 ---@field _wheel_sections string[]
 ---@field _pressed_section string?
 ---@field _buttons table<PointerButton, true>
+---@field _mouse_callback fun(name: string, mouse: table)?
+---@field _shutdown boolean
 ---@overload fun(app: App): self
 local MpInput = std.class.new('MpInput', {})
 
@@ -66,6 +68,8 @@ function MpInput:__init(app)
     self._wheel_sections = {}
     self._pressed_section = nil
     self._buttons = {}
+    self._mouse_callback = nil
+    self._shutdown = false
     self:_clear_owned_sections()
     self:_bind_mouse()
     self:_bind_keys()
@@ -85,7 +89,10 @@ function MpInput:_refresh_position()
 end
 
 function MpInput:_bind_mouse()
-    mp.observe_property('mouse-pos', 'native', function(_, mouse)
+    self._mouse_callback = function(_, mouse)
+        if self._shutdown then
+            return
+        end
         if not mouse then
             return
         end
@@ -106,7 +113,8 @@ function MpInput:_bind_mouse()
         self.x, self.y = mouse.x + 0.5, mouse.y + 0.5
         self.hover = true
         self:_dispatch('move')
-    end)
+    end
+    mp.observe_property('mouse-pos', 'native', self._mouse_callback)
 end
 
 ---@return PointerButtons
@@ -142,6 +150,9 @@ end
 ---@param data any?
 ---@param section string?
 function MpInput:_dispatch(event, data, section)
+    if self._shutdown then
+        return
+    end
     debug_msgf('MpInput:_dispatch(%s)', event)
     if event == 'down' or event == 'double' then
         self:_refresh_position()
@@ -356,6 +367,9 @@ end
 
 --- Synchronize RenderOwner regions with mpv sections and mouse areas.
 function MpInput:update_regions()
+    if self._shutdown then
+        return
+    end
     local regions = self.app.owner:pointer_regions()
     local signature = region_signature(regions) .. (self._pressed and ':pressed' or '')
     if signature == self._region_signature then
@@ -377,6 +391,14 @@ end
 
 --- Release host input resources when the app is shutting down.
 function MpInput:shutdown()
+    if self._shutdown then
+        return
+    end
+    self._shutdown = true
+    if self._mouse_callback then
+        mp.unobserve_property(self._mouse_callback)
+        self._mouse_callback = nil
+    end
     self.app.owner:clear_hover()
     self._pressed = false
     self._pressed_section = nil

@@ -55,11 +55,13 @@
 
 ### 6.3 配置/API 热更新与 PlayerContext
 
-- 完善 BuildContext 的 `of`/`maybe_of` 使用模式；
-- 配置默认支持运行时热更新，解析为不可变 snapshot，再驱动 Provider/State/setter；
-- 对外接口数据支持订阅和清理；扩展可使用预先提供的接口，也可在 Define 内容中
-  设计自己的更新协议；
-- 不支持 Lua 源码热重载，不重新执行扩展代码，不改变 Widget class identity。
+- 已完成 BuildContext 的 `Provider.of`/`maybe_of` 使用模式；
+- 已提供 host-independent `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和
+  `PlayerProvider`，更新经过 Provider/State/BuildOwner 管线；
+- 已提供 mpv property bridge、可 dispose 的 property observer，以及 Define 的只读
+  `player` module；
+- 配置/API 更新不支持 Lua 源码热重载，不重新执行扩展代码，不改变 Widget class
+  identity。完整播放器字段 schema 由后续应用层按实际消费点增加。
 
 ### 6.4 Pages/Main 与扩展内容
 

@@ -29,15 +29,13 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current local baseline (2026-10-15): **0 diagnostics / 1223 checks** from the Linux
-equivalent EmmyLua checker; the container has no mpv executable, so the real-host
-run reports **2 passed / 7 skipped**. The previous Windows host baseline was **9
-passed**. Commands and scope are recorded in
+Current local baseline (2026-10-16): **0 diagnostics / 1297 checks** from the
+EmmyLua checker; the real-host run reports **9 passed**. Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
-values, dispatch results and real double-click coverage; the Player application
-contracts in [`dev/design/PLAYER.md`](../dev/design/PLAYER.md) remain planned.
+values and dispatch results; the PlayerContext 6.3 contracts are implemented, while
+Pages, Main composition and multi-overlay contracts remain planned.
 
 ## Real host (Python + uv, first stage)
 
@@ -91,9 +89,11 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_button_contract.lua` | Button options/style immutability and PointerEvent/KeyEvent construction |
 | `test_icon.lua` | Icon options, nominal box/center anchor, optical offset, font/style propagation and aggregate identity |
 | `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
+| `test_player_context.lua` | Provider lookup, immutable snapshot views, Store subscriptions and State lifecycle |
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
+| `test_host_player_context.lua` | mpv property bridge, observer disposal and Define player updates (`mp` stubbed) |
 | `test_host_app.lua` | `App`: frame clock, overlay, input areas/capture, demo output and the define window (`mp` stubbed) |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |

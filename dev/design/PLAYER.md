@@ -106,6 +106,29 @@ user config / public API data
 Lua 代码热重载暂不属于本阶段。它涉及 class identity、State 保留、controller、
 宿主回调和 mpv script-message 清理，应作为独立的开发工具设计。
 
+### 6.3 当前实现
+
+当前已提供以下最小更新链路：
+
+```text
+mpv property / host API event
+    → validate / create PlayerSnapshot
+    → PlayerStore:replace
+    → PlayerScope subscription
+    → State.set_state
+    → BuildOwner / Scheduler frame
+    → PlayerProvider dependents rebuild
+```
+
+核心入口位于 `widget/player_context.lua`，不依赖 mpv；宿主桥位于
+`host/mpv_player_context.lua`。`App` 接受可选 `player_store` 并把 root 放入
+`PlayerScope`。`MpDefine` 可以把同一个 Store 暴露为受控的 `player` module。
+
+Snapshot 使用新对象表达新状态，Store 不修改调用方数据。订阅按注册顺序执行，返回
+的句柄支持幂等 `dispose()`；App shutdown、State unmount 和 Define 扩展生命周期必须
+清理 observer/subscription。配置/API 更新不重新执行 Define 源码，也不改变 Widget
+class identity。
+
 ## 多层 overlay
 
 Pages 可以使用多个 host-level `osd_overlay` 层。overlay 是 presentation/host

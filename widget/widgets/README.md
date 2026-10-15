@@ -17,3 +17,7 @@ independent module first, then explicitly exported by any compatibility aggregat
 
 `mpv/` is reserved for host-specific widget experiments; it is not part of the
 host-free widget contract yet.
+
+Player state is not a Widget option. Use `PlayerProvider.of(context)` or
+`PlayerProvider.maybe_of(context)` from a build method and let `PlayerScope` deliver
+new snapshots through the existing rebuild pipeline.

@@ -17,9 +17,13 @@ require 'elxlib_load' -- sets up elxlibs.*
 
 local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
+local mpv_player_context = require 'host.mpv_player_context'
+local player_context = require 'widget.player_context'
 local main_layout = require 'main_layout'
 
 local MpDefine = mpv_define.MpDefine
+local MpPlayerContext = mpv_player_context.MpPlayerContext
+local PlayerStore = player_context.PlayerStore
 
 -- Seconds the define window stays open. Long enough for every script to have
 -- sent its payload, short enough not to be noticed; `define_end` from all
@@ -50,13 +54,22 @@ end
 
 --== start =================================================================
 
-local define = MpDefine()
+local player_store = PlayerStore()
+local player_updates = MpPlayerContext(player_store)
+local define = MpDefine({ player_store = player_store })
 define:listen()
 
-local app = mpv_app.start(main_layout.build_scaffold)
+local app = mpv_app.start(main_layout.build_scaffold, {
+    player_store = player_store,
+    player_context = player_updates,
+})
 
 --- Re-apply the collected binds to a fresh scaffold and swap it in.
+local shutting_down = false
 local function remount()
+    if shutting_down then
+        return
+    end
     app:set_root_widget(define:apply(main_layout.build_scaffold()))
 end
 
@@ -65,7 +78,10 @@ define.on_sealed = remount
 
 -- Backstop: seal anyway once the window is over, so a script that forgets its
 -- `define_end` cannot keep the session open (dev/design/HOST.md).
-mp.add_timeout(define_window, function()
+local define_timer = mp.add_timeout(define_window, function()
+    if shutting_down then
+        return
+    end
     if define:is_sealed() then
         return
     end
@@ -73,3 +89,16 @@ mp.add_timeout(define_window, function()
     remount()
     mp.msg.info('elxosc: define window closed')
 end)
+
+---@type fun(ev: table)
+local shutdown_callback
+shutdown_callback = function(_event)
+    shutting_down = true
+    if define_timer and define_timer.kill then
+        define_timer:kill()
+    end
+    if mp.unregister_event then
+        mp.unregister_event(shutdown_callback)
+    end
+end
+mp.register_event('shutdown', shutdown_callback)

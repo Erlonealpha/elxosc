@@ -28,6 +28,7 @@ end
 
 ---@class Scheduler : std.object
 ---@field clock FrameClock
+---@field _disposed boolean
 ---@overload fun(clock: FrameClock): self
 local Scheduler = std.class.new('Scheduler', {})
 
@@ -41,6 +42,7 @@ function Scheduler:__init(clock)
     self._post_frame = {}
     self._scheduled = false
     self._last_time = nil
+    self._disposed = false
     clock:set_handler(function(time)
         self:_handle_frame(time)
     end)
@@ -48,6 +50,9 @@ end
 
 ---@param cb fun(dt: number, time: number)
 function Scheduler:add_transient(cb)
+    if self._disposed then
+        return
+    end
     self._transient[cb] = true
 end
 
@@ -58,6 +63,9 @@ end
 
 ---@param cb fun(dt: number, time: number)
 function Scheduler:add_persistent(cb)
+    if self._disposed then
+        return
+    end
     self._persistent[cb] = true
 end
 
@@ -68,6 +76,9 @@ end
 
 ---@param cb fun()
 function Scheduler:add_post_frame(cb)
+    if self._disposed then
+        return
+    end
     local posts = self._post_frame
     posts[#posts + 1] = cb
 end
@@ -79,6 +90,9 @@ end
 
 --- Request a frame; repeated calls before the frame runs are coalesced.
 function Scheduler:schedule_frame()
+    if self._disposed then
+        return
+    end
     if not self._scheduled then
         self._scheduled = true
         self.clock:request_frame()
@@ -87,6 +101,9 @@ end
 
 ---@param time number
 function Scheduler:_handle_frame(time)
+    if self._disposed then
+        return
+    end
     self._scheduled = false
     local last = self._last_time
     local dt = last and (time - last) or 0
@@ -111,6 +128,20 @@ function Scheduler:_handle_frame(time)
     if next(self._transient) ~= nil then
         self:schedule_frame()
     end
+end
+
+--- Stop the frame pipeline and release all registered callbacks.
+function Scheduler:dispose()
+    if self._disposed then
+        return false
+    end
+    self._disposed = true
+    self._transient = {}
+    self._persistent = {}
+    self._post_frame = {}
+    self._scheduled = false
+    self.clock:set_handler(nil)
+    return true
 end
 
 M.Scheduler = Scheduler

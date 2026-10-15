@@ -90,6 +90,17 @@ mp option/property or public API event
 更新不绕过 Define 注入新的 Widget。订阅、timer、script-message 和 property observer
 必须有明确的 dispose/清理生命周期。
 
+当前 6.3 实现提供 host-independent `PlayerStore` 和 host-side
+`MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，并在
+dispose 时调用 `mp.unobserve_property`。Define 的 `player` 模块只提供：
+
+- `get_snapshot()`：读取当前只读快照；
+- `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
+
+它不提供替换快照、编辑已挂载 Widget、重新执行 Define 源码或改变 Widget class
+identity 的能力。`mp.on_prop` 也返回 disposable observer，扩展必须在 State/扩展
+销毁时清理它。
+
 ## 多层 overlay
 
 当前 App 只有一个 `AssPresenter`；下一阶段引入 host-level OverlayHost/Registry，
