@@ -171,6 +171,9 @@ end
 --- Swap the root widget (the define phase finished, or a script re-declared).
 ---@param root_widget Widget
 function App:set_root_widget(root_widget)
+    if self.input then
+        self.input:cancel_capture()
+    end
     self.binding:set_root_widget(root_widget)
     self:request_frame()
 end
@@ -186,6 +189,9 @@ function App:_observe()
         self:_update_delay()
     end)
     mp.register_event('shutdown', function()
+        if self.input then
+            self.input:shutdown()
+        end
         self.presenter:remove()
     end)
 end
@@ -201,6 +207,9 @@ function App:_update_display()
     -- application's child to exactly fill the viewport), which is what makes
     -- the doc's Example 1/2 fill the screen.
     self.owner:set_viewport(Constraints.tight(width, height))
+    if self.input then
+        self:request_frame()
+    end
 end
 
 function App:_update_delay()
@@ -217,6 +226,7 @@ function App:render()
     end
     self.binding:flush_build()
     self.owner:layout()
+    self.input:update_regions()
     if not self.owner:needs_paint() then
         return
     end

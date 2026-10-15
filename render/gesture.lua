@@ -14,6 +14,7 @@ local geometry = require 'foundation.geometry'
 local render_object = require 'render.render_object'
 
 local Offset = geometry.Offset
+local Rect = geometry.Rect
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
@@ -64,6 +65,12 @@ function RenderGesture:__hit_test_bounds(point)
         and point.x < self.size.width + expand and point.y < self.size.height + expand
 end
 
+---@return Rect
+function RenderGesture:input_region_rect()
+    local expand = self.handlers.expand or 0
+    return Rect(-expand, -expand, self.size.width + expand, self.size.height + expand)
+end
+
 function RenderGesture:wants_pointer(event)
     local h = self.handlers
     if event == 'down' or event == 'up' then
@@ -76,10 +83,17 @@ function RenderGesture:wants_pointer(event)
     return false
 end
 
+---@param data any?
+---@return boolean
+local function is_primary_button(data)
+    return data == nil or data == 'left'
+end
+
 function RenderGesture:on_pointer(event, point, data)
     local h = self.handlers
     if event == 'down' then
-        if data == 'right' then
+        if not is_primary_button(data) then
+            self.pressed = false
             return false
         end
         self.pressed = true
@@ -88,7 +102,8 @@ function RenderGesture:on_pointer(event, point, data)
         end
         return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
     elseif event == 'up' then
-        if data == 'right' then
+        if not is_primary_button(data) then
+            self.pressed = false
             return false
         end
         local was_pressed = self.pressed

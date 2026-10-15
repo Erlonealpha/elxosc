@@ -29,12 +29,13 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current verified baseline (2026-10-12): **0 diagnostics / 1036 checks**;
-real mpv.net suite: **8 passed**. Commands and scope are recorded in
-[`dev/design/TESTING.md`](../dev/design/TESTING.md). The next input and player
-application contracts are planned in [`dev/design/INPUT.md`](../dev/design/INPUT.md)
-and [`dev/design/PLAYER.md`](../dev/design/PLAYER.md); they are not implemented by
-the current baseline.
+Current verified baseline (2026-10-14): **0 diagnostics / 1100 checks**;
+real mpv.net suite: **9 passed**. Commands and scope are recorded in
+[`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
+[`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
+root-space regions, per-rectangle sections, capture cleanup and real double-click
+coverage; the Player application contracts in [`dev/design/PLAYER.md`](../dev/design/PLAYER.md)
+remain planned.
 
 ## Real host (Python + uv, first stage)
 
@@ -65,10 +66,11 @@ after the test, and has no user scripts. A missing host executable reports
 **SKIPPED** with a reason. Hosts that exit, IPC startup timeouts, and unexpected
 command or assertion failures fail the test.
 
-The suite also includes a first elxosc integration smoke test. It loads
+The suite also includes elxosc integration tests. It loads
 `main.lua`, sends `elxosc-demo`, checks that the host remains alive, and reads
-back `osd-dimensions`. This proves script loading and the basic IPC path; it is
-not yet a pixel-level OSD or real mouse-click assertion.
+back `osd-dimensions`. The button fixture also sends real mpv `mouse` commands
+through an isolated user `input.conf` to verify interactive double-click capture
+and background fullscreen passthrough. These tests are not pixel-level OSD checks.
 
 ## Layout
 
@@ -82,7 +84,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_animation.lua` | Matrix2D, paint-only OffsetBox/TransformBox, layout scale, curves/tweens, controllers and State resource lifecycle |
 | `test_layout.lua` | Constraints, fitted/finite scale boxes, crop/input mapping, owner driving, paint + hit test |
-| `test_input.lua` | Pointer path resolution, gesture dispatch, hover tracking |
+| `test_input.lua` | Root-space regions, transform clipping, gesture dispatch, hover and capture |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds, constrained text anchors, paint-only updates and scale boxes |
 | `test_button_contract.lua` | Button options/style immutability and PointerEvent construction |
 | `test_icon.lua` | Icon options, nominal box/center anchor, optical offset, font/style propagation and aggregate identity |
@@ -90,7 +92,7 @@ not yet a pixel-level OSD or real mouse-click assertion.
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
-| `test_host_app.lua` | `App`: frame clock, overlay, phase 0–4 demo output and the define window (`mp` stubbed) |
+| `test_host_app.lua` | `App`: frame clock, overlay, input areas/capture, demo output and the define window (`mp` stubbed) |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |

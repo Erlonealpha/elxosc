@@ -254,6 +254,25 @@ function RenderLayoutScaleBox:pointer_path(point, out)
     return out
 end
 
+---@param out PointerRegion[]?
+---@param local_to_root Matrix2D?
+---@return PointerRegion[]
+function RenderLayoutScaleBox:collect_pointer_regions(out, local_to_root)
+    out = out or {}
+    local_to_root = local_to_root or Matrix2D.identity()
+    self:_append_pointer_region(out, local_to_root)
+    local child = self._children[1]
+    if child then
+        local child_start = #out
+        local mapping = self:_mapping()
+        if mapping then
+            child:collect_pointer_regions(out, local_to_root:multiply(mapping))
+            self:_clip_pointer_regions(out, child_start, local_to_root)
+        end
+    end
+    return out
+end
+
 ---@param controller AnimationController?
 ---@param tween Tween<Size>?
 function RenderLayoutScaleBox:set_scale_animation(controller, tween)

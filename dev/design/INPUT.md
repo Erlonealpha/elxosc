@@ -4,19 +4,19 @@
 `RenderOwner` 和 `RenderGesture` 之上，目标是让 UI 控件精确拦截属于自己的输入，
 同时保留播放器背景区域的用户 `input.conf` 行为。
 
-**状态：待实施。** 下文的区域、事件字段和 section 名称是设计草案，不是已存在的
-API；实施顺序和依赖见 [ROADMAP.md](ROADMAP.md)。
+**状态：6.0 已完成 API 语义 spike，6.1 区域隔离实施中。** 下文仍有未完成的
+事件、真实宿主回归和生命周期部分；实施顺序和依赖见 [ROADMAP.md](ROADMAP.md)。
 
 ## 当前基线
 
-当前宿主输入层使用一个 `elxosc_mouse` section，按鼠标是否位于
-`RenderOwner:wants_pointer()` 命中的节点来启用或禁用。它已经支持鼠标移动、离开、
-左右键、滚轮和 pointer capture，但事件字段仍主要放在 `PointerEvent.data`，也没有
-设置 mpv 的 mouse area。
+当前宿主输入层使用 `elxosc-input`、`elxosc-wheel` 以及按区域追加编号的 section，
+按 `RenderOwner:pointer_regions()` 导出的 root-space 区域来启用或禁用。它已经支持
+鼠标移动、离开、左右键、滚轮和 pointer capture，但事件字段仍主要放在
+`PointerEvent.data`，结构化事件和完整生命周期清理尚未完成。
 
-因此，控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 仍可能执行例如
+旧实现中，控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 仍可能执行例如
 `cycle fullscreen`。仅在 Lua 层收到一次普通 down/up 不能可靠地表达“这个区域已经
-消费双击”，必须在 mpv 输入 section 中声明并处理 `mbtn_left_dbl`。
+消费双击”，因此当前 section 必须显式声明并处理 `mbtn_left_dbl`。
 
 本次提供的参考脚本只作为设计参考，不是运行依赖：
 
@@ -53,10 +53,12 @@ RenderObject tree
 快照必须与当前输入逆变换、有效祖先命中边界和 clip 一致；不得把分离的按钮粗暴并成
 一个包围盒，导致中间原本可透传的空隙也被吞掉。
 
-初始按“一 section 对应一矩形”规划，不能假设反复调用同名 section 会追加矩形。
-6.0 验证后再选择区域拆分/section 复用策略；无论选择哪种，都要保留区域空隙、
-前后层遮挡和拖动 capture。同时确认窗口与 OSD 坐标关系、像素边界取整、零尺寸窗口
-保护，以及 `force`/exclusive 的实际优先级。
+当前目标版本的 mpv 输入实现中，一个 section 只保存一个 `mp_rect`；重复调用
+`mp.set_mouse_area()` 会替换该 section 的矩形，而不是追加多个矩形。因此当前 6.1
+实现使用一个区域对应一个 section，例如 `elxosc-input`、`elxosc-input-2`，并对
+wheel 区域使用对应的 `elxosc-wheel` 编号。这样不能把分离的按钮粗暴合并成包围盒，
+也保留了区域空隙、前后层遮挡和拖动 capture。窗口与 OSD 坐标关系、像素边界取整、
+零尺寸窗口保护，以及 `force`/exclusive 的实际优先级仍需在目标宿主中继续验证。
 
 ## 三类节点
 
@@ -121,7 +123,7 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 | `elxosc-drag` | 明确声明的视频/窗口拖动 | 按控件策略选择 dragging flags |
 | `elxosc-modal` | 菜单、对话框和 modal layer | 可 exclusive，关闭时完整清理 |
 
-表中为职责分组，实际 section 数量/名称由 6.0 验证和区域拆分决定。普通控件不默认
+表中为职责分组；普通输入区域当前使用基础名称加编号的 section。普通控件不默认
 允许窗口拖动；`allow-vo-dragging`、`allow-hide-cursor` 按显示监听、拖动区和控件区
 分别配置，不把当前全局 flags 原样复制到所有分组。
 
@@ -172,9 +174,10 @@ inside/outside 状态，便于时间线拖动；目标卸载、失焦或强制�
 
 ### 6.0 mpv 输入 spike
 
-- 验证 `mp.set_mouse_area()` 的坐标和多区域语义；
+- 验证 `mp.set_mouse_area()` 的坐标和多区域语义；已确认每个 section 只有一个矩形，
+  当前实现采用按区域拆分 section；
 - 验证 `force`、exclusive、用户 `input.conf` 和双击事件优先级；
-- 新增最小 mp stub/real-host fixture，不先改整个 RenderOwner。
+- 已新增最小 mp stub；真实 host fixture 仍需补充，不先改整个 RenderOwner。
 
 ### 6.1 区域与默认输入隔离
 

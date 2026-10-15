@@ -10,10 +10,12 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
+local transform_mod = require 'foundation.transform'
 local render_object = require 'render.render_object'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
+local Matrix2D = transform_mod.Matrix2D
 local RenderObject = render_object.RenderObject
 
 local M = {}
@@ -113,6 +115,24 @@ function RenderOffsetBox:pointer_path(point, out)
         end
     end
     out[#out + 1] = { node = self, point = point }
+    return out
+end
+
+---@param out PointerRegion[]?
+---@param local_to_root Matrix2D?
+---@return PointerRegion[]
+function RenderOffsetBox:collect_pointer_regions(out, local_to_root)
+    out = out or {}
+    local_to_root = local_to_root or Matrix2D.identity()
+    self:_append_pointer_region(out, local_to_root)
+    local child = self._children[1]
+    if child then
+        local child_offset = self:_child_offset(child.parent_data and child.parent_data.offset)
+        local child_start = #out
+        child:collect_pointer_regions(out,
+            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)))
+        self:_clip_pointer_regions(out, child_start, local_to_root)
+    end
     return out
 end
 

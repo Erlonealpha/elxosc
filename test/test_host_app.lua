@@ -85,6 +85,136 @@ F.test('the overlay carries the ASS text and the resolution', function()
     F.ok(fake.overlay.data ~= nil and #fake.overlay.data > 0, 'ASS payload emitted')
 end)
 
+F.test('interactive input installs a precise area and consumes double-click', function()
+    mp_stub.reset()
+    local clicks = 0
+    local app = mpv_app.App(Button({
+        label = 'OK',
+        on_click = function() clicks = clicks + 1 end,
+    }))
+    app:render()
+
+    local binding = fake.binding_sections['elxosc-input']
+    F.ok(binding ~= nil, 'interactive section is defined')
+    ---@type table?
+    local double_binding
+    ---@type table[]
+    local entries = binding.list
+    for _, entry in ipairs(entries) do
+        if entry[1] == 'mbtn_left_dbl' then
+            double_binding = entry
+        end
+    end
+    F.ok(double_binding ~= nil, 'left double-click is claimed by the UI section')
+    local double_callback = double_binding[2] --[[@as fun()]]
+    double_callback()
+    F.eq(clicks, 0, 'double-click does not synthesize a button click')
+
+    local areas = fake.mouse_areas['elxosc-input']
+    F.ok(areas ~= nil and #areas >= 2, 'input area is cleared and then installed')
+    local installed = areas[#areas]
+    F.ok(installed.x1 > installed.x0 and installed.y1 > installed.y0,
+        'interactive area has positive bounds')
+end)
+
+F.test('separate interactive regions use separate mpv sections', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Column({
+        children = {
+            Button({ label = 'one', on_click = function() end }),
+            Button({ label = 'two', on_click = function() end }),
+        },
+    }))
+    app:render()
+
+    local first_history = fake.mouse_areas['elxosc-input']
+    local second_history = fake.mouse_areas['elxosc-input-2']
+    F.ok(first_history ~= nil and second_history ~= nil,
+        'each interactive region has its own section')
+    if first_history == nil or second_history == nil then
+        return
+    end
+    local first = first_history[#first_history]
+    local second = second_history[#second_history]
+    F.ok(first.x1 > first.x0 and first.y1 > first.y0, 'first area has positive bounds')
+    F.ok(second.x1 > second.x0 and second.y1 > second.y0, 'second area has positive bounds')
+    F.ok(first.y0 < second.y0,
+        'separate areas preserve the controls\' relative positions')
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] ~= nil,
+        'first input section is enabled')
+    F.ok(fake.bindings_enabled_sections['elxosc-input-2'] ~= nil,
+        'second input section is enabled')
+end)
+
+F.test('a passive root leaves default mpv input available', function()
+    mp_stub.reset()
+    local app = mpv_app.App(scaffold())
+    app:render()
+    F.ok(fake.binding_sections['elxosc-input'] ~= nil, 'input section is defined once')
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] == nil,
+        'passive scaffold does not enable input section')
+    local areas = fake.mouse_areas['elxosc-input']
+    local cleared = areas and areas[#areas]
+    F.ok(cleared ~= nil and cleared.x0 == cleared.x1 and cleared.y0 == cleared.y1,
+        'passive scaffold clears its input area')
+end)
+
+F.test('display resize schedules a fresh layout and input-area update', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() end }))
+    app:render()
+    mp_stub.pump()
+    fake.timeouts = {}
+    fake.osd_width, fake.osd_height = 640, 360
+    for _, event in ipairs(fake.events) do
+        if event.name == 'osd-dimensions' then
+            event.cb(nil, nil)
+        end
+    end
+    F.eq(app.display.width, 640, 'display width updated')
+    F.eq(app.display.height, 360, 'display height updated')
+    F.ok(#fake.timeouts > 0, 'resize requests a frame')
+    mp_stub.pump()
+    local areas = fake.mouse_areas['elxosc-input']
+    local installed = areas[#areas]
+    F.ok(installed.x1 > installed.x0 and installed.y1 > installed.y0,
+        'input area remains installed after resize')
+end)
+
+F.test('root replacement cancels capture and clears old areas', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() end }))
+    app:render()
+    fake.mouse = { x = 5, y = 5, hover = true }
+    for _, event in ipairs(fake.events) do
+        if event.name == 'mouse-pos' then event.cb(nil, fake.mouse) end
+    end
+    fake.bindings.list[1][3]()
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] ~= nil, 'capture starts')
+    app:set_root_widget(scaffold())
+    app.binding:flush_build()
+    app:render()
+    local areas = fake.mouse_areas['elxosc-input']
+    local cleared = areas[#areas]
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] == nil,
+        'old input section is disabled')
+    F.ok(cleared.x0 == cleared.x1 and cleared.y0 == cleared.y1,
+        'old area is cleared')
+end)
+
+F.test('shutdown clears input sections and areas', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() end }))
+    app:render()
+    fake.log['event:shutdown']()
+    local areas = fake.mouse_areas['elxosc-input']
+    local cleared = areas[#areas]
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] == nil,
+        'input section disabled on shutdown')
+    F.ok(cleared.x0 == cleared.x1 and cleared.y0 == cleared.y1,
+        'input area cleared on shutdown')
+end)
+
 F.test('the demo exposes anchors, nominal icons and static animation output', function()
     mp_stub.reset()
     local app = mpv_app.App(Demo())

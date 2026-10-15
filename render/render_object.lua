@@ -10,9 +10,12 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
+local transform_mod = require 'foundation.transform'
 
 local Offset = geometry.Offset
+local Rect = geometry.Rect
 local Size = geometry.Size
+local Matrix2D = transform_mod.Matrix2D
 local table = table
 local ipairs = ipairs
 local huge = math.huge
@@ -29,6 +32,12 @@ local M = {}
 ---@field offset Offset
 ---@field flex number? main-axis flex weight (see RenderFlex)
 ---@field fit FlexFit? flex fit (see RenderFlex)
+
+---@class PointerRegion
+---@field node RenderObject
+---@field rect Rect root-space input bounds
+---@field down boolean
+---@field wheel boolean
 
 ---@class RenderObject : std.object
 ---@field parent RenderObject?
@@ -246,6 +255,69 @@ function RenderObject:pointer_path(point, out)
     end
     out[#out + 1] = { node = self, point = point }
     return out
+end
+
+--- Collect interactive regions in root coordinates. Host input code can use the
+--- result to constrain mpv sections without making the render layer depend on
+--- mpv. Subclasses with paint/input transforms override this method to compose
+--- their local-to-parent mapping.
+---@param out PointerRegion[]?
+---@param local_to_root Matrix2D?
+---@return PointerRegion[]
+function RenderObject:collect_pointer_regions(out, local_to_root)
+    out = out or {}
+    local_to_root = local_to_root or Matrix2D.identity()
+
+    self:_append_pointer_region(out, local_to_root)
+
+    local child_start = #out
+    for _, child in ipairs(self._children) do
+        local child_offset = child.parent_data and child.parent_data.offset or Offset.zero()
+        child:collect_pointer_regions(out,
+            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)))
+    end
+    self:_clip_pointer_regions(out, child_start, local_to_root)
+    return out
+end
+
+---@param out PointerRegion[]
+---@param local_to_root Matrix2D
+function RenderObject:_append_pointer_region(out, local_to_root)
+    local wants_down = self:wants_pointer('down') or self:wants_pointer('up')
+    local wants_wheel = self:wants_pointer('wheel')
+    if not wants_down and not wants_wheel then
+        return
+    end
+    local rect = local_to_root:transform_rect(self:input_region_rect())
+    if rect:is_empty() then
+        return
+    end
+    out[#out + 1] = {
+        node = self,
+        rect = rect,
+        down = wants_down,
+        wheel = wants_wheel,
+    }
+end
+
+---@param out PointerRegion[]
+---@param start integer number of entries already present before this node's children
+---@param local_to_root Matrix2D
+function RenderObject:_clip_pointer_regions(out, start, local_to_root)
+    local clip = local_to_root:transform_rect(self:input_region_rect())
+    for index = #out, start + 1, -1 do
+        local rect = out[index].rect:intersect(clip)
+        if rect:is_empty() then
+            table.remove(out, index)
+        else
+            out[index].rect = rect
+        end
+    end
+end
+
+---@return Rect
+function RenderObject:input_region_rect()
+    return Rect.from_offset_size(Offset.zero(), self.size)
 end
 
 --== pointer events =======================================================

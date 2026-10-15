@@ -31,8 +31,8 @@ ASS 坐标一致；不要让 render 层读取 overlay 字符串来做布局。
 
 ## 输入
 
-`MpInput` 监听鼠标位置和按键，把事件交给 RenderOwner。下一阶段会增加
-`mp.set_mouse_area()` 区域同步和职责分离的 input sections：passive 的 Root/排版
+`MpInput` 监听鼠标位置和按键，把事件交给 RenderOwner。当前输入阶段已经接入
+`mp.set_mouse_area()` 区域同步和按区域拆分的 input sections：passive 的 Root/排版
 节点不创建输入区域，interactive 控件只在自己的 root-space 区域消费相关事件，
 modal/exclusive layer 可以显式阻止穿透。默认情况下，Button 区域会消费
 `mbtn_left_dbl`，避免触发用户 `input.conf` 的 `cycle fullscreen`；没有 interactive

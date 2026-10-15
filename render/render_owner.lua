@@ -36,6 +36,7 @@ function RenderOwner:__init(root)
     ---@type RenderObject?
     ---@type RenderObject?
     self._capture = nil
+    self._cancelled_sequence = false
     if root then
         self:set_root(root)
     end
@@ -43,7 +44,9 @@ end
 
 ---@param root RenderObject
 function RenderOwner:set_root(root)
-    self:cancel_pointer()
+    -- Root replacement invalidates both sides of pointer state. Send leave and
+    -- cancel while the old tree still has its owner, then detach it.
+    self:clear_hover()
     if self.root then
         self.root:_set_owner(nil)
     end
@@ -85,6 +88,7 @@ end
 
 --- Lay the tree out when the viewport changed or anything was marked dirty.
 function RenderOwner:layout()
+    self:_cleanup_detached_pointer_state()
     local root = self.root
     if root == nil then
         return
@@ -116,6 +120,26 @@ function RenderOwner:pointer_path(point)
     return self.root:pointer_path(point)
 end
 
+---@return PointerRegion[]
+function RenderOwner:pointer_regions()
+    if not self.root then
+        return {}
+    end
+    return self.root:collect_pointer_regions()
+end
+
+--- Return whether a pointer sequence is captured by a mounted node. If a
+--- subtree rebuild detached the target, cancel that sequence before returning.
+---@return boolean
+function RenderOwner:has_pointer_capture()
+    local capture = self._capture
+    if capture and (capture.owner ~= self or self.root == nil) then
+        self:cancel_pointer()
+    end
+    capture = self._capture
+    return capture ~= nil
+end
+
 ---@param event string
 ---@param point Offset
 ---@return boolean
@@ -141,9 +165,19 @@ function RenderOwner:dispatch_pointer(event, point, data)
         local pointer = event
         event, point, data = pointer.type, pointer.point, pointer.data
     end
+    local detached_capture = self:_cleanup_detached_pointer_state()
+    local cancelled_sequence = detached_capture or self._cancelled_sequence
+    if event == 'down' then
+        self._cancelled_sequence = false
+    end
+    if cancelled_sequence and (event == 'up' or event == 'cancel') then
+        self._cancelled_sequence = false
+        return true
+    end
     local path = self:pointer_path(point)
     if event == 'move' then
         self:_update_hover(path)
+        self:has_pointer_capture()
         if self._capture then
             for _, entry in ipairs(path) do
                 if entry.node == self._capture then
@@ -155,12 +189,15 @@ function RenderOwner:dispatch_pointer(event, point, data)
             return true
         end
         for _, entry in ipairs(path) do
-            entry.node:on_pointer('move', entry.point, data)
+            if entry.node.owner == self then
+                entry.node:on_pointer('move', entry.point, data)
+            end
         end
         return #path > 0
     end
     if event == 'down' then
         self:cancel_pointer()
+        self._cancelled_sequence = false
     elseif event == 'up' or event == 'cancel' then
         local captured = self._capture
         self._capture = nil
@@ -178,7 +215,7 @@ function RenderOwner:dispatch_pointer(event, point, data)
     end
     for _, entry in ipairs(path) do
         if entry.node:on_pointer(event, entry.point, data) then
-            if event == 'down' then
+            if event == 'down' and entry.node.owner == self then
                 self._capture = entry.node
             end
             return true
@@ -189,9 +226,11 @@ end
 
 --- Cancel a pending press when the host loses the pointer or the root changes.
 function RenderOwner:cancel_pointer()
-    if self._capture then
-        self._capture:on_pointer('cancel', nil)
-        self._capture = nil
+    local captured = self._capture
+    self._capture = nil
+    if captured then
+        self._cancelled_sequence = true
+        captured:on_pointer('cancel', nil)
     end
 end
 
@@ -202,6 +241,23 @@ function RenderOwner:clear_hover()
         node:on_pointer('leave', nil)
     end
     self._hovered = {}
+end
+
+---@return boolean detached_capture
+function RenderOwner:_cleanup_detached_pointer_state()
+    local detached_capture = false
+    local capture = self._capture
+    if capture and (capture.owner ~= self or self.root == nil) then
+        detached_capture = true
+        self:cancel_pointer()
+    end
+    for node in pairs(self._hovered) do
+        if node.owner ~= self then
+            node:on_pointer('leave', nil)
+            self._hovered[node] = nil
+        end
+    end
+    return detached_capture
 end
 
 ---@param path {node: RenderObject, point: Offset}[]

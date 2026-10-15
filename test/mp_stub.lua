@@ -15,6 +15,9 @@ local fake = {
     timeouts = {},
     log = {},
     time = 0,
+    mouse_areas = {},
+    binding_sections = {},
+    bindings_enabled_sections = {},
 }
 
 S.fake = fake
@@ -26,6 +29,12 @@ function S.reset()
     fake.osd_width, fake.osd_height = 1280, 720
     fake.fps = 60
     fake.overlay = nil
+    fake.bindings = nil
+    fake.bindings_enabled = nil
+    fake.bindings_disabled = nil
+    fake.mouse_areas = {}
+    fake.binding_sections = {}
+    fake.bindings_enabled_sections = {}
 end
 
 --- Run every timeout queued since the last call (one frame of the host loop).
@@ -125,16 +134,32 @@ function S.install()
     end
 
     function mp.set_key_bindings(list, section, flags)
-        fake.bindings = { list = list, section = section, flags = flags }
+        local binding = { list = list, section = section, flags = flags }
+        fake.binding_sections[section] = binding
+        if section == 'elxosc-input' then
+            fake.bindings = binding
+        end
     end
 
     function mp.enable_key_bindings(section, flags)
-        fake.bindings_enabled = { section = section, flags = flags }
+        local binding = { section = section, flags = flags }
+        fake.bindings_enabled_sections[section] = binding
+        fake.bindings_enabled = binding
     end
 
     function mp.disable_key_bindings(section)
+        fake.bindings_enabled_sections[section] = nil
         fake.bindings_enabled = nil
         fake.bindings_disabled = section
+    end
+
+    function mp.set_mouse_area(x0, y0, x1, y1, section)
+        local areas = fake.mouse_areas[section]
+        if areas == nil then
+            areas = {}
+            fake.mouse_areas[section] = areas
+        end
+        areas[#areas + 1] = { x0 = x0, y0 = y0, x1 = x1, y1 = y1 }
     end
 
     package.loaded['mp'] = mp

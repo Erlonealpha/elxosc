@@ -5,9 +5,9 @@
 --
 -- Follows uosc's `lib/cursor.lua` where it matters:
 --   * the pointer comes from the `mouse-pos` property (pixel centres, +0.5);
---   * mouse buttons/wheel are captured through a named key binding *section*
---     which is only enabled while the cursor is over something interactive,
---     so ordinary clicks still reach mpv's default bindings elsewhere.
+--   * mouse buttons/wheel are captured through named key-binding sections;
+--   * sections have mouse areas, so ordinary clicks still reach mpv's default
+--     bindings outside interactive render regions.
 
 local mp = require 'mp'
 
@@ -18,17 +18,37 @@ local pointer_event = require 'foundation.pointer_event'
 local Offset = geometry.Offset
 local PointerEvent = pointer_event.PointerEvent
 local math = math
+local floor = math.floor
+local ceil = math.ceil
 local debug_msgf = rawget(_G, 'debug_msgf') or function(...) end
 local debug_msg = rawget(_G, 'debug_msg') or function(...) end
 
+---@param value number
+---@return integer
+local function pixel_floor(value)
+    return floor(value) --[[@as integer]]
+end
+
+---@param value number
+---@return integer
+local function pixel_ceil(value)
+    return ceil(value) --[[@as integer]]
+end
+
 local M = {}
 
-local BINDING_GROUP = 'elxosc_mouse'
-local BINDING_FLAGS = 'allow-vo-dragging+allow-hide-cursor'
+local INPUT_SECTION = 'elxosc-input'
+local WHEEL_SECTION = 'elxosc-wheel'
+local BINDING_FLAGS = 'allow-hide-cursor'
 
 ---@class MpInput : std.object
 ---@field app App
 ---@field hover boolean
+---@field _regions PointerRegion[]
+---@field _region_signature string?
+---@field _input_sections string[]
+---@field _wheel_sections string[]
+---@field _pressed_section string?
 ---@overload fun(app: App): self
 local MpInput = std.class.new('MpInput', {})
 
@@ -36,10 +56,15 @@ function MpInput:__init(app)
     self.app = app
     self.x, self.y = math.huge, math.huge
     self.hover = false
-    self._enabled = false
     self._pressed = false
+    self._regions = {}
+    self._region_signature = nil
+    self._input_sections = {}
+    self._wheel_sections = {}
+    self._pressed_section = nil
     self:_bind_mouse()
     self:_bind_keys()
+    self:_clear_mouse_areas()
 end
 
 ---@return Offset
@@ -63,63 +88,232 @@ function MpInput:_bind_mouse()
             if self.hover then
                 self.hover = false
                 self.app.owner:clear_hover()
-                self:_decide_bindings()
+            end
+            if self._pressed then
+                self.app.owner:cancel_pointer()
+                self._pressed = false
+                self._pressed_section = nil
+                self:update_regions()
             end
             return
         end
         self.x, self.y = mouse.x + 0.5, mouse.y + 0.5
         self.hover = true
         self.app.owner:dispatch_pointer(PointerEvent('move', self:_point())) --[[@as PointerEvent]]
-        self:_decide_bindings()
         self.app:request_frame()
     end)
 end
 
 ---@param event string
 ---@param data any?
-function MpInput:_dispatch(event, data)
+---@param section string?
+function MpInput:_dispatch(event, data, section)
     debug_msgf('MpInput:_dispatch(%s)', event)
-    if event == 'down' then
+    if event == 'down' or event == 'double' then
         self:_refresh_position()
     end
     local handled = self.app.owner:dispatch_pointer(PointerEvent(event, self:_point(), data)) --[[@as PointerEvent]]
     if event == 'down' and data == 'left' then
         self._pressed = handled
+        if handled then
+            self._pressed_section = section
+        end
+        self:update_regions()
     elseif event == 'up' and data == 'left' then
         self._pressed = false
+        self._pressed_section = nil
+        self:update_regions()
     end
-    self:_decide_bindings()
     self.app:request_frame()
 end
 
-function MpInput:_bind_keys()
-    mp.set_key_bindings({
-        { 'mbtn_left', function() self:_dispatch('up', 'left') end, function() self:_dispatch('down', 'left') end },
-        { 'mbtn_right', function() self:_dispatch('up', 'right') end, function() self:_dispatch('down', 'right') end },
-        { 'wheel_up', function() self:_dispatch('wheel', 1) end },
-        { 'wheel_down', function() self:_dispatch('wheel', -1) end },
-    }, BINDING_GROUP, 'force')
-    mp.disable_key_bindings(BINDING_GROUP)
+function MpInput:_input_section(index)
+    return index == 1 and INPUT_SECTION or INPUT_SECTION .. '-' .. tostring(index)
 end
 
---- Enable the mouse section only while the cursor is over an interactive node,
---- so clicks elsewhere keep their normal mpv meaning.
-function MpInput:_decide_bindings()
-    local point = self:_point()
-    local want = self._pressed or self.hover and (
-        self.app.owner:wants_pointer('down', point)
-        or self.app.owner:wants_pointer('wheel', point)) or false
-    if want == self._enabled then
+function MpInput:_wheel_section(index)
+    return index == 1 and WHEEL_SECTION or WHEEL_SECTION .. '-' .. tostring(index)
+end
+
+---@param section string
+function MpInput:_define_input_section(section)
+    mp.set_key_bindings({
+        { 'mbtn_left', function() self:_dispatch('up', 'left', section) end, function()
+            self:_dispatch('down', 'left', section)
+        end },
+        { 'mbtn_right', function() self:_dispatch('up', 'right', section) end, function()
+            self:_dispatch('down', 'right', section)
+        end },
+        { 'mbtn_mid', function() self:_dispatch('up', 'middle', section) end, function()
+            self:_dispatch('down', 'middle', section)
+        end },
+        { 'mbtn_left_dbl', function() self:_dispatch('double', 'left', section) end },
+        { 'mbtn_right_dbl', function() self:_dispatch('double', 'right', section) end },
+    }, section, 'force')
+end
+
+---@param section string
+function MpInput:_define_wheel_section(section)
+    mp.set_key_bindings({
+        { 'wheel_up', function() self:_dispatch('wheel', 1) end },
+        { 'wheel_down', function() self:_dispatch('wheel', -1) end },
+        { 'wheel_left', function() self:_dispatch('wheel', { x = -1, y = 0 }) end },
+        { 'wheel_right', function() self:_dispatch('wheel', { x = 1, y = 0 }) end },
+    }, section, 'force')
+end
+
+function MpInput:_bind_keys()
+    self:_define_input_section(INPUT_SECTION)
+    self:_define_wheel_section(WHEEL_SECTION)
+    mp.disable_key_bindings(INPUT_SECTION)
+    mp.disable_key_bindings(WHEEL_SECTION)
+end
+
+---@param section string
+function MpInput:_clear_mouse_area(section)
+    if mp.set_mouse_area then
+        mp.set_mouse_area(0, 0, 0, 0, section)
+    end
+end
+
+function MpInput:_clear_mouse_areas()
+    self:_clear_mouse_area(INPUT_SECTION)
+    self:_clear_mouse_area(WHEEL_SECTION)
+end
+
+---@return Rect
+function MpInput:_viewport_rect()
+    local display = self.app.display
+    local width, height = display.width, display.height
+    if width <= 0 or height <= 0 then
+        width, height = mp.get_osd_size()
+    end
+    return geometry.Rect(0, 0, width, height)
+end
+
+---@param rect Rect
+---@param section string
+function MpInput:_set_mouse_area(rect, section)
+    if mp.set_mouse_area then
+        mp.set_mouse_area(
+            pixel_floor(rect.left),
+            pixel_floor(rect.top),
+            pixel_ceil(rect.right),
+            pixel_ceil(rect.bottom),
+            section)
+    end
+end
+
+---@param section string
+function MpInput:_disable_section(section)
+    self:_clear_mouse_area(section)
+    mp.disable_key_bindings(section)
+end
+
+---@param regions PointerRegion[]
+function MpInput:_apply_regions(regions)
+    for _, section in ipairs(self._input_sections) do
+        self:_disable_section(section)
+    end
+    for _, section in ipairs(self._wheel_sections) do
+        self:_disable_section(section)
+    end
+    self._input_sections = {}
+    self._wheel_sections = {}
+
+    local down_index, wheel_index = 0, 0
+    ---@type string?
+    local pressed_section = nil
+    if self._pressed then
+        pressed_section = self._pressed_section
+    end
+    local pressed_section_found = false
+    for _, region in ipairs(regions) do
+        if region.down then
+            down_index = down_index + 1
+            local section = self:_input_section(down_index)
+            if down_index > 1 then
+                self:_define_input_section(section)
+            end
+            if pressed_section == nil or pressed_section == section then
+                self._input_sections[#self._input_sections + 1] = section
+                local area = region.rect
+                if pressed_section == section then
+                    area = self:_viewport_rect()
+                    pressed_section_found = true
+                end
+                self:_set_mouse_area(area, section)
+                mp.enable_key_bindings(section, BINDING_FLAGS)
+            end
+        end
+        if pressed_section == nil and region.wheel then
+            wheel_index = wheel_index + 1
+            local section = self:_wheel_section(wheel_index)
+            if wheel_index > 1 then
+                self:_define_wheel_section(section)
+            end
+            self._wheel_sections[#self._wheel_sections + 1] = section
+            self:_set_mouse_area(region.rect, section)
+            mp.enable_key_bindings(section, BINDING_FLAGS)
+        end
+    end
+
+    if pressed_section ~= nil and not pressed_section_found then
+        local capture_section = pressed_section --[[@as string]]
+        self:_define_input_section(capture_section)
+        self._input_sections[#self._input_sections + 1] = capture_section
+        self:_set_mouse_area(self:_viewport_rect(), capture_section)
+        mp.enable_key_bindings(capture_section, BINDING_FLAGS)
+    end
+end
+
+---@param regions PointerRegion[]
+---@return string
+local function region_signature(regions)
+    local values = {}
+    for _, region in ipairs(regions) do
+        values[#values + 1] = string.format('%g,%g,%g,%g:%d:%d',
+            region.rect.left, region.rect.top, region.rect.right, region.rect.bottom,
+            region.down and 1 or 0, region.wheel and 1 or 0)
+    end
+    return table.concat(values, ';')
+end
+
+--- Synchronize RenderOwner regions with mpv sections and mouse areas.
+function MpInput:update_regions()
+    local regions = self.app.owner:pointer_regions()
+    local signature = region_signature(regions) .. (self._pressed and ':pressed' or '')
+    if signature == self._region_signature then
         return
     end
-    self._enabled = want
-    if want then
-        debug_msg('enable_key_bindings')
-        mp.enable_key_bindings(BINDING_GROUP, BINDING_FLAGS)
-    else
-        debug_msg('disable_key_bindings')
-        mp.disable_key_bindings(BINDING_GROUP)
+    self._region_signature = signature
+    self._regions = regions
+    self:_apply_regions(regions)
+end
+
+--- Cancel host-side pointer capture and restore the normal region policy.
+function MpInput:cancel_capture()
+    self.app.owner:cancel_pointer()
+    self._pressed = false
+    self._pressed_section = nil
+    self:update_regions()
+end
+
+--- Release host input resources when the app is shutting down.
+function MpInput:shutdown()
+    self.app.owner:clear_hover()
+    self._pressed = false
+    self._pressed_section = nil
+    for _, section in ipairs(self._input_sections) do
+        self:_disable_section(section)
     end
+    for _, section in ipairs(self._wheel_sections) do
+        self:_disable_section(section)
+    end
+    self._input_sections = {}
+    self._wheel_sections = {}
+    self:_disable_section(INPUT_SECTION)
+    self:_disable_section(WHEEL_SECTION)
 end
 
 M.MpInput = MpInput
