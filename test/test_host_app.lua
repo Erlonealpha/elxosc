@@ -215,6 +215,26 @@ F.test('shutdown clears input sections and areas', function()
         'input area cleared on shutdown')
 end)
 
+F.test('a new input instance clears old numbered sections', function()
+    mp_stub.reset()
+    local first = mpv_app.App(Column({
+        children = {
+            Button({ label = 'one', on_click = function() end }),
+            Button({ label = 'two', on_click = function() end }),
+        },
+    }))
+    first:render()
+    mp_stub.reset()
+    local second = mpv_app.App(scaffold())
+    second:render()
+    F.ok(fake.bindings_enabled_sections['elxosc-input-2'] == nil,
+        'old numbered input section is disabled')
+    local areas = fake.mouse_areas['elxosc-input-2']
+    local cleared = areas and areas[#areas]
+    F.ok(cleared ~= nil and cleared.x0 == cleared.x1 and cleared.y0 == cleared.y1,
+        'old numbered input area is cleared')
+end)
+
 F.test('the demo exposes anchors, nominal icons and static animation output', function()
     mp_stub.reset()
     local app = mpv_app.App(Demo())
@@ -321,6 +341,44 @@ F.test('host capture keeps the press routed after leaving the button', function(
     end
     bindings[1][2]()
     F.eq(clicks, 0, 'release outside does not click')
+end)
+
+F.test('host normalizes structured button, wheel and double-click fields', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Button({ label = 'OK', on_click = function() end }))
+    app:render()
+    local events = {}
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function app.owner:dispatch_pointer_result(event)
+        events[#events + 1] = event
+        return { handled = true, capture = event.type == 'down', stop_propagation = true }
+    end
+
+    fake.time = 12.5
+    app.input:_dispatch('down', 'middle', 'elxosc-input')
+    local down = events[#events]
+    F.eq(down.button, 'middle', 'middle button')
+    F.ok(down.buttons ~= nil and down.buttons.middle, 'held middle button')
+    F.eq(down.pointer_id, 1, 'mouse pointer id')
+    F.eq(down.source, 'mouse', 'mouse source')
+    F.eq(down.timestamp, 12.5, 'mouse timestamp')
+    F.ok(fake.bindings_enabled_sections['elxosc-input'] ~= nil,
+        'structured capture keeps the section enabled')
+
+    app.input:_dispatch('up', 'middle', 'elxosc-input')
+    local up = events[#events]
+    F.ok(up.buttons ~= nil and not up.buttons.middle, 'released middle button')
+
+    app.input:_dispatch('wheel', { x = -1, y = 0 }, 'elxosc-wheel')
+    local wheel = events[#events]
+    F.eq(wheel.delta_x, -1, 'horizontal wheel delta')
+    F.eq(wheel.delta_y, 0, 'horizontal wheel vertical delta')
+    F.ok(wheel.data ~= nil and wheel.data.x == -1, 'legacy wheel payload')
+
+    app.input:_dispatch('double', 'left', 'elxosc-input')
+    local double = events[#events]
+    F.eq(double.button, 'left', 'double-click button')
+    F.eq(double.click_count, 2, 'double-click count')
 end)
 
 --== the whole entry point =================================================

@@ -10,11 +10,82 @@
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local constraints_mod = require 'layout.constraints'
+local pointer_event = require 'foundation.pointer_event'
 
 local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
+local PointerEvent = pointer_event.PointerEvent
+local raise = std.raise
+local POINTER_BUTTONS = { left = true, middle = true, right = true }
 
 local M = {}
+
+---@param value boolean?
+---@param name string
+local function validate_result_field(value, name)
+    if value ~= nil and type(value) ~= 'boolean' then
+        raise(std.TypeError('DispatchResult.' .. name .. ' must be a boolean'))
+    end
+end
+
+---@param value any
+---@param event PointerEvent
+---@return DispatchResult
+local function normalize_dispatch_result(value, event)
+    if value == nil or value == false then
+        return { handled = false, capture = false, stop_propagation = false }
+    end
+    if value == true then
+        return {
+            handled = true,
+            capture = event.type == 'down',
+            stop_propagation = event.type ~= 'move',
+        }
+    end
+    if type(value) ~= 'table' then
+        raise(std.TypeError('pointer dispatch must return boolean or DispatchResult'))
+    end
+    validate_result_field(value.handled, 'handled')
+    validate_result_field(value.capture, 'capture')
+    validate_result_field(value.stop_propagation, 'stop_propagation')
+    return {
+        handled = value.handled == true,
+        capture = value.capture == true,
+        stop_propagation = value.stop_propagation == true,
+    }
+end
+
+---@param target DispatchResult
+---@param result DispatchResult
+local function merge_dispatch_result(target, result)
+    target.handled = target.handled or result.handled
+    target.capture = target.capture or result.capture
+    target.stop_propagation = target.stop_propagation or result.stop_propagation
+end
+
+---@param event PointerEvent
+---@return PointerButton?
+local function pointer_button(event)
+    if event.button ~= nil then
+        return event.button
+    end
+    if type(event.data) == 'string' and POINTER_BUTTONS[event.data] then
+        return event.data --[[@as PointerButton]]
+    end
+    return nil
+end
+
+---@param path {node: RenderObject, point: Offset}[]
+---@param target RenderObject
+---@return Offset?
+local function local_point_for(path, target)
+    for _, entry in ipairs(path) do
+        if entry.node == target then
+            return entry.point
+        end
+    end
+    return nil
+end
 
 ---@class RenderOwner : std.object
 ---@field root RenderObject?
@@ -36,6 +107,8 @@ function RenderOwner:__init(root)
     ---@type RenderObject?
     ---@type RenderObject?
     self._capture = nil
+    ---@type table<PointerButton, true>
+    self._capture_buttons = {}
     self._cancelled_sequence = false
     if root then
         self:set_root(root)
@@ -140,7 +213,7 @@ function RenderOwner:has_pointer_capture()
     return capture ~= nil
 end
 
----@param event string
+---@param event PointerEvents
 ---@param point Offset
 ---@return boolean
 function RenderOwner:wants_pointer(event, point)
@@ -152,85 +225,158 @@ function RenderOwner:wants_pointer(event, point)
     return false
 end
 
---- Route a pointer event down the tree. `move` bubbles and drives hover
---- tracking (`enter`/`leave`); every other event stops at the first node that
---- handles it.
----@param event string
----@param point Offset
+--- Route a structured pointer event down the tree. `move` bubbles and drives
+--- hover tracking (`enter`/`leave`); other events honor structured propagation
+--- results while retaining the legacy boolean behavior.
+---@param event PointerEvent|string
+---@param point Offset?
+---@param data any?
+---@return DispatchResult
+---@overload fun(event: PointerEvent): DispatchResult
+function RenderOwner:dispatch_pointer_result(event, point, data)
+    local pointer
+    if type(event) == 'table' then
+        if pointer_event.is_instance(event) then
+            pointer = event --[[@as PointerEvent]]
+        else
+            pointer = PointerEvent(event --[[@as _PointerEventFields]])
+        end
+    else
+        pointer = PointerEvent(event, point, data)
+    end
+
+    local detached_capture = self:_cleanup_detached_pointer_state()
+    local cancelled_sequence = detached_capture or self._cancelled_sequence
+    if pointer.type == 'down' then
+        self._cancelled_sequence = false
+    end
+    if cancelled_sequence and (pointer.type == 'up' or pointer.type == 'cancel') then
+        self._cancelled_sequence = false
+        return { handled = true, capture = false, stop_propagation = true }
+    end
+
+    local path = pointer.point and self:pointer_path(pointer.point) or {}
+    if pointer.type == 'move' then
+        local root_point = pointer.point --[[@as Offset]]
+        self:_update_hover(path, root_point)
+        self:has_pointer_capture()
+        if self._capture then
+            local captured = self._capture
+            local result = normalize_dispatch_result(
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+            result.handled = true
+            result.capture = true
+            result.stop_propagation = true
+            return result
+        end
+        local result = { handled = false, capture = false, stop_propagation = false }
+        for _, entry in ipairs(path) do
+            if entry.node.owner == self then
+                local entry_result = normalize_dispatch_result(
+                    entry.node:on_pointer_event(pointer, entry.point), pointer)
+                merge_dispatch_result(result, entry_result)
+                if entry_result.stop_propagation then
+                    break
+                end
+            end
+        end
+        return result
+    end
+
+    if pointer.type == 'down' then
+        local button = pointer_button(pointer)
+        if self._capture and button ~= nil and not self._capture_buttons[button] then
+            local captured = self._capture
+            self._capture_buttons[button] = true
+            local result = normalize_dispatch_result(
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+            result.handled = true
+            result.capture = true
+            result.stop_propagation = true
+            return result
+        end
+        if self._capture then
+            self:cancel_pointer()
+        end
+        self._cancelled_sequence = false
+    elseif pointer.type == 'up' or pointer.type == 'cancel' then
+        local captured = self._capture
+        if captured then
+            local result = normalize_dispatch_result(
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+            if pointer.type == 'cancel' then
+                self._capture = nil
+                self._capture_buttons = {}
+            else
+                local button = pointer_button(pointer)
+                if button == nil then
+                    self._capture_buttons = {}
+                else
+                    self._capture_buttons[button] = nil
+                end
+                if next(self._capture_buttons) == nil then
+                    self._capture = nil
+                end
+            end
+            result.handled = true
+            result.capture = self._capture ~= nil
+            result.stop_propagation = true
+            return result
+        end
+    end
+
+    local result = { handled = false, capture = false, stop_propagation = false }
+    for _, entry in ipairs(path) do
+        local entry_result = normalize_dispatch_result(
+            entry.node:on_pointer_event(pointer, entry.point), pointer)
+        merge_dispatch_result(result, entry_result)
+        if pointer.type == 'down' and entry_result.capture
+            and entry.node.owner == self and self._capture == nil then
+            self._capture = entry.node
+            self._capture_buttons = {}
+            local button = pointer_button(pointer)
+            if button ~= nil then
+                self._capture_buttons[button] = true
+            end
+        end
+        if entry_result.stop_propagation then
+            break
+        end
+    end
+    return result
+end
+
+--- Compatibility wrapper retaining the historical boolean return value.
+---@param event PointerEvent|string
+---@param point Offset?
 ---@param data any?
 ---@return boolean handled
 ---@overload fun(event: PointerEvent): boolean
 function RenderOwner:dispatch_pointer(event, point, data)
+    local event_type
+    local event_point
     if type(event) == 'table' then
-        local pointer = event
-        event, point, data = pointer.type, pointer.point, pointer.data
+        event_type = event.type
+        event_point = event.point
+    else
+        event_type = event
+        event_point = point
     end
-    local detached_capture = self:_cleanup_detached_pointer_state()
-    local cancelled_sequence = detached_capture or self._cancelled_sequence
-    if event == 'down' then
-        self._cancelled_sequence = false
+    local result = self:dispatch_pointer_result(event, point, data)
+    if event_type == 'move' and not result.handled and event_point ~= nil then
+        return #self:pointer_path(event_point) > 0
     end
-    if cancelled_sequence and (event == 'up' or event == 'cancel') then
-        self._cancelled_sequence = false
-        return true
-    end
-    local path = self:pointer_path(point)
-    if event == 'move' then
-        self:_update_hover(path)
-        self:has_pointer_capture()
-        if self._capture then
-            for _, entry in ipairs(path) do
-                if entry.node == self._capture then
-                    self._capture:on_pointer('move', entry.point, data)
-                    return true
-                end
-            end
-            self._capture:on_pointer('move', nil, data)
-            return true
-        end
-        for _, entry in ipairs(path) do
-            if entry.node.owner == self then
-                entry.node:on_pointer('move', entry.point, data)
-            end
-        end
-        return #path > 0
-    end
-    if event == 'down' then
-        self:cancel_pointer()
-        self._cancelled_sequence = false
-    elseif event == 'up' or event == 'cancel' then
-        local captured = self._capture
-        self._capture = nil
-        if captured then
-            local local_point
-            for _, entry in ipairs(path) do
-                if entry.node == captured then
-                    local_point = entry.point
-                    break
-                end
-            end
-            captured:on_pointer(event, local_point, data)
-            return true
-        end
-    end
-    for _, entry in ipairs(path) do
-        if entry.node:on_pointer(event, entry.point, data) then
-            if event == 'down' and entry.node.owner == self then
-                self._capture = entry.node
-            end
-            return true
-        end
-    end
-    return false
+    return result.handled
 end
 
 --- Cancel a pending press when the host loses the pointer or the root changes.
 function RenderOwner:cancel_pointer()
     local captured = self._capture
     self._capture = nil
+    self._capture_buttons = {}
     if captured then
         self._cancelled_sequence = true
-        captured:on_pointer('cancel', nil)
+        captured:on_pointer_event(PointerEvent('cancel'), nil)
     end
 end
 
@@ -238,7 +384,7 @@ end
 function RenderOwner:clear_hover()
     self:cancel_pointer()
     for node in pairs(self._hovered) do
-        node:on_pointer('leave', nil)
+        node:on_pointer_event(PointerEvent('leave'), nil)
     end
     self._hovered = {}
 end
@@ -253,7 +399,7 @@ function RenderOwner:_cleanup_detached_pointer_state()
     end
     for node in pairs(self._hovered) do
         if node.owner ~= self then
-            node:on_pointer('leave', nil)
+            node:on_pointer_event(PointerEvent('leave'), nil)
             self._hovered[node] = nil
         end
     end
@@ -261,19 +407,20 @@ function RenderOwner:_cleanup_detached_pointer_state()
 end
 
 ---@param path {node: RenderObject, point: Offset}[]
-function RenderOwner:_update_hover(path)
+---@param root_point Offset
+function RenderOwner:_update_hover(path, root_point)
     local current = {}
     for _, entry in ipairs(path) do
         current[entry.node] = true
     end
     for node in pairs(self._hovered) do
         if not current[node] then
-            node:on_pointer('leave', nil)
+            node:on_pointer_event(PointerEvent('leave', root_point), nil)
         end
     end
     for _, entry in ipairs(path) do
         if not self._hovered[entry.node] then
-            entry.node:on_pointer('enter', entry.point)
+            entry.node:on_pointer_event(PointerEvent('enter', root_point), entry.point)
         end
     end
     self._hovered = current

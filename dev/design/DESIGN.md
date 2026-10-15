@@ -108,8 +108,10 @@ scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 
-2026-10-14 的完整基线为 **1100 Lua checks**、EmmyLua **No issues found**、
-真实 mpv.net 测试 **9 passed**。命令和测试职责以 [TESTING.md](TESTING.md) 为准。
+2026-10-15 的本地 6.2 基线为 **1223 Lua checks**、Linux EmmyLua equivalent
+**No issues found**；本容器没有 mpv.net/mpv executable，real-host 为 **2 passed,
+7 skipped**。上一轮 Windows host baseline 为 **9 passed**。命令和测试职责以
+[TESTING.md](TESTING.md) 为准。
 
 ## 变更决策规则
 

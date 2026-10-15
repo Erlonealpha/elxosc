@@ -8,7 +8,7 @@
 
 | 分区 | 所有权 | 主要入口 |
 | --- | --- | --- |
-| `foundation/` | 无宿主值类型和数学 | `geometry`, `color`, `anchor`, `transform`, `pointer_event` |
+| `foundation/` | 无宿主值类型和数学 | `geometry`, `color`, `anchor`, `transform`, `pointer_event`, `key_event` |
 | `painting/` | 绘制契约和值对象 | `Canvas`, `Paint`, `Path`, `TextPaint` |
 | `text/` | 文本意图和布局结果 | `TextStyle`, `Paragraph`, `TextLayout` |
 | `layout/` | 约束代数 | `Constraints` |

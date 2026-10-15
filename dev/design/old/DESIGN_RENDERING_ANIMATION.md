@@ -262,9 +262,9 @@ ink、阴影/描边溢出，也不提供通用父约束逆解。动画测量基�
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **836 checks passed** |
-| `emmylua_check.exe .` | **No issues found** |
-| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **5 passed**，真实 mpv.net |
+ | `luajit test/run.lua` | **836 checks passed** |
+| `emmylua_check .` | **No issues found** |
+ | `uv run --group test python -m pytest -q test/real_host` | **5 passed**，真实 mpv.net |
 
 本轮三个检查均已运行，没有跳过项。真实宿主测试覆盖入口、IPC 和合成指针事件，
 不代表已验证精确字体像素边界或图标视觉居中。
@@ -279,9 +279,9 @@ AnimationController，以及 State 所有资源的卸载释放。OffsetBox 的�
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **904 checks passed** |
-| `emmylua_check.exe .` | **No issues found** |
-| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **5 passed**，真实 mpv.net |
+ | `luajit test/run.lua` | **904 checks passed** |
+| `emmylua_check .` | **No issues found** |
+ | `uv run --group test python -m pytest -q test/real_host` | **5 passed**，真实 mpv.net |
 
 真实宿主夹具已将 `animation/` 纳入隔离 staging；入口 smoke test 等待 Demo
 State 注册后再发送消息，避免异步脚本启动竞态。
@@ -302,9 +302,9 @@ TextStyle 文本以及由 FrameClock 驱动、逐帧输出静态 ASS 的 OffsetB
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **956 checks passed** |
-| `emmylua_check.exe .` | **No issues found** |
-| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **6 passed**，真实 mpv.net |
+ | `luajit test/run.lua` | **956 checks passed** |
+| `emmylua_check .` | **No issues found** |
+ | `uv run --group test python -m pytest -q test/real_host` | **6 passed**，真实 mpv.net |
 
 ### 阶段 3 完成记录
 
@@ -319,9 +319,9 @@ cover crop、clip 以及可交互的缩放按钮。
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **982 checks passed** |
-| `emmylua_check.exe .` | **No issues found** |
-| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **7 passed**，真实 mpv.net |
+ | `luajit test/run.lua` | **982 checks passed** |
+| `emmylua_check .` | **No issues found** |
+ | `uv run --group test python -m pytest -q test/real_host` | **7 passed**，真实 mpv.net |
 
 ### 阶段 4 完成记录
 
@@ -337,6 +337,6 @@ paint/layout dirty 分类、缩放动画 listener 生命周期、clip、命中�
 
 | 命令 | 最终结果 |
 | --- | --- |
-| `/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua` | **1036 checks passed** |
-| `emmylua_check.exe .` | **No issues found** |
-| `/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"` | **8 passed**，真实 mpv.net |
+ | `luajit test/run.lua` | **1036 checks passed** |
+| `emmylua_check .` | **No issues found** |
+ | `uv run --group test python -m pytest -q test/real_host` | **8 passed**，真实 mpv.net |

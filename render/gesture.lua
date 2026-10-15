@@ -93,7 +93,6 @@ function RenderGesture:on_pointer(event, point, data)
     local h = self.handlers
     if event == 'down' then
         if not is_primary_button(data) then
-            self.pressed = false
             return false
         end
         self.pressed = true
@@ -103,7 +102,6 @@ function RenderGesture:on_pointer(event, point, data)
         return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
     elseif event == 'up' then
         if not is_primary_button(data) then
-            self.pressed = false
             return false
         end
         local was_pressed = self.pressed

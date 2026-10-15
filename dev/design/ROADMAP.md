@@ -46,10 +46,12 @@
 
 ### 6.2 输入系统重构
 
-- 结构化 PointerEvent/KeyEvent、modifier、button、click count、wheel 和 timestamp；
-- 引入结构化 dispatch result，区分 handled、capture 和传播停止；默认行为由 host
+- 已完成结构化 PointerEvent/KeyEvent、modifier 字段契约、button、click count、wheel
+  和 timestamp/source；当前 mpv Lua binding 没有可靠 modifier 来源，host 明确暂留 nil；
+- 已引入结构化 dispatch result，区分 handled、capture 和传播停止；默认行为由 host
   的区域/事件族 claim policy 在 section 选择前决定；
-- 保留当前 RenderOwner capture 语义，并为 keyboard/focus、Gesture arena 留出接口。
+- 已保留当前 RenderOwner capture 语义；keyboard target/focus、key translation 和
+  Gesture arena 仍留作后续接口。
 
 ### 6.3 配置/API 热更新与 PlayerContext
 

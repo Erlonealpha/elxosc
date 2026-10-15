@@ -23,5 +23,15 @@ supported paint/layout transforms, then clipped by every ancestor's rectangular
 hit bounds. `RenderOwner:has_pointer_capture()` reports whether the captured node
 is still mounted; it cancels a detached capture before returning false, and the
 cancelled sequence's stale up/cancel is not retargeted to the replacement tree.
+Capture keeps the original target while additional button sequences are active;
+the target is released only after the final captured button is released or the
+sequence is cancelled.
+
+`RenderOwner:dispatch_pointer_result()` returns a structured result with separate
+`handled`, `capture`, and `stop_propagation` fields. `dispatch_pointer()` remains
+the boolean compatibility wrapper. Render objects may implement
+`on_pointer_event(event, local_point)` to inspect structured root-space events;
+the default adapter preserves existing `on_pointer(event, local_point, data)`
+implementations.
 
 See [rendering](../dev/design/RENDERING.md) and [architecture](../dev/design/ARCHITECTURE.md).

@@ -11,11 +11,13 @@
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local transform_mod = require 'foundation.transform'
+local pointer_event = require 'foundation.pointer_event'
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
 local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
+local legacy_pointer_data = pointer_event.legacy_data
 local table = table
 local ipairs = ipairs
 local huge = math.huge
@@ -38,6 +40,11 @@ local M = {}
 ---@field rect Rect root-space input bounds
 ---@field down boolean
 ---@field wheel boolean
+
+---@class DispatchResult
+---@field handled boolean whether a node handled the event
+---@field capture boolean whether a down event requests pointer capture
+---@field stop_propagation boolean whether ancestor dispatch should stop
 
 ---@class RenderObject : std.object
 ---@field parent RenderObject?
@@ -322,9 +329,19 @@ end
 
 --== pointer events =======================================================
 
---- Hook invoked by `RenderOwner:dispatch_pointer`. `point` is in this node's
---- local space. Return truthy to mark the event handled, which stops
---- propagation to ancestors (`move` always bubbles).
+--- Hook invoked by `RenderOwner:dispatch_pointer_result`. `point` is in this
+--- node's local space; `event.point` remains in root space. Return a boolean
+--- for the legacy contract or a DispatchResult to separate handling, capture,
+--- and propagation. The default adapts to `on_pointer`.
+---@param event PointerEvent
+---@param point Offset?
+---@return boolean|DispatchResult|nil
+function RenderObject:on_pointer_event(event, point)
+    local handled = self:on_pointer(event.type, point, legacy_pointer_data(event))
+    return handled and true or false
+end
+
+--- Legacy pointer hook retained for existing RenderObject implementations.
 ---@param event PointerEvents
 ---@param point Offset?
 ---@param data any? wheel delta

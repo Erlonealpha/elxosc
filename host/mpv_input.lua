@@ -20,6 +20,7 @@ local PointerEvent = pointer_event.PointerEvent
 local math = math
 local floor = math.floor
 local ceil = math.ceil
+local huge = math.huge
 local debug_msgf = rawget(_G, 'debug_msgf') or function(...) end
 local debug_msg = rawget(_G, 'debug_msg') or function(...) end
 
@@ -40,6 +41,7 @@ local M = {}
 local INPUT_SECTION = 'elxosc-input'
 local WHEEL_SECTION = 'elxosc-wheel'
 local BINDING_FLAGS = 'allow-hide-cursor'
+local owned_sections = {}
 
 ---@class MpInput : std.object
 ---@field app App
@@ -49,12 +51,13 @@ local BINDING_FLAGS = 'allow-hide-cursor'
 ---@field _input_sections string[]
 ---@field _wheel_sections string[]
 ---@field _pressed_section string?
+---@field _buttons table<PointerButton, true>
 ---@overload fun(app: App): self
 local MpInput = std.class.new('MpInput', {})
 
 function MpInput:__init(app)
     self.app = app
-    self.x, self.y = math.huge, math.huge
+    self.x, self.y = huge, huge
     self.hover = false
     self._pressed = false
     self._regions = {}
@@ -62,6 +65,8 @@ function MpInput:__init(app)
     self._input_sections = {}
     self._wheel_sections = {}
     self._pressed_section = nil
+    self._buttons = {}
+    self:_clear_owned_sections()
     self:_bind_mouse()
     self:_bind_keys()
     self:_clear_mouse_areas()
@@ -95,13 +100,42 @@ function MpInput:_bind_mouse()
                 self._pressed_section = nil
                 self:update_regions()
             end
+            self._buttons = {}
             return
         end
         self.x, self.y = mouse.x + 0.5, mouse.y + 0.5
         self.hover = true
-        self.app.owner:dispatch_pointer(PointerEvent('move', self:_point())) --[[@as PointerEvent]]
-        self.app:request_frame()
+        self:_dispatch('move')
     end)
+end
+
+---@return PointerButtons
+local function copy_buttons(buttons)
+    local copy = {}
+    for button, pressed in pairs(buttons) do
+        copy[button] = pressed
+    end
+    return copy
+end
+
+---@param data any?
+---@return number?
+---@return number?
+local function wheel_delta(data)
+    if type(data) == 'number' then
+        return nil, data
+    end
+    if type(data) == 'table' then
+        return data.x, data.y
+    end
+    return nil, nil
+end
+
+---@return boolean
+local function has_position(input)
+    return input.x == input.x and input.y == input.y
+        and input.x ~= huge and input.y ~= huge
+        and input.x ~= -huge and input.y ~= -huge
 end
 
 ---@param event string
@@ -112,16 +146,44 @@ function MpInput:_dispatch(event, data, section)
     if event == 'down' or event == 'double' then
         self:_refresh_position()
     end
-    local handled = self.app.owner:dispatch_pointer(PointerEvent(event, self:_point(), data)) --[[@as PointerEvent]]
-    if event == 'down' and data == 'left' then
-        self._pressed = handled
-        if handled then
+    if not has_position(self) then
+        return
+    end
+    local button
+    if event == 'down' or event == 'up' or event == 'double' then
+        button = data
+        if event == 'down' and button ~= nil then
+            self._buttons[button] = true
+        elseif event == 'up' and button ~= nil then
+            self._buttons[button] = nil
+        end
+    end
+    local delta_x, delta_y
+    if event == 'wheel' then
+        delta_x, delta_y = wheel_delta(data)
+    end
+    local pointer = PointerEvent(event, self:_point(), data, {
+        pointer_id = 1,
+        button = button,
+        buttons = copy_buttons(self._buttons),
+        click_count = event == 'double' and 2 or nil,
+        delta_x = delta_x,
+        delta_y = delta_y,
+        source = 'mouse',
+        timestamp = mp.get_time(),
+    })
+    local result = self.app.owner:dispatch_pointer_result(pointer)
+    if event == 'down' then
+        if result.capture and not self._pressed then
+            self._pressed = true
             self._pressed_section = section
         end
         self:update_regions()
-    elseif event == 'up' and data == 'left' then
-        self._pressed = false
-        self._pressed_section = nil
+    elseif event == 'up' then
+        if not self.app.owner:has_pointer_capture() then
+            self._pressed = false
+            self._pressed_section = nil
+        end
         self:update_regions()
     end
     self.app:request_frame()
@@ -131,12 +193,24 @@ function MpInput:_input_section(index)
     return index == 1 and INPUT_SECTION or INPUT_SECTION .. '-' .. tostring(index)
 end
 
+function MpInput:_register_section(section)
+    owned_sections[section] = true
+end
+
+function MpInput:_clear_owned_sections()
+    for section in pairs(owned_sections) do
+        self:_disable_section(section)
+    end
+    owned_sections = {}
+end
+
 function MpInput:_wheel_section(index)
     return index == 1 and WHEEL_SECTION or WHEEL_SECTION .. '-' .. tostring(index)
 end
 
 ---@param section string
 function MpInput:_define_input_section(section)
+    self:_register_section(section)
     mp.set_key_bindings({
         { 'mbtn_left', function() self:_dispatch('up', 'left', section) end, function()
             self:_dispatch('down', 'left', section)
@@ -154,6 +228,7 @@ end
 
 ---@param section string
 function MpInput:_define_wheel_section(section)
+    self:_register_section(section)
     mp.set_key_bindings({
         { 'wheel_up', function() self:_dispatch('wheel', 1) end },
         { 'wheel_down', function() self:_dispatch('wheel', -1) end },
@@ -296,6 +371,7 @@ function MpInput:cancel_capture()
     self.app.owner:cancel_pointer()
     self._pressed = false
     self._pressed_section = nil
+    self._buttons = {}
     self:update_regions()
 end
 
@@ -304,6 +380,7 @@ function MpInput:shutdown()
     self.app.owner:clear_hover()
     self._pressed = false
     self._pressed_section = nil
+    self._buttons = {}
     for _, section in ipairs(self._input_sections) do
         self:_disable_section(section)
     end
@@ -312,6 +389,7 @@ function MpInput:shutdown()
     end
     self._input_sections = {}
     self._wheel_sections = {}
+    self:_clear_owned_sections()
     self:_disable_section(INPUT_SECTION)
     self:_disable_section(WHEEL_SECTION)
 end

@@ -159,26 +159,18 @@ Widget construction protocol, not a runtime tree manager:
 
 ## 7. Required checks
 
-Run from the repository root. Windows paths are shown because the project is
-normally run from Windows; the equivalent WSL paths are used in this checkout.
+Run from the repository root. Local executable names are kept in the ignored
+`project.conf`; copy `project.conf.tpl` before the first run and adjust it for
+the current machine. The commands below use the default WSL tool names.
 
-```powershell
-E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
-emmylua_check.exe .
+```text
+luajit test/run.lua
+emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-Equivalent paths used here:
-
-```text
-/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua
-/mnt/f/Tools-soft/emmylua/emmylua_check.exe .
-/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"
-```
-
-The current verified baseline is **1036 Lua checks**, **No issues found** from
-EmmyLua, and **8 real-host tests passed**. Update the current design/testing
-documents when the intentional test count changes.
+The current local baseline is recorded in `dev/design/TESTING.md`; update the
+current design/testing documents when the intentional test count changes.
 
 The real-host fixture uses an isolated config and ownership-bounded cleanup.
 Never replace it with a command that kills mpv by image name. Real-host tests

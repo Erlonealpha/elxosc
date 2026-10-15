@@ -305,6 +305,129 @@ F.test('PointerEvent carries core and extension fields', function()
     F.eq(copied.pressure, 0.5, 'table constructor extension')
 end)
 
+F.test('structured dispatch keeps root and local pointer coordinates separate', function()
+    local root_event, root_point, child_event, child_point
+    local child = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function child:on_pointer_event(event, point)
+        child_event, child_point = event, point
+        return { handled = true, capture = false, stop_propagation = false }
+    end
+    local root = RenderPadding(EdgeInsets.all(5), child)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function root:on_pointer_event(event, point)
+        root_event, root_point = event, point
+        return { handled = true, capture = false, stop_propagation = true }
+    end
+    local owner = laid_out(root)
+    local result = owner:dispatch_pointer_result(PointerEvent('down', Offset(7, 7), 'left'))
+    F.ok(result.handled and result.stop_propagation, 'structured result is returned')
+    F.ok(child_event ~= nil and child_event.point == Offset(7, 7),
+        'child receives root-space event point')
+    F.ok(child_point == Offset(2, 2), 'child receives local point')
+    F.ok(root_event ~= nil and root_point == Offset(7, 7), 'ancestor receives local root point')
+    F.ok(not result.capture and not owner:has_pointer_capture(),
+        'handled without capture does not capture')
+end)
+
+F.test('hover events keep the root point separate from the local point', function()
+    local event_point, local_point
+    local child = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function child:on_pointer_event(event, point)
+        if event.type == 'enter' then
+            event_point, local_point = event.point, point
+        end
+        return false
+    end
+    local owner = laid_out(RenderPadding(EdgeInsets.all(5), child))
+    owner:dispatch_pointer_result('move', Offset(7, 7))
+    F.ok(event_point == Offset(7, 7), 'enter keeps the root-space point')
+    F.ok(local_point == Offset(2, 2), 'enter provides a local point separately')
+end)
+
+F.test('structured results can stop propagation independently of handling', function()
+    local parent_calls = 0
+    local child = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function child:on_pointer_event()
+        return { handled = false, capture = false, stop_propagation = true }
+    end
+    local root = RenderCustomPaint(nil, { child = child })
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function root:on_pointer_event()
+        parent_calls = parent_calls + 1
+        return { handled = true, capture = false, stop_propagation = false }
+    end
+    local result = laid_out(root):dispatch_pointer_result('down', Offset(2, 2), 'left')
+    F.ok(not result.handled and result.stop_propagation, 'stop is separate from handled')
+    F.eq(parent_calls, 0, 'stopped child does not reach the ancestor')
+end)
+
+F.test('structured capture is explicit and invalid results are rejected', function()
+    local node = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function node:on_pointer_event()
+        return { handled = true, capture = true, stop_propagation = true }
+    end
+    local owner = laid_out(node)
+    local result = owner:dispatch_pointer_result('down', Offset(2, 2), 'left')
+    F.ok(result.capture and owner:has_pointer_capture(), 'structured capture starts')
+    owner:dispatch_pointer_result('up', Offset(2, 2), 'left')
+    F.ok(not owner:has_pointer_capture(), 'structured capture ends on up')
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function node:on_pointer_event()
+        return { handled = 'yes' }
+    end
+    F.raises(function()
+        owner:dispatch_pointer_result('down', Offset(2, 2), 'left')
+    end, 'must be a boolean', 'invalid structured result')
+end)
+
+F.test('capture keeps a second button sequence on the same target', function()
+    local events = {}
+    local node = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function node:on_pointer_event(event)
+        events[#events + 1] = event.type .. ':' .. tostring(event.button)
+        if event.type == 'down' then
+            return { handled = true, capture = true, stop_propagation = true }
+        end
+        return { handled = true, capture = false, stop_propagation = true }
+    end
+    local owner = laid_out(node)
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'down', point = Offset(2, 2), button = 'left', buttons = { left = true },
+    }))
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'down', point = Offset(2, 2), button = 'middle',
+        buttons = { left = true, middle = true },
+    }))
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'up', point = Offset(2, 2), button = 'middle', buttons = { left = true },
+    }))
+    F.ok(owner:has_pointer_capture(), 'left sequence remains captured')
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'up', point = Offset(2, 2), button = 'left', buttons = {},
+    }))
+    F.ok(not owner:has_pointer_capture(), 'capture ends after the final button')
+    F.eq(events[2], 'down:middle', 'second button stays on the captured target')
+    F.eq(events[3], 'up:middle', 'middle release reaches the captured target')
+end)
+
+F.test('legacy truthy handlers remain boolean-compatible', function()
+    local node = box(20, 20)
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function node:on_pointer()
+        return 1
+    end
+    local owner = laid_out(node)
+    F.ok(owner:dispatch_pointer('down', Offset(2, 2)), 'truthy down is handled')
+    F.ok(owner:has_pointer_capture(), 'truthy down captures')
+    owner:dispatch_pointer('up', Offset(2, 2))
+end)
+
 F.test('capture routes move and up outside the hit area', function()
     local events = {}
     local node = box(20, 20)
@@ -320,7 +443,8 @@ F.test('capture routes move and up outside the hit area', function()
         return event == 'down'
     end
     local owner = laid_out(node)
-    owner:dispatch_pointer(PointerEvent('down', Offset(5, 5))) --[[@as PointerEvent]]
+    local result = owner:dispatch_pointer_result(PointerEvent('down', Offset(5, 5)))
+    F.ok(result.capture, 'legacy true maps to capture')
     F.ok(owner:has_pointer_capture(), 'capture is reported while mounted')
     owner:dispatch_pointer(PointerEvent('move', Offset(100, 100))) --[[@as PointerEvent]]
     owner:dispatch_pointer(PointerEvent('up', Offset(100, 100))) --[[@as PointerEvent]]

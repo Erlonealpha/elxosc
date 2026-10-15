@@ -791,6 +791,6 @@ end
    得依赖 `mp`；宿主交互通过明确的事件值对象和 owner 契约传递。
 9. **每个新增公共控件同时提供行为测试和加载/聚合测试**。测试应验证用户可观察
    行为、边界状态和独立模块与兼容入口的 identity，而不是只验证内部字段。
-10. **提交前必须运行**：`emmylua_check.exe .`、`luajit test/run.lua`，以及受
+10. **提交前必须运行**：`emmylua_check .`、`luajit test/run.lua`，以及受
     影响的 `uv run --group test python -m pytest -q test/real_host`；未运行的检查
     不得在文档或提交说明中宣称通过。

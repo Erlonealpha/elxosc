@@ -4,15 +4,17 @@
 `RenderOwner` 和 `RenderGesture` 之上，目标是让 UI 控件精确拦截属于自己的输入，
 同时保留播放器背景区域的用户 `input.conf` 行为。
 
-**状态：6.0 已完成 API 语义 spike，6.1 区域隔离实施中。** 下文仍有未完成的
-事件、真实宿主回归和生命周期部分；实施顺序和依赖见 [ROADMAP.md](ROADMAP.md)。
+**状态：6.0、6.1 已完成，6.2 的结构化 pointer path 已完成。** Keyboard
+target/focus、Gesture arena 和真实宿主的结构化字段回归仍未完成；实施顺序和依赖见
+[ROADMAP.md](ROADMAP.md)。
 
 ## 当前基线
 
 当前宿主输入层使用 `elxosc-input`、`elxosc-wheel` 以及按区域追加编号的 section，
 按 `RenderOwner:pointer_regions()` 导出的 root-space 区域来启用或禁用。它已经支持
-鼠标移动、离开、左右键、滚轮和 pointer capture，但事件字段仍主要放在
-`PointerEvent.data`，结构化事件和完整生命周期清理尚未完成。
+鼠标移动、离开、左右/中键、滚轮、双击和 pointer capture。Host 现在把这些事件
+转换为带有 button、held buttons、wheel delta、click count、pointer id、source 和
+timestamp 的 `PointerEvent`；`data` 仍保留为兼容 payload。
 
 旧实现中，控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 仍可能执行例如
 `cycle fullscreen`。仅在 Lua 层收到一次普通 down/up 不能可靠地表达“这个区域已经
@@ -128,13 +130,14 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 分别配置，不把当前全局 flags 原样复制到所有分组。
 
 所有 section 在初始化和关闭时清理旧 mouse area；不可见 layer 不留旧区域或 enable
-状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。6.0 还要验证
-离开区域、窗口失焦和强制隐藏时，宿主是否继续交付已捕获序列的 up/cancel。
+状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。离开区域、
+窗口失焦和强制隐藏时，宿主必须继续清理已捕获序列并发送 cancel。
 
-## 事件模型重构
+## 事件模型
 
-当前 boolean `handled` 不能区分“业务已处理”“请求 capture”和“停止传播”。下一阶段
-先定义框架内部的结构化结果，并在迁移期兼容 boolean：
+boolean `handled` 不能区分“业务已处理”“请求 capture”和“停止传播”。当前
+`RenderOwner:dispatch_pointer_result()` 返回以下结构，并由 `dispatch_pointer()`
+保留旧 boolean 兼容入口：
 
 ```lua
 {
@@ -149,7 +152,12 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 因此 host 默认行为由区域/事件族的事前 claim policy 决定，和树内 dispatch result
 分开。不复制 `input-bindings` 命令作为一般回退，也不递归注入相同按键。
 
-`PointerEvent` 计划增加结构化字段，而不是继续扩张 `data`；以下是字段草案：
+`RenderObject:on_pointer_event(event, local_point)` 可以读取结构化事件；其中
+`event.point` 是 root-space，`local_point` 是当前目标坐标。默认实现调用旧的
+`on_pointer(event_type, local_point, legacy_data)`，所以现有 Gesture/Button 不需要
+立即迁移。
+
+`PointerEvent` 的字段和边界已经固定，不再继续扩张 `data`：
 
 | 字段 | 语义 |
 | --- | --- |
@@ -158,17 +166,19 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 | `pointer_id`, `button`, `buttons` | 指针标识、变化的键和按住的键集合 |
 | `click_count` | 宿主已报告的点击次数，不无依据地合成多击 |
 | `delta_x`, `delta_y` | 双轴滚轮/移动量，单位在适配契约中固定 |
-| `modifiers` | shift/ctrl/alt/meta，只填目标宿主可提供的信息 |
-| `source`, `timestamp` | 输入来源和单调时间；先实现 mouse，为 touch 预留契约 |
+| `modifiers` | shift/ctrl/alt/meta；当前 mpv Lua binding 没有可靠的 modifier 来源，host 暂留 nil |
+| `source`, `timestamp` | 输入来源和单调时间；当前 source 只接受 `mouse` |
 
-Keyboard 不伪装成 PointerEvent，后续使用独立的 `KeyEvent`，包含 key、down/up/press、
-modifier、repeat 和 timestamp。Gesture arena 仍属于原有交互路线；本阶段先完成
-事件结构、capture、区域和默认行为隔离。
+Keyboard 不伪装成 PointerEvent，当前已经提供独立的 `KeyEvent` 值对象，包含
+key、down/up/press、modifier、repeat 和 timestamp，并在构造边界校验和复制 modifier
+快照。它还没有 keyboard target、focus owner、焦点遍历或全局 key policy；这些属于
+后续输入/播放器阶段。Gesture arena 仍属于原有交互路线。
 
 capture 归属至少包含 layer、target 和按键序列；在 capture 期间优先投递到原目标，
 不能因为移到另一个 overlay 就重新命中。补齐离开命中区后的可用 local 坐标及
 inside/outside 状态，便于时间线拖动；目标卸载、失焦或强制隐藏必须 cancel。鼠标
-不移动而布局/变换变化时也重新核对 hover，避免旧状态残留。
+不移动而布局/变换变化时也重新核对 hover，避免旧状态残留。当前 owner 以按钮集合
+维持同一目标的多按钮 capture，最后一个按钮释放后才结束 capture。
 
 ## 分期
 
@@ -177,7 +187,7 @@ inside/outside 状态，便于时间线拖动；目标卸载、失焦或强制�
 - 验证 `mp.set_mouse_area()` 的坐标和多区域语义；已确认每个 section 只有一个矩形，
   当前实现采用按区域拆分 section；
 - 验证 `force`、exclusive、用户 `input.conf` 和双击事件优先级；
-- 已新增最小 mp stub；真实 host fixture 仍需补充，不先改整个 RenderOwner。
+- 已新增最小 mp stub 和真实 host fixture，不先改整个 RenderOwner。
 
 ### 6.1 区域与默认输入隔离
 
@@ -188,9 +198,13 @@ inside/outside 状态，便于时间线拖动；目标卸载、失焦或强制�
 
 ### 6.2 输入事件重构
 
-- 结构化 PointerEvent/KeyEvent；
-- `InputRouter` 或等价 host 层，处理 section、area、capture 和 dispatch result；
-- 接入 modifier、middle/right、四向 wheel、double-click、keyboard 基础事件；
+- 已完成结构化 PointerEvent/KeyEvent、modifier 字段契约、button 快照、click count、
+  四向 wheel delta 和 timestamp/source；当前 mpv Lua binding 没有可靠 modifier 来源，
+  host 明确暂留 nil；
+- 已完成 `RenderOwner:dispatch_pointer_result()` 与 `dispatch_pointer()` 兼容入口，
+  区分 handled、capture 和 stop propagation；
+- 已完成等价 host 输入适配，接入 middle/right、四向 wheel 和 double-click；keyboard
+  基础事件值对象已提供，但 keyboard target/focus 和宿主 key translation 尚未接入；
 - 保持核心层无 mpv 依赖，host 负责将 mpv 事件翻译为值对象。
 
 ## 验收标准

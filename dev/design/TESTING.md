@@ -4,24 +4,19 @@
 
 ## 必跑检查
 
-WSL checkout 的命令：
+本地工具名来自忽略的 `project.conf`；首次运行前复制 `project.conf.tpl` 并按机器调整。
+默认命令为：
 
 ```text
-/mnt/e/lua/local/LuaJIT/bin/luajit.exe test/run.lua
-/mnt/f/Tools-soft/emmylua/emmylua_check.exe .
-/mnt/c/Windows/system32/cmd.exe /d /c "uv run --group test python -m pytest -q test/real_host"
-```
-
-Windows 开发环境对应：
-
-```powershell
-E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
-emmylua_check.exe .
+luajit test/run.lua
+emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前基线（2026-10-14）：**1100 Lua checks passed**、EmmyLua **No issues found**、
-真实 mpv.net **9 passed**。测试数量变化时，应在本文件和主设计文档同步更新。
+当前本地基线（2026-10-15）：**1223 Lua checks passed**、Linux EmmyLua equivalent
+**No issues found**。本容器没有 mpv.net/mpv executable，real-host 为 **2 passed,
+7 skipped**；上一轮 Windows host baseline 为 **9 passed**。测试数量变化时，应在本
+文件和主设计文档同步更新。
 
 ## Lua suite
 
@@ -47,6 +42,8 @@ runner。测试按层覆盖：
 - Pages/Main、3×3 grid 的全部稳定区域、`more`、扩展内容冲突和 ordered append；
 - `set_mouse_area` 坐标换算、passive/interactive/exclusive policy、双击拦截和背景
   默认绑定透传；
+- 结构化 PointerEvent/KeyEvent 字段、字段快照/边界、legacy payload 兼容、structured
+  dispatch result 和显式 capture；
 - input section 的 enable/disable、resize、hidden layer、root swap、capture 和
   shutdown 清理；
 - 多 overlay 的创建、更新、移除、z 顺序、同 z 稳定排序、独立 presenter/cache 和

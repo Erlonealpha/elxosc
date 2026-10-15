@@ -34,7 +34,7 @@ ASS 有限缩放以及阶段 4 的缩放盒：文本使用后端无关 `Anchor`/
 | # | 规则 | 为什么 / 怎么保证 |
 | --- | --- | --- |
 | I1 | **框架层不得 `require 'mp'`**。只有 `main.lua`、`elxlib_load.lua`、`host/*` 可以。 | mpv.net 后端要复用框架层。由 `test/test_layering.lua` 自动守护;被检查的目录是 `foundation/ painting/ text/ scheduler/ layout/ render/ widget/ backends/ libs/`。 |
-| I2 | **框架层不得出现 `undefined-global` 之外的新诊断**。框架目录要求 0 条诊断。 | `emmylua_check.exe .` 必须输出 `No issues found`。 |
+| I2 | **框架层不得出现 `undefined-global` 之外的新诊断**。框架目录要求 0 条诊断。 | `emmylua_check .` 必须输出 `No issues found`。 |
 | I3 | 模块间 `require` 用**裸名**(`require 'foundation.geometry'`),不加 `elxosc.` 前缀。 | mpv 运行时脚本目录在搜索路径里;测试由 `test/support.lua` 设置;EmmyLua 以工作区根为解析根。 |
 | I4 | **`require` 不能成环**。Lua 的 `require` 遇环直接报错。 | 约定:`widget/widget.lua` 只声明 Widget,Element 与 `create_element` 的绑定放在 `widget/element.lua` 底部(见 §6.5)。 |
 | I5 | Widget 是**不可变描述**;**mount 之后不得再改 widget 树**。结构性变化只能通过重建(`set_state`)。 | `bind` 只在挂载前写入(§7)。 |
@@ -576,14 +576,14 @@ define_end
 ## 11. 验证流程(每次改动都要做)
 
 ```powershell
-cd E:\mpvnet\portable_config\scripts\elxosc
+cd <repository>/portable_config/scripts/elxosc
 
 # 1) 静态检查(必须在项目根运行,以便读到 .emmyrc.json)
-emmylua_check.exe .
+emmylua_check .
 #    期望: "No issues found",退出码 0
 
 # 2) 离线测试(裸 LuaJIT,不需要 mpv)
-E:\lua\local\LuaJIT\bin\luajit.exe test\run.lua
+luajit test/run.lua
 #    期望: "ALL GOOD: <N> checks passed",退出码 0
 ```
 

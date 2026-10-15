@@ -14,6 +14,13 @@ The app flushes Widget rebuilds, lays out and paints through a backend, then pre
 only changed ASS output. Input is routed through `RenderOwner`; host code must not
 call widget callbacks directly.
 
+`MpInput` translates mpv mouse bindings into structured `PointerEvent` values with
+button, held-button, wheel delta, click-count, source, pointer-id and timestamp
+fields. Tree dispatch results are separate from mpv's section claim policy; the
+host uses the result's capture field only for pointer capture. Modifier fields
+remain absent when the mpv Lua binding does not expose reliable modifier state;
+the host does not invent them.
+
 The current input stage includes root-space mouse-area/section management; the next
 application stage adds config/API hot updates and multiple named OSD overlay layers.
 Overlay z-order is a presentation policy, not Widget or Define priority. Define remains

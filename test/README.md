@@ -21,7 +21,7 @@ The project is also checked with the EmmyLua analyzer; run it from the project
 root so `.emmyrc.json` (library paths, `runtime.special.raise`, ...) applies:
 
 ```sh
-emmylua_check.exe .
+emmylua_check .
 ```
 
 Both gates are expected to be clean: `No issues found` and `ALL GOOD`.
@@ -29,13 +29,15 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current verified baseline (2026-10-14): **0 diagnostics / 1100 checks**;
-real mpv.net suite: **9 passed**. Commands and scope are recorded in
+Current local baseline (2026-10-15): **0 diagnostics / 1223 checks** from the Linux
+equivalent EmmyLua checker; the container has no mpv executable, so the real-host
+run reports **2 passed / 7 skipped**. The previous Windows host baseline was **9
+passed**. Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
-root-space regions, per-rectangle sections, capture cleanup and real double-click
-coverage; the Player application contracts in [`dev/design/PLAYER.md`](../dev/design/PLAYER.md)
-remain planned.
+root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
+values, dispatch results and real double-click coverage; the Player application
+contracts in [`dev/design/PLAYER.md`](../dev/design/PLAYER.md) remain planned.
 
 ## Real host (Python + uv, first stage)
 
@@ -84,9 +86,9 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_animation.lua` | Matrix2D, paint-only OffsetBox/TransformBox, layout scale, curves/tweens, controllers and State resource lifecycle |
 | `test_layout.lua` | Constraints, fitted/finite scale boxes, crop/input mapping, owner driving, paint + hit test |
-| `test_input.lua` | Root-space regions, transform clipping, gesture dispatch, hover and capture |
+| `test_input.lua` | Root-space regions, transform clipping, structured dispatch, gesture dispatch, hover and capture |
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds, constrained text anchors, paint-only updates and scale boxes |
-| `test_button_contract.lua` | Button options/style immutability and PointerEvent construction |
+| `test_button_contract.lua` | Button options/style immutability and PointerEvent/KeyEvent construction |
 | `test_icon.lua` | Icon options, nominal box/center anchor, optical offset, font/style propagation and aggregate identity |
 | `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
 | `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
