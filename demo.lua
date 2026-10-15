@@ -14,6 +14,7 @@ local layout_widgets = require 'widget.widgets.layout'
 local icon_mod = require 'widget.widgets.icon'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
+local player_context = require 'widget.player_context'
 local tween_mod = require 'animation.tween'
 
 local Color = color.Color
@@ -26,6 +27,7 @@ local TextStyle = text_style.TextStyle
 local Align = text_style.Align
 local State = state_mod.State
 local StatefulWidget = widget_mod.StatefulWidget
+local PlayerProvider = player_context.PlayerProvider
 local Tween = tween_mod.Tween
 local Column = layout_widgets.Column
 local Row = layout_widgets.Row
@@ -114,6 +116,11 @@ end
 
 ---@param context BuildContext
 function DemoState:build(context)
+    local player = PlayerProvider.maybe_of(context)
+    local snapshot = player and player.snapshot
+    local display_count = snapshot and snapshot:get('demo_count') or self.count
+    local display_event = snapshot and snapshot:get('demo_event') or self.selected
+
     local function anchor_cell(label, anchor, background)
         return Container({
             width = 64,
@@ -132,7 +139,7 @@ function DemoState:build(context)
         radius = 6,
         child = Container{
             padding = EdgeInsets.all(5),
-            child = Text(string.format('elxosc  %d', self.count), {
+            child = Text(string.format('elxosc  %d', display_count), {
                 style = TextStyle({ font_size = 20, color = Color.rgba255(0xF0, 0xF0, 0xF0) }),
             })
         },
@@ -268,9 +275,18 @@ function DemoState:build(context)
                 Container{
                     padding = EdgeInsets.all(5),
                     color = Color.rgba(0x2020206C),
-                    child = Text('event: ' .. self.selected, {
+                    child = Text('event: ' .. tostring(display_event), {
                         style = TextStyle({ font_size = 14, color = Color.rgba255(180, 190, 205) }),
                     })
+                },
+                Container{
+                    padding = EdgeInsets.all(5),
+                    color = Color.rgba(0x183A2AC0),
+                    child = Text(string.format(
+                        'PlayerContext  count=%s  event=%s',
+                        tostring(display_count), tostring(display_event)), {
+                        style = TextStyle({ font_size = 13, color = Color.rgba255(190, 220, 200) }),
+                    }),
                 },
                 Row({
                     spacing = 6,

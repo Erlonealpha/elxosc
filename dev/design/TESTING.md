@@ -13,7 +13,7 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-16）：**1297 Lua checks passed**、EmmyLua
+当前本地基线（2026-10-16）：**1300 Lua checks passed**、EmmyLua
 **No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主设计
 文档同步更新。
 

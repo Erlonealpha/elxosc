@@ -256,12 +256,30 @@ end)
 
 F.test('the demo exposes anchors, nominal icons and static animation output', function()
     mp_stub.reset()
-    local app = mpv_app.App(Demo())
+    local app = mpv_app.App(Demo(), {
+        player_store = PlayerStore({ demo_count = 7, demo_event = 'context' }),
+    })
     app:render()
     F.contains(fake.overlay.data, '\\an5', 'center text anchor')
     F.contains(fake.overlay.data, '\\an3', 'bottom-right text anchor')
     F.contains(fake.overlay.data, '\\fnMaterial Symbols Rounded', 'icon font')
     F.contains(fake.overlay.data, 'Frame-clock OffsetBox', 'paint-only offset demo label')
+    F.contains(fake.overlay.data, 'PlayerContext count=7 event=context',
+        'PlayerContext snapshot output')
+end)
+
+F.test('the demo updates its PlayerContext panel on the next frame', function()
+    mp_stub.reset()
+    local store = PlayerStore({ demo_count = 1, demo_event = 'initial' })
+    local app = mpv_app.App(Demo(), { player_store = store })
+    app:render()
+    F.contains(fake.overlay.data, 'PlayerContext count=1 event=initial',
+        'initial PlayerContext output')
+
+    store:replace({ demo_count = 2, demo_event = 'updated' })
+    mp_stub.pump()
+    F.contains(fake.overlay.data, 'PlayerContext count=2 event=updated',
+        'updated PlayerContext output')
 end)
 
 F.test('the demo exposes finite scale box and clip output', function()

@@ -56,6 +56,12 @@ end
 
 local player_store = PlayerStore()
 local player_updates = MpPlayerContext(player_store)
+player_updates:observe('user-data/elxosc-demo-count', function(value, current)
+    return current:copy({ demo_count = tonumber(value) or 0 })
+end)
+player_updates:observe('user-data/elxosc-demo-event', function(value, current)
+    return current:copy({ demo_event = value or 'ready' })
+end)
 local define = MpDefine({ player_store = player_store })
 define:listen()
 
