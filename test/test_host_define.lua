@@ -169,6 +169,23 @@ F.test('define_start / define / define_end seal through the messages', function(
     F.eq(owner.root:children()[1].paragraph.text, 'hi', 'the bind landed')
 end)
 
+F.test('pages declarations are scoped and assembled after sealing', function()
+    reset_fake()
+    local define = MpDefine({ builtins = { Text = Text } })
+    define:listen()
+    local log = dispatcher()
+
+    log.define_start()
+    log.define('extension', "pages.fill('grid.top', Text('page'))")
+    log.define_end()
+
+    local entries = define.pages:entries()
+    F.eq(#entries, 1, 'one page declaration')
+    F.eq(entries[1].scope_id, 'extension', 'page scope is recorded')
+    local root = define:build_root(Text('fallback'))
+    F.ok(root ~= nil, 'Pages root assembled after sealing')
+end)
+
 F.test('refcounted: one define_end does not seal two starters', function()
     reset_fake()
     local define = MpDefine()

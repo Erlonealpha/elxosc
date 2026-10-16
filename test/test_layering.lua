@@ -69,6 +69,7 @@ local function is_framework(path)
         or path:match('/widget/') ~= nil
         or path:match('/backends/') ~= nil
         or path:match('/libs/') ~= nil
+        or path:match('/player/') ~= nil
 end
 
 --- Matches `require 'mp'`, `require("mp.utils")`, `require 'mp.assdraw'` ...

@@ -29,6 +29,7 @@ local M = {}
 ---@field builtins table<string, any>? names every scope can read as-is
 ---@field modules ModuleRegistry? shared module registry
 ---@field binds BindRegistry? shared bind registry
+---@field pages table? scope-capable Pages declaration service
 ---@field protected_names table<string, true>? names a chunk may not overwrite
 
 ---@alias DefineSessionPhase
@@ -41,6 +42,7 @@ local M = {}
 ---@class DefineSession : std.object
 ---@field modules ModuleRegistry
 ---@field binds BindRegistry
+---@field pages table?
 ---@field api table<string, any>
 ---@field protected_names table<string, true>
 ---@field phase DefineSessionPhase
@@ -56,6 +58,7 @@ function DefineSession:__init(options)
     options = options or {}
     self.modules = options.modules or ModuleRegistry()
     self.binds = options.binds or BindRegistry()
+    self.pages = options.pages
     self.phase = 'idle'
     self.defining_count = 0
     self.current_define = nil
@@ -81,7 +84,28 @@ function DefineSession:__init(options)
     api['bind'] = function(id, widget, opts)
         self.binds:add(id, widget, opts, self.current_define)
     end
+    if self.pages ~= nil then
+        api['pages'] = self:_scoped_api(self.pages, { 'add', 'fill', 'append' })
+    end
     self.api = api
+end
+
+---@param service table
+---@param methods string[]
+---@return table
+function DefineSession:_scoped_api(service, methods)
+    local api = {}
+    for _, method in ipairs(methods) do
+        api[method] = function(...)
+            if self.current_define == nil then
+                raise(std.RuntimeError(string.format(
+                    "define service '%s' used outside of a define payload", method)))
+            end
+            local scoped = service:scope(self.current_define)
+            return scoped[method](scoped, ...)
+        end
+    end
+    return api
 end
 
 --- The environment of `scope_id`, created on first use and reused afterwards,
@@ -158,6 +182,10 @@ function DefineSession:define(scope_id, code)
         end
         return self:env_for(scope_id)
     end
+    -- A scope consumes its one initial payload even when compilation or
+    -- execution fails. This prevents a broken first payload from being
+    -- replaced by a later payload from the same scope.
+    self._defined_scopes[scope_id] = true
     local env = self:env_for(scope_id)
     local chunk, err = sandbox.load_chunk(code, '@define:' .. scope_id, env)
     if chunk == nil then
@@ -169,8 +197,6 @@ function DefineSession:define(scope_id, code)
     self.current_define, self.current_env = nil, nil
     if not ok then
         self:_fail(scope_id, run_err)
-    else
-        self._defined_scopes[scope_id] = true
     end
     return env
 end

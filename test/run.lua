@@ -39,6 +39,7 @@ local files = {
     'test_host_player_context',
     'test_host_app',
     'test_main_layout',
+    'test_pages',
     'test_ass',
     'test_constraints_examples',
     'test_layering',

@@ -16,6 +16,7 @@
 | `animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
 | `scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
 | `widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetBinding`, `PlayerStore` |
+| `player/` | host-independent 播放器组合和扩展区域 | `Region`, `PageContribution`, `PagesRegistry`, `PlayerScaffold` |
 | `backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
 | `libs/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
 | `host/` | mpv 接线 | `App`, `MpFrameClock`, `MpInput`, `MpDefine` |
@@ -23,7 +24,7 @@
 ## 依赖规则
 
 ```text
-foundation → painting/text → layout → render → widget → host → main.lua
+foundation → painting/text → layout → render → widget → player → host → main.lua
                          scheduler ────────────────┘
 backends → painting/text contracts
 libs → widget/bind and host assembly
@@ -38,6 +39,11 @@ Pages 是播放器应用层的 Widget 组合契约，不是第四棵底层运行
 扩展入口；最终仍由 Widget/Element/RenderObject 三棵树完成挂载和绘制。Define 是
 扩展内容进入 Pages 的唯一入口，配置/API 热更新只是数据或事件输入，不是新的内容
 注入通道。
+
+当前 `player/` 只执行初始化期、host-independent 的组装：`PagesRegistry` 收集带
+scope/key/order/registration sequence 的 `PageContribution`，freeze 后一次性生成
+新的 `PlayerScaffold` Widget 描述。它不查 Provider、不管理 runtime registry、不
+修改已构造或 mounted 的 Widget，也不提供 Navigator 或任意 z。
 
 ## 三棵树的职责
 

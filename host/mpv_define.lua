@@ -18,11 +18,13 @@ local define_mod = require 'libs.define'
 local modules_mod = require 'libs.modules'
 local bind_mod = require 'widget.bind'
 local player_context = require 'widget.player_context'
+local pages_mod = require 'player.registry'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
 local BindRegistry = bind_mod.BindRegistry
 local PlayerStore = player_context.PlayerStore
+local PagesRegistry = pages_mod.PagesRegistry
 
 local M = {}
 
@@ -123,6 +125,7 @@ end
 ---@field binds BindRegistry? shared bind registry
 ---@field modules ModuleRegistry? shared module registry (gets the `mp` module)
 ---@field player_store PlayerStore? host-independent player snapshot store
+---@field pages PagesRegistry? initialization-time Pages declaration registry
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
@@ -131,6 +134,7 @@ end
 ---@field binds BindRegistry
 ---@field on_sealed fun()? called when the last `define_end` arrives
 ---@field player_store PlayerStore
+---@field pages PagesRegistry
 ---@field _listening boolean
 ---@field _allow_start boolean
 ---@overload fun(options: MpDefineOptions?): self
@@ -140,6 +144,7 @@ function MpDefine:__init(options)
     options = options or {}
     self.binds = options.binds or BindRegistry()
     self.player_store = options.player_store or PlayerStore()
+    self.pages = options.pages or PagesRegistry()
     self.on_sealed = nil
     self._listening = false
     self._allow_start = true
@@ -160,6 +165,7 @@ function MpDefine:__init(options)
         builtins = builtins,
         modules = modules,
         binds = self.binds,
+        pages = self.pages,
     })
     self.session.on_error = function(scope_id, err)
         mp.msg.error(string.format("elxosc: define('%s') failed: %s", scope_id, tostring(err)))
@@ -267,6 +273,15 @@ end
 ---@return Widget
 function MpDefine:apply(root)
     return self.binds:apply(root)
+end
+
+--- Assemble the host-independent Pages tree after the Define session is sealed.
+--- The fallback child belongs to the player and is never extension content.
+---@param middle_child Widget
+---@return Widget
+function MpDefine:build_root(middle_child)
+    local root = self.pages:assemble({ middle_child = middle_child })
+    return self:apply(root)
 end
 
 M.MpDefine = MpDefine

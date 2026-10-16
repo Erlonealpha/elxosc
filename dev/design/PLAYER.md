@@ -48,9 +48,9 @@ Define 本身只负责 transport、sandbox、scope、模块和内容交付。它
 自己的消息/API 协议。
 
 当前实现仍保持初始化期 Define 语义：每个 `scope_id` 只接受第一个 payload，绑定
-在 mount 前应用，不能运行时 unbind、回滚或直接编辑已挂载 Widget 树。Pages API
-是下一阶段在这一入口之上增加的内容注册/组装接口，不把 Define 变成通用运行时树
-管理器。
+在 mount 前应用，不能运行时 unbind、回滚或直接编辑已挂载 Widget 树。`pages` 和
+`overlay` 是 Define sandbox 中由宿主注入的 scope-bound 声明 facade；它们在 seal
+后分别交给 Pages 和 OverlayHost 一次性组装，不把 Define 变成通用运行时树管理器。
 
 ## Pages 和区域所有权
 
@@ -74,6 +74,41 @@ Define 本身只负责 transport、sandbox、scope、模块和内容交付。它
 
 Pages 是组合和布局根，不是导航管理器。未来如果实现页面列表，也必须先定义
 page/root 声明、生命周期和冲突诊断，再决定是否需要 Navigator 风格 API。
+
+### 6.4 离线 Pages API
+
+当前实现位于 host-independent 的 `player/` 模块。稳定区域 ID 由
+`player.region.Region` 提供：
+
+| 区域 | 基数 | Define 扩展操作 |
+| --- | --- | --- |
+| `main.title_bar`、`main.timeline`、`main.bottom` | single | 播放器拥有，拒绝扩展注册 |
+| `main.left`、`main.right` | single | `fill` 或按区域推导的 `add` |
+| `grid.top_left` … `grid.bottom_right` | single | `fill` 或按区域推导的 `add` |
+| `more` | multi | 带 `key` 的 `append` 或按区域推导的 `add` |
+
+`PageContribution` 是不可变组装输入，记录 region、widget、scope、key、order、
+operation、全局 registration sequence 和 scope sequence。`PagesRegistry` 在
+初始化期提供：
+
+```lua
+pages:fill(region, widget, { key = 'extension' }, scope_id)
+pages:append('more', widget, { key = 'extension-more', order = 20 }, scope_id)
+pages:add(region, widget, options, scope_id)
+pages:freeze()
+local root = pages:assemble({ middle_child = fallback_widget })
+```
+
+single 区域只能有一个 contribution；`more` 必须使用不重复的 key。`order` 只
+影响同一 `more` 区域，缺省时使用 registration sequence；它不是权限或优先级。
+非法 region、错误 operation、重复 single、重复 key 和 freeze 后注册都会生成包含
+scope、region、operation、key 和 sequence 信息的诊断。拒绝的 contribution 不会
+删除已经接受的内容，调用方仍可组装播放器基础 Shell。
+
+`assemble()` 每次创建新的 `PlayerScaffold`、`Main`、grid 和 `more` Widget 描述，
+不修改传入 Widget 或之前构造/挂载的树。组装阶段只消费不可变 Widget 输入，不进行
+Provider lookup；动态状态仍由挂载后的 Widget/State/Provider 处理。这里的 Pages
+不是 Navigator，没有 runtime registry、route history 或任意 z。
 
 ## 配置和对外接口热更新
 
@@ -136,10 +171,10 @@ class identity。
 
 ## 多层 overlay
 
-Pages 可以使用多个 host-level `osd_overlay` 层。overlay 是 presentation/host
-概念，不是 Widget z-order，也不改变 Bind priority。
-
-计划提供一个 OverlayHost/OverlayRegistry（名称待实现）管理多个命名 layer：
+Pages 使用多个 host-level `osd_overlay` 层。overlay 是 presentation/host 概念，不是
+Widget z-order，也不改变 Bind priority。当前实现由 `host/overlay_host.lua` 提供
+OverlayHost、OverlayRegistry、OverlayInputRouter 和初始化期
+OverlayDeclarationRegistry：
 
 ```text
 OverlayHost
@@ -156,6 +191,11 @@ OverlayHost
 - dirty/cache 状态；
 - visible、z、input policy 和生命周期；
 - create/update/remove 操作。
+
+扩展只能在 Define payload 中调用 `overlay.add(id, widget, options)`；`main` 和
+`system` policy 保留给播放器/宿主，扩展声明默认使用 `extension`。Define seal 后
+声明被冻结并由主机一次性 mount；后续可见性、State、Provider 和 RenderObject
+更新不重新执行 Define，也不注册新的内容 layer。
 
 `overlay.z` 控制视觉优先级：数值越高的 layer 在视觉上越靠前；相同 z 使用稳定的
 注册顺序作为 tie-breaker。z 只影响呈现，不影响 Widget reconciliation、Pages
@@ -177,23 +217,25 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - 配置解析、校验、不可变快照和热更新；
 - 扩展只通过 Define 获得这些接口。
 
-### 6.4 Pages/Main 组合层
+### 6.4 Pages/Main 组合层（当前）
 
 - 把固定 Main UI 与 extension grid/more 分开；
 - 定义 stable region id、single/multi child 规则和冲突诊断；
 - 提供“扩展页面添加到 Pages”的公开接口；
-- Pages 注册阶段只使用不可变输入和非监听 `read`/`maybe_read`，consumer Widget
-  才能在 `build`/`did_change_dependencies` 中建立 Provider 依赖；
+- Pages 注册/组装阶段只使用不可变输入；Provider `read`/`maybe_read` 只在已经拥有
+  BuildContext 的 Widget/State 生命周期和事件回调中使用，consumer Widget 才能在
+  `build`/`did_change_dependencies` 中建立 Provider 依赖；
 - 保持 mounted Widget 不被外部直接修改。
 
-### 6.5 OverlayHost
+### 6.5 OverlayHost（当前）
 
 - 多个 AssPresenter/OSD overlay 的创建、更新、移除和 z 排序；
 - 每层独立 dirty/cache 和 input policy；
 - overlay 重叠输入、隐藏清理和真实 mpv 回归；
 - layer policy、input callback 和移除流程使用非监听 Provider read，Widget build
   才使用监听式 lookup；
-- 把 Pages layer 和 host overlay layer 的职责明确分开。
+- 把 Pages layer 和 host overlay layer 的职责明确分开；`main.lua` 使用一个
+  OverlayHost，把播放器主 layer 与 Define seal 后的扩展 layer 放入同一共享 pipeline。
 
 ### 6.6 可扩展播放器 Shell
 

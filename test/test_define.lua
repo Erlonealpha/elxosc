@@ -241,6 +241,20 @@ F.test('a bad payload is reported with its scope id', function()
     end, "define('scope_a')", 'syntax errors carry the scope id')
 end)
 
+F.test('a failed first payload still consumes the scope', function()
+    local accepted = 0
+    local session = DefineSession()
+    session.on_error = function()
+        accepted = accepted + 1
+    end
+    session:define_start()
+    session:define('broken', 'this is not lua')
+    session:define('broken', 'accepted = true')
+    session:define_end()
+    F.eq(accepted, 2, 'syntax failure and duplicate are both reported')
+    F.eq(session:env_for('broken').accepted, nil, 'second payload was ignored')
+end)
+
 F.test('on_error intercepts a broken payload', function()
     local session = DefineSession()
     local caught

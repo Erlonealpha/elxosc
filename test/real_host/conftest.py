@@ -17,7 +17,7 @@ from lifecycle import OwnedProcess
 
 
 ELXOSC_SOURCE_DIRS = ("animation", "backends", "foundation", "host", "layout", "libs",
-                       "painting", "render", "scheduler", "text", "widget")
+                       "painting", "player", "render", "scheduler", "text", "widget")
 
 # Top-level runtime modules `main.lua` requires next to the package dirs.
 ELXOSC_ROOT_MODULES = ("main_layout.lua", "demo.lua")
