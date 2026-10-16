@@ -17,6 +17,8 @@ local widget_mod = require('widget.widget')
 local bind_mod = require('widget.bind')
 local player_context = require('widget.player_context')
 local geometry = require('foundation.geometry')
+local demo_mod = require('demo')
+local player = require('player')
 
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
@@ -28,6 +30,8 @@ local BindRegistry = bind_mod.BindRegistry
 local PlayerStore = player_context.PlayerStore
 local Offset = geometry.Offset
 local OverlayHost = overlay_host.OverlayHost
+local Demo = demo_mod.Demo
+local PlayerScaffold = player.PlayerScaffold
 
 local function text_root(value)
     return Text(value)
@@ -191,7 +195,7 @@ F.test('pointer move and leave callbacks do not add a click-claiming section', f
     host:create('passive', Text('passive'), {
         input_policy = 'passive',
     })
-    ---@type { cb: fun(name: any, mouse: table) }
+    ---@type { cb: fun(name: any, mouse: table?) }
     local move_event
     for _, event in ipairs(fake.events) do
         if event.name == 'mouse-pos' then
@@ -200,13 +204,41 @@ F.test('pointer move and leave callbacks do not add a click-claiming section', f
     end
     fake.mouse = { x = 10, y = 10, hover = true }
     move_event.cb(nil, fake.mouse)
-    fake.mouse = { x = 10, y = 10, hover = false }
-    move_event.cb(nil, fake.mouse)
+    move_event.cb(nil, nil)
     F.eq(moves, 1, 'move callback receives in-window movement')
     F.eq(leaves, 1, 'leave callback receives window exit')
     F.ok(fake.binding_sections['elxosc-input'] ~= nil, 'normal input section remains defined')
     F.ok(fake.binding_sections['elxosc-showhide'] == nil,
         'no separate click-claiming showhide section is installed')
+    host:shutdown()
+end)
+
+F.test('compact demo controls stay inside the grid cell and remain interactive', function()
+    mp_stub.reset()
+    local host = OverlayHost()
+    local layer = host:create('demo', PlayerScaffold({
+        middle_child = Demo({ compact = true }),
+    }), {
+        z_policy = 'main',
+        input_policy = 'interactive',
+    })
+    host:render()
+    local regions = layer.owner:pointer_regions()
+    F.eq(#regions, 6, 'compact demo exports all six controls')
+    local width, height = host.display.width, host.display.height
+    for _, region in ipairs(regions) do
+        F.ok(region.rect.left >= 0 and region.rect.top >= 0,
+            'demo region starts inside the viewport')
+        F.ok(region.rect.right <= width and region.rect.bottom <= height,
+            'demo region remains clipped to the viewport')
+        local point = Offset(
+            (region.rect.left + region.rect.right) / 2,
+            (region.rect.top + region.rect.bottom) / 2)
+        host.input_router:dispatch_pointer_result('down', point, 'left')
+        host.input_router:dispatch_pointer_result('up', point, 'left')
+    end
+    F.ok(fake.props['user-data/elxosc-demo-event'] ~= nil,
+        'a compact demo control handles input')
     host:shutdown()
 end)
 

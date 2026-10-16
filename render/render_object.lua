@@ -239,16 +239,39 @@ function RenderObject:__hit_test_bounds(position)
         and position.x < self.size.width and position.y < self.size.height
 end
 
---- Nodes containing `point`, deepest first, each paired with the point
---- converted into that node's local coordinate space.
+---@param path {node: RenderObject, point: Offset}[]
+---@param event_type PointerEventType?
+---@return boolean
+local function path_has_pointer_target(path, event_type)
+    for _, entry in ipairs(path) do
+        local node = entry.node
+        if event_type == nil then
+            if node:wants_pointer('down') or node:wants_pointer('up')
+                or node:wants_pointer('wheel') or node:wants_pointer('move') then
+                return true
+            end
+        elseif node:wants_pointer(event_type) then
+            return true
+        end
+    end
+    return false
+end
+
 ---@param point Offset
 ---@param out {node: RenderObject, point: Offset}[]?
+---@param event_type PointerEventType?
 ---@return {node: RenderObject, point: Offset}[]
-function RenderObject:pointer_path(point, out)
+function RenderObject:pointer_path(point, out, event_type)
     out = out or {}
     if not self:__hit_test_bounds(point) then
         return out
     end
+    ---@type {node: RenderObject, point: Offset}[]?
+    local fallback_path = nil
+    -- A passive layout child may fill the viewport while its actual child is
+    -- elsewhere. Keep searching lower Stack siblings when that branch has no
+    -- target for this event; otherwise a full-size Align would hide buttons
+    -- painted below it from the render-tree hit test.
     for i = #self._children, 1, -1 do
         local child = self._children[i]
         local local_point = point
@@ -256,8 +279,22 @@ function RenderObject:pointer_path(point, out)
             local_point = (point - child.parent_data.offset) --[[@as Offset]]
         end
         if child:__hit_test_bounds(local_point) then
-            child:pointer_path(local_point, out)
-            break
+            local candidate = child:pointer_path(local_point, nil, event_type)
+            if path_has_pointer_target(candidate, event_type) then
+                for _, entry in ipairs(candidate) do
+                    out[#out + 1] = entry
+                end
+                fallback_path = nil
+                break
+            end
+            if fallback_path == nil then
+                fallback_path = candidate
+            end
+        end
+    end
+    if fallback_path ~= nil then
+        for _, entry in ipairs(fallback_path) do
+            out[#out + 1] = entry
         end
     end
     out[#out + 1] = { node = self, point = point }

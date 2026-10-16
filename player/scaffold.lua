@@ -170,7 +170,14 @@ function Main:build()
     -- Main owns the fixed shell slots. They are empty by default, but remain
     -- stable bind targets so the player can supply its controls without
     -- allowing extension Pages contributions to replace player-owned regions.
-    local children = { self.grid, self.title_bar, self.timeline, self.bottom }
+    local top_controls = Align(self.title_bar, { alignment = Offset(0.5, 0) })
+    local bottom_controls = Align(Column({
+        main_alignment = 'start',
+        main_axis_size = 'min',
+        cross_alignment = 'stretch',
+        children = { self.timeline, self.bottom },
+    }), { alignment = Offset(0.5, 1) })
+    local children = { self.grid, top_controls, bottom_controls }
     if self.left then
         children[#children + 1] = Align(self.left, { alignment = Offset(0, 0.5) })
     end

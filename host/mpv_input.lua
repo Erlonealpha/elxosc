@@ -96,6 +96,20 @@ function MpInput:_bind_mouse()
             return
         end
         if not mouse then
+            if self.hover then
+                self.hover = false
+                self.app.owner:clear_hover()
+                if self.app.on_pointer_leave then
+                    self.app.on_pointer_leave()
+                end
+            end
+            if self._pressed then
+                self.app.owner:cancel_pointer()
+                self._pressed = false
+                self._pressed_section = nil
+                self:update_regions()
+            end
+            self._buttons = {}
             return
         end
         if not mouse.hover then

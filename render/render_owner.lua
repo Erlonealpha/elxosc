@@ -194,11 +194,11 @@ end
 
 ---@param point Offset
 ---@return {node: RenderObject, point: Offset}[]
-function RenderOwner:pointer_path(point)
+function RenderOwner:pointer_path(point, event_type)
     if not self.root then
         return {}
     end
-    return self.root:pointer_path(point)
+    return self.root:pointer_path(point, nil, event_type)
 end
 
 ---@return PointerRegion[]
@@ -225,7 +225,7 @@ end
 ---@param point Offset
 ---@return boolean
 function RenderOwner:wants_pointer(event, point)
-    for _, entry in ipairs(self:pointer_path(point)) do
+    for _, entry in ipairs(self:pointer_path(point, event)) do
         if entry.node:wants_pointer(event) then
             return true
         end
@@ -263,7 +263,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         return { handled = true, capture = false, stop_propagation = true }
     end
 
-    local path = pointer.point and self:pointer_path(pointer.point) or {}
+    local path = pointer.point and self:pointer_path(pointer.point, pointer.type) or {}
     if pointer.type == 'move' then
         local root_point = pointer.point --[[@as Offset]]
         self:_update_hover(path, root_point)

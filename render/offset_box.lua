@@ -100,8 +100,9 @@ end
 
 ---@param point Offset
 ---@param out {node: RenderObject, point: Offset}[]?
+---@param event_type PointerEventType?
 ---@return {node: RenderObject, point: Offset}[]
-function RenderOffsetBox:pointer_path(point, out)
+function RenderOffsetBox:pointer_path(point, out, event_type)
     out = out or {}
     if not self:__hit_test_bounds(point) then
         return out
@@ -111,7 +112,7 @@ function RenderOffsetBox:pointer_path(point, out)
         local child_offset = self:_child_offset(child.parent_data and child.parent_data.offset)
         local local_point = (point - child_offset) --[[@as Offset]]
         if child:__hit_test_bounds(local_point) then
-            child:pointer_path(local_point, out)
+            child:pointer_path(local_point, out, event_type)
         end
     end
     out[#out + 1] = { node = self, point = point }

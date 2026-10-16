@@ -160,7 +160,7 @@ local host = OverlayHost({
     on_pointer_move = function() shell_controller:pointer_move() end,
     on_pointer_leave = function() shell_controller:pointer_leave() end,
 })
-host:create('main', shell_root(PlayerScaffold({ middle_child = Demo() })), {
+host:create('main', shell_root(PlayerScaffold({ middle_child = Demo({ compact = true }) })), {
     z_policy = 'main',
     input_policy = 'interactive',
     player_store = player_store,
@@ -172,7 +172,7 @@ local function remount()
     if shutting_down then
         return
     end
-    host:update('main', shell_root(define:build_root(Demo())), {
+    host:update('main', shell_root(define:build_root(Demo({ compact = true }))), {
         z_policy = 'main',
         input_policy = 'interactive',
         player_store = player_store,

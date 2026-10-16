@@ -6,6 +6,7 @@ local F = require('framework')
 local std = require('elxlibs.std')
 
 local constraints_mod = require('layout.constraints')
+local geometry = require('foundation.geometry')
 local render_owner = require('render.render_owner')
 local text_layout = require('text.text_layout')
 local binding_mod = require('widget.binding')
@@ -17,6 +18,7 @@ local shell_mod = require('player.shell')
 local ass_canvas = require('backends.ass_canvas')
 
 local Constraints = constraints_mod.Constraints
+local Offset = geometry.Offset
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local PlayerScope = player_context.PlayerScope
@@ -150,4 +152,33 @@ F.test('controller subscriptions are disposed with Shell State', function()
     binding:dispose()
     F.eq(#controller._subscriptions, 0, 'dispose removes Shell subscription')
     controller:pointer_move()
+end)
+
+F.test('Main side and bottom controls all receive input through passive overlays', function()
+    local clicks = 0
+    local function control(label)
+        return Button({ label = label, on_click = function() clicks = clicks + 1 end })
+    end
+    local owner = RenderOwner()
+    local binding = WidgetBinding(PlayerScaffold({
+        middle_child = Text('body'),
+        title_bar = Text('title'),
+        timeline = Text('timeline'),
+        bottom = control('bottom'),
+        main_left = control('left'),
+        main_right = control('right'),
+    }), owner)
+    owner:set_viewport(Constraints.tight(500, 300))
+    owner:layout()
+    local regions = owner:pointer_regions()
+    F.eq(#regions, 3, 'side and bottom controls export three regions')
+    for _, region in ipairs(regions) do
+        local point = Offset(
+            (region.rect.left + region.rect.right) / 2,
+            (region.rect.top + region.rect.bottom) / 2)
+        owner:dispatch_pointer('down', point, 'left')
+        owner:dispatch_pointer('up', point, 'left')
+    end
+    F.eq(clicks, 3, 'all Main controls receive clicks')
+    binding:dispose()
 end)

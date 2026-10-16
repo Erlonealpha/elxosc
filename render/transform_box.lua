@@ -181,8 +181,9 @@ end
 
 ---@param point Offset
 ---@param out {node: RenderObject, point: Offset}[]?
+---@param event_type PointerEventType?
 ---@return {node: RenderObject, point: Offset}[]
-function RenderTransformBox:pointer_path(point, out)
+function RenderTransformBox:pointer_path(point, out, event_type)
     out = out or {}
     if not self:__hit_test_bounds(point) then
         return out
@@ -192,7 +193,7 @@ function RenderTransformBox:pointer_path(point, out)
     if child and inverse then
         local child_point = inverse:transform_point(point)
         if child:__hit_test_bounds(child_point) then
-            child:pointer_path(child_point, out)
+            child:pointer_path(child_point, out, event_type)
         end
     end
     out[#out + 1] = { node = self, point = point }

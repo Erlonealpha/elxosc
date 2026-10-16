@@ -114,12 +114,89 @@ function DemoState:_animate(name)
     mp.set_property('user-data/elxosc-demo-event', name)
 end
 
+---@param display_count string
+---@param display_event string
+---@return Widget
+function DemoState:_build_compact(display_count, display_event)
+    local action_row = Row({
+        spacing = 4,
+        main_alignment = 'center',
+        cross_alignment = 'center',
+        children = {
+            IconButton({
+                icon = Icon('add', { size = 20 }),
+                on_click = function()
+                    self:set_state(function()
+                        self.count = self.count + 1
+                        self.selected = 'increment'
+                        mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
+                        mp.set_property('user-data/elxosc-demo-event', self.selected)
+                    end)
+                end,
+            }),
+            OutlinedButton({
+                label = 'Reset',
+                on_click = function()
+                    self:set_state(function()
+                        self.count = 0
+                        self.selected = 'reset'
+                        mp.set_property('user-data/elxosc-demo-count', '0')
+                        mp.set_property('user-data/elxosc-demo-event', self.selected)
+                    end)
+                end,
+            }),
+            TextButton({
+                label = 'Ping',
+                on_click = function() self:_set_event('ping') end,
+            }),
+            TextButton({
+                label = 'Animate',
+                on_click = function() self:_animate('animation') end,
+            }),
+            IconButton({
+                icon = Text('!'),
+                on_click = function() self:_set_event('icon') end,
+            }),
+        },
+    })
+    return Container({
+        padding = EdgeInsets.all(8),
+        color = Color.rgba(0x202020D0),
+        child = Column({
+            main_alignment = 'center',
+            main_axis_size = 'min',
+            cross_alignment = 'center',
+            spacing = 5,
+            children = {
+                Text(string.format('elxosc %s', tostring(display_count)), {
+                    style = TextStyle({ font_size = 18, bold = true }),
+                }),
+                Text('event: ' .. tostring(display_event), {
+                    style = TextStyle({ font_size = 12, color = Color.rgba255(180, 190, 205) }),
+                }),
+                action_row,
+                OutlinedButton({
+                    label = 'Scale tap',
+                    on_click = function()
+                        self:_set_event('scaled tap')
+                        self.button_scale_controller:repeat_animation({ reverse = true, count = 1 })
+                    end,
+                }),
+            },
+        }),
+    })
+end
+
 ---@param context BuildContext
 function DemoState:build(context)
     local player = PlayerProvider.maybe_of(context)
     local snapshot = player and player.snapshot
     local display_count = snapshot and snapshot:get('demo_count') or self.count
     local display_event = snapshot and snapshot:get('demo_event') or self.selected
+
+    if self.widget.compact then
+        return self:_build_compact(tostring(display_count), tostring(display_event))
+    end
 
     local function anchor_cell(label, anchor, background)
         return Container({
@@ -337,9 +414,21 @@ function DemoState:build(context)
     }
 end
 
+---@class _DemoOptions
+---@field compact boolean?
+---@field key any?
+
 ---@class Demo : StatefulWidget
----@overload fun(): self
+---@field compact boolean
+---@overload fun(options?: _DemoOptions): self
 local Demo = std.class.new('Demo', { StatefulWidget })
+
+---@param options? _DemoOptions
+function Demo:__init(options)
+    options = options or {}
+    self.key = options.key
+    self.compact = options.compact == true
+end
 
 function Demo:create_state()
     return DemoState()

@@ -17,6 +17,8 @@ local layout_scale_box = require('render.layout_scale_box')
 local offset_box = require('render.offset_box')
 local padding_mod = require('render.padding')
 local transform_box = require('render.transform_box')
+local stack_mod = require('render.stack')
+local align_mod = require('render.align')
 
 local Offset, Size, Rect, EdgeInsets = geometry.Offset, geometry.Size, geometry.Rect, geometry.EdgeInsets
 local Constraints = constraints_mod.Constraints
@@ -29,6 +31,8 @@ local RenderLayoutScaleBox = layout_scale_box.RenderLayoutScaleBox
 local RenderOffsetBox = offset_box.RenderOffsetBox
 local RenderPadding = padding_mod.RenderPadding
 local RenderTransformBox = transform_box.RenderTransformBox
+local RenderStack = stack_mod.RenderStack
+local RenderAlign = align_mod.RenderAlign
 
 ---@param w number
 ---@param h number
@@ -53,6 +57,21 @@ local function laid_out(node)
 end
 
 F.section('input: pointer path')
+
+F.test('passive full-size overlay does not block a lower interactive sibling', function()
+    local taps = 0
+    local lower = RenderGesture(box(40, 20), {
+        on_tap = function() taps = taps + 1 end,
+    })
+    local overlay = RenderAlign(Offset(1, 0.5), RenderGesture(box(20, 20), {
+        on_tap = function() end,
+    }))
+    local owner = laid_out_with(RenderStack({ children = { lower, overlay } }),
+        Constraints.tight(200, 100))
+    owner:dispatch_pointer('down', Offset(10, 10), 'left')
+    owner:dispatch_pointer('up', Offset(10, 10), 'left')
+    F.eq(taps, 1, 'lower button receives input outside overlay child')
+end)
 
 F.test('lists nodes deepest-first with local points', function()
     local leaf = box(10, 10)
