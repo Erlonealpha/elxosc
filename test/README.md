@@ -29,7 +29,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current local baseline (2026-10-16): **0 diagnostics / 1300 checks** from the
+Current local baseline (2026-10-16): **0 diagnostics / 1315 checks** from the
 EmmyLua checker; the real-host run reports **9 passed**. Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through

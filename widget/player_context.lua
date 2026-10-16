@@ -425,6 +425,18 @@ function PlayerProvider.maybe_of(context)
 end
 
 ---@param context BuildContext
+---@return PlayerProvider
+function PlayerProvider.read(context)
+    return Provider.read(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider]]
+end
+
+---@param context BuildContext
+---@return PlayerProvider?
+function PlayerProvider.maybe_read(context)
+    return Provider.maybe_read(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider?]]
+end
+
+---@param context BuildContext
 ---@return PlayerSnapshot
 function PlayerProvider.snapshot_of(context)
     return PlayerProvider.of(context).snapshot

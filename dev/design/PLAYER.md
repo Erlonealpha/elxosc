@@ -129,6 +129,11 @@ Snapshot 使用新对象表达新状态，Store 不修改调用方数据。订�
 清理 observer/subscription。配置/API 更新不重新执行 Define 源码，也不改变 Widget
 class identity。
 
+6.3 的 Provider 语义是最小 InheritedWidget 模型，不是 `package:provider` 兼容层：
+监听式 `of` / `maybe_of` 返回 Provider Widget 并建立依赖，非监听式 `read` /
+`maybe_read` 只读取最近的精确运行时类型。State 首次挂载和依赖更新经过
+`did_change_dependencies()`；`init_state`、事件回调和 dispose 不得使用监听式查询。
+
 ## 多层 overlay
 
 Pages 可以使用多个 host-level `osd_overlay` 层。overlay 是 presentation/host
@@ -177,6 +182,8 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - 把固定 Main UI 与 extension grid/more 分开；
 - 定义 stable region id、single/multi child 规则和冲突诊断；
 - 提供“扩展页面添加到 Pages”的公开接口；
+- Pages 注册阶段只使用不可变输入和非监听 `read`/`maybe_read`，consumer Widget
+  才能在 `build`/`did_change_dependencies` 中建立 Provider 依赖；
 - 保持 mounted Widget 不被外部直接修改。
 
 ### 6.5 OverlayHost
@@ -184,6 +191,8 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - 多个 AssPresenter/OSD overlay 的创建、更新、移除和 z 排序；
 - 每层独立 dirty/cache 和 input policy；
 - overlay 重叠输入、隐藏清理和真实 mpv 回归；
+- layer policy、input callback 和移除流程使用非监听 Provider read，Widget build
+  才使用监听式 lookup；
 - 把 Pages layer 和 host overlay layer 的职责明确分开。
 
 ### 6.6 可扩展播放器 Shell
@@ -191,6 +200,8 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - Main 的标题栏、时间线、底部和两侧控件；
 - 可隐藏的顶层控件和 auto/always/never visibility 状态；
 - 3×3 grid、more 和多层 overlay 的组合；
+- Shell 的 build 使用监听式 Provider，init/event/resource 回调使用非监听 read，
+  依赖变化资源通过 `did_change_dependencies` 更新；
 - 配置/API 热更新驱动 State/Provider，而非代码重载。
 
 ## 非目标

@@ -21,8 +21,16 @@ RenderObject setters. Bindings apply before mounting and do not manage a live tr
 
 `PlayerStore` replaces immutable snapshots and exposes disposable subscriptions.
 `PlayerScope` owns the subscription and rebuilds a `PlayerProvider` through the normal
-State/BuildOwner frame pipeline. Provider consumers use `SomeProvider.of(context)` or
-`SomeProvider.maybe_of(context)`; they do not read `mp` or mutate a mounted Widget.
+State/BuildOwner frame pipeline. `SomeProvider.of(context)` and
+`SomeProvider.maybe_of(context)` are listening lookups and are valid from `build()` or
+`did_change_dependencies()`. `SomeProvider.read(context)` and
+`SomeProvider.maybe_read(context)` are non-listening lookups for initialization and event
+callbacks. They do not read `mp` or mutate a mounted Widget.
+
+The Provider API follows the project's minimal `InheritedWidget` model: `of` returns the
+Provider Widget, not a `package:provider` value-container result. Lookup uses exact runtime
+class identity. `BuildContext` is currently an `Element` alias for implementation
+simplicity; callers must treat it as a read-only context handle.
 
 The planned Pages application layer composes Main, the extension 3x3 grid, and `more`.
 Extensions enter through Define; config/API hot updates only feed State/Provider or

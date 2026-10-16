@@ -13,7 +13,7 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-16）：**1300 Lua checks passed**、EmmyLua
+当前本地基线（2026-10-16）：**1315 Lua checks passed**、EmmyLua
 **No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主设计
 文档同步更新。
 
@@ -34,6 +34,14 @@ runner。测试按层覆盖：
 内部字段。无效输入、无限尺寸、零/负缩放和非法选项应在边界测试。
 
 阶段 6 的新增回归要求：
+
+6.3 Provider 修复还必须覆盖：
+
+- inherited Provider 的精确运行时类型查找和最近祖先规则；
+- `of`/`maybe_of` 的监听依赖与 `read`/`maybe_read` 的非监听读取；
+- State 首次挂载、Provider 更新时的 `did_change_dependencies` 顺序；
+- `update_should_notify == false`、依赖重查、unmount 清理；
+- `init_state`/`dispose` 中拒绝监听式 lookup，并允许明确的非监听读取。
 
 - Define 是唯一扩展内容入口；重复 scope payload、bind 顺序和错误边界保持覆盖；
 - 配置/API 热更新验证 snapshot、Provider/State/setter 传播、订阅清理，并证明不会

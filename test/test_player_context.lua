@@ -17,6 +17,7 @@ local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local StatelessWidget = widget_mod.StatelessWidget
+local state_mod = require('widget.state')
 local Text = require('widget.widgets.basic').Text
 local Provider = provider_mod.Provider
 local PlayerSnapshot = player_context.PlayerSnapshot
@@ -67,14 +68,14 @@ F.test('Provider of and maybe_of use the inherited dependency lookup', function(
         snapshot = snapshot,
         child = MaybeReader(),
     }))
-    local inherited = PlayerProvider.of(binding.root_element.child)
-    F.eq(inherited.snapshot.value, snapshot.value, 'PlayerProvider.of returns the ancestor')
+    local inherited = PlayerProvider.read(binding.root_element.child)
+    F.eq(inherited.snapshot.value, snapshot.value, 'PlayerProvider.read returns the ancestor')
     F.eq(owner.root.paragraph.text, 'provided', 'maybe_of sees the ancestor')
 end)
 
 F.test('maybe_of returns nil outside a provider', function()
     local owner, binding = mount(MaybeReader())
-    F.ok(PlayerProvider.maybe_of(binding.root_element) == nil, 'missing provider is nil')
+    F.ok(PlayerProvider.maybe_read(binding.root_element) == nil, 'missing provider is nil')
     F.eq(owner.root.paragraph.text, 'missing', 'descendant handles the missing provider')
 end)
 
@@ -97,6 +98,86 @@ F.test('Provider.of can query a concrete inherited Provider class', function()
     F.eq(owner.root.paragraph.text, 'marker', 'concrete Provider lookup')
 end)
 
+F.test('Provider lookup uses exact runtime class identity', function()
+    local Base = std.class.new('test.BaseProvider', { Provider })
+    function Base:__init(options)
+        options = options or {}
+        self.key = options.key
+        self.child = options.child
+        self.value = options.value
+    end
+    local Child = std.class.new('test.ChildProvider', { Base })
+
+    local ShowBase = std.class.new('test.ShowBaseProvider', { StatelessWidget })
+    function ShowBase:build(context)
+        local provider = Provider.of(context, Base --[[@as std.Class]])
+        return Text(provider.value)
+    end
+
+    local owner = mount(Base({
+        value = 'base',
+        child = Child({ value = 'child', child = ShowBase() }),
+    }))
+    F.eq(owner.root.paragraph.text, 'base', 'base lookup skips the child Provider class')
+end)
+
+F.test('read does not register a dependency or rebuild on Provider update', function()
+    local builds = 0
+    local ReadProbe = std.class.new('test.ReadProbe', { StatelessWidget })
+    function ReadProbe:build(context)
+        builds = builds + 1
+        local provider = PlayerProvider.read(context)
+        return Text('read=' .. provider.snapshot.value)
+    end
+
+    local probe = ReadProbe()
+    local owner, binding = mount(PlayerProvider({
+        snapshot = PlayerSnapshot({ value = 1 }),
+        child = probe,
+    }))
+    F.eq(builds, 1, 'read probe initially builds once')
+
+    binding:set_root_widget(PlayerProvider({
+        snapshot = PlayerSnapshot({ value = 2 }),
+        child = probe,
+    }))
+    binding:flush_build()
+    owner:layout()
+    F.eq(builds, 1, 'read probe is not rebuilt by Provider updates')
+    F.eq(owner.root.paragraph.text, 'read=1', 'non-listening value remains stable')
+end)
+
+F.test('update_should_notify false skips dependency callbacks', function()
+    local QuietProvider = std.class.new('test.QuietProvider', { Provider })
+    function QuietProvider:__init(options)
+        options = options or {}
+        self.key = options.key
+        self.child = options.child
+    end
+    function QuietProvider:update_should_notify()
+        return false
+    end
+
+    local dependency_calls = 0
+    local QuietState = std.class.new('test.QuietState', { state_mod.State })
+    function QuietState:did_change_dependencies()
+        dependency_calls = dependency_calls + 1
+    end
+    function QuietState:build()
+        return Text('quiet')
+    end
+    local QuietWidget = std.class.new('test.QuietWidget', { widget_mod.StatefulWidget })
+    function QuietWidget:create_state()
+        return QuietState()
+    end
+
+    local owner, binding = mount(QuietProvider({ child = QuietWidget() }))
+    binding:set_root_widget(QuietProvider({ child = QuietWidget() }))
+    binding:flush_build()
+    owner:layout()
+    F.eq(dependency_calls, 1, 'quiet Provider does not notify dependents')
+end)
+
 F.test('replacing a Provider notifies registered dependents', function()
     local owner, binding = mount(PlayerProvider({
         snapshot = PlayerSnapshot({ value = 1 }),
@@ -109,6 +190,80 @@ F.test('replacing a Provider notifies registered dependents', function()
     binding:flush_build()
     owner:layout()
     F.eq(owner.root.paragraph.text, 'value=2', 'dependent rebuilt with the replacement')
+end)
+
+F.test('did_change_dependencies runs before the first build and on updates', function()
+    local dependency_calls = 0
+    local build_calls = 0
+    local DependencyState = std.class.new('test.DependencyState', { state_mod.State })
+    function DependencyState:did_change_dependencies()
+        dependency_calls = dependency_calls + 1
+        self.latest = PlayerProvider.snapshot_of(self.context).value
+    end
+    function DependencyState:build()
+        build_calls = build_calls + 1
+        return Text(string.format('dependency=%d', self.latest))
+    end
+
+    local DependencyWidget = std.class.new('test.DependencyWidget', { widget_mod.StatefulWidget })
+    function DependencyWidget:create_state()
+        return DependencyState()
+    end
+
+    local owner, binding = mount(PlayerProvider({
+        snapshot = PlayerSnapshot({ value = 1 }),
+        child = DependencyWidget(),
+    }))
+    F.ok(next(binding.root_element.dependents) ~= nil, 'state registers dependency')
+    F.eq(dependency_calls, 1, 'initial dependency callback runs once')
+    F.eq(build_calls, 1, 'initial build runs after dependency callback')
+    F.eq(owner.root.paragraph.text, 'dependency=1', 'initial dependency value')
+
+    binding:set_root_widget(PlayerProvider({
+        snapshot = PlayerSnapshot({ value = 2 }),
+        child = DependencyWidget(),
+    }))
+    binding:flush_build()
+    owner:layout()
+    F.ok(next(binding.root_element.dependents) ~= nil, 'dependency remains after update')
+    F.eq(dependency_calls, 2, 'provider update invokes dependency callback')
+    F.eq(build_calls, 2, 'provider update rebuilds once')
+    F.eq(owner.root.paragraph.text, 'dependency=2', 'updated dependency value')
+end)
+
+F.test('listening lookup is rejected in init_state and dispose', function()
+    local InitState = std.class.new('test.LookupInInitState', { state_mod.State })
+    function InitState:init_state()
+        PlayerProvider.maybe_of(self.context)
+    end
+    function InitState:build()
+        return Text('init')
+    end
+    local InitWidget = std.class.new('test.LookupInInitWidget', { widget_mod.StatefulWidget })
+    function InitWidget:create_state()
+        return InitState()
+    end
+
+    F.raises(function()
+        mount(PlayerProvider({ snapshot = PlayerSnapshot(), child = InitWidget() }))
+    end, 'RuntimeError', 'listening lookup in init_state')
+
+    local DisposeState = std.class.new('test.LookupInDisposeState', { state_mod.State })
+    function DisposeState:dispose()
+        PlayerProvider.maybe_of(self.context)
+    end
+    function DisposeState:build()
+        return Text('dispose')
+    end
+    local DisposeWidget = std.class.new('test.LookupInDisposeWidget', { widget_mod.StatefulWidget })
+    function DisposeWidget:create_state()
+        return DisposeState()
+    end
+
+    local _, binding = mount(PlayerProvider({ snapshot = PlayerSnapshot(), child = DisposeWidget() }))
+    F.raises(function()
+        binding:set_root_widget(Text('gone'))
+    end, 'RuntimeError', 'listening lookup in dispose')
 end)
 
 F.section('player context: snapshots')

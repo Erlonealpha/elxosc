@@ -15,6 +15,7 @@
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
 
+local raise = std.raise
 local can_update = widget_mod.can_update
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
@@ -37,6 +38,7 @@ local M = {}
 ---@field mounted boolean
 ---@field dirty boolean
 ---@field _inherited_dependencies table<InheritedElement, true>
+---@field _lifecycle_phase string
 ---@overload fun(widget: Widget):self
 local Element = std.class.new('Element', {})
 
@@ -52,6 +54,7 @@ function Element:__init(widget)
     self.mounted = false
     self.dirty = false
     self._inherited_dependencies = {}
+    self._lifecycle_phase = 'idle'
 end
 
 ---@param parent Element?
@@ -61,6 +64,7 @@ function Element:mount(parent, owner)
     self.owner = owner
     self.depth = parent and (parent.depth + 1) or 0
     self.mounted = true
+    self._lifecycle_phase = 'idle'
 end
 
 function Element:unmount()
@@ -69,12 +73,45 @@ function Element:unmount()
     end
     self.mounted = false
     self.dirty = false
+    self._lifecycle_phase = 'dispose'
     self:_clear_inherited_dependencies()
     for _, child in ipairs(self:element_children()) do
         child:unmount()
     end
     self.parent = nil
     self.owner = nil
+    self._lifecycle_phase = 'unmounted'
+end
+
+---@param phase string
+---@param callback fun(): any
+---@return any
+function Element:_run_in_phase(phase, callback)
+    local previous = self._lifecycle_phase
+    self._lifecycle_phase = phase
+    local ok, result = pcall(callback)
+    self._lifecycle_phase = previous
+    if not ok then
+        error(result, 0)
+    end
+    return result
+end
+
+function Element:_assert_can_depend()
+    if not self.mounted then
+        raise(std.RuntimeError('listening Provider lookup requires a mounted BuildContext'))
+    end
+    if self._lifecycle_phase ~= 'build' and self._lifecycle_phase ~= 'dependencies' then
+        raise(std.RuntimeError(
+            'listening Provider lookup is only valid during build or did_change_dependencies'))
+    end
+end
+
+function Element:_assert_can_read()
+    if not self.mounted or self._lifecycle_phase == 'dispose'
+        or self._lifecycle_phase == 'unmounted' then
+        raise(std.RuntimeError('non-listening Provider lookup requires a mounted BuildContext'))
+    end
 end
 
 ---@param new_widget Widget
@@ -123,12 +160,14 @@ function Element:_sync_render_children_upwards()
     end
 end
 
---- Walk up to the nearest ancestor providing `widget_class` and register this
---- element as a dependent, so it is rebuilt when that provider changes.
+--- Walk up to the nearest ancestor with the exact runtime class
+--- `widget_class` and register this element as a dependent, so it is rebuilt
+--- when that provider changes.
 ---@param widget_class std.Class
 ---@return InheritedWidget?
 function Element:depend_on_inherited(widget_class)
-    local element = self:find_inherited(widget_class)
+    self:_assert_can_depend()
+    local element = self:find_inherited_exact(widget_class)
     if not element then
         return nil
     end
@@ -136,6 +175,30 @@ function Element:depend_on_inherited(widget_class)
     inherited.dependents[self] = true
     self._inherited_dependencies[inherited] = true
     return inherited.widget --[[@as InheritedWidget]]
+end
+
+---@param widget_class std.Class
+---@return InheritedWidget?
+function Element:depend_on_inherited_widget_of_exact_type(widget_class)
+    return self:depend_on_inherited(widget_class)
+end
+
+---@param widget_class std.Class
+---@return InheritedWidget?
+function Element:get_inherited_widget(widget_class)
+    self:_assert_can_read()
+    local element = self:find_inherited_exact(widget_class)
+    if not element then
+        return nil
+    end
+    local inherited = element --[[@as InheritedElement]]
+    return inherited.widget --[[@as InheritedWidget]]
+end
+
+---@param widget_class std.Class
+---@return InheritedWidget?
+function Element:get_inherited_widget_of_exact_type(widget_class)
+    return self:get_inherited_widget(widget_class)
 end
 
 function Element:_clear_inherited_dependencies()
@@ -148,14 +211,24 @@ end
 ---@param widget_class std.Class
 ---@return Element?
 function Element:find_inherited(widget_class)
+    return self:find_inherited_exact(widget_class)
+end
+
+---@param widget_class std.Class
+---@return Element?
+function Element:find_inherited_exact(widget_class)
     local element = self.parent
     while element do
-        if element:is_inherited_element() and std.isinstance(element.widget, widget_class) then
+        if element:is_inherited_element() and element.widget.__class == widget_class then
             return element
         end
         element = element.parent
     end
     return nil
+end
+
+function Element:dependency_changed()
+    self:mark_dirty()
 end
 
 ---@return boolean
@@ -225,7 +298,10 @@ end
 function StatelessElement:rebuild()
     self:_clear_inherited_dependencies()
     self.dirty = false
-    self.child = self:update_child(self.child, self.widget:build(self))
+    local child = self:_run_in_phase('build', function()
+        return self.widget:build(self)
+    end)
+    self.child = self:update_child(self.child, child)
     self:_sync_render_children_upwards()
 end
 
@@ -237,12 +313,14 @@ end
 ---@class StatefulElement : Element
 ---@field child Element?
 ---@field state State
+---@field _dependencies_changed boolean
 ---@overload fun(widget: Widget):self
 local StatefulElement = std.class.new('StatefulElement', { Element })
 
 function StatefulElement:__init(widget)
     std.super(StatefulElement, self, Element).__init(self, widget)
     self.child = nil
+    self._dependencies_changed = false
     self.state = widget:create_state()
     self.state.widget = widget
     self.state.context = self
@@ -250,7 +328,10 @@ end
 
 function StatefulElement:mount(parent, owner)
     std.super(StatefulElement, self, Element).mount(self, parent, owner)
-    self.state:init_state()
+    self:_run_in_phase('init_state', function()
+        self.state:init_state()
+    end)
+    self._dependencies_changed = true
 end
 
 function StatefulElement:update(new_widget)
@@ -263,7 +344,9 @@ end
 
 function StatefulElement:unmount()
     if self.mounted then
-        self.state:dispose()
+        self:_run_in_phase('dispose', function()
+            self.state:dispose()
+        end)
         self.state:_dispose_resources()
         self.state.context = nil
     end
@@ -281,8 +364,28 @@ end
 function StatefulElement:rebuild()
     self:_clear_inherited_dependencies()
     self.dirty = false
-    self.child = self:update_child(self.child, self.state:build(self))
+    if self._dependencies_changed then
+        self._dependencies_changed = false
+        self:_run_in_phase('dependencies', function()
+            self.state:did_change_dependencies()
+        end)
+    end
+    local child = self:_run_in_phase('build', function()
+        return self.state:build(self)
+    end)
+    self.child = self:update_child(self.child, child)
     self:_sync_render_children_upwards()
+end
+
+---@param initial boolean?
+function StatefulElement:dependency_changed(initial)
+    if not self.mounted then
+        return
+    end
+    self._dependencies_changed = true
+    if not initial then
+        self:mark_dirty()
+    end
 end
 
 ---@class ProxyElement : Element
@@ -347,18 +450,29 @@ end
 
 function InheritedElement:update(new_widget)
     local old_widget = self.widget
-    self.widget = new_widget
-    self:rebuild()
-    if new_widget:update_should_notify(old_widget) then
-        self:notify_dependents()
+    local dependents = {}
+    for dependent in pairs(self.dependents) do
+        dependents[#dependents + 1] = dependent
     end
+    self.widget = new_widget
+    if new_widget:update_should_notify(old_widget) then
+        self:notify_dependents(dependents)
+    end
+    self:rebuild()
 end
 
 --- Rebuild every element that looked this provider up.
-function InheritedElement:notify_dependents()
-    for dependent in pairs(self.dependents) do
+---@param dependents Element[]?
+function InheritedElement:notify_dependents(dependents)
+    if dependents == nil then
+        dependents = {}
+        for dependent in pairs(self.dependents) do
+            dependents[#dependents + 1] = dependent
+        end
+    end
+    for _, dependent in ipairs(dependents) do
         if dependent.mounted then
-            dependent:mark_dirty()
+            dependent:dependency_changed()
         else
             self.dependents[dependent] = nil
         end

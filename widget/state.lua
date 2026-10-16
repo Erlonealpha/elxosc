@@ -38,6 +38,10 @@ end
 --- Called once, right after the element is mounted.
 function State:init_state() end
 
+--- Called after the State is mounted and whenever an inherited dependency
+--- changes. Listening Provider lookups are valid from this callback.
+function State:did_change_dependencies() end
+
 ---@param old_widget StatefulWidget
 function State:did_update_widget(old_widget) end
 

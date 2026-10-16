@@ -79,22 +79,27 @@ mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩�
 
 ## BuildContext、Provider 与播放器状态
 
-当前 `BuildContext` 是 `Element` 的类型别名，并支持
-`depend_on_inherited(widget_class)`。`widget/provider.lua` 在此基础上提供稳定的
+当前 `BuildContext` 是 `Element` 的类型别名，并支持基于精确运行时 class identity 的
+InheritedWidget 查询：监听式 `depend_on_inherited_widget_of_exact_type()` 和非监听式
+`get_inherited_widget_of_exact_type()`。`widget/provider.lua` 在此基础上提供稳定的
 `Provider.of(context)` / `Provider.maybe_of(context)` 入口；具体 Provider 可以通过
 `SomeProvider.of(context)` 和 `SomeProvider.maybe_of(context)` 查询最近的同类祖先。
 
 6.3 提供 `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和 `PlayerProvider`。Store
 只替换快照，不原地修改快照；订阅按注册顺序通知，并返回可幂等 `dispose()` 的句柄。
 `PlayerScope` 在挂载时订阅 Store，在 State dispose 时清理订阅，再通过
-`PlayerProvider` 通知依赖者。更新仍然进入 BuildOwner/Scheduler 管线，不直接修改
-已挂载 Widget。
+`PlayerProvider` 通知依赖者。State 首次挂载和 inherited 依赖变化都会调用
+`did_change_dependencies()`，随后进入正常 build/dirty 管线；更新仍然不直接修改已挂载
+Widget。
 
 Provider 的更新必须让依赖者走既有 dirty/build 管线；控件不能直接读取 `mp`，也不能
-在 `build()` 中注册一次性 property observer。播放器配置/API 热更新形成新 snapshot，
-由 Provider/State 或明确 RenderObject setter 消费；扩展通过 Define 获得允许的 provider
-和更新接口，更新本身不构成新的内容注入。`PlayerProvider.of(context)` 找不到祖先时
-报错，`maybe_of` 返回 `nil`。
+在 `build()` 中注册一次性 property observer。监听式查询只允许在 `build()` 或
+`did_change_dependencies()` 中使用；`SomeProvider.read(context)` /
+`SomeProvider.maybe_read(context)` 不建立依赖，适合 `init_state` 和事件回调。播放器
+配置/API 热更新形成新 snapshot，由 Provider/State 或明确 RenderObject setter 消费；
+扩展通过 Define 获得允许的 provider 和更新接口，更新本身不构成新的内容注入。
+`PlayerProvider.of(context)` 找不到祖先时报错，`maybe_of` 返回 `nil`；这些 API 返回
+Inherited Provider Widget，不是 `package:provider` 风格的业务值容器。
 
 ## 新控件检查表
 

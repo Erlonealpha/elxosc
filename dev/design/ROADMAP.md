@@ -55,7 +55,9 @@
 
 ### 6.3 配置/API 热更新与 PlayerContext
 
-- 已完成 BuildContext 的 `Provider.of`/`maybe_of` 使用模式；
+- 核心 `Provider.of`/`maybe_of`、PlayerStore、PlayerScope 和热更新链路已完成；
+- 已完成 Provider exact lookup、非监听 `read`/`maybe_read`、
+  `did_change_dependencies` 和 init/dispose lookup 边界回归；
 - 已提供 host-independent `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和
   `PlayerProvider`，更新经过 Provider/State/BuildOwner 管线；
 - 已提供 mpv property bridge、可 dispose 的 property observer，以及 Define 的只读
@@ -65,6 +67,9 @@
 
 ### 6.4 Pages/Main 与扩展内容
 
+- 启动门槛：6.3 的 exact lookup、read API、依赖生命周期和 lookup 边界测试必须先
+  完成；Pages 注册阶段只能使用不可变输入和非监听读取，consumer Widget 才能在
+  build/did_change_dependencies 中建立依赖；
 - 建立 `Root → Pages → Main / 3x3 grid / more` 的应用组合层；
 - Main 拥有标题栏、时间线、底部按钮、两侧按钮及其稳定 id/快捷绑定元数据；
 - Define 作为扩展唯一入口，提供将扩展页面加入 Pages 和区域内容的公开接口；
@@ -76,6 +81,8 @@
 - 建立 host-level OverlayHost/Registry，支持多个独立 `osd_overlay` layer；
 - 每个 layer 保有 root、RenderOwner、Canvas、presenter、visible、z、dirty/cache 和
   input policy；
+- overlay policy、input callback 和 remove/shutdown 流程使用非监听 Provider read，
+  不在 host callback 中建立 Widget 依赖；
 - `overlay.z` 只决定视觉顺序，较高 z 在前，同 z 使用稳定注册顺序；
 - overlay 可用于 Pages 的 main/extension/popup/system 层，但不成为 Widget 或 bind
   priority；
@@ -86,6 +93,8 @@
 - 顶层控件支持 visible/hidden 和 auto/always/never 策略；
 - hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；
 - 将当前 scaffold 逐步收敛为 Pages/Main/grid/more，而不是一次性重写全部控件；
+- Shell build 使用监听式 Provider，init/event/resource callback 使用非监听 read，
+  依赖资源变化通过 `did_change_dependencies` 处理；
 - 使用已有 Scheduler、State、dirty 和 ASS presenter 管线，先做可观察行为再优化性能。
 
 阶段 6 的完整输入和播放器应用规划见 [INPUT.md](INPUT.md) 与 [PLAYER.md](PLAYER.md)。

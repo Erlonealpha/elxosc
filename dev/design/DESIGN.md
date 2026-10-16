@@ -108,9 +108,13 @@ scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 
-2026-10-16 的本地 6.3 基线为 **1300 Lua checks**、EmmyLua
+2026-10-16 的本地 6.3 修复基线为 **1315 Lua checks**、EmmyLua
 **No issues found**、real-host **9 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
+
+6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，
+State 支持 `did_change_dependencies`，并对 init/dispose 的 listening lookup 做边界
+诊断。6.4 Pages 实现仍需遵守这些 Provider 和生命周期契约。
 
 ## 变更决策规则
 
