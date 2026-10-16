@@ -108,7 +108,7 @@ scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 
-2026-10-16 的本地 6.3 修复基线为 **1315 Lua checks**、EmmyLua
+2026-10-16 的本地 6.4/6.5 基线为 **1455 Lua checks**、EmmyLua
 **No issues found**、real-host **9 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 

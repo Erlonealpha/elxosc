@@ -4,26 +4,30 @@
 --
 --   1. build the scaffold — the tree that names the slots other scripts may
 --      fill (`Widget.id` + `bind`, dev/design/WIDGETS.md);
---   2. start the app, which drives the `WidgetBinding` frame loop (§9.1);
+--   2. start one `OverlayHost` pipeline with the player-owned main layer;
 --   3. accept `define_start` / `define` / `define_end` for `define_window`
 --      seconds, then seal and re-mount with the collected binds applied.
 --
--- `bind` writes into the widget tree *before* it is mounted (dev/design/WIDGETS.md), so
--- the re-mount builds a fresh scaffold rather than mutating the live one.
+-- `bind`, Pages contributions and overlay declarations are applied after the Define
+-- window closes, before the fresh roots are mounted. Runtime updates use State,
+-- Provider or explicit host setters rather than re-running Define source.
 
 local mp = require 'mp'
 
 require 'elxlib_load' -- sets up elxlibs.*
 
-local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
+local overlay_host = require 'host.overlay_host'
 local mpv_player_context = require 'host.mpv_player_context'
 local player_context = require 'widget.player_context'
 local main_layout = require 'main_layout'
+local demo_mod = require 'demo'
 
 local MpDefine = mpv_define.MpDefine
+local OverlayHost = overlay_host.OverlayHost
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local PlayerStore = player_context.PlayerStore
+local Demo = demo_mod.Demo
 
 -- Seconds the define window stays open. Long enough for every script to have
 -- sent its payload, short enough not to be noticed; `define_end` from all
@@ -65,9 +69,14 @@ end)
 local define = MpDefine({ player_store = player_store })
 define:listen()
 
-local app = mpv_app.start(main_layout.build_scaffold, {
+local host = OverlayHost({
     player_store = player_store,
     player_context = player_updates,
+})
+host:create('main', main_layout.build_scaffold(), {
+    z_policy = 'main',
+    input_policy = 'interactive',
+    player_store = player_store,
 })
 
 --- Re-apply the collected binds to a fresh scaffold and swap it in.
@@ -76,7 +85,12 @@ local function remount()
     if shutting_down then
         return
     end
-    app:set_root_widget(define:apply(main_layout.build_scaffold()))
+    host:update('main', define:build_root(Demo()), {
+        z_policy = 'main',
+        input_policy = 'interactive',
+        player_store = player_store,
+    })
+    define:mount_overlays(host)
 end
 
 -- Fast path: every starter sent its `define_end`.

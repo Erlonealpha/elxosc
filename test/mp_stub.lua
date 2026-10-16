@@ -30,6 +30,7 @@ function S.reset()
     fake.osd_width, fake.osd_height = 1280, 720
     fake.fps = 60
     fake.overlay = nil
+    fake.overlays = {}
     fake.bindings = nil
     fake.bindings_enabled = nil
     fake.bindings_disabled = nil
@@ -124,19 +125,24 @@ function S.install()
     end
 
     function mp.create_osd_overlay(format)
-        fake.overlay = {
+        local overlay = {
             format = format,
             z = 0,
             data = nil,
             res_x = nil,
             res_y = nil,
             updates = 0,
+            removed = false,
         }
-        fake.overlay.update = function(self)
+        overlay.update = function(self)
             self.updates = self.updates + 1
         end
-        fake.overlay.remove = function() end
-        return fake.overlay
+        overlay.remove = function(self)
+            self.removed = true
+        end
+        fake.overlays[#fake.overlays + 1] = overlay
+        fake.overlay = overlay
+        return overlay
     end
 
     function mp.get_osd_size()

@@ -25,6 +25,7 @@ local Slot = bind_mod.Slot
 local PlayerStore = player_context.PlayerStore
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
+local OverlayHost
 
 -- Deterministic measurer: half the font size per character (see test_widget.lua).
 local FixedLayout = std.class.new('test.hostdefine.FixedLayout', { text_layout.TextLayout })
@@ -40,6 +41,8 @@ mp_stub.install()
 
 local fake = mp_stub.fake
 local reset_fake = mp_stub.reset
+local overlay_host_mod = require('host.overlay_host')
+OverlayHost = overlay_host_mod.OverlayHost
 
 reset_fake()
 
@@ -169,14 +172,19 @@ F.test('define_start / define / define_end seal through the messages', function(
     F.eq(owner.root:children()[1].paragraph.text, 'hi', 'the bind landed')
 end)
 
-F.test('pages declarations are scoped and assembled after sealing', function()
+F.test('pages and overlay declarations are scoped and mounted after sealing', function()
     reset_fake()
     local define = MpDefine({ builtins = { Text = Text } })
     define:listen()
     local log = dispatcher()
 
     log.define_start()
-    log.define('extension', "pages.fill('grid.top', Text('page'))")
+    log.define('extension', [[
+        pages.fill('grid.top', Text('page'))
+        overlay.add('extension-layer', Text('overlay'), {
+            z_policy = 'extension', input_policy = 'passive'
+        })
+    ]])
     log.define_end()
 
     local entries = define.pages:entries()
@@ -184,6 +192,12 @@ F.test('pages declarations are scoped and assembled after sealing', function()
     F.eq(entries[1].scope_id, 'extension', 'page scope is recorded')
     local root = define:build_root(Text('fallback'))
     F.ok(root ~= nil, 'Pages root assembled after sealing')
+
+    local host = OverlayHost()
+    local layers = define:mount_overlays(host)
+    F.eq(#layers, 1, 'one overlay layer mounted')
+    F.eq(layers[1].id, 'extension-layer', 'overlay id is preserved')
+    host:shutdown()
 end)
 
 F.test('refcounted: one define_end does not seal two starters', function()

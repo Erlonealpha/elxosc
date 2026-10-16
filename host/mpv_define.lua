@@ -19,12 +19,14 @@ local modules_mod = require 'libs.modules'
 local bind_mod = require 'widget.bind'
 local player_context = require 'widget.player_context'
 local pages_mod = require 'player.registry'
+local overlay_host_mod = require 'host.overlay_host'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
 local BindRegistry = bind_mod.BindRegistry
 local PlayerStore = player_context.PlayerStore
 local PagesRegistry = pages_mod.PagesRegistry
+local OverlayDeclarationRegistry = overlay_host_mod.OverlayDeclarationRegistry
 
 local M = {}
 
@@ -126,6 +128,7 @@ end
 ---@field modules ModuleRegistry? shared module registry (gets the `mp` module)
 ---@field player_store PlayerStore? host-independent player snapshot store
 ---@field pages PagesRegistry? initialization-time Pages declaration registry
+---@field overlay OverlayDeclarationRegistry? initialization-time overlay registry
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
@@ -135,6 +138,7 @@ end
 ---@field on_sealed fun()? called when the last `define_end` arrives
 ---@field player_store PlayerStore
 ---@field pages PagesRegistry
+---@field overlays OverlayDeclarationRegistry
 ---@field _listening boolean
 ---@field _allow_start boolean
 ---@overload fun(options: MpDefineOptions?): self
@@ -145,6 +149,7 @@ function MpDefine:__init(options)
     self.binds = options.binds or BindRegistry()
     self.player_store = options.player_store or PlayerStore()
     self.pages = options.pages or PagesRegistry()
+    self.overlays = options.overlay or options.overlays or OverlayDeclarationRegistry()
     self.on_sealed = nil
     self._listening = false
     self._allow_start = true
@@ -166,6 +171,7 @@ function MpDefine:__init(options)
         modules = modules,
         binds = self.binds,
         pages = self.pages,
+        overlay = self.overlays,
     })
     self.session.on_error = function(scope_id, err)
         mp.msg.error(string.format("elxosc: define('%s') failed: %s", scope_id, tostring(err)))
@@ -282,6 +288,14 @@ end
 function MpDefine:build_root(middle_child)
     local root = self.pages:assemble({ middle_child = middle_child })
     return self:apply(root)
+end
+
+--- Freeze extension overlay declarations and hand them to the host-owned layer
+--- manager. The sandbox never receives the host or any presenter directly.
+---@param host OverlayHost
+---@return LayerRecord[]
+function MpDefine:mount_overlays(host)
+    return host:mount_declarations(self.overlays:freeze())
 end
 
 M.MpDefine = MpDefine

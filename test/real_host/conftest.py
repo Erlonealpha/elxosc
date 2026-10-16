@@ -176,10 +176,12 @@ def _running_host(tmp_path, extra_args=()):
                                      script in {Path(__file__).parent / "button_input.lua",
                                                  Path(__file__).parent / "text_anchor.lua",
                                                  Path(__file__).parent / "scale.lua",
-                                                 Path(__file__).parent / "transform.lua"}):
+                                                 Path(__file__).parent / "transform.lua",
+                                                 Path(__file__).parent / "overlay_host.lua"}):
                 staged_elxosc = config / "scripts" / "elxosc"
                 _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
-                if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua"}:
+                if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua",
+                                   "overlay_host.lua"}:
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
                 # Load the directory package, matching portable_config/scripts/elxosc.

@@ -30,6 +30,7 @@ local M = {}
 ---@field modules ModuleRegistry? shared module registry
 ---@field binds BindRegistry? shared bind registry
 ---@field pages table? scope-capable Pages declaration service
+---@field overlay table? scope-capable Overlay declaration service
 ---@field protected_names table<string, true>? names a chunk may not overwrite
 
 ---@alias DefineSessionPhase
@@ -43,6 +44,7 @@ local M = {}
 ---@field modules ModuleRegistry
 ---@field binds BindRegistry
 ---@field pages table?
+---@field overlay table?
 ---@field api table<string, any>
 ---@field protected_names table<string, true>
 ---@field phase DefineSessionPhase
@@ -59,6 +61,7 @@ function DefineSession:__init(options)
     self.modules = options.modules or ModuleRegistry()
     self.binds = options.binds or BindRegistry()
     self.pages = options.pages
+    self.overlay = options.overlay
     self.phase = 'idle'
     self.defining_count = 0
     self.current_define = nil
@@ -86,6 +89,9 @@ function DefineSession:__init(options)
     end
     if self.pages ~= nil then
         api['pages'] = self:_scoped_api(self.pages, { 'add', 'fill', 'append' })
+    end
+    if self.overlay ~= nil then
+        api['overlay'] = self:_scoped_api(self.overlay, { 'add' })
     end
     self.api = api
 end

@@ -13,8 +13,8 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-16）：**1315 Lua checks passed**、EmmyLua
-**No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主设计
+当前本地基线（2026-10-16）：**1455 Lua checks passed**、EmmyLua
+**No issues found**、real-host **10 passed**。测试数量变化时，应在本文件和主设计
 文档同步更新。
 
 ## Lua suite
@@ -73,8 +73,9 @@ host 确实不可用时 skip；禁止使用按进程名杀 mpv 的清理命令�
 
 阶段 6 的 real-host fixture 已使用真实用户 `mbtn_left_dbl` 绑定验证：交互控件区域
 不触发默认 fullscreen，背景区域仍保留该绑定；OSD resize 后的 mouse area 坐标目前
-由 Lua host stub 覆盖，真实宿主回归仍需补齐。多 overlay 需要验证真实 `overlay.z`
-的视觉顺序和隐藏/移除后的清理行为。
+由 Lua host stub 覆盖，真实宿主回归仍需补齐 resize 坐标。`test_overlay_host.py`
+已用真实宿主验证多 overlay 的创建、隐藏、恢复、移除和进程生命周期；精确的视觉
+`overlay.z` 顺序及重叠输入 policy 仍由 Lua stub/离线 router 测试覆盖。
 
 ## 改动后的检查顺序
 
