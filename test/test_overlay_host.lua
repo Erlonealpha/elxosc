@@ -16,6 +16,7 @@ local state_mod = require('widget.state')
 local widget_mod = require('widget.widget')
 local bind_mod = require('widget.bind')
 local player_context = require('widget.player_context')
+local geometry = require('foundation.geometry')
 
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
@@ -25,6 +26,7 @@ local StatefulWidget = widget_mod.StatefulWidget
 local Slot = bind_mod.Slot
 local BindRegistry = bind_mod.BindRegistry
 local PlayerStore = player_context.PlayerStore
+local Offset = geometry.Offset
 local OverlayHost = overlay_host.OverlayHost
 
 local function text_root(value)
@@ -115,6 +117,39 @@ F.test('passive layers do not block an interactive layer below them', function()
     fake.bindings.list[1][2]()
     F.eq(lower_clicks, 1, 'interactive lower layer receives input')
     F.eq(passive_clicks, 0, 'passive layer receives no input')
+    host:shutdown()
+end)
+
+F.test('moving outside interactive regions clears button hover state', function()
+    mp_stub.reset()
+    local host = OverlayHost()
+    host:create('main', Column({
+        children = {
+            button_root('first', function() end),
+            button_root('second', function() end),
+        },
+    }), {
+        z_policy = 'main',
+        input_policy = 'interactive',
+    })
+    host:render()
+
+    local regions = host.registry:get('main').owner:pointer_regions()
+    F.ok(#regions >= 2, 'two button input regions are installed')
+    local first_region = regions[1]
+    local second_region = regions[2]
+    local first = first_region.node
+    local second = second_region.node
+    local first_point = Offset(
+        (first_region.rect.left + first_region.rect.right) / 2,
+        (first_region.rect.top + first_region.rect.bottom) / 2)
+    host.input_router:dispatch_pointer_result('move', first_point)
+    F.ok(first.hovered, 'first button enters hover')
+    F.ok(not second.hovered, 'second button is not hovered')
+
+    host.input_router:dispatch_pointer_result('move', Offset(500, 500))
+    F.ok(not first.hovered, 'first button leaves hover in the gap')
+    F.ok(not second.hovered, 'second button remains unhovered')
     host:shutdown()
 end)
 

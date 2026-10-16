@@ -556,6 +556,14 @@ function OverlayInputRouter:dispatch_pointer_result(event, point, data)
         end
     end
     if selected == nil then
+        -- A move outside every interactive layer is still meaningful: the
+        -- RenderOwner must see it to emit leave events for any hovered node.
+        -- MpInput only calls clear_hover when the pointer leaves the mpv
+        -- window, so dropping an in-window move here leaves buttons hovered
+        -- until another interactive region is entered.
+        if pointer.type == 'move' then
+            self:clear_hover()
+        end
         return { handled = false, capture = false, stop_propagation = false }
     end
     ---@cast selected LayerRecord
