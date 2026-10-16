@@ -108,8 +108,8 @@ scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 
-2026-10-16 的本地 6.4/6.5 基线为 **1455 Lua checks**、EmmyLua
-**No issues found**、real-host **9 passed**。命令和测试职责以
+2026-10-16 的本地 6.4/6.5/6.6 基线为 **1497 Lua checks**、EmmyLua
+**No issues found**、real-host **11 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 
 6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，

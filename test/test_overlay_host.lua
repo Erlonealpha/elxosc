@@ -120,6 +120,96 @@ F.test('passive layers do not block an interactive layer below them', function()
     host:shutdown()
 end)
 
+F.test('hiding a retained layer clears hover as well as capture and regions', function()
+    mp_stub.reset()
+    local host = OverlayHost()
+    local layer = host:create('hover', button_root('hover', function() end), {
+        z_policy = 'popup',
+        input_policy = 'interactive',
+    })
+    host:render()
+    local region = layer.owner:pointer_regions()[1]
+    local node = region.node
+    local point = Offset(
+        (region.rect.left + region.rect.right) / 2,
+        (region.rect.top + region.rect.bottom) / 2)
+    host.input_router:dispatch_pointer_result('move', point)
+    F.ok(node.hovered, 'layer is hovered before hide')
+    host:hide('hover')
+    F.ok(not node.hovered, 'hide clears the hovered node')
+    F.eq(#host.input_router:pointer_regions(), 0, 'hide clears input regions')
+    host:shutdown()
+end)
+
+F.test('input policy transition makes a modal exclusive without remounting', function()
+    mp_stub.reset()
+    local lower_clicks = 0
+    local host = OverlayHost()
+    local lower = host:create('lower', button_root('lower', function()
+        lower_clicks = lower_clicks + 1
+    end), {
+        z_policy = 'main',
+        input_policy = 'interactive',
+    })
+    local modal = host:create('modal', Text('modal'), {
+        z_policy = 'popup',
+        input_policy = 'passive',
+    })
+    host:render()
+    local lower_state = lower.binding.root_element.state
+    local region = lower.owner:pointer_regions()[1]
+    local point = Offset(
+        (region.rect.left + region.rect.right) / 2,
+        (region.rect.top + region.rect.bottom) / 2)
+    host.input_router:dispatch_pointer_result('down', point, 'left')
+    host.input_router:dispatch_pointer_result('up', point, 'left')
+    F.eq(lower_clicks, 1, 'passive modal allows lower click')
+
+    local modal_element = modal.binding.root_element
+    F.ok(host:set_input_policy('modal', 'exclusive'), 'modal policy changes')
+    F.ok(modal.binding.root_element == modal_element, 'modal remains mounted')
+    F.eq(host.input_router:pointer_regions()[1].layer_id, 'modal',
+        'exclusive modal owns the full viewport region')
+    host.input_router:dispatch_pointer_result('down', point, 'left')
+    host.input_router:dispatch_pointer_result('up', point, 'left')
+    F.eq(lower_clicks, 1, 'exclusive modal blocks lower click')
+    F.ok(lower.binding.root_element.state == lower_state, 'lower State is retained')
+
+    F.raises(function()
+        host:set_input_policy('modal', 'unknown' --[[@as any]])
+    end, 'overlay input_policy', 'invalid policy is rejected')
+    host:shutdown()
+end)
+
+F.test('pointer move and leave callbacks do not add a click-claiming section', function()
+    mp_stub.reset()
+    local moves, leaves = 0, 0
+    local host = OverlayHost({
+        on_pointer_move = function() moves = moves + 1 end,
+        on_pointer_leave = function() leaves = leaves + 1 end,
+    })
+    host:create('passive', Text('passive'), {
+        input_policy = 'passive',
+    })
+    ---@type { cb: fun(name: any, mouse: table) }
+    local move_event
+    for _, event in ipairs(fake.events) do
+        if event.name == 'mouse-pos' then
+            move_event = event
+        end
+    end
+    fake.mouse = { x = 10, y = 10, hover = true }
+    move_event.cb(nil, fake.mouse)
+    fake.mouse = { x = 10, y = 10, hover = false }
+    move_event.cb(nil, fake.mouse)
+    F.eq(moves, 1, 'move callback receives in-window movement')
+    F.eq(leaves, 1, 'leave callback receives window exit')
+    F.ok(fake.binding_sections['elxosc-input'] ~= nil, 'normal input section remains defined')
+    F.ok(fake.binding_sections['elxosc-showhide'] == nil,
+        'no separate click-claiming showhide section is installed')
+    host:shutdown()
+end)
+
 F.test('moving outside interactive regions clears button hover state', function()
     mp_stub.reset()
     local host = OverlayHost()

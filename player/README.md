@@ -1,8 +1,8 @@
 # Player composition
 
-`player/` is the host-independent application composition layer for phase 6.4.
-It does not load `mp`, manage an overlay presenter, or look up Providers while
-assembling a tree.
+`player/` is the host-independent application composition layer for phases 6.4 and
+6.6. It does not load `mp` or manage an overlay presenter. Pages assembly remains
+Provider-free; `PlayerShell` performs Provider lookup only after it is mounted.
 
 ## Public entry points
 
@@ -10,6 +10,8 @@ assembling a tree.
 - `registry.lua` — `PageContribution` and the initialization-only
   `PagesRegistry`.
 - `scaffold.lua` — `PlayerScaffold`, `Main`, `Grid`, and `More` widgets.
+- `shell.lua` — `ShellConfig`, `ShellVisibilityController`, and the Provider-driven
+  `PlayerShell` with `auto`/`always`/`never` control visibility.
 - `init.lua` — aggregate exports for the public classes.
 
 Extensions register immutable Widget inputs before mounting:
@@ -39,4 +41,7 @@ the demo middle child supplied by the entry point.
 Pages is a composition name, not Navigator: there is no route history, runtime
 registry, Provider lookup during assembly, arbitrary z ordering, or mounted
 Widget mutation here. Host-level presentation and overlay lifecycle belong to
-`host/` in a later phase.
+`host/`. The host forwards pointer move/leave notifications to a Shell controller;
+the controller does not claim clicks or wheel input. `PlayerShell` uses a listening
+Provider lookup in `build`, non-listening reads for event callbacks, and disposes its
+controller subscription with its State.

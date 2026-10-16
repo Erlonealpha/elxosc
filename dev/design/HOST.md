@@ -117,3 +117,12 @@ overlay 的创建、更新、移除、分辨率变化和隐藏都必须可重复
 输入由中央 router 从高 z 到低 z 选择第一个 interactive layer；passive layer 不
 吞背景输入，exclusive layer 明确阻断下层。capture 始终绑定 layer，隐藏、root swap、
 移除和 shutdown 时取消并清理。
+
+## Shell 输入与可见性
+
+6.6 的 `PlayerShell` 由同一 `OverlayHost` 主 layer 挂载。`MpInput` 的
+`mouse-pos` move/leave 观察结果通过 host callback 转发给
+`ShellVisibilityController`，不新增抢占 click/wheel 的 `elxosc-showhide` section。
+Shell 配置通过 `PlayerStore`/`PlayerProvider` 更新；pointer event callback 使用非监听
+read，Shell build 使用监听 lookup。modal layer 的输入阻断仍必须显式调用
+`set_input_policy(id, 'exclusive')`，不能由 z-order 自动推导。

@@ -13,8 +13,8 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-16）：**1455 Lua checks passed**、EmmyLua
-**No issues found**、real-host **10 passed**。测试数量变化时，应在本文件和主设计
+当前本地基线（2026-10-16）：**1497 Lua checks passed**、EmmyLua
+**No issues found**、real-host **11 passed**。测试数量变化时，应在本文件和主设计
 文档同步更新。
 
 ## Lua suite
@@ -56,6 +56,8 @@ runner。测试按层覆盖：
 - 多 overlay 的创建、更新、移除、z 顺序、同 z 稳定排序、独立 presenter/cache 和
   overlap input policy；
 - 顶层控件 visible/hidden、auto/always/never 和 modal 输入策略。
+- `PlayerShell` 的 aggregate/direct identity、ShellConfig 边界、Provider snapshot 更新、
+  controller pointer move/leave、State 复用和 subscription dispose。
 
 ## EmmyLua
 
@@ -76,6 +78,10 @@ host 确实不可用时 skip；禁止使用按进程名杀 mpv 的清理命令�
 由 Lua host stub 覆盖，真实宿主回归仍需补齐 resize 坐标。`test_overlay_host.py`
 已用真实宿主验证多 overlay 的创建、隐藏、恢复、移除和进程生命周期；精确的视觉
 `overlay.z` 顺序及重叠输入 policy 仍由 Lua stub/离线 router 测试覆盖。
+
+`test_player_shell.py` 已用真实宿主验证 Shell 配置更新、pointer move/leave 通知和
+进程生命周期；精确的 ASS 控件可见性和 mouse-area 坐标仍由离线 RenderOwner/host
+stub 覆盖。
 
 ## 改动后的检查顺序
 

@@ -3,6 +3,7 @@
 local region_mod = require 'player.region'
 local registry_mod = require 'player.registry'
 local scaffold_mod = require 'player.scaffold'
+local shell_mod = require 'player.shell'
 
 return {
     Region = region_mod.Region,
@@ -12,4 +13,8 @@ return {
     Main = scaffold_mod.Main,
     More = scaffold_mod.More,
     PlayerScaffold = scaffold_mod.PlayerScaffold,
+    ShellConfig = shell_mod.ShellConfig,
+    ShellVisibilityController = shell_mod.ShellVisibilityController,
+    PlayerShellState = shell_mod.PlayerShellState,
+    PlayerShell = shell_mod.PlayerShell,
 }

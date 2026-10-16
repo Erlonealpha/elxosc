@@ -63,6 +63,8 @@ local M = {}
 ---@field delay number?
 ---@field player_store PlayerStore?
 ---@field player_context MpPlayerContext?
+---@field on_pointer_move fun()?
+---@field on_pointer_leave fun()?
 
 ---@class OverlayLayerOptions
 ---@field z_policy OverlayZPolicy?
@@ -587,6 +589,8 @@ end
 ---@field input MpInput
 ---@field player_store PlayerStore?
 ---@field player_context MpPlayerContext?
+---@field on_pointer_move fun()?
+---@field on_pointer_leave fun()?
 ---@field _input_app OverlayInputApp
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
@@ -692,6 +696,8 @@ function OverlayHost:__init(options)
     }
     self.player_store = config.player_store
     self.player_context = config.player_context
+    self.on_pointer_move = options.on_pointer_move
+    self.on_pointer_leave = options.on_pointer_leave
     self._shutdown = false
     self._property_callbacks = {}
     self.display = { width = 1280, height = 720, initialized = false }
@@ -704,6 +710,16 @@ function OverlayHost:__init(options)
         owner = self.input_router,
         request_frame = function()
             self:request_frame()
+        end,
+        on_pointer_move = function()
+            if self.on_pointer_move then
+                self.on_pointer_move()
+            end
+        end,
+        on_pointer_leave = function()
+            if self.on_pointer_leave then
+                self.on_pointer_leave()
+            end
         end,
     }
 
@@ -1047,7 +1063,13 @@ function OverlayHost:update(id, root_widget, options)
         layer.presenter.overlay.z = layer.z
         layer.presenter.overlay:update()
     end
-    layer.input_policy = config.input_policy --[[@as OverlayInputPolicy]]
+    if config.input_policy ~= layer.input_policy then
+        self:_cancel_layer_capture(id)
+        if layer.mounted then
+            layer.owner:clear_hover()
+        end
+        layer.input_policy = config.input_policy --[[@as OverlayInputPolicy]]
+    end
     layer.opaque = config.opaque == true
     layer.keep_alive = config.keep_alive ~= false
     if config.visible ~= layer.visible then
@@ -1066,6 +1088,28 @@ function OverlayHost:update(id, root_widget, options)
 end
 
 ---@param id string
+---@param policy OverlayInputPolicy
+---@return boolean
+function OverlayHost:set_input_policy(id, policy)
+    local layer = self.registry:get(id)
+    if layer == nil then
+        return false
+    end
+    policy = validate_input_policy(policy)
+    if layer.input_policy == policy then
+        return true
+    end
+    self:_cancel_layer_capture(id)
+    if layer.mounted then
+        layer.owner:clear_hover()
+    end
+    layer.input_policy = policy
+    self.input:update_regions()
+    self:request_frame()
+    return true
+end
+
+---@param id string
 ---@return boolean
 function OverlayHost:hide(id)
     local layer = self.registry:get(id)
@@ -1073,6 +1117,9 @@ function OverlayHost:hide(id)
         return false
     end
     self:_cancel_layer_capture(id)
+    if layer.mounted then
+        layer.owner:clear_hover()
+    end
     layer.visible = false
     if not layer.keep_alive then
         self:_dispose_layer_binding(layer)
@@ -1112,6 +1159,9 @@ function OverlayHost:remove(id)
         return false
     end
     self:_cancel_layer_capture(id)
+    if layer.mounted then
+        layer.owner:clear_hover()
+    end
     layer.visible = false
     self:_clear_output(layer)
     self.input:update_regions()

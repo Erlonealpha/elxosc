@@ -45,6 +45,8 @@ local owned_sections = {}
 
 ---@class MpInput : std.object
 ---@field app App
+---@field app.on_pointer_move fun()?
+---@field app.on_pointer_leave fun()?
 ---@field hover boolean
 ---@field _regions PointerRegion[]
 ---@field _region_signature string?
@@ -100,6 +102,9 @@ function MpInput:_bind_mouse()
             if self.hover then
                 self.hover = false
                 self.app.owner:clear_hover()
+                if self.app.on_pointer_leave then
+                    self.app.on_pointer_leave()
+                end
             end
             if self._pressed then
                 self.app.owner:cancel_pointer()
@@ -112,6 +117,9 @@ function MpInput:_bind_mouse()
         end
         self.x, self.y = mouse.x + 0.5, mouse.y + 0.5
         self.hover = true
+        if self.app.on_pointer_move then
+            self.app.on_pointer_move()
+        end
         self:_dispatch('move')
     end
     mp.observe_property('mouse-pos', 'native', self._mouse_callback)

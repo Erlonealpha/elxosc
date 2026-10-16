@@ -41,6 +41,7 @@ local files = {
     'test_overlay_host',
     'test_main_layout',
     'test_pages',
+    'test_player_shell',
     'test_ass',
     'test_constraints_examples',
     'test_layering',

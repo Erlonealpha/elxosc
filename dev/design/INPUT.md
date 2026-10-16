@@ -16,6 +16,10 @@ target/focus、Gesture arena 和真实宿主的结构化字段回归仍未完成
 转换为带有 button、held buttons、wheel delta、click count、pointer id、source 和
 timestamp 的 `PointerEvent`；`data` 仍保留为兼容 payload。
 
+6.6 的 Shell auto visibility 复用同一个 `mouse-pos` observer 的 move/leave 通知，
+通过 `OverlayHost` 的观察回调传给 `ShellVisibilityController`；当前不安装独立的
+`elxosc-showhide` 点击 section，因此不会抢占背景 click 或 wheel binding。
+
 旧实现中，控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 仍可能执行例如
 `cycle fullscreen`。仅在 Lua 层收到一次普通 down/up 不能可靠地表达“这个区域已经
 消费双击”，因此当前 section 必须显式声明并处理 `mbtn_left_dbl`。

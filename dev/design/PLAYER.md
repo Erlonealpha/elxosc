@@ -237,14 +237,23 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - 把 Pages layer 和 host overlay layer 的职责明确分开；`main.lua` 使用一个
   OverlayHost，把播放器主 layer 与 Define seal 后的扩展 layer 放入同一共享 pipeline。
 
-### 6.6 可扩展播放器 Shell
+### 6.6 可扩展播放器 Shell（当前）
 
-- Main 的标题栏、时间线、底部和两侧控件；
-- 可隐藏的顶层控件和 auto/always/never visibility 状态；
-- 3×3 grid、more 和多层 overlay 的组合；
-- Shell 的 build 使用监听式 Provider，init/event/resource 回调使用非监听 read，
-  依赖变化资源通过 `did_change_dependencies` 更新；
-- 配置/API 热更新驱动 State/Provider，而非代码重载。
+- `player/shell.lua` 提供 `PlayerShell`、`ShellConfig` 和
+  `ShellVisibilityController`。Shell 组合播放器拥有的 title bar、timeline、bottom
+  和 left/right controls，并复用已组装的 Pages grid/more；隐藏控制不会留下 ASS
+  绘制或 pointer region。
+- 控件显隐模式为闭合集合 `auto`、`always`、`never`：`auto` 初始隐藏，收到 pointer
+  move 显示，pointer leave 隐藏；`always` 始终显示；`never` 始终隐藏。本阶段不引入
+  idle timer。
+- Shell 的 `build` 使用监听式 `PlayerProvider.maybe_of`；`init_state`、pointer
+  event callback 使用非监听 `maybe_read`；Provider snapshot 变化在
+  `did_change_dependencies` 中重新解析；controller subscription 在 `dispose` 清理。
+- `main.lua` 通过 `user-data/elxosc-controls-visibility` 把已校验的配置/API 数据
+  转换为 `PlayerStore` snapshot，更新经过现有 Provider/State frame pipeline，不重跑
+  Define，也不替换 Shell State。
+- host 只把 mouse move/leave 观察事件转发给 controller，不安装额外的点击抢占
+  section；modal 行为仍通过 OverlayHost 显式 `input_policy = 'exclusive'` 管理。
 
 ## 非目标
 

@@ -33,14 +33,20 @@ re-run Define source. Property observers and Define `mp.on_prop` subscriptions r
 disposable handles and must be released on shutdown or extension disposal.
 
 `OverlayHost` owns one `MpFrameClock`, `Scheduler`, and `MpInput` for named
-presentation layers. `create`, `update`, `hide`, `show`, `remove`, and `shutdown`
+presentation layers. `create`, `update`, `hide`, `show`, `remove`,
+`set_input_policy`, and `shutdown`
 manage `LayerRecord` trees. A layer chooses a named `z_policy` (`main`,
 `extension`, `popup`, or `system`) rather than an arbitrary z value, and an
 `input_policy` (`passive`, `interactive`, or `exclusive`). Hidden layers clear
 ASS output and input regions; they retain their Widget/State tree by default,
 while `keep_alive = false` unmounts it. `OverlayInputRouter` binds capture to a
 layer and routes visible input from higher z to lower z, with later registration
-winning ties.
+winning ties. Policy transitions clear hover/capture without remounting the layer;
+retained hidden layers clear output, hover, capture, and input regions.
+
+`OverlayHost` may forward pointer move/leave notifications to a host-independent
+`ShellVisibilityController`. These callbacks are observational only: they do not
+claim mouse buttons or wheel input, so background mpv bindings remain available.
 
 See [host design](../dev/design/HOST.md), [input](../dev/design/INPUT.md),
 [player application](../dev/design/PLAYER.md), and [testing](../dev/design/TESTING.md).

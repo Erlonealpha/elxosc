@@ -88,14 +88,17 @@
   priority；
 - 隐藏/移除 layer 时清理 ASS、mouse area、hover、capture 和订阅。
 
-### 6.6 播放器 Shell
+### 6.6 播放器 Shell（首个可用切片已实现）
 
-- 顶层控件支持 visible/hidden 和 auto/always/never 策略；
-- hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；
-- 将当前 scaffold 逐步收敛为 Pages/Main/grid/more，而不是一次性重写全部控件；
-- Shell build 使用监听式 Provider，init/event/resource callback 使用非监听 read，
-  依赖资源变化通过 `did_change_dependencies` 处理；
-- 使用已有 Scheduler、State、dirty 和 ASS presenter 管线，先做可观察行为再优化性能。
+- `PlayerShell` 已支持顶层控件 visible/hidden 和 auto/always/never 策略；
+- hidden controls 不绘制、不创建 input area；modal layer 可以通过
+  `OverlayHost:set_input_policy(..., 'exclusive')` 切换策略；
+- 当前切片复用现有 `PlayerScaffold` 的 Pages/Main/grid/more 组合，不一次性重写全部
+  控件；
+- Shell build 使用监听式 Provider，init/event callback 使用非监听 read，配置变化在
+  `did_change_dependencies` 处理；
+- 使用已有 Scheduler、State、dirty 和 ASS presenter 管线。idle timeout、键盘 focus、
+  Slider/timeline 专用控件和更完整的 Shell 控件仍是后续工作。
 
 阶段 6 的完整输入和播放器应用规划见 [INPUT.md](INPUT.md) 与 [PLAYER.md](PLAYER.md)。
 
