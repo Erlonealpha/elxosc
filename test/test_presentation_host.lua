@@ -91,7 +91,7 @@ F.test('logical plans group entries into controlled physical surfaces', function
     F.eq(surfaces.popup.input_policy, 'exclusive', 'popup policy is derived from plan')
     F.raises(function()
         host:create_surface('bad', Text('bad'), { surface_policy = 'unknown' --[[@as any]] })
-    end, 'overlay z_policy', 'arbitrary surface names are rejected')
+    end, 'presentation surface', 'arbitrary surface names are rejected')
     host:shutdown()
 end)
 

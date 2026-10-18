@@ -851,10 +851,10 @@ end
 ---@return PointerRegion[]
 function OverlayHost:_regions_for_layer(layer)
     if layer.dirty.input then
+        layer.region_snapshot.generation = layer.region_snapshot.generation + 1
         if layer.mounted and layer.visible and not layer.removed then
             local regions = layer.owner:pointer_regions()
             local snapshot = layer.region_snapshot
-            snapshot.generation = snapshot.generation + 1
             snapshot.regions = {}
             for index, region in ipairs(regions) do
                 snapshot.regions[index] = region
@@ -1416,6 +1416,9 @@ end
 ---@param options OverlayLayerOptions?
 ---@return LayerRecord
 function OverlayHost:create_surface(id, root_widget, options)
+    if id ~= 'default' and id ~= 'extension' and id ~= 'popup' and id ~= 'system' then
+        raise(std.ValueError('presentation surface id must be default, extension, popup, or system'))
+    end
     options = options or {}
     local copied = {} --[[@type OverlayLayerOptions]]
     for name, value in pairs(options) do
