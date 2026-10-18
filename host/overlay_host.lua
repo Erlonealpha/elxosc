@@ -52,6 +52,7 @@ local M = {}
 
 ---@alias OverlayZPolicy
 ---| 'main'
+---| 'default'
 ---| 'extension'
 ---| 'popup'
 ---| 'system'
@@ -64,7 +65,10 @@ local M = {}
 ---@alias OverlayLifecycle
 ---| 'registered'
 ---| 'mounted'
+---| 'visible'
+---| 'occluded'
 ---| 'hidden'
+---| 'removed'
 ---| 'disposed'
 
 ---@class OverlayHostOptions
@@ -79,6 +83,7 @@ local M = {}
 
 ---@class OverlayLayerOptions
 ---@field z_policy OverlayZPolicy?
+---@field surface_policy OverlayZPolicy?
 ---@field input_policy OverlayInputPolicy?
 ---@field visible boolean?
 ---@field opaque boolean?
@@ -121,8 +126,25 @@ local M = {}
 ---@field dirty OverlayLayerDirty
 ---@field cache OverlayLayerCache
 ---@field removed boolean
+---@field region_snapshot RegionSnapshot
+---@field surface_policy OverlayZPolicy
 ---@overload fun(id: string, root_widget: Widget, options: OverlayLayerOptions, sequence: integer, z: number): self
 local LayerRecord = std.class.new('LayerRecord', {})
+
+---@class RegionSnapshot : std.object
+---@field generation integer
+---@field regions PointerRegion[]
+---@field signature string
+---@field active boolean
+---@overload fun(): self
+local RegionSnapshot = std.class.new('RegionSnapshot', {})
+
+function RegionSnapshot:__init()
+    self.generation = 0
+    self.regions = {}
+    self.signature = ''
+    self.active = false
+end
 
 ---@param id string
 ---@param root_widget Widget
@@ -136,6 +158,7 @@ function LayerRecord:__init(id, root_widget, options, sequence, z)
     self.binds = options.binds
     self.player_store = options.player_store
     self.z_policy = options.z_policy --[[@as OverlayZPolicy]]
+    self.surface_policy = options.surface_policy or self.z_policy
     self.z = z
     self.input_policy = options.input_policy --[[@as OverlayInputPolicy]]
     self.visible = options.visible ~= false
@@ -162,6 +185,7 @@ function LayerRecord:__init(id, root_widget, options, sequence, z)
         occluded = false,
     }
     self.removed = false
+    self.region_snapshot = RegionSnapshot()
 end
 
 ---@class OverlayRegistry : std.object
@@ -375,6 +399,7 @@ local OverlayInputRouter = std.class.new('OverlayInputRouter', {})
 function OverlayInputRouter:__init(host)
     self.host = host
     self.capture_layer_id = nil
+    self._hover_layer_id = nil
 end
 
 ---@param layer LayerRecord
@@ -385,7 +410,7 @@ end
 
 ---@return LayerRecord[]
 function OverlayInputRouter:_front_to_back()
-    local records = self.host.registry:sorted()
+    local records = self.host:_front_to_back()
     local result = {}
     for index = #records, 1, -1 do
         result[#result + 1] = records[index]
@@ -421,7 +446,7 @@ function OverlayInputRouter:_contains_event_region(layer, event)
     if point == nil then
         return false
     end
-    for _, region in ipairs(layer.owner:pointer_regions()) do
+    for _, region in ipairs(self.host:_regions_for_layer(layer)) do
         if region_matches(region, event.type, point) then
             return true
         end
@@ -442,7 +467,7 @@ function OverlayInputRouter:pointer_regions()
                     layer_id = layer.id,
                 }
             end
-            for _, region in ipairs(layer.owner:pointer_regions()) do
+            for _, region in ipairs(self.host:_regions_for_layer(layer)) do
                 regions[#regions + 1] = {
                     rect = region.rect,
                     down = region.down,
@@ -512,6 +537,7 @@ end
 --- captured render node, so the host-level capture is cleared first.
 function OverlayInputRouter:clear_hover()
     self.capture_layer_id = nil
+    self._hover_layer_id = nil
     for _, layer in ipairs(self.host.registry:records()) do
         if layer.mounted then
             layer.owner:clear_hover()
@@ -575,18 +601,28 @@ function OverlayInputRouter:dispatch_pointer_result(event, point, data)
         -- window, so dropping an in-window move here leaves buttons hovered
         -- until another interactive region is entered.
         if pointer.type == 'move' then
-            self:clear_hover()
+            local previous_id = self._hover_layer_id
+            self._hover_layer_id = nil
+            if previous_id ~= nil then
+                local previous = self.host.registry:get(previous_id --[[@as string]])
+                if previous and previous.mounted then
+                    previous.owner:clear_hover()
+                end
+            end
         end
         return { handled = false, capture = false, stop_propagation = false }
     end
     ---@cast selected LayerRecord
 
     if pointer.type == 'move' then
-        for _, layer in ipairs(self.host.registry:records()) do
-            if layer ~= selected and layer.mounted then
-                layer.owner:clear_hover()
+        local previous_id = self._hover_layer_id
+        if previous_id ~= nil and previous_id ~= selected.id then
+            local previous = self.host.registry:get(previous_id --[[@as string]])
+            if previous and previous.mounted then
+                previous.owner:clear_hover()
             end
         end
+        self._hover_layer_id = selected.id
     end
 
     local result = selected.owner:dispatch_pointer_result(pointer)
@@ -615,11 +651,14 @@ end
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
 ---@field _shutdown boolean
+---@field _order_cache LayerRecord[]?
+---@field _order_dirty boolean
 ---@overload fun(options: OverlayHostOptions?): self
 local OverlayHost = std.class.new('OverlayHost', {})
 
 local Z_POLICIES = {
     main = 100,
+    default = 100,
     extension = 200,
     popup = 300,
     system = 1000,
@@ -668,7 +707,15 @@ local function normalize_layer_options(options, defaults)
         raise(std.ValueError('overlay layers accept z_policy, not arbitrary z'))
     end
     local result = {}
-    result.z_policy = validate_z_policy(options.z_policy or (defaults and defaults.z_policy) or 'main')
+    local requested_policy = options.surface_policy or options.z_policy
+        or (defaults and (defaults.surface_policy or defaults.z_policy)) or 'main'
+    if requested_policy == 'default' then
+        result.surface_policy = 'default'
+        requested_policy = 'main'
+    else
+        result.surface_policy = requested_policy
+    end
+    result.z_policy = validate_z_policy(requested_policy)
     result.input_policy = validate_input_policy(
         options.input_policy or (defaults and defaults.input_policy) or 'passive')
     result.visible = options.visible
@@ -745,6 +792,8 @@ function OverlayHost:__init(options)
     self.clock = MpFrameClock(config.delay)
     self.scheduler = Scheduler(self.clock)
     self.registry = OverlayRegistry()
+    self._order_cache = nil
+    self._order_dirty = true
     self.input_router = OverlayInputRouter(self)
     self._input_app = {
         display = self.display,
@@ -774,6 +823,66 @@ function OverlayHost:__init(options)
     self:_update_display()
     self:_update_delay()
     self.input = MpInput(self._input_app --[[@as App]])
+end
+
+-- Return a stable back-to-front order.  The router reverses this cached list
+-- when it needs to hit-test from the front; pointer moves never sort again.
+---@return LayerRecord[]
+function OverlayHost:_front_to_back()
+    if self._order_cache == nil or self._order_dirty then
+        local sorted = self.registry:sorted()
+        self._order_cache = sorted
+        self._order_dirty = false
+    end
+    return self._order_cache
+end
+
+function OverlayHost:_invalidate_order()
+    self._order_dirty = true
+end
+
+---@param layer LayerRecord
+function OverlayHost:_invalidate_regions(layer)
+    layer.dirty.input = true
+    layer.region_snapshot.active = false
+end
+
+---@param layer LayerRecord
+---@return PointerRegion[]
+function OverlayHost:_regions_for_layer(layer)
+    if layer.dirty.input then
+        if layer.mounted and layer.visible and not layer.removed then
+            local regions = layer.owner:pointer_regions()
+            local snapshot = layer.region_snapshot
+            snapshot.generation = snapshot.generation + 1
+            snapshot.regions = {}
+            for index, region in ipairs(regions) do
+                snapshot.regions[index] = region
+            end
+            snapshot.signature = self:_region_signature(snapshot.regions)
+            snapshot.active = true
+        else
+            layer.region_snapshot.regions = {}
+            layer.region_snapshot.signature = ''
+            layer.region_snapshot.active = false
+        end
+        layer.dirty.input = false
+    end
+    return layer.region_snapshot.regions
+end
+
+---@param regions PointerRegion[]
+---@return string
+function OverlayHost:_region_signature(regions)
+    local values = {}
+    for _, region in ipairs(regions) do
+        local rect = region.rect
+        values[#values + 1] = string.format('%g,%g,%g,%g:%d:%d:%s',
+            rect.left, rect.top, rect.right, rect.bottom,
+            region.down and 1 or 0, region.wheel and 1 or 0,
+            tostring(region.node))
+    end
+    return table.concat(values, ';')
 end
 
 ---@param root_widget Widget
@@ -836,6 +945,7 @@ function OverlayHost:_update_display()
             if layer.mounted and layer.binding then
                 layer.binding:set_root_widget(self:_wrap_root(
                     layer.root_widget, layer.player_store))
+                self:_invalidate_regions(layer)
             end
         end
     end
@@ -845,6 +955,7 @@ function OverlayHost:_update_display()
             layer.owner:set_viewport(viewport)
             layer.dirty.layout = true
             layer.dirty.paint = true
+            layer.dirty.input = true
         end
     end
     if self.input then
@@ -898,6 +1009,10 @@ function OverlayHost:_wire_layer(layer)
         layer.dirty.paint = layer.owner:needs_paint()
         self:request_frame()
     end
+    layer.owner.on_input_dirty = function()
+        self:_invalidate_regions(layer)
+        self:request_frame()
+    end
 end
 
 ---@param layer LayerRecord
@@ -913,16 +1028,18 @@ function OverlayHost:_mount_layer(layer)
         self.scheduler)
     layer.binding.on_dirty = function()
         layer.dirty.build = true
+        self:_invalidate_regions(layer)
         self:request_frame()
     end
     if self.display.initialized then
         layer.owner:set_viewport(Constraints.tight(self.display.width, self.display.height))
     end
     layer.mounted = true
-    layer.lifecycle = layer.visible and 'mounted' or 'hidden'
+    layer.lifecycle = layer.visible and 'visible' or 'hidden'
     layer.dirty.build = true
     layer.dirty.layout = true
     layer.dirty.paint = true
+    layer.dirty.input = true
 end
 
 ---@param layer LayerRecord
@@ -936,9 +1053,12 @@ function OverlayHost:_dispose_layer_binding(layer)
     layer.binding = nil
     layer.mounted = false
     layer.owner.on_dirty = nil
+    layer.owner.on_input_dirty = nil
     layer.dirty.build = false
     layer.dirty.layout = false
     layer.dirty.paint = false
+    layer.dirty.input = true
+    layer.region_snapshot.active = false
 end
 
 ---@param layer LayerRecord
@@ -978,6 +1098,7 @@ function OverlayHost:_paint_layer(layer, occluded)
             layer.owner:mark_needs_paint()
         end
     end
+    layer.lifecycle = occluded and 'occluded' or 'visible'
     if occluded then
         if layer.cache.ass_data ~= '' then
             self:_present_empty(layer, true)
@@ -1036,9 +1157,13 @@ function OverlayHost:render(dt, time)
     end
     for _, layer in ipairs(self.registry:records()) do
         if layer.mounted and layer.visible then
+            local needs_layout = layer.owner:needs_layout()
             layer.owner:layout()
             layer.dirty.layout = layer.owner:needs_layout()
             layer.dirty.paint = layer.owner:needs_paint()
+            if needs_layout then
+                layer.dirty.input = true
+            end
         end
     end
     self.input:update_regions()
@@ -1068,6 +1193,7 @@ function OverlayHost:create(id, root_widget, options)
     layer.presenter = mpv_app.AssPresenter(layer.z)
     layer.ass_presenter = layer.presenter
     self.registry:add(layer)
+    self:_invalidate_order()
     self:_mount_layer(layer)
     if not layer.visible then
         if not layer.keep_alive then
@@ -1094,6 +1220,7 @@ function OverlayHost:update(id, root_widget, options)
     end
     local config = normalize_layer_options(options, {
         z_policy = layer.z_policy,
+        surface_policy = layer.surface_policy,
         input_policy = layer.input_policy,
         visible = layer.visible,
         opaque = layer.opaque,
@@ -1115,7 +1242,9 @@ function OverlayHost:update(id, root_widget, options)
         end
     end
     layer.z_policy = config.z_policy --[[@as OverlayZPolicy]]
+    layer.surface_policy = config.surface_policy
     layer.z = Z_POLICIES[layer.z_policy]
+    self:_invalidate_order()
     if layer.presenter.overlay.z ~= layer.z then
         layer.presenter.overlay.z = layer.z
         layer.presenter.overlay:update()
@@ -1161,6 +1290,7 @@ function OverlayHost:set_input_policy(id, policy)
         layer.owner:clear_hover()
     end
     layer.input_policy = policy
+    self:_invalidate_regions(layer)
     self.input:update_regions()
     self:request_frame()
     return true
@@ -1178,10 +1308,11 @@ function OverlayHost:hide(id)
         layer.owner:clear_hover()
     end
     layer.visible = false
+    layer.lifecycle = 'hidden'
+    self:_invalidate_regions(layer)
     if not layer.keep_alive then
         self:_dispose_layer_binding(layer)
     end
-    layer.lifecycle = 'hidden'
     self:_clear_output(layer)
     self.input:update_regions()
     self:request_frame()
@@ -1196,13 +1327,14 @@ function OverlayHost:show(id)
         return false
     end
     layer.visible = true
+    self:_invalidate_regions(layer)
     if not layer.mounted then
         self:_mount_layer(layer)
     else
         layer.owner:mark_needs_paint()
         layer.dirty.paint = true
     end
-    layer.lifecycle = 'mounted'
+    layer.lifecycle = 'visible'
     self.input:update_regions()
     self:request_frame()
     return true
@@ -1220,6 +1352,7 @@ function OverlayHost:remove(id)
         layer.owner:clear_hover()
     end
     layer.visible = false
+    self:_invalidate_regions(layer)
     self:_clear_output(layer)
     self.input:update_regions()
     self:_dispose_layer_binding(layer)
@@ -1227,8 +1360,10 @@ function OverlayHost:remove(id)
     layer.presenter:remove()
     layer.mounted = false
     layer.removed = true
-    layer.lifecycle = 'disposed'
+    layer.lifecycle = 'removed'
     self.registry:remove(id)
+    self:_invalidate_order()
+    layer.lifecycle = 'disposed'
     self.input:update_regions()
     self:request_frame()
     return true
@@ -1255,6 +1390,7 @@ function OverlayHost:shutdown()
         self:_clear_output(layer)
         self:_dispose_layer_binding(layer)
         layer.owner.on_dirty = nil
+        layer.owner.on_input_dirty = nil
         layer.presenter:remove()
         layer.visible = false
         layer.removed = true
@@ -1272,7 +1408,60 @@ function OverlayHost:shutdown()
     return true
 end
 
+-- PresentationHost vocabulary.  The legacy layer methods remain available for
+-- existing host callers, while the named surface API keeps the logical
+-- default/extension/popup/system policies separate from physical z values.
+---@param id string
+---@param root_widget Widget
+---@param options OverlayLayerOptions?
+---@return LayerRecord
+function OverlayHost:create_surface(id, root_widget, options)
+    options = options or {}
+    local copied = {} --[[@type OverlayLayerOptions]]
+    for name, value in pairs(options) do
+        copied[name] = value
+    end
+    if copied.surface_policy == nil and copied.z_policy == nil then
+        copied.surface_policy = id == 'default' and 'default' or id
+    end
+    return self:create(id, root_widget, copied)
+end
+
+---@param id string
+---@param root_widget Widget
+---@param options OverlayLayerOptions?
+---@return LayerRecord?
+function OverlayHost:update_surface(id, root_widget, options)
+    return self:update(id, root_widget, options)
+end
+
+---@param id string
+---@return LayerRecord?
+function OverlayHost:get_surface(id)
+    return self.registry:get(id)
+end
+
+---@param id string
+---@return boolean
+function OverlayHost:hide_surface(id)
+    return self:hide(id)
+end
+
+---@param id string
+---@return boolean
+function OverlayHost:show_surface(id)
+    return self:show(id)
+end
+
+---@param id string
+---@return boolean
+function OverlayHost:remove_surface(id)
+    return self:remove(id)
+end
+
 M.LayerRecord = LayerRecord
+M.PresentationSurface = LayerRecord
+M.RegionSnapshot = RegionSnapshot
 M.OverlayRegistry = OverlayRegistry
 M.OverlayDeclaration = OverlayDeclaration
 M.OverlayDeclarationRegistry = OverlayDeclarationRegistry
@@ -1280,6 +1469,7 @@ M.OverlayInputRouter = OverlayInputRouter
 M.OverlayHost = OverlayHost
 M.Z_POLICIES = {
     main = Z_POLICIES.main,
+    default = Z_POLICIES.default,
     extension = Z_POLICIES.extension,
     popup = Z_POLICIES.popup,
     system = Z_POLICIES.system,

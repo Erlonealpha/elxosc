@@ -40,6 +40,7 @@ local files = {
     'test_host_player_context',
     'test_host_app',
     'test_overlay_host',
+    'test_presentation_host',
     'test_main_layout',
     'test_pages',
     'test_navigation',

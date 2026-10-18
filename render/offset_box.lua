@@ -42,6 +42,7 @@ function RenderOffsetBox:set_offset(offset)
     end
     self.offset = offset
     self:mark_needs_paint()
+    self:mark_needs_input()
 end
 
 ---@param child_offset Offset

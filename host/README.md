@@ -9,6 +9,8 @@ outside the reusable layers.
 - `mpv_app.lua` — `App`, `MpFrameClock`, `AssPresenter`, and the frame loop.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
 - `overlay_host.lua` — shared-clock host layers, registry, lifecycle, and input routing.
+- `presentation_host.lua` — `PresentationHost`/`PresentationSurface` vocabulary,
+  logical `PresentationPlan` materialization, and Define declaration adapter.
 - `view.lua` — a lightweight layer handle that mounts raw app content into an existing
   `OverlayHost` without creating another frame or input pipeline.
 - `mpv_define.lua` — script-message Define transport and host module facade.
@@ -35,8 +37,11 @@ DefaultTextStyle → DefaultApp` chain. The `player` Define module exposes only 
 re-run Define source. Property observers and Define `mp.on_prop` subscriptions return
 disposable handles and must be released on shutdown or extension disposal.
 
-`OverlayHost` owns one `MpFrameClock`, `Scheduler`, and `MpInput` for named
-presentation layers. `create`, `update`, `hide`, `show`, `remove`,
+`PresentationHost` (implemented by the shared `OverlayHost` owner) owns one
+`MpFrameClock`, `Scheduler`, and `MpInput` for named presentation surfaces.
+`create_surface`, `update_surface`, `hide_surface`, `show_surface`, and
+`remove_surface` manage `default`, `extension`, `popup`, and `system` surfaces.
+The older `create`, `update`, `hide`, `show`, `remove`,
 `set_input_policy`, and `shutdown`
 manage `LayerRecord` trees. A layer chooses a named `z_policy` (`main`,
 `extension`, `popup`, or `system`) rather than an arbitrary z value, and an
@@ -46,6 +51,11 @@ while `keep_alive = false` unmounts it. `OverlayInputRouter` binds capture to a
 layer and routes visible input from higher z to lower z, with later registration
 winning ties. Policy transitions clear hover/capture without remounting the layer;
 retained hidden layers clear output, hover, capture, and input regions.
+
+Each surface owns a `RegionSnapshot`. The central router caches surface order and
+root-space regions; normal mouse movement does not sort layers, recursively walk
+render trees, or rebuild mpv sections. Layout, widget rebuilds, paint-only input
+transforms, visibility, and policy changes invalidate the snapshot explicitly.
 
 `OverlayHost` may forward pointer move/leave notifications to a host-independent
 `ShellVisibilityController`. These callbacks are observational only: they do not

@@ -91,6 +91,7 @@ end
 ---@field root RenderObject?
 ---@field viewport Constraints
 ---@field on_dirty fun()?
+---@field on_input_dirty fun()?
 ---@overload fun(root: RenderObject?): self
 local RenderOwner = std.class.new('RenderOwner', {})
 
@@ -100,6 +101,7 @@ function RenderOwner:__init(root)
     -- default `BoxConstraints()`), not a tightly infinite one.
     self.viewport = Constraints.unbounded()
     self.on_dirty = nil
+    self.on_input_dirty = nil
     self._needs_layout = false
     self._needs_paint = false
     ---@type table<RenderObject, true>
@@ -145,8 +147,20 @@ end
 function RenderOwner:mark_needs_layout()
     self._needs_layout = true
     self._needs_paint = true
+    if self.on_input_dirty then
+        self.on_input_dirty()
+    end
     if self.on_dirty then
         self.on_dirty()
+    end
+end
+
+-- Input regions are a separate cache invalidation category from paint.  A
+-- transform or clip can change hit testing without changing logical layout;
+-- hosts use this hook to rebuild their RegionSnapshot exactly when needed.
+function RenderOwner:mark_needs_input()
+    if self.on_input_dirty then
+        self.on_input_dirty()
     end
 end
 

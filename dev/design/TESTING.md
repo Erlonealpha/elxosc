@@ -13,9 +13,8 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前工作树基线（2026-10-19）：**1686 Lua checks passed**、EmmyLua
-**No issues found**、real-host **10 passed, 1 failed**；失败项由当前工作树中
-`main.lua` 的 intentional `tmp_enable = false` guard 使脚本提前返回。测试数量变化时，
+当前工作树基线（2026-10-19）：**1713 Lua checks passed**、EmmyLua
+**No issues found**、real-host **12 passed**。测试数量变化时，
 应在本文件和主设计文档同步更新。
 
 ## Lua suite
@@ -29,6 +28,8 @@ runner。测试按层覆盖：
 - widget：Widget/Element 复用、State rebuild、聚合 identity、控件行为；
 - libs/Define：沙箱、模块、scope 首次 payload、bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；
+- presentation host：named surface policy、独立 presenter、logical plan materialization、
+  RegionSnapshot 复用/失效和 Define declaration adapter；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
 
 聚合模块必须和直接模块返回同一类对象；新增公共 API 时要有加载测试，而非只测
@@ -61,7 +62,8 @@ runner。测试按层覆盖：
   controller pointer move/leave、State 复用和 subscription dispose。
 - Stage 5 `test_overlay.lua` 覆盖 Theatre 的 Main→Extension→Popup 顺序、opaque/input
   独立性、maintain-state lifecycle adapter、PopupRoute barrier/content 配对和 plan
-  generation；物理 presentation 仍由后续 host/real-host 回归覆盖。
+  generation；Stage 6~8 的物理 presentation、RegionSnapshot 和 Define adapter 由
+  `test_presentation_host.lua` 与 `test/real_host/test_presentation_host.py` 覆盖。
 
 ## EmmyLua
 

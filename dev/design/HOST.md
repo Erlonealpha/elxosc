@@ -103,20 +103,26 @@ identity 的能力。`mp.on_prop` 也返回 disposable observer，扩展必须�
 
 ## 多层 overlay
 
-当前 `main.lua` 使用 host-level `OverlayHost/OverlayRegistry` 管理播放器主 layer 和
-Define 声明的扩展 layer。每个 layer 拥有独立 root、Canvas、RenderOwner、presenter、
+当前 `main.lua` 使用 `PresentationHost`（由共享 `OverlayHost` owner 实现）和
+`PresentationSurface` 管理播放器主 surface 和 Define 声明的扩展 surface。每个 surface 拥有独立 root、Canvas、RenderOwner、presenter、
 visible、z、dirty/cache 和 input policy；所有 layer 共享一个 `MpFrameClock`、
 `Scheduler` 和 `MpInput`，避免重复 timer、observer 和 input section 所有权。
 
-扩展只能通过 Define 的 `overlay.add` 声明 layer，宿主在 Define seal 后一次性组装；
-扩展不能取得 OverlayHost、RenderOwner 或 presenter。z 使用 `main`、`extension`、
-`popup`、`system` 命名 policy，不接受任意数值；较高 `overlay.z` 视觉上在前，同 z
+扩展只能通过 Define 的 `overlay.add` 声明内容，宿主在 Define seal 后转换为
+logical `PresentationPlan` 并一次性 materialize；扩展不能取得 PresentationHost、
+RenderOwner 或 presenter。逻辑 surface 使用 `default`、`extension`、`popup`、
+`system`，host 内部映射到 `main`、`extension`、`popup`、`system` policy，不接受任意数值；较高 `overlay.z` 视觉上在前，同 z
 用后注册顺序作为 tie-breaker。z 只影响呈现，不影响 Widget/Pages/Define 优先级。
 
 overlay 的创建、更新、移除、分辨率变化和隐藏都必须可重复，ASS 仍是静态逐帧输出。
 输入由中央 router 从高 z 到低 z 选择第一个 interactive layer；passive layer 不
 吞背景输入，exclusive layer 明确阻断下层。capture 始终绑定 layer，隐藏、root swap、
 移除和 shutdown 时取消并清理。
+
+每个 surface 持有 root-space `RegionSnapshot`。普通 mouse move 只读取缓存的 surface
+顺序和区域，不重新排序、递归遍历 RenderObject 或重建 mpv sections；layout、Widget
+rebuild、paint-only transform/clip、visibility 和 policy 变化通过独立 input dirty
+通知使 snapshot 失效。
 
 ## Shell 输入与可见性
 

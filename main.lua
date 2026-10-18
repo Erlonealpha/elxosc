@@ -17,7 +17,7 @@ local mp = require 'mp'
 require 'elxlib_load' -- sets up elxlibs.*
 
 local mpv_define = require 'host.mpv_define'
-local overlay_host = require 'host.overlay_host'
+local presentation_host = require 'host.presentation_host'
 local mpv_player_context = require 'host.mpv_player_context'
 local player_context = require 'widget.player_context'
 local demo_mod = require 'demo'
@@ -29,7 +29,7 @@ local geometry = require 'foundation.geometry'
 local text_style = require 'text.text_style'
 
 local MpDefine = mpv_define.MpDefine
-local OverlayHost = overlay_host.OverlayHost
+local PresentationHost = presentation_host.PresentationHost
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local PlayerStore = player_context.PlayerStore
 local Demo = demo_mod.Demo
@@ -154,14 +154,14 @@ local function shell_root(scaffold)
     })
 end
 
-local host = OverlayHost({
+local host = PresentationHost({
     player_store = player_store,
     player_context = player_updates,
     on_pointer_move = function() shell_controller:pointer_move() end,
     on_pointer_leave = function() shell_controller:pointer_leave() end,
 })
-host:create('main', shell_root(PlayerScaffold({ middle_child = Demo({ compact = true }) })), {
-    z_policy = 'main',
+host:create_surface('default', shell_root(PlayerScaffold({ middle_child = Demo({ compact = true }) })), {
+    surface_policy = 'default',
     input_policy = 'interactive',
     player_store = player_store,
 })
@@ -172,8 +172,8 @@ local function remount()
     if shutting_down then
         return
     end
-    host:update('main', shell_root(define:build_root(Demo({ compact = true }))), {
-        z_policy = 'main',
+    host:update_surface('default', shell_root(define:build_root(Demo({ compact = true }))), {
+        surface_policy = 'default',
         input_policy = 'interactive',
         player_store = player_store,
     })

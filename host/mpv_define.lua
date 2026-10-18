@@ -293,8 +293,11 @@ end
 --- Freeze extension overlay declarations and hand them to the host-owned layer
 --- manager. The sandbox never receives the host or any presenter directly.
 ---@param host OverlayHost
----@return LayerRecord[]
+---@return LayerRecord[]|table<string, LayerRecord>
 function MpDefine:mount_overlays(host)
+    if type(host.mount_declarations_as_plan) == 'function' then
+        return host:mount_declarations_as_plan(self.overlays:freeze())
+    end
     return host:mount_declarations(self.overlays:freeze())
 end
 

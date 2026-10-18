@@ -111,15 +111,16 @@ host-level overlay layer。
 
 ## 当前验证基线
 
-2026-10-19 的当前工作树基线为 **1686 Lua checks**、EmmyLua
-**No issues found**、real-host **10 passed, 1 failed**；失败项由当前工作树中
-`main.lua` 的 intentional `tmp_enable = false` guard 使脚本提前返回。命令和测试职责以
+2026-10-19 的当前工作树基线为 **1713 Lua checks**、EmmyLua
+**No issues found**、real-host **12 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 
 6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，
 State 支持 `did_change_dependencies`，并对 init/dispose 的 listening lookup 做边界
-诊断。Stage 5 的 logical Overlay core 已实现；物理 presentation 仍遵守
-`PresentationHost`/surface 的后续阶段边界。
+诊断。Stage 5 的 logical Overlay core、Stage 6 的 named PresentationHost/Surface
+和多 presenter plan materialization、Stage 7 的 RegionSnapshot/cache invalidation，
+以及 Stage 8 的 Define declaration adapter 和 real-host fixture 已实现。旧
+`OverlayHost`/`App` 名称仍作为兼容层保留，避免在新物理管线完成验证前破坏既有 host API。
 
 ## 变更决策规则
 

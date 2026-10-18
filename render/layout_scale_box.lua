@@ -146,6 +146,7 @@ function RenderLayoutScaleBox:set_alignment(alignment)
     end
     self.alignment = alignment
     self:mark_needs_paint()
+    self:mark_needs_input()
 end
 
 ---@param clip boolean
@@ -158,6 +159,7 @@ function RenderLayoutScaleBox:set_clip(clip)
     end
     self.clip = clip
     self:mark_needs_paint()
+    self:mark_needs_input()
 end
 
 ---@param constraints Constraints

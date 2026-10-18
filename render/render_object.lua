@@ -418,6 +418,15 @@ function RenderObject:mark_needs_paint()
     end
 end
 
+-- Mark only the root-space pointer mapping dirty.  Paint-only transforms call
+-- this instead of forcing a relayout; the owner remains responsible for
+-- scheduling the shared frame.
+function RenderObject:mark_needs_input()
+    if self.owner then
+        self.owner:mark_needs_input()
+    end
+end
+
 M.RenderObject = RenderObject
 
 return M
