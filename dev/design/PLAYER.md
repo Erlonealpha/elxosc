@@ -31,6 +31,12 @@ Root
 `Pages` API。下一阶段先把当前固定 region id 迁移为 Pages 的明确契约，再考虑页面
 列表和导航；不自动引入 Navigator。
 
+应用 Widget 树由 `MpvApp → MaterialApp → WidgetsApp` 建立 ambient 环境，并在其下
+组合 `DefaultApp({ main, extension, popup })`。`DefaultApp` 的三个字段是同一 Widget
+树内的声明式 child，按 Main、Extension、Popup 顺序绘制；它不等同于 host-level
+overlay layer。需要独立 presenter、z-order、visibility、input policy 或 pointer
+capture 的内容继续由 `OverlayHost` 管理，不能通过 `DefaultApp` 绕过 host layer 契约。
+
 ## Define 是扩展唯一入口
 
 Define 是用户扩展向播放器提供内容的唯一入口。扩展通过 Define 传入 sandboxed

@@ -27,6 +27,10 @@ local text_layout = require 'text.text_layout'
 local binding_mod = require 'widget.binding'
 local mpv_input = require 'host.mpv_input'
 local player_context = require 'widget.player_context'
+local widget_app = require 'widget.app'
+local theme_mod = require 'widget.theme'
+local display_scope_mod = require 'widget.display_scope'
+local text_style_mod = require 'text.text_style'
 
 local Constraints = constraints_mod.Constraints
 local FrameClock = frame_clock.FrameClock
@@ -36,7 +40,11 @@ local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetBinding = binding_mod.WidgetBinding
 local MpInput = mpv_input.MpInput
-local PlayerScope = player_context.PlayerScope
+local MpvApp = widget_app.MpvApp
+local ThemeData = theme_mod.ThemeData
+local DisplaySnapshot = display_scope_mod.DisplaySnapshot
+local TextStyle = text_style_mod.TextStyle
+local PlayerStore = player_context.PlayerStore
 
 local math = math
 
@@ -154,18 +162,33 @@ end
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
----@field player_store PlayerStore?
+---@field root_widget Widget raw application content
+---@field player_store PlayerStore
+---@field theme ThemeData
+---@field display_snapshot DisplaySnapshot
+---@field default_text_style TextStyle
 ---@field player_context MpPlayerContext?
 ---@field _shutdown boolean
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext? }?): self
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, default_text_style: TextStyle? }?): self
 local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
     options = options or {}
-    self.player_store = options.player_store
+    if type(root_widget) ~= 'table' or type(root_widget.create_element) ~= 'function' then
+        std.raise(std.TypeError('App root_widget must be a Widget'))
+    end
+    self.root_widget = root_widget
+    self.player_store = options.player_store or PlayerStore()
+    self.theme = options.theme or ThemeData()
+    self.default_text_style = options.default_text_style or TextStyle()
+    self.display_snapshot = DisplaySnapshot({
+        width = 1280,
+        height = 720,
+        initialized = false,
+    })
     self.player_context = options.player_context
     self._shutdown = false
     self._property_callbacks = {}
@@ -188,7 +211,7 @@ function App:__init(root_widget, options)
     -- the engine stand-in: `RenderText` falls back to this measurer
     text_layout.set_default(AssTextLayout())
 
-    self.binding = WidgetBinding(self:_wrap_root(root_widget), self.owner, options.binds, self.scheduler)
+    self.binding = WidgetBinding(self:_compose_root(), self.owner, options.binds, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end
@@ -199,15 +222,14 @@ function App:__init(root_widget, options)
     self.input = MpInput(self)
 end
 
----@param root_widget Widget
 ---@return Widget
-function App:_wrap_root(root_widget)
-    if self.player_store == nil then
-        return root_widget
-    end
-    return PlayerScope({
-        store = self.player_store,
-        child = root_widget,
+function App:_compose_root()
+    return MpvApp({
+        child = self.root_widget,
+        theme = self.theme,
+        player_store = self.player_store,
+        display_snapshot = self.display_snapshot,
+        default_text_style = self.default_text_style,
     })
 end
 
@@ -228,7 +250,11 @@ function App:set_root_widget(root_widget)
     if self.input then
         self.input:cancel_capture()
     end
-    self.binding:set_root_widget(self:_wrap_root(root_widget))
+    if type(root_widget) ~= 'table' or type(root_widget.create_element) ~= 'function' then
+        std.raise(std.TypeError('App root_widget must be a Widget'))
+    end
+    self.root_widget = root_widget
+    self.binding:set_root_widget(self:_compose_root())
     self:request_frame()
 end
 
@@ -301,8 +327,21 @@ function App:_update_display()
     if width <= 0 or height <= 0 then
         return
     end
+    local changed = not self.display.initialized
+        or self.display.width ~= width or self.display.height ~= height
     self.display.width, self.display.height = width, height
     self.display.initialized = true
+    if changed then
+        self.display_snapshot = self.display_snapshot:copy({
+            width = width,
+            height = height,
+            initialized = true,
+            generation = self.display_snapshot.generation + 1,
+        })
+        if self.binding then
+            self.binding:set_root_widget(self:_compose_root())
+        end
+    end
     -- The root gets tight constraints (Flutter's `RenderView` forces the
     -- application's child to exactly fill the viewport), which is what makes
     -- the doc's Example 1/2 fill the screen.

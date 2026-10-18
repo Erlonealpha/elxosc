@@ -77,6 +77,17 @@ Pages 是应用组合层，不是 Navigator，也不提供运行时 unbind、树
 mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩展自己的 State/build
 完成。
 
+## DefaultApp 与 host layer 的边界
+
+应用环境由 `MpvApp → MaterialApp → WidgetsApp` 提供；`DefaultApp` 是其下的
+host-independent Widget 组合节点，接受可选的 `main`、`extension` 和 `popup` 子节点，
+并按此顺序放入同一个 Stack。它只描述 Widget 树，不拥有 OSD presenter、z policy、
+visibility、input policy 或独立 RenderOwner。
+
+`DefaultApp` 的三个子节点不是 Define 的额外内容入口，也不替代 `OverlayHost` 的
+独立 layer。需要独立 ASS 输出、隐藏/显示、捕获或输入策略的内容仍必须通过 host-level
+layer；Pages 继续拥有播放器 Main、3×3 grid 和 `more` 的稳定区域契约。
+
 ## BuildContext、Provider 与播放器状态
 
 当前 `BuildContext` 是 `Element` 的类型别名，并支持基于精确运行时 class identity 的

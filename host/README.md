@@ -9,6 +9,8 @@ outside the reusable layers.
 - `mpv_app.lua` — `App`, `MpFrameClock`, `AssPresenter`, and the frame loop.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
 - `overlay_host.lua` — shared-clock host layers, registry, lifecycle, and input routing.
+- `view.lua` — a lightweight layer handle that mounts raw app content into an existing
+  `OverlayHost` without creating another frame or input pipeline.
 - `mpv_define.lua` — script-message Define transport and host module facade.
 - `mpv_player_context.lua` — mpv property observers bridged to `PlayerStore`.
 
@@ -27,8 +29,9 @@ The current input stage includes root-space mouse-area/section management and th
 host-level named OSD overlay layers. Overlay z-order is a presentation policy, not
 Widget or Define priority. Define remains the sole extension-content ingress.
 
-`App` accepts an optional `player_store` and wraps its root in `PlayerScope`. The
-`player` Define module exposes only `get_snapshot()` and `on_update()`; updates do not
+`App` accepts an optional `player_store` and composes its root through the
+`MpvApp → MaterialApp → WidgetsApp → Theme → PlayerScope → DisplayScope →
+DefaultTextStyle → DefaultApp` chain. The `player` Define module exposes only `get_snapshot()` and `on_update()`; updates do not
 re-run Define source. Property observers and Define `mp.on_prop` subscriptions return
 disposable handles and must be released on shutdown or extension disposal.
 

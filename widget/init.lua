@@ -14,6 +14,10 @@ local build_owner_mod = require 'widget.build_owner'
 local binding_mod = require 'widget.binding'
 local provider_mod = require 'widget.provider'
 local player_context_mod = require 'widget.player_context'
+local theme_mod = require 'widget.theme'
+local display_scope_mod = require 'widget.display_scope'
+local default_text_style_mod = require 'widget.default_text_style'
+local app_mod = require 'widget.app'
 
 local M = {}
 
@@ -26,6 +30,10 @@ for _, mod in ipairs({
     binding_mod,
     provider_mod,
     player_context_mod,
+    theme_mod,
+    display_scope_mod,
+    default_text_style_mod,
+    app_mod,
 }) do
     for name, value in pairs(mod) do
         M[name] = value

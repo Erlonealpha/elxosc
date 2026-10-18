@@ -38,6 +38,32 @@ local Demo = demo_mod.Demo
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 
+local function find_state(element, widget_class)
+    if element.widget and element.widget.__class == widget_class and element.state then
+        return element.state
+    end
+    for _, child in ipairs(element:element_children()) do
+        local state = find_state(child, widget_class)
+        if state then
+            return state
+        end
+    end
+    return nil
+end
+
+local function first_text(root)
+    if root.paragraph then
+        return root.paragraph.text
+    end
+    for _, child in ipairs(root:children()) do
+        local text = first_text(child)
+        if text then
+            return text
+        end
+    end
+    return nil
+end
+
 ---@return Widget
 local function scaffold()
     return Column({ children = { Slot('slot'), Text('body', {
@@ -312,7 +338,7 @@ F.test('set_root_widget swaps the tree', function()
     app:set_root_widget(Column({ children = { Text('one') } }))
     app.binding:flush_build()
     app.owner:layout()
-    F.eq(app.owner.root:children()[1].paragraph.text, 'one', 'root replaced')
+    F.eq(first_text(app.owner.root), 'one', 'root replaced')
 end)
 
 F.test('a set_state rebuild lands in the next frame', function()
@@ -333,15 +359,14 @@ F.test('a set_state rebuild lands in the next frame', function()
 
     local app = mpv_app.App(Column({ children = { Counter() } }))
     -- reach the live state through the element tree
-    local element = app.binding.root_element
-    local child = element:element_children()[1]
-    child.state:set_state(function()
-        child.state.value = 7
+    local child = find_state(app.binding.root_element, Counter)
+    child:set_state(function()
+        child.value = 7
     end)
 
     app.binding:flush_build()
     app.owner:layout()
-    F.eq(app.owner.root:children()[1].paragraph.text, 'v7', 'rebuilt with the new state')
+    F.eq(first_text(app.owner.root), 'v7', 'rebuilt with the new state')
 end)
 
 F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
@@ -354,12 +379,12 @@ F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
     local store = PlayerStore({ value = 1 })
     local app = mpv_app.App(Reader(), { player_store = store })
     app:render()
-    F.eq(app.owner.root.paragraph.text, 'v1', 'initial snapshot reaches the root')
+    F.eq(first_text(app.owner.root), 'v1', 'initial snapshot reaches the root')
 
     store:replace({ value = 2 })
     F.ok(#fake.timeouts > 0, 'store update schedules a frame')
     mp_stub.pump()
-    F.eq(app.owner.root.paragraph.text, 'v2', 'next frame renders the new snapshot')
+    F.eq(first_text(app.owner.root), 'v2', 'next frame renders the new snapshot')
 end)
 
 F.test('shutdown unmounts PlayerScope subscriptions', function()
@@ -372,7 +397,7 @@ F.test('shutdown unmounts PlayerScope subscriptions', function()
     local store = PlayerStore({ value = 1 })
     local app = mpv_app.App(Reader(), { player_store = store })
     app:render()
-    local scope_state = app.binding.root_element.state
+    local scope_state = find_state(app.binding.root_element, player_context.PlayerScope)
     F.ok(scope_state.subscription and scope_state.subscription:is_active(), 'scope is subscribed')
 
     fake.log['event:shutdown']()
@@ -472,7 +497,7 @@ F.test('binds are applied to a fresh scaffold and mounted', function()
     app.binding:flush_build()
     app.owner:layout()
 
-    F.eq(app.owner.root:children()[1].paragraph.text, 'bound', 'the bound widget rendered')
+    F.eq(first_text(app.owner.root), 'bound', 'the bound widget rendered')
 end)
 
 F.test('an unbound slot costs no render node', function()

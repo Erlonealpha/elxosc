@@ -18,6 +18,10 @@ local text_layout = require 'text.text_layout'
 local binding_mod = require 'widget.binding'
 local pointer_event = require 'foundation.pointer_event'
 local player_context = require 'widget.player_context'
+local widget_app = require 'widget.app'
+local theme_mod = require 'widget.theme'
+local display_scope_mod = require 'widget.display_scope'
+local text_style_mod = require 'text.text_style'
 local mpv_app = require 'host.mpv_app'
 local mpv_input = require 'host.mpv_input'
 
@@ -30,7 +34,11 @@ local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetBinding = binding_mod.WidgetBinding
 local PointerEvent = pointer_event.PointerEvent
-local PlayerScope = player_context.PlayerScope
+local MpvApp = widget_app.MpvApp
+local ThemeData = theme_mod.ThemeData
+local DisplaySnapshot = display_scope_mod.DisplaySnapshot
+local TextStyle = text_style_mod.TextStyle
+local PlayerStore = player_context.PlayerStore
 local MpInput = mpv_input.MpInput
 local raise = std.raise
 ---@type fun(value: any): OverlayZPolicy
@@ -63,6 +71,9 @@ local M = {}
 ---@field delay number?
 ---@field player_store PlayerStore?
 ---@field player_context MpPlayerContext?
+---@field theme ThemeData?
+---@field default_text_style TextStyle?
+---@field display_snapshot DisplaySnapshot?
 ---@field on_pointer_move fun()?
 ---@field on_pointer_leave fun()?
 
@@ -570,6 +581,14 @@ function OverlayInputRouter:dispatch_pointer_result(event, point, data)
     end
     ---@cast selected LayerRecord
 
+    if pointer.type == 'move' then
+        for _, layer in ipairs(self.host.registry:records()) do
+            if layer ~= selected and layer.mounted then
+                layer.owner:clear_hover()
+            end
+        end
+    end
+
     local result = selected.owner:dispatch_pointer_result(pointer)
     if pointer.type == 'down' and result.capture then
         self.capture_layer_id = selected.id
@@ -691,16 +710,38 @@ function OverlayHost:__init(options)
     end
     local config = {
         delay = options.delay,
-        player_store = options.player_store,
+        player_store = options.player_store or PlayerStore(),
         player_context = options.player_context,
     }
+    if options.theme ~= nil and not std.isinstance(options.theme, ThemeData) then
+        raise(std.TypeError('OverlayHost.theme must be a ThemeData'))
+    end
+    if options.default_text_style ~= nil
+        and not std.isinstance(options.default_text_style, TextStyle) then
+        raise(std.TypeError('OverlayHost.default_text_style must be a TextStyle'))
+    end
+    if options.display_snapshot ~= nil
+        and not std.isinstance(options.display_snapshot, DisplaySnapshot) then
+        raise(std.TypeError('OverlayHost.display_snapshot must be a DisplaySnapshot'))
+    end
     self.player_store = config.player_store
     self.player_context = config.player_context
+    self.theme = options.theme or ThemeData()
+    self.default_text_style = options.default_text_style or TextStyle()
     self.on_pointer_move = options.on_pointer_move
     self.on_pointer_leave = options.on_pointer_leave
     self._shutdown = false
     self._property_callbacks = {}
-    self.display = { width = 1280, height = 720, initialized = false }
+    self.display_snapshot = options.display_snapshot or DisplaySnapshot({
+        width = 1280,
+        height = 720,
+        initialized = false,
+    })
+    self.display = {
+        width = self.display_snapshot.width,
+        height = self.display_snapshot.height,
+        initialized = self.display_snapshot.initialized,
+    }
     self.clock = MpFrameClock(config.delay)
     self.scheduler = Scheduler(self.clock)
     self.registry = OverlayRegistry()
@@ -739,12 +780,12 @@ end
 ---@param store PlayerStore?
 ---@return Widget
 function OverlayHost:_wrap_root(root_widget, store)
-    if store == nil then
-        return root_widget
-    end
-    return PlayerScope({
-        store = store,
+    return MpvApp({
         child = root_widget,
+        theme = self.theme,
+        player_store = store or self.player_store,
+        display_snapshot = self.display_snapshot,
+        default_text_style = self.default_text_style,
     })
 end
 
@@ -780,8 +821,24 @@ function OverlayHost:_update_display()
     if width <= 0 or height <= 0 then
         return
     end
+    local changed = not self.display.initialized
+        or self.display.width ~= width or self.display.height ~= height
     self.display.width, self.display.height = width, height
     self.display.initialized = true
+    if changed then
+        self.display_snapshot = self.display_snapshot:copy({
+            width = width,
+            height = height,
+            initialized = true,
+            generation = self.display_snapshot.generation + 1,
+        })
+        for _, layer in ipairs(self.registry:records()) do
+            if layer.mounted and layer.binding then
+                layer.binding:set_root_widget(self:_wrap_root(
+                    layer.root_widget, layer.player_store))
+            end
+        end
+    end
     local viewport = Constraints.tight(width, height)
     for _, layer in ipairs(self.registry:records()) do
         if layer.mounted then

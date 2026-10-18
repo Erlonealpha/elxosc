@@ -105,10 +105,13 @@ Lua 源码。改变这些语义必须先更新本目录的设计和测试。
 提供内容。Pages 的组合布局与 host-level 多层 `osd_overlay` 分开；overlay 使用
 `overlay.z` 控制视觉层级，不改变 Widget reconciliation、bind priority 或 Define
 scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
+当前 ambient 应用壳由 `MpvApp → MaterialApp → WidgetsApp` 提供，`DefaultApp` 可在
+同一 Widget 树内按 `main`、`extension`、`popup` 顺序组合内容；它不替代独立的
+host-level overlay layer。
 
 ## 当前验证基线
 
-2026-10-16 的本地 6.4/6.5/6.6 基线为 **1514 Lua checks**、EmmyLua
+2026-10-18 的当前工作树基线为 **1564 Lua checks**、EmmyLua
 **No issues found**、real-host **11 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 

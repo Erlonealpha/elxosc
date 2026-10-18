@@ -85,6 +85,9 @@ function DefineSession:__init(options)
         self:_mod(name, data)
     end
     api['bind'] = function(id, widget, opts)
+        if self.current_define == nil then
+            raise(std.RuntimeError('define service \'bind\' used outside of a define payload'))
+        end
         self.binds:add(id, widget, opts, self.current_define)
     end
     if self.pages ~= nil then

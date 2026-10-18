@@ -33,6 +33,7 @@ local files = {
     'test_icon',
     'test_bind',
     'test_player_context',
+    'test_app_composition',
     'test_define',
     'test_dsl',
     'test_host_define',

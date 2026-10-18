@@ -19,6 +19,7 @@ local player_context = require('widget.player_context')
 local geometry = require('foundation.geometry')
 local demo_mod = require('demo')
 local player = require('player')
+local view_mod = require('host.view')
 
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
@@ -32,6 +33,33 @@ local Offset = geometry.Offset
 local OverlayHost = overlay_host.OverlayHost
 local Demo = demo_mod.Demo
 local PlayerScaffold = player.PlayerScaffold
+local View = view_mod.View
+
+local function find_state(element, widget_class)
+    if element.widget and element.widget.__class == widget_class and element.state then
+        return element.state
+    end
+    for _, child in ipairs(element:element_children()) do
+        local state = find_state(child, widget_class)
+        if state then
+            return state
+        end
+    end
+    return nil
+end
+
+local function first_text(root)
+    if root.paragraph then
+        return root.paragraph.text
+    end
+    for _, child in ipairs(root:children()) do
+        local text = first_text(child)
+        if text then
+            return text
+        end
+    end
+    return nil
+end
 
 local function text_root(value)
     return Text(value)
@@ -57,6 +85,23 @@ F.test('layers share one clock and scheduler', function()
     mp_stub.pump()
     F.ok(fake.overlays[1].data ~= nil and fake.overlays[2].data ~= nil,
         'one shared frame presents both layers')
+    host:shutdown()
+end)
+
+F.test('View updates and removes one host layer', function()
+    mp_stub.reset()
+    local host = OverlayHost()
+    local view = View(host, Text('first'), {
+        id = 'view',
+        z_policy = 'main',
+    })
+    F.eq(view.layer, host.registry:get('view'), 'View owns its host layer')
+    view:set_root_widget(Text('second'))
+    host:render()
+    F.eq(first_text(view.layer.owner.root), 'second',
+        'View replacement reaches the render tree')
+    F.ok(view:remove(), 'View removes its layer')
+    F.eq(host.registry:get('view'), nil, 'View removal deletes the layer')
     host:shutdown()
 end)
 
@@ -95,6 +140,32 @@ F.test('same z routes input to the later registered visible interactive layer', 
     fake.bindings.list[1][2]()
     F.eq(upper_clicks, 1, 'later same-z layer receives the click')
     F.eq(lower_clicks, 0, 'lower same-z layer is not selected')
+    host:shutdown()
+end)
+
+F.test('moving into an upper layer clears lower-layer hover', function()
+    mp_stub.reset()
+    local host = OverlayHost()
+    local lower = host:create('lower-hover', button_root('lower', function() end), {
+        z_policy = 'main',
+        input_policy = 'interactive',
+    })
+    local upper = host:create('upper-hover', button_root('upper', function() end), {
+        z_policy = 'popup',
+        input_policy = 'interactive',
+        visible = false,
+    })
+    host:render()
+    local lower_region = lower.owner:pointer_regions()[1]
+    local point = Offset(
+        (lower_region.rect.left + lower_region.rect.right) / 2,
+        (lower_region.rect.top + lower_region.rect.bottom) / 2)
+    host.input_router:dispatch_pointer_result('move', point)
+    F.ok(lower_region.node.hovered, 'lower layer is hovered first')
+    host:show('upper-hover')
+    host:render()
+    host.input_router:dispatch_pointer_result('move', point)
+    F.ok(not lower_region.node.hovered, 'lower hover is cleared by upper layer')
     host:shutdown()
 end)
 
@@ -321,7 +392,7 @@ F.test('hide clears output and input while retaining state by default', function
         input_policy = 'interactive',
     })
     host:render()
-    local state = layer.binding.root_element.state
+    local state = find_state(layer.binding.root_element, TestWidget)
     local output = layer.presenter.overlay
     F.ok(output.data ~= nil and #output.data > 0, 'layer initially has ASS output')
     host:hide('keep')
@@ -331,7 +402,8 @@ F.test('hide clears output and input while retaining state by default', function
     F.eq(output.data, '', 'hide clears ASS output')
     F.ok(#host.input_router:pointer_regions() == 0, 'hide removes input regions')
     host:show('keep')
-    F.ok(layer.binding.root_element.state == state, 'show restores the same State')
+    local restored_state = find_state(layer.binding.root_element, TestWidget)
+    F.ok(restored_state == state, 'show restores the same State')
     host:remove('keep')
     F.eq(disposed, 1, 'remove disposes retained State')
     F.eq(host.registry:get('keep'), nil, 'remove deletes the registry record')
@@ -402,7 +474,7 @@ F.test('update replaces the layer store and bind registry before remounting', fu
     host:render()
     F.eq(layer.binds, second_binds, 'bind registry replaced')
     F.eq(layer.player_store, second_store, 'player store replaced')
-    F.eq(layer.owner.root:children()[1].paragraph.text, 'second',
+    F.eq(first_text(layer.owner.root), 'second',
         'new bind applied to the replacement root')
     host:shutdown()
 end)
@@ -428,14 +500,15 @@ F.test('keep_alive false unmounts on hide and remounts fresh on show', function(
         visible = true,
     })
     host:render()
-    local old_state = layer.binding.root_element.state
+    local old_state = find_state(layer.binding.root_element, TestWidget)
     host:hide('non-keep')
     F.eq(layer.mounted, false, 'non-keep hide unmounts the tree')
     F.eq(disposed, 1, 'non-keep hide disposes State')
     host:show('non-keep')
     host:render()
     F.ok(layer.mounted, 'show remounts the layer')
-    F.ok(layer.binding.root_element.state ~= old_state, 'show creates fresh State')
+    local new_state = find_state(layer.binding.root_element, TestWidget)
+    F.ok(new_state ~= old_state, 'show creates fresh State')
     host:shutdown()
 end)
 

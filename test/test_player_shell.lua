@@ -182,3 +182,28 @@ F.test('Main side and bottom controls all receive input through passive overlays
     F.eq(clicks, 3, 'all Main controls receive clicks')
     binding:dispose()
 end)
+
+F.test('Shell preserves a Pages side contribution over its fallback control', function()
+    local owner = RenderOwner()
+    local controller = ShellVisibilityController()
+    local binding = WidgetBinding(PlayerShell({
+        scaffold = PlayerScaffold({
+            middle_child = Text('body'),
+            main_left = Text('page-left'),
+        }),
+        controller = controller,
+        left = Text('shell-left'),
+    }), owner)
+    owner:set_viewport(Constraints.tight(500, 300))
+    owner:layout()
+    controller:pointer_move()
+    binding:flush_build()
+    owner:layout()
+    local canvas = AssCanvas()
+    owner:mark_needs_paint()
+    owner:paint(canvas)
+    local output = canvas:text()
+    F.contains(output, 'page-left', 'Pages side contribution is retained')
+    F.ok(not output:find('shell-left', 1, true), 'fallback is not layered over a single slot')
+    binding:dispose()
+end)

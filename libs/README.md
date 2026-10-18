@@ -7,7 +7,7 @@ trees from controlled Lua sources. It must not import `mp`.
 
 - `sandbox.lua` — restricted environments and portable chunk loading.
 - `modules.lua` — data modules, scope-aware loaders, and protected names.
-- `define.lua` — Define phase machine, scopes, `import`/`mod`/`bind` builtins.
+- `define.lua` — Define phase machine, scopes, and `import`/`mod`/`bind` builtins.
 - `dsl.lua` — `new_widget`, `new_state`, and builtins assembly helpers.
 
 Define is the sole extension-content ingress and currently an initialization-time

@@ -271,12 +271,13 @@ end
 function PlayerShellState:_scaffold(visible)
     local shell = self.widget --[[@as PlayerShell]]
     local source = shell.scaffold
+    local source_main = source.main
     return PlayerScaffold({
         key = source.key,
         grid = source.grid,
         more = source.more,
-        main_left = visible and shell.left or nil,
-        main_right = visible and shell.right or nil,
+        main_left = visible and ((source_main and source_main.left) or shell.left) or nil,
+        main_right = visible and ((source_main and source_main.right) or shell.right) or nil,
         title_bar = visible and shell.title_bar or nil,
         timeline = visible and shell.timeline or nil,
         bottom = visible and shell.bottom or nil,
