@@ -18,6 +18,7 @@ local theme_mod = require 'widget.theme'
 local display_scope_mod = require 'widget.display_scope'
 local default_text_style_mod = require 'widget.default_text_style'
 local app_mod = require 'widget.app'
+local autohide_mod = require 'widget.autohide'
 
 local M = {}
 
@@ -34,6 +35,7 @@ for _, mod in ipairs({
     display_scope_mod,
     default_text_style_mod,
     app_mod,
+    autohide_mod,
 }) do
     for name, value in pairs(mod) do
         M[name] = value

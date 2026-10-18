@@ -25,7 +25,6 @@ local M = {}
 ---@field key any?
 
 ---@class _MainOptions
----@field grid Widget
 ---@field left Widget?
 ---@field right Widget?
 ---@field title_bar Widget?
@@ -49,6 +48,7 @@ local M = {}
 ---@field bottom Widget?
 ---@field more Widget?
 ---@field more_children Widget[]?
+---@field extension Widget?
 ---@field key any?
 
 local legacy_slot_ids = {
@@ -127,15 +127,15 @@ local function build_grid(region_widgets, middle_child, legacy_ids)
     })
 end
 
----@class Grid : StatelessWidget
+---@class ExtensionGrid : StatelessWidget
 ---@field region_widgets table<RegionId, Widget>
 ---@field middle_child Widget?
 ---@field legacy_ids boolean
 ---@overload fun(options?: _GridOptions): self
-local Grid = std.class.new('Grid', { StatelessWidget })
+local ExtensionGrid = std.class.new('ExtensionGrid', { StatelessWidget })
 
 ---@param options? _GridOptions
-function Grid:__init(options)
+function ExtensionGrid:__init(options)
     options = options or {}
     self.key = options.key
     self.region_widgets = copy_region_widgets(options.region_widgets)
@@ -143,12 +143,11 @@ function Grid:__init(options)
     self.legacy_ids = options.legacy_ids or false
 end
 
-function Grid:build()
+function ExtensionGrid:build()
     return build_grid(self.region_widgets, self.middle_child, self.legacy_ids)
 end
 
 ---@class Main : StatelessWidget
----@field grid Widget
 ---@field left Widget?
 ---@field right Widget?
 ---@overload fun(options: _MainOptions): self
@@ -158,7 +157,6 @@ local Main = std.class.new('Main', { StatelessWidget })
 function Main:__init(options)
     options = options or {}
     self.key = options.key
-    self.grid = options.grid
     self.left = options.left
     self.right = options.right
     self.title_bar = options.title_bar or SizedBox.shrink({ id = Region.MAIN_TITLE_BAR })
@@ -177,14 +175,14 @@ function Main:build()
         cross_alignment = 'stretch',
         children = { self.timeline, self.bottom },
     }), { alignment = Offset(0.5, 1) })
-    local children = { self.grid, top_controls, bottom_controls }
+    local children = { top_controls, bottom_controls }
     if self.left then
         children[#children + 1] = Align(self.left, { alignment = Offset(0, 0.5) })
     end
     if self.right then
         children[#children + 1] = Align(self.right, { alignment = Offset(1, 0.5) })
     end
-    return Stack({ children = children })
+    return SizedBox.expand({ child = Stack({ children = children }) })
 end
 
 ---@class More : StatelessWidget
@@ -211,8 +209,43 @@ function More:build()
     })
 end
 
+---@class _ExtensionOptions
+---@field grid Widget
+---@field more Widget?
+---@field key any?
+
+---@class Extension : StatelessWidget
+---@field grid Widget
+---@field more Widget
+---@overload fun(options: _ExtensionOptions): self
+local Extension = std.class.new('Extension', { StatelessWidget })
+
+---@param options _ExtensionOptions
+function Extension:__init(options)
+    options = options or {}
+    self.key = options.key
+    self.grid = options.grid
+    self.more = options.more or More()
+end
+
+function Extension:child_widgets()
+    return { self.grid, self.more }
+end
+
+function Extension:build()
+    return SizedBox.expand({
+        child = Stack({
+            children = {
+                self.grid,
+                self.more,
+            },
+        }),
+    })
+end
+
 ---@class PlayerScaffold : StatelessWidget
 ---@field main Widget
+---@field extension Widget
 ---@field grid Widget
 ---@field more Widget
 ---@overload fun(options?: _PlayerScaffoldOptions): self
@@ -223,13 +256,12 @@ function PlayerScaffold:__init(options)
     options = options or {}
     self.key = options.key
 
-    self.grid = options.grid or Grid({
+    self.grid = options.grid or ExtensionGrid({
         region_widgets = options.region_widgets,
         middle_child = options.middle_child,
         legacy_ids = true,
     })
     self.main = options.main or Main({
-        grid = self.grid,
         left = options.main_left,
         right = options.main_right,
         title_bar = options.title_bar,
@@ -237,15 +269,23 @@ function PlayerScaffold:__init(options)
         bottom = options.bottom,
     })
     self.more = options.more or More({ children = options.more_children })
+    self.extension = options.extension or Extension({
+        grid = self.grid,
+        more = self.more,
+    })
 end
 
 function PlayerScaffold:build()
     return Stack({
         children = {
             self.main,
-            self.more,
+            self.extension,
         },
     })
+end
+
+function PlayerScaffold:child_widgets()
+    return { self.main, self.extension }
 end
 
 --- Build the legacy grid directly. The compatibility facade uses this to keep
@@ -264,9 +304,11 @@ function M.build_scaffold(options)
     return PlayerScaffold(options)
 end
 
-M.Grid = Grid
+M.ExtensionGrid = ExtensionGrid
+M.Grid = ExtensionGrid
 M.Main = Main
 M.More = More
+M.Extension = Extension
 M.PlayerScaffold = PlayerScaffold
 M.LEGACY_SLOT = legacy_slot_ids
 

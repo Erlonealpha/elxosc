@@ -15,6 +15,8 @@ local basic_widgets = require('widget.widgets.basic')
 local player = require('player')
 local scaffold_mod = require('player.scaffold')
 local shell_mod = require('player.shell')
+local autohide_mod = require('widget.autohide')
+local widget_api = require('widget')
 local ass_canvas = require('backends.ass_canvas')
 
 local Constraints = constraints_mod.Constraints
@@ -29,6 +31,9 @@ local PlayerScaffold = scaffold_mod.PlayerScaffold
 local ShellConfig = shell_mod.ShellConfig
 local ShellVisibilityController = shell_mod.ShellVisibilityController
 local PlayerShell = shell_mod.PlayerShell
+local AutoHide = autohide_mod.AutoHide
+local AutoHideState = autohide_mod.AutoHideState
+local AutoHideController = autohide_mod.AutoHideController
 local AssCanvas = ass_canvas.AssCanvas
 
 local FixedLayout = std.class.new('test.PlayerShellLayout', { text_layout.TextLayout })
@@ -77,6 +82,36 @@ F.test('aggregate and direct Shell exports preserve identity', function()
     F.eq(player.ShellConfig, ShellConfig, 'ShellConfig identity')
     F.eq(player.ShellVisibilityController, ShellVisibilityController,
         'visibility controller identity')
+    F.eq(widget_api.AutoHide, AutoHide, 'AutoHide identity')
+    F.eq(player.AutoHide, AutoHide, 'player AutoHide identity')
+    F.eq(player.AutoHideState, AutoHideState, 'AutoHideState identity')
+end)
+
+F.test('AutoHide owns visibility independently of PlayerShell', function()
+    local controller = AutoHideController()
+    local store = PlayerStore({ controls_visibility = 'auto' })
+    local button = Button({ label = 'auto-hide-control', on_click = function() end })
+    local owner = RenderOwner()
+    local binding = WidgetBinding(PlayerScope({
+        store = store,
+        child = AutoHide({ child = button, controller = controller }),
+    }), owner)
+    owner:set_viewport(Constraints.tight(500, 300))
+    owner:layout()
+    local auto_hide_element = binding.root_element.child.child
+    local state = auto_hide_element.state
+    F.eq(state.__class, AutoHideState, 'AutoHide has the shared visibility State')
+    F.eq(#owner:pointer_regions(), 0, 'AutoHide starts hidden in auto mode')
+
+    controller:pointer_move()
+    refresh(owner, binding)
+    F.ok(#owner:pointer_regions() > 0, 'AutoHide shows its child on pointer move')
+    F.ok(not auto_hide_element.dirty, 'the rebuild is flushed')
+    controller:pointer_move()
+    F.ok(not auto_hide_element.dirty, 'repeated move does not schedule another rebuild')
+
+    binding:dispose()
+    F.eq(#controller._subscriptions, 0, 'AutoHide disposes its controller subscription')
 end)
 
 F.test('ShellConfig validates closed visibility modes and defaults to auto', function()

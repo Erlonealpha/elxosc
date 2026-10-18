@@ -23,6 +23,8 @@ local Region = region_mod.Region
 local PageContribution = registry_mod.PageContribution
 local PagesRegistry = registry_mod.PagesRegistry
 local PlayerScaffold = scaffold_mod.PlayerScaffold
+local ExtensionGrid = scaffold_mod.ExtensionGrid
+local Extension = scaffold_mod.Extension
 
 local FixedLayout = std.class.new('test.pages.FixedLayout', { text_layout.TextLayout })
 function FixedLayout:line_width(line, style)
@@ -39,9 +41,9 @@ local function mount(widget)
 end
 
 local function grid_render(owner)
-    local shell = owner.root
-    local main = shell:children()[1]
-    return main:children()[1]
+    local root = owner.root
+    local extension = root:children()[2]
+    return extension:children()[1]:children()[1]
 end
 
 F.section('pages: public regions and operations')
@@ -50,6 +52,9 @@ F.test('the aggregate and direct modules share class identities', function()
     F.eq(player.PagesRegistry, PagesRegistry, 'registry identity')
     F.eq(player.PageContribution, PageContribution, 'contribution identity')
     F.eq(player.PlayerScaffold, PlayerScaffold, 'scaffold identity')
+    F.eq(player.ExtensionGrid, ExtensionGrid, 'ExtensionGrid identity')
+    F.eq(player.Grid, ExtensionGrid, 'Grid compatibility identity')
+    F.eq(player.Extension, Extension, 'Extension identity')
     F.eq(#region_mod.grid_ids(), 9, 'nine stable grid ids')
 end)
 
@@ -181,8 +186,13 @@ F.test('the scaffold keeps the 3x3 geometry and default middle fallback', functi
     local root = pages:assemble({ middle_child = middle })
     F.eq(root.__class, PlayerScaffold, 'root class')
     F.eq(root.main.__class, scaffold_mod.Main, 'main class')
-    F.eq(root.grid.__class, scaffold_mod.Grid, 'grid class')
+    F.eq(root.main.grid, nil, 'Main does not own the Extension grid')
+    F.eq(root.grid.__class, ExtensionGrid, 'grid class')
     F.eq(root.more.__class, scaffold_mod.More, 'more class')
+    F.eq(root.extension.__class, Extension, 'extension class')
+    F.eq(root.extension.grid, root.grid, 'Extension owns the grid')
+    F.eq(root.extension.more, root.more, 'More is under Extension')
+    F.ok(root.main ~= root.extension, 'Main and Extension are siblings')
     F.eq(root.grid.middle_child, middle, 'middle fallback')
     F.eq(top_left.id, nil, 'contribution widget was not mutated')
     F.eq(middle.id, nil, 'fallback widget was not mutated')

@@ -13,9 +13,10 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前工作树基线（2026-10-18）：**1564 Lua checks passed**、EmmyLua
-**No issues found**、real-host **11 passed**。测试数量变化时，应在本文件和主设计
-文档同步更新。
+当前工作树基线（2026-10-19）：**1686 Lua checks passed**、EmmyLua
+**No issues found**、real-host **10 passed, 1 failed**；失败项由当前工作树中
+`main.lua` 的 intentional `tmp_enable = false` guard 使脚本提前返回。测试数量变化时，
+应在本文件和主设计文档同步更新。
 
 ## Lua suite
 
@@ -58,6 +59,9 @@ runner。测试按层覆盖：
 - 顶层控件 visible/hidden、auto/always/never 和 modal 输入策略。
 - `PlayerShell` 的 aggregate/direct identity、ShellConfig 边界、Provider snapshot 更新、
   controller pointer move/leave、State 复用和 subscription dispose。
+- Stage 5 `test_overlay.lua` 覆盖 Theatre 的 Main→Extension→Popup 顺序、opaque/input
+  独立性、maintain-state lifecycle adapter、PopupRoute barrier/content 配对和 plan
+  generation；物理 presentation 仍由后续 host/real-host 回归覆盖。
 
 ## EmmyLua
 

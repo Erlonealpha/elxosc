@@ -61,8 +61,9 @@ Root
     │   ├── timeline
     │   ├── bottom buttons
     │   └── left/right buttons
-    ├── 3x3 grid
-    └── more
+    └── Extension
+        ├── 3x3 grid
+        └── more
 ```
 
 Main 的固定结构由播放器拥有；扩展通过 Define 暴露的 Pages/region 接口提供内容，
@@ -73,9 +74,16 @@ Define 仍是扩展内容的唯一入口。它只负责传入扩展内容，不�
 扩展可以在自己的 StatefulWidget 中处理状态、消息和配置/API 更新。配置/API 热更新
 是数据事件，不是第二条 Widget 注入路径，也不重新执行扩展源代码。
 
-Pages 是应用组合层，不是 Navigator，也不提供运行时 unbind、树回滚或外部直接修改
-mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩展自己的 State/build
-完成。
+PagesRegistry 是应用组合层，不提供运行时 unbind、树回滚或外部直接修改 mounted
+Widget；它与运行时 Navigator 分离。NavigatorState 只通过自己的 Page list 做 Route
+reconciliation，Page builder 由 mounted route-content Widget 执行，不能在组合阶段
+查 Provider 或保存 BuildContext。区域结构变化仍应通过 Pages 的受控更新接口或扩展
+自己的 State/build 完成。
+
+`AutoHide` 是普通的 host-independent StatefulWidget。它包装 Main controls，使用
+`PlayerProvider` 的 `controls_visibility` 和一个 pointer controller 决定是否构造
+控制子树；隐藏时不输出绘制或 pointer region。PlayerShell 只负责把 AutoHide 放在
+Main entry 上，不再维护另一份可见性状态。
 
 ## DefaultApp 与 host layer 的边界
 

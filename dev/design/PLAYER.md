@@ -17,15 +17,17 @@ Root
     │   ├── bottom buttons
     │   └── left/right buttons
     │       (controls expose stable ids and shortcut metadata)
-    ├── 3x3 grid
-    │   └── extension regions
-    └── more
-        └── extension regions
+    └── Extension
+        ├── 3x3 grid
+        │   └── extension regions
+        └── more
+            └── extension regions
 ```
 
 `Main` 是播放器内置页面和固定 UI 的所有者；标题栏、时间线、底部按钮、两侧按钮
-等位置由播放器定义。3×3 grid 和 `more` 是扩展可以使用的稳定区域，但区域的布局
-约束仍由 Pages/播放器控制，扩展只提供内容。
+等位置由播放器定义。`Extension` 与 `Main` 是同级组合项，并拥有 `ExtensionGrid`
+和 `More`；扩展可以使用其中的稳定区域，但区域的布局约束仍由 Pages/播放器控制，
+扩展只提供内容。
 
 当前 `main_layout.lua` 的三行三列 scaffold 是这一模型的早期基础，不等同于最终
 `Pages` API。下一阶段先把当前固定 region id 迁移为 Pages 的明确契约，再考虑页面
@@ -78,8 +80,10 @@ Define 本身只负责 transport、sandbox、scope、模块和内容交付。它
   驱动 rebuild；
 - 同一区域的冲突应在 mount 前报告 scope、region 和 operation，而不是静默覆盖。
 
-Pages 是组合和布局根，不是导航管理器。未来如果实现页面列表，也必须先定义
-page/root 声明、生命周期和冲突诊断，再决定是否需要 Navigator 风格 API。
+PagesRegistry 是组合和布局根，仍然不是导航管理器。运行时页面列表由
+host-independent 的 Navigator/NavigatorState 管理；它在 mounted route-content Widget
+上下文中执行 Page builder，并按 Page class/key 对齐 Route。PagesRegistry 与
+Navigator 的声明和运行时所有权保持分离。
 
 ### 6.4 离线 Pages API
 
@@ -111,7 +115,7 @@ single 区域只能有一个 contribution；`more` 必须使用不重复的 key�
 scope、region、operation、key 和 sequence 信息的诊断。拒绝的 contribution 不会
 删除已经接受的内容，调用方仍可组装播放器基础 Shell。
 
-`assemble()` 每次创建新的 `PlayerScaffold`、`Main`、grid 和 `more` Widget 描述，
+`assemble()` 每次创建新的 `PlayerScaffold`、`Main`、`Extension`、grid 和 `more` Widget 描述，
 不修改传入 Widget 或之前构造/挂载的树。组装阶段只消费不可变 Widget 输入，不进行
 Provider lookup；动态状态仍由挂载后的 Widget/State/Provider 处理。这里的 Pages
 不是 Navigator，没有 runtime registry、route history 或任意 z。
@@ -225,7 +229,7 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 
 ### 6.4 Pages/Main 组合层（当前）
 
-- 把固定 Main UI 与 extension grid/more 分开；
+- 把固定 Main UI 与 Extension（grid/more）作为同级组合项；
 - 定义 stable region id、single/multi child 规则和冲突诊断；
 - 提供“扩展页面添加到 Pages”的公开接口；
 - Pages 注册/组装阶段只使用不可变输入；Provider `read`/`maybe_read` 只在已经拥有
@@ -245,14 +249,15 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 
 ### 6.6 可扩展播放器 Shell（当前）
 
-- `player/shell.lua` 提供 `PlayerShell`、`ShellConfig` 和
-  `ShellVisibilityController`。Shell 组合播放器拥有的 title bar、timeline、bottom
-  和 left/right controls，并复用已组装的 Pages grid/more；隐藏控制不会留下 ASS
-  绘制或 pointer region。
+- `widget/autohide.lua` 提供 host-independent `AutoHide`、配置、控制器和 State。
+  `player/shell.lua` 通过别名保留 `ShellConfig` 和 `ShellVisibilityController`，并
+  组合播放器拥有的 title bar、timeline、bottom 和 left/right controls；已组装的
+  Pages `ExtensionGrid`/`More` 保持为同级 Extension，隐藏控制不会留下 ASS 绘制或
+  pointer region。
 - 控件显隐模式为闭合集合 `auto`、`always`、`never`：`auto` 初始隐藏，收到 pointer
   move 显示，pointer leave 隐藏；`always` 始终显示；`never` 始终隐藏。本阶段不引入
   idle timer。
-- Shell 的 `build` 使用监听式 `PlayerProvider.maybe_of`；`init_state`、pointer
+- `AutoHide` 的 `build` 使用监听式 `PlayerProvider.maybe_of`；初始化和 pointer
   event callback 使用非监听 `maybe_read`；Provider snapshot 变化在
   `did_change_dependencies` 中重新解析；controller subscription 在 `dispose` 清理。
 - `main.lua` 通过 `user-data/elxosc-controls-visibility` 把已校验的配置/API 数据
@@ -261,13 +266,29 @@ FrameClock。overlay 更新、删除、z 调整和分辨率变化都必须可重
 - host 只把 mouse move/leave 观察事件转发给 controller，不安装额外的点击抢占
   section；modal 行为仍通过 OverlayHost 显式 `input_policy = 'exclusive'` 管理。
 
+### 6.7 Page/Route/Navigator/Overlay runtime（Stage 4/5）
+
+- `player/navigation.lua` 提供不可变 `Page` descriptor、运行时 `Route` record、
+  `RouteResult` 和 `Navigator`/`NavigatorState`。
+- `NavigatorState` 的 state-owned Page list 是唯一运行时来源；相同 Page class/key
+  （且 route kind 未改变）复用 Route，其余声明按生命周期顺序移除和 dispose。
+- Page builder 只从已挂载的 route-content Widget build 调用，不把 `BuildContext`
+  保存到 Page、Route 或导航控制对象。Page subtree unmount 后才完成 Route dispose
+  和 pop result。
+- `widget/overlay.lua` 提供 host-independent `Theatre`、`Overlay`、`OverlayEntry`、
+  `PopupRoute` 和 `ModalBarrier`；PopupRoute 直接复用 `Route` lifecycle/result 合约，
+  plan 只表达逻辑顺序、surface policy、opaque/input 和 maintain-state 元数据。
+- Overlay core 不创建 ASS presenter、surface 或 host input section；
+  PagesRegistry/PageContribution 仍只负责初始化组合，DefaultApp 也暂不动态接线。
+
 ## 非目标
 
 - 不把 Define 改成运行时 Widget tree manager；
 - 不新增第二条扩展内容注入通道；
 - 不默认支持 Lua 源码热重载；
 - 不把 overlay.z 变成 bind 或页面优先级；
-- 不在本阶段承诺 Navigator 或复杂页面导航；
+- 不在本阶段实现物理 PresentationSurface、ASS presenter、RegionSnapshot 或复杂页面
+  转场；
 - 不让根布局节点默认拦截播放器输入。
 
 ## 验收标准
