@@ -7,7 +7,11 @@ not import Widget modules or mpv.
 
 - `render_object.lua` — child ownership, layout/paint, hit testing, pointer paths,
   root-space pointer regions, parent data, and dirty propagation.
-- `render_owner.lua` — root viewport, frame work, pointer dispatch, hover, and capture.
+- `render_owner.lua` — compatibility implementation for the single-root owner.
+- `pipeline_owner.lua` — canonical `PipelineOwner` name; exports the same class as
+  `RenderOwner`.
+- `painting_context.lua` — Canvas/child paint/clip boundary without a Layer tree.
+- `renderer_binding.lua` — instance-scoped PipelineOwner/Canvas binding facade.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.

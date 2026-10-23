@@ -186,6 +186,7 @@ function RenderFittedBox:_mapping()
     }
 end
 
+---@param canvas PaintingContext
 function RenderFittedBox:__paint(canvas, offset)
     local child = self._children[1]
     local mapping = self:_mapping()

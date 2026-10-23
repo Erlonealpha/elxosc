@@ -73,6 +73,7 @@ function RenderDecoratedBox:__perform_layout(constraints)
     end
 end
 
+---@param canvas PaintingContext
 function RenderDecoratedBox:__paint(canvas, offset)
     local decoration = self.decoration
     local rect = Rect.from_offset_size(offset, self.size)

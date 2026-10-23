@@ -11,10 +11,12 @@ local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local constraints_mod = require 'layout.constraints'
 local pointer_event = require 'foundation.pointer_event'
+local painting_context = require 'render.painting_context'
 
 local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
 local PointerEvent = pointer_event.PointerEvent
+local PaintingContext = painting_context.PaintingContext
 local raise = std.raise
 local POINTER_BUTTONS = { left = true, middle = true, right = true }
 
@@ -185,9 +187,31 @@ end
 ---@param canvas Canvas
 function RenderOwner:paint(canvas)
     if self.root and self._needs_paint then
-        self.root:paint(canvas, Offset.zero())
+        self.root:paint(PaintingContext(canvas), Offset.zero())
         self._needs_paint = false
     end
+end
+
+--- Flutter-aligned pipeline names on the existing single-root owner.
+function RenderOwner:flush_layout()
+    self:layout()
+end
+
+---@param canvas Canvas
+function RenderOwner:flush_paint(canvas)
+    self:paint(canvas)
+end
+
+function RenderOwner:request_visual_update()
+    self:mark_needs_paint()
+end
+
+function RenderOwner:dispose()
+    self:set_root(nil, false)
+    self.on_dirty = nil
+    self._hovered = {}
+    self._capture = nil
+    self._capture_buttons = {}
 end
 
 --== pointer routing ======================================================

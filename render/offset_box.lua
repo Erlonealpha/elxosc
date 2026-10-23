@@ -65,6 +65,7 @@ function RenderOffsetBox:__perform_layout(constraints)
     self.size = child.size
 end
 
+---@param canvas PaintingContext
 function RenderOffsetBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil then

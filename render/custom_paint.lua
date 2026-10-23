@@ -54,9 +54,10 @@ function RenderCustomPaint:__perform_layout(constraints)
     end
 end
 
+---@param canvas PaintingContext
 function RenderCustomPaint:__paint(canvas, offset)
     if self.draw then
-        self.draw(canvas, offset, self.size)
+        self.draw(canvas.canvas, offset, self.size)
     end
     self:paint_children(canvas, offset)
 end

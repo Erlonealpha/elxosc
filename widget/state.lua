@@ -32,7 +32,7 @@ end
 
 ---@return boolean
 function State:is_mounted()
-    return self.context ~= nil and self.context.mounted
+    return self.context ~= nil and self.context:is_active()
 end
 
 --- Called once, right after the element is mounted.
@@ -55,7 +55,7 @@ function State:_own_resource(resource)
     return resource
 end
 
---- Create a ticker owned by this State. The WidgetBinding must be connected to
+--- Create a ticker owned by this State. The WidgetsBinding must be connected to
 --- a Scheduler for runtime animation; otherwise this is an explicit error.
 ---@param on_tick fun(dt: number, time: number)
 ---@return Ticker

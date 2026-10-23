@@ -18,6 +18,10 @@ It must remain usable without mpv.
   contain a non-empty key, `down`/`up`/`press` type, copied modifier snapshot,
   finite timestamp when supplied, and an `is_repeat` flag defaulting to `false`.
   Focus routing is owned by a later host/application layer.
+- `key.lua` — host-independent `Key`, `LocalKey`, `ValueKey` and `UniqueKey` identity
+  primitives used by Widget reconciliation.
+- `binding_base.lua` — instance-scoped binding lifecycle base; it does not create a global
+  framework singleton.
 
 Value helpers return new objects and do not mutate caller-owned geometry. This layer
 does not know about layout, ASS, widgets, focus, routing, or `mp`. Pointer events

@@ -14,6 +14,8 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
+local key_mod = require 'widget.key'
+local foundation_key = require 'foundation.key'
 
 local raise = std.raise
 local can_update = widget_mod.can_update
@@ -25,6 +27,8 @@ local InheritedWidget = widget_mod.InheritedWidget
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
+local GlobalKey = key_mod.GlobalKey
+local LocalKey = foundation_key.LocalKey
 
 local M = {}
 
@@ -34,9 +38,11 @@ local M = {}
 ---@field widget Widget
 ---@field parent Element?
 ---@field owner BuildOwner?
----@field depth number
+---@field depth int
 ---@field mounted boolean
+---@field active boolean
 ---@field dirty boolean
+---@field build_scope BuildScope?
 ---@field _inherited_dependencies table<InheritedElement, true>
 ---@field _lifecycle_phase string
 ---@overload fun(widget: Widget):self
@@ -52,7 +58,9 @@ function Element:__init(widget)
     self.owner = nil
     self.depth = 0
     self.mounted = false
+    self.active = false
     self.dirty = false
+    self.build_scope = nil
     self._inherited_dependencies = {}
     self._lifecycle_phase = 'idle'
 end
@@ -64,6 +72,19 @@ function Element:mount(parent, owner)
     self.owner = owner
     self.depth = parent and (parent.depth + 1) or 0
     self.mounted = true
+    self.active = true
+    self.build_scope = parent and parent.build_scope or owner.root_scope
+    local key = self.widget.key
+    if key and std.isinstance(key, GlobalKey) then
+        local ok, err = pcall(owner.register_global_key, owner, key, self)
+        if not ok then
+            self.mounted = false
+            self.active = false
+            self.parent = nil
+            self.owner = nil
+            error(err, 0)
+        end
+    end
     self._lifecycle_phase = 'idle'
 end
 
@@ -72,15 +93,62 @@ function Element:unmount()
         return
     end
     self.mounted = false
+    self.active = false
     self.dirty = false
     self._lifecycle_phase = 'dispose'
     self:_clear_inherited_dependencies()
+    local key = self.widget.key
+    if key and std.isinstance(key, GlobalKey) and self.owner then
+        self.owner:unregister_global_key(key, self)
+    end
     for _, child in ipairs(self:element_children()) do
         child:unmount()
     end
     self.parent = nil
     self.owner = nil
+    self.build_scope = nil
     self._lifecycle_phase = 'unmounted'
+end
+
+--- Temporarily remove this subtree from the active tree. The BuildOwner keeps
+--- it alive until the current build frame is finalized.
+function Element:deactivate()
+    if not self.mounted or not self.active then
+        return false
+    end
+    self.active = false
+    self.dirty = false
+    for _, child in ipairs(self:element_children()) do
+        child:deactivate()
+    end
+    if self.owner then
+        self.owner:add_inactive(self)
+    end
+    return true
+end
+
+---@param parent Element?
+function Element:activate(parent)
+    if not self.mounted or self.active then
+        return false
+    end
+    self.parent = parent
+    self.depth = parent and (parent.depth + 1) or 0
+    self.active = true
+    self.build_scope = parent and parent.build_scope
+        or (self.owner and self.owner.root_scope or nil)
+    if self.owner then
+        self.owner:remove_inactive(self)
+    end
+    for _, child in ipairs(self:element_children()) do
+        child:activate(self)
+    end
+    return true
+end
+
+---@return boolean
+function Element:is_active()
+    return self.mounted and self.active
 end
 
 ---@param phase string
@@ -233,7 +301,7 @@ end
 
 ---@return boolean
 function Element:mark_dirty()
-    if not self.mounted or self.owner == nil then
+    if not self.mounted or not self.active or self.owner == nil then
         return false
     end
     self.dirty = true
@@ -592,6 +660,22 @@ function MultiChildRenderObjectElement:rebuild()
     local previous = self.children
     local widgets = self.widget.children or {}
     local children = {}
+
+    local seen_local_keys = {}
+    for _, child_widget in ipairs(widgets) do
+        local key = child_widget.key
+        if key and std.isinstance(key --[[@as std.object]], LocalKey) then
+            for _, seen in ipairs(seen_local_keys) do
+                if seen == key then
+                    if self.owner then
+                        self.owner:diagnose('duplicate LocalKey among siblings', key)
+                    end
+                    break
+                end
+            end
+            seen_local_keys[#seen_local_keys + 1] = key
+        end
+    end
 
     -- Match keyed children by identity rather than by array position. This is
     -- intentionally small, but preserves the important Flutter guarantee that

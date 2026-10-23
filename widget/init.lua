@@ -11,7 +11,9 @@ local element_mod = require 'widget.element'
 local state_mod = require 'widget.state'
 local key_mod = require 'widget.key'
 local build_owner_mod = require 'widget.build_owner'
+local build_scope_mod = require 'widget.build_scope'
 local binding_mod = require 'widget.binding'
+local widgets_binding_mod = require 'widget.widgets_binding'
 local provider_mod = require 'widget.provider'
 local player_context_mod = require 'widget.player_context'
 
@@ -23,7 +25,9 @@ for _, mod in ipairs({
     state_mod,
     key_mod,
     build_owner_mod,
+    build_scope_mod,
     binding_mod,
+    widgets_binding_mod,
     provider_mod,
     player_context_mod,
 }) do

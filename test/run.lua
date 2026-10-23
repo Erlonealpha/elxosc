@@ -29,6 +29,7 @@ local files = {
     'test_layout',
     'test_input',
     'test_widget',
+    'test_flutter_runtime',
     'test_button_contract',
     'test_icon',
     'test_bind',

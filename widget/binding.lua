@@ -1,14 +1,15 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- Glue between the widget tree and a `RenderOwner` (a trimmed
+-- Glue between the widget tree and a `PipelineOwner` (a trimmed
 -- `WidgetsBinding` without any host dependency).
 --
 -- Once per frame the host calls `flush_build()` before layout/paint; `on_dirty`
 -- is the hook the host wires to its frame clock, exactly like
--- `RenderOwner.on_dirty`.
+-- `PipelineOwner.on_dirty`.
 
 local std = require 'elxlibs.std'
+local binding_base = require 'foundation.binding_base'
 local build_owner_mod = require 'widget.build_owner'
 local widget_mod = require 'widget.widget'
 -- Loading the element module also installs `Widget:create_element` (see the
@@ -17,19 +18,22 @@ require 'widget.element'
 
 local BuildOwner = build_owner_mod.BuildOwner
 local can_update = widget_mod.can_update
+local BindingBase = binding_base.BindingBase
 
 local M = {}
 
----@class WidgetBinding : std.object
+---@class WidgetsBinding : std.object
 ---@field render_owner RenderOwner
 ---@field build_owner BuildOwner
 ---@field root_element Element?
 ---@field on_dirty fun()?
 ---@field _disposed boolean
 ---@overload fun(root_widget: Widget, render_owner: RenderOwner, binds: BindRegistry?, scheduler: Scheduler?): self
-local WidgetBinding = std.class.new('WidgetBinding', {})
+local WidgetBinding = std.class.new('WidgetsBinding', { BindingBase })
 
 function WidgetBinding:__init(root_widget, render_owner, binds, scheduler)
+    ---@diagnostic disable-next-line: param-type-mismatch, generic-constraint-mismatch
+    std.super(WidgetBinding, self, BindingBase).__init(self)
     self.render_owner = render_owner
     self.build_owner = BuildOwner(render_owner, scheduler)
     self.root_element = nil
@@ -92,6 +96,7 @@ function WidgetBinding:flush_build()
         return
     end
     self.build_owner:rebuild_dirty()
+    self.build_owner:finalize_tree()
     self:_sync_root()
 end
 
@@ -100,7 +105,7 @@ function WidgetBinding:dispose()
     if self._disposed then
         return false
     end
-    self._disposed = true
+    BindingBase.dispose(self)
     self.on_dirty = nil
     self.build_owner:clear_dirty()
     local element = self.root_element
@@ -113,5 +118,6 @@ function WidgetBinding:dispose()
 end
 
 M.WidgetBinding = WidgetBinding
+M.WidgetsBinding = WidgetBinding
 
 return M

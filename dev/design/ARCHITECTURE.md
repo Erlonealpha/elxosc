@@ -33,6 +33,27 @@ libs → widget/bind and host assembly
 通过 `Canvas`、`TextLayout`、`FrameClock` 和输入值对象进入核心。所有模块使用裸
 模块名并避免 require cycle；聚合入口必须返回直接模块导出的同一对象。
 
+## Flutter runtime 对齐
+
+运行时采用实例作用域的 owner 拓扑，不复制 Flutter 全局 binding singleton：
+
+```text
+App instance
+├── SchedulerBinding → Scheduler → FrameClock
+├── WidgetsBinding → BuildOwner → BuildScope → Element tree
+├── RendererBinding → PipelineOwner → RenderObject tree
+└── PaintingBinding → backend Canvas（需要共享绘制资源时）
+```
+
+`BuildOwner` 管 dirty Element、BuildScope、inactive/finalize 和 GlobalKey registry；
+`PipelineOwner` 是现有 `RenderOwner` 的规范名称，迁移期两个入口返回同一 class object；
+`PaintingContext` 是 RenderObject 到 Canvas 的最小绘制上下文，不是 Layer tree。Binding
+只拥有由调用方传入的资源，host 可以组合它们但不能让 framework 依赖 mpv 或模块级默认实例。
+
+F runtime 的生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPresenter` 和单
+`osd-overlay`。Layer/compositing、Semantics、multi-view 和 GlobalKey 跨父节点 reparent
+不因名称对齐而进入当前 API。
+
 Pages 是播放器应用层的 Widget 组合契约，不是第四棵底层运行时树。它负责把固定
 播放器 Main、3×3 grid 和 `more` 区域组装成一个或多个 Widget root，并暴露稳定的
 扩展入口；最终仍由 Widget/Element/RenderObject 三棵树完成挂载和绘制。Define 是

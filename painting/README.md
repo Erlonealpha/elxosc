@@ -14,4 +14,7 @@ Coordinates are logical pixels. `TextPaint.offset` affects visual painting only;
 layout and hit testing remain RenderObject responsibilities. Concrete backends belong
 in `backends/`.
 
+`PaintingContext` belongs to `render/`, not this contract layer. It owns the current Canvas
+for a paint pass and forwards backend-neutral operations without exposing ASS details.
+
 See [rendering](../dev/design/RENDERING.md).

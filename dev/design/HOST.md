@@ -14,7 +14,7 @@
 
 ## App 帧循环
 
-`host.mpv_app.App` 将 WidgetBinding、RenderOwner、Scheduler、AssCanvas 和
+`host.mpv_app.App` 将 WidgetsBinding、PipelineOwner、Scheduler、AssCanvas 和
 AssPresenter 组装起来：
 
 ```text

@@ -8,16 +8,22 @@ binding, and the public widget library. It must remain independent of mpv.
 - `widget.lua` — Widget base classes and type/key reuse rules.
 - `element.lua` — mounted Element classes and Widget-to-RenderObject connection.
 - `state.lua` — State lifecycle, `set_state`, ticker/controller ownership.
-- `build_owner.lua` and `binding.lua` — rebuild queue and render-tree assembly.
+- `build_scope.lua`, `build_owner.lua`, `binding.lua` and `widgets_binding.lua` — BuildScope,
+  rebuild queue, inactive/finalize handling and render-tree assembly. `WidgetsBinding` is the
+  canonical name; `WidgetBinding` is the migration-period identity alias.
 - `bind.lua` — Define-time named targets, `Slot`, and `BindRegistry`.
 - `provider.lua` — inherited Provider lookup with `of` and `maybe_of` helpers.
 - `player_context.lua` — host-independent `PlayerSnapshot`, `PlayerStore`,
   `PlayerScope`, and `PlayerProvider`.
+- `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
 - `widgets/` — independent layout, content, input, and button widgets; `basic.lua`
   and `layout.lua` are compatibility aggregates.
 
 Widgets are immutable after construction. Runtime changes use State or explicit
 RenderObject setters. Bindings apply before mounting and do not manage a live tree.
+
+Each WidgetsBinding owns its BuildOwner and GlobalKey registry. It does not share dirty state
+or key registration with another App or off-screen tree.
 
 `PlayerStore` replaces immutable snapshots and exposes disposable subscriptions.
 `PlayerScope` owns the subscription and rebuilds a `PlayerProvider` through the normal

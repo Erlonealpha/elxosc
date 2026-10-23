@@ -12,12 +12,14 @@ local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local transform_mod = require 'foundation.transform'
 local pointer_event = require 'foundation.pointer_event'
+local painting_context = require 'render.painting_context'
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
 local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
 local legacy_pointer_data = pointer_event.legacy_data
+local PaintingContext = painting_context.PaintingContext
 local table = table
 local ipairs = ipairs
 local huge = math.huge
@@ -183,22 +185,29 @@ end
 
 --== painting =============================================================
 
----@param canvas Canvas
+---@param canvas Canvas|PaintingContext
 ---@param offset Offset top-left of this node in canvas space
 function RenderObject:paint(canvas, offset)
-    self:__paint(canvas, offset)
+    ---@type PaintingContext
+    local context
+    if canvas.canvas == nil then
+        context = PaintingContext(canvas --[[@as Canvas]])
+    else
+        context = canvas --[[@as PaintingContext]]
+    end
+    self:__paint(context --[[@as PaintingContext]], offset)
     self.needs_paint = false
 end
 
 --- Default paints nothing but the children. Subclasses draw their own content
 --- first, then call `self:paint_children(canvas, offset)`.
----@param canvas Canvas
+---@param canvas PaintingContext
 ---@param offset Offset
 function RenderObject:__paint(canvas, offset)
     self:paint_children(canvas, offset)
 end
 
----@param canvas Canvas
+---@param canvas PaintingContext
 ---@param offset Offset
 function RenderObject:paint_children(canvas, offset)
     for _, child in ipairs(self._children) do
@@ -206,7 +215,7 @@ function RenderObject:paint_children(canvas, offset)
         if child.parent_data and child.parent_data.offset then
             child_offset = (offset + child.parent_data.offset) --[[@as Offset]]
         end
-        child:paint(canvas, child_offset)
+        canvas:paint_child(child, child_offset)
     end
 end
 

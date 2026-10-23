@@ -193,6 +193,7 @@ end
 
 ---@param canvas Canvas
 ---@param offset Offset
+---@param canvas PaintingContext
 function RenderLayoutScaleBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil or child.size.width <= 0 or child.size.height <= 0 then

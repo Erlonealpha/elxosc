@@ -25,6 +25,33 @@ State 的 `init_state` 只在首次挂载调用，`set_state` 只包裹状态修
 加入 build 队列，`dispose` 必须释放 controller、ticker 和宿主订阅。State 不应在
 build 中反复注册一次性宿主资源。
 
+## BuildOwner、BuildScope 与 Binding
+
+`BuildOwner` 是实例作用域的 Widget tree owner。它按 `BuildScope` 对 dirty Element 去重，
+以 depth 顺序 flush，并在每个 build pass 结束时处理 inactive Element 的 `finalize_tree()`。
+parent rebuild 已经更新的 child 不得在同一 frame 重复 build。`WidgetsBinding` 持有
+BuildOwner 和 root Element；旧 `WidgetBinding` 入口在迁移期返回同一 class object。
+
+Element 的 runtime 生命周期允许：
+
+```text
+active → inactive → active
+                 ↘ finalize → unmounted
+```
+
+本阶段只提供 inactive/finalize 基础语义，不宣称 GlobalKey 跨父节点 reparent。Binding
+实例之间不得共享 dirty queue、Scheduler、GlobalKey registry 或 frame 状态。
+
+## Key identity
+
+Key 层级位于 `foundation/key.lua`：`Key → LocalKey → ValueKey/UniqueKey`；
+`ObjectKey` 和 `GlobalKey` 由 `widget/key.lua` 扩展。LocalKey 只要求同一父 Element
+的直接 children 唯一；重复 LocalKey 产生 BuildOwner diagnostic。GlobalKey 在一个
+BuildOwner 内注册、查找和检测重复，unmount/finalize 后清理 stale entry。
+
+Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution identity、append
+顺序和 priority 与 Widget.key 分离，Slot 不得覆盖 Widget.key。
+
 ## 控件层
 
 `widget/widgets/` 按职责拆成：

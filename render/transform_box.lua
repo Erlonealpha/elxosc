@@ -145,6 +145,7 @@ end
 
 ---@param canvas Canvas
 ---@param offset Offset
+---@param canvas PaintingContext
 function RenderTransformBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil then

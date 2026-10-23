@@ -63,6 +63,7 @@ function RenderText:__perform_layout(constraints)
     self.size = paragraph.size
 end
 
+---@param canvas PaintingContext
 function RenderText:__paint(canvas, offset)
     if self.paragraph then
         -- Anchor within the constrained layout box, not the estimated natural
