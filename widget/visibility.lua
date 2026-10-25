@@ -4,16 +4,10 @@
 -- Visibility and player-control auto-hide widgets.
 
 local std = require 'elxlibs.std'
-local constraints_mod = require 'layout.constraints'
 local offstage_mod = require 'render.offstage'
 local widget_mod = require 'widget.widget'
-local gesture_widgets = require 'widget.widgets.gesture_detector'
-local constrained_widgets = require 'widget.widgets.constraints'
 
-local Constraints = constraints_mod.Constraints
 local RenderOffstage = offstage_mod.RenderOffstage
-local GestureDetector = gesture_widgets.GestureDetector
-local ConstrainedBox = constrained_widgets.ConstrainedBox
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
@@ -300,22 +294,10 @@ end
 
 function AutoHideState:build()
     local widget = self.widget --[[@as AutoHide]]
-    local child = Visibility({
+    return Visibility({
         visible = widget.controller.visible,
         maintain_state = widget.maintain_state,
         child = widget.child,
-    })
-    local activity = function()
-        widget.controller:activity()
-    end
-    -- Keep an activity surface even when the child is offstage.  The wrapper
-    -- is laid out to the viewport, while Offstage keeps the player state alive.
-    return GestureDetector(ConstrainedBox({
-        constraints = Constraints.expand(),
-        child = child,
-    }), {
-        on_move = activity,
-        on_down = activity,
     })
 end
 

@@ -14,8 +14,11 @@ mp_stub.install()
 local fake = mp_stub.fake
 
 local color = require('foundation.color')
+local geometry = require('foundation.geometry')
 local text_style = require('text.text_style')
 local mpv_app = require('host.mpv_app')
+local main_layout = require('main_layout')
+local app_widgets = require('widget.app')
 local mpv_define = require('host.mpv_define')
 local demo_mod = require('demo')
 local layout_widgets = require('widget.widgets.layout')
@@ -26,6 +29,7 @@ local widget_mod = require('widget.widget')
 local player_context = require('widget.player_context')
 
 local Color = color.Color
+local Offset = geometry.Offset
 local TextStyle = text_style.TextStyle
 local MpDefine = mpv_define.MpDefine
 local Slot = bind_mod.Slot
@@ -35,6 +39,7 @@ local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
 local Demo = demo_mod.Demo
+local DefaultApp = app_widgets.DefaultApp
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 
@@ -333,6 +338,33 @@ F.test('set_root_widget swaps the tree', function()
     app.binding:flush_build()
     app.owner:layout()
     F.eq(app.owner.root:children()[1].paragraph.text, 'one', 'root replaced')
+end)
+
+F.test('DefaultApp extension controls remain clickable above Main activity surface', function()
+    mp_stub.reset()
+    local clicks = 0
+    local app = mpv_app.App(main_layout.build_app(Button({
+        label = 'Demo',
+        on_click = function() clicks = clicks + 1 end,
+    })))
+    app:render()
+    app.owner:dispatch_pointer('down', Offset(20, 20), 'left')
+    app.owner:dispatch_pointer('up', Offset(20, 20), 'left')
+    F.eq(clicks, 1, 'extension button receives click through Main activity surface')
+end)
+
+F.test('host mouse activity restores a hidden Main without intercepting clicks', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local default_element = find_widget_element(app.binding.root_element, DefaultApp)
+    F.ok(default_element ~= nil, 'DefaultApp is mounted')
+    if default_element == nil then
+        return
+    end
+    default_element.state:hide_main()
+    F.ok(not default_element.state.main_controller.visible, 'Main is hidden before activity')
+    app:notify_activity()
+    F.ok(default_element.state.main_controller.visible, 'mouse activity restores Main')
 end)
 
 F.test('a set_state rebuild lands in the next frame', function()

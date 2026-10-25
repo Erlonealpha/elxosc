@@ -154,6 +154,9 @@ function MpInput:_dispatch(event, data, section)
         return
     end
     debug_msgf('MpInput:_dispatch(%s)', event)
+    if event == 'move' or event == 'down' or event == 'double' or event == 'wheel' then
+        self.app:notify_activity()
+    end
     if event == 'down' or event == 'double' then
         self:_refresh_position()
     end

@@ -247,6 +247,25 @@ function App:request_frame()
     self.scheduler:schedule_frame()
 end
 
+-- Notify application-level visibility policies without installing a full-size
+-- pointer interceptor in the render tree.  A passive Main/background layer must
+-- not swallow clicks destined for an Extension or WindowLayer control.
+function App:notify_activity()
+    if self._shutdown or not self.binding or not self.binding.root_element then
+        return
+    end
+    local function visit(element)
+        local state = element.state
+        if state and type(state.notify_activity) == 'function' then
+            state:notify_activity()
+        end
+        for _, child in ipairs(element:element_children()) do
+            visit(child)
+        end
+    end
+    visit(self.binding.root_element)
+end
+
 --- Swap the root widget (the define phase finished, or a script re-declared).
 ---@param root_widget Widget
 function App:set_root_widget(root_widget)

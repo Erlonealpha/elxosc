@@ -54,6 +54,53 @@ function RenderStack:__perform_layout(constraints)
     end
 end
 
+-- A passive full-size layer must not hide an interactive sibling below it.
+-- The ordinary hit-test walk is intentionally topmost-child-first, but pointer
+-- routing needs the topmost child that actually declares a pointer handler.
+-- This keeps a full-screen Main/background layer from swallowing extension or
+-- popup controls while preserving the normal paint order.
+local function path_has_pointer_target(path)
+    for _, entry in ipairs(path) do
+        local node = entry.node
+        if node:wants_pointer('down') or node:wants_pointer('up')
+            or node:wants_pointer('move') or node:wants_pointer('wheel') then
+            return true
+        end
+    end
+    return false
+end
+
+---@param point Offset
+---@param out {node: RenderObject, point: Offset}[]?
+---@return {node: RenderObject, point: Offset}[]
+function RenderStack:pointer_path(point, out)
+    out = out or {}
+    if not self:__hit_test_bounds(point) then
+        return out
+    end
+
+    for index = #self._children, 1, -1 do
+        local child = self._children[index]
+        local child_point = point
+        if child.parent_data and child.parent_data.offset then
+            child_point = (point - child.parent_data.offset) --[[@as Offset]]
+        end
+        if child:__hit_test_bounds(child_point) then
+            local child_path = {}
+            child:pointer_path(child_point, child_path)
+            if path_has_pointer_target(child_path) then
+                for _, entry in ipairs(child_path) do
+                    out[#out + 1] = entry
+                end
+                break
+            end
+        end
+    end
+
+    out[#out + 1] = { node = self, point = point }
+    return out
+end
+
 M.RenderStack = RenderStack
 
 return M
