@@ -23,7 +23,6 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint?
 ---@field key any?
----@field id string?
 
 ---@class TextRenderObjectWidget : LeafRenderObjectWidget
 ---@field text string
@@ -74,7 +73,6 @@ local Text = std.class.new('Text', { StatelessWidget })
 function Text:__init(text, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.text = tostring(text)
     self.style = options.style
     self.text_layout = options.text_layout

@@ -12,7 +12,9 @@ binding, and the public widget library. It must remain independent of mpv.
   rebuild queue, inactive/finalize handling and render-tree assembly. `WidgetsBinding` is the
   canonical singleton composition; `WidgetBinding` is the same class alias. Use
   `WidgetsBinding.ensure_initialized():attach(...)` for each additional tree.
-- `bind.lua` — Define-time named targets, `Slot`, and `BindRegistry`.
+- `slot.lua` — initialization-only `SlotSpec`, `SlotWrap`, immutable
+  `Contribution` snapshots and `CompositionAssembler`.
+- `bind.lua` — the small Define `bind(slot_id, widget, opts)` facade.
 - `provider.lua` — inherited Provider lookup with `of` and `maybe_of` helpers.
 - `player_context.lua` — host-independent `PlayerSnapshot`, `PlayerStore`,
   `PlayerScope`, and `PlayerProvider`.
@@ -27,7 +29,16 @@ binding, and the public widget library. It must remain independent of mpv.
   and `layout.lua` are compatibility aggregates.
 
 Widgets are immutable after construction. Runtime changes use State or explicit
-RenderObject setters. Bindings apply before mounting and do not manage a live tree.
+RenderObject setters. Define contributions are sealed and assembled into a fresh
+Widget description before mounting; the binding only mounts, updates and disposes
+that description and never applies contributions itself.
+
+The R1 operations are `replace`, `set` and `append`. `replace` is last-valid-wins,
+`set` is first-valid-wins with a diagnostic for later values, and `append` is
+ordered by the SlotSpec's priority/identity/position rules. `SlotWrap` is an
+initialization declaration and must not remain in the mounted tree. Invalid or
+unresolved contributions are diagnosed and ignored without mutating the caller's
+Widget or options tables.
 
 The concrete WidgetsBinding is shared within one runtime. Each attached WidgetTree owns its
 BuildOwner, root Element, PipelineOwner/RenderOwner scope, dirty state and GlobalKey registry;

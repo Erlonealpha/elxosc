@@ -172,7 +172,7 @@ end
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
 local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
@@ -207,7 +207,7 @@ function App:__init(root_widget, options)
     text_layout.set_default(AssTextLayout())
 
     self.binding = self.widgets_binding:attach(
-        self:_wrap_root(self.root_widget), self.owner, options.binds, self.scheduler)
+        self:_wrap_root(self.root_widget), self.owner, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end
@@ -403,7 +403,7 @@ end
 
 --- Build a root widget and start rendering it.
 ---@param build fun(): Widget
----@param options { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext? }?
+---@param options { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext? }?
 ---@return App
 function M.start(build, options)
     local app = App(build(), options)

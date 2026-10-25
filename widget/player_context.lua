@@ -533,10 +533,6 @@ function PlayerScope:child_widgets()
     return self.child and { self.child } or {}
 end
 
-function PlayerScope:bind_target()
-    return 'child'
-end
-
 M.PlayerSnapshot = PlayerSnapshot
 M.PlayerSubscription = PlayerSubscription
 M.PlayerStore = PlayerStore

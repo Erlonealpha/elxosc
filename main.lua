@@ -2,14 +2,13 @@
 --
 -- Brings up the mpv host around a Widget tree and opens the define window:
 --
---   1. build the scaffold — the tree that names the slots other scripts may
---      fill (`Widget.id` + `bind`, dev/design/WIDGETS.md);
+--   1. build the default Widget description and its explicit SlotSpec tree;
 --   2. start the app, which drives the `WidgetBinding` frame loop (§9.1);
 --   3. accept `define_start` / `define` / `define_end` for `define_window`
---      seconds, then seal and re-mount with the collected binds applied.
+--      seconds, then seal and assemble a fresh description once.
 --
--- `bind` writes into the widget tree *before* it is mounted (dev/design/WIDGETS.md), so
--- the re-mount builds a fresh scaffold rather than mutating the live one.
+-- Define contributions are assembled before the Widget tree is mounted. Runtime
+-- Binding only owns mount/update/dispose and never applies contributions.
 
 local enable = true
 if not enable then
@@ -81,13 +80,14 @@ local app = mpv_app.start(build_app, {
     player_context = player_updates,
 })
 
---- Re-apply the collected binds to a fresh scaffold and swap it in.
+--- Assemble the sealed contributions into a fresh application description and
+--- swap it into the existing runtime tree.
 local shutting_down = false
 local function remount()
     if shutting_down then
         return
     end
-    app:set_root_widget(define:apply(build_app()))
+    app:set_root_widget(define:assemble(main_layout.build_app_description(Demo())))
 end
 
 -- Fast path: every starter sent its `define_end`.
@@ -117,5 +117,6 @@ shutdown_callback = function(_event)
     if mp.unregister_event then
         mp.unregister_event(shutdown_callback)
     end
+    define:shutdown()
 end
 mp.register_event('shutdown', shutdown_callback)

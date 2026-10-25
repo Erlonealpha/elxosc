@@ -19,7 +19,6 @@ local GestureDetector = std.class.new('GestureDetector', { SingleChildRenderObje
 function GestureDetector:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.handlers = options
 end

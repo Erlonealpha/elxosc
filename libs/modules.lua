@@ -32,6 +32,32 @@ function ModuleRegistry:__init()
     self.protected_names = {}
 end
 
+--- Create a transaction-local registry with the same visible modules.
+---@return ModuleRegistry
+function ModuleRegistry:fork()
+    local child = ModuleRegistry()
+    for name, data in pairs(self.mods) do
+        child.mods[name] = data
+    end
+    for name, loader in pairs(self.loaders) do
+        child.loaders[name] = loader
+    end
+    for name in pairs(self.protected_names) do
+        child.protected_names[name] = true
+    end
+    return child
+end
+
+--- Publish only modules that were added or replaced in a successful payload.
+---@param transaction ModuleRegistry
+function ModuleRegistry:commit_from(transaction)
+    for name, data in pairs(transaction.mods) do
+        if self.mods[name] ~= data then
+            self.mods[name] = data
+        end
+    end
+end
+
 --- Register a data module (host side).
 ---@param name string
 ---@param data table<string, any>

@@ -43,9 +43,10 @@ Define 本身只负责 transport、sandbox、scope、模块和内容交付。它
 扩展内容可以使用播放器预先提供的更新接口，也可以在 Define 允许的范围内设计
 自己的消息/API 协议。
 
-当前实现仍保持初始化期 Define 语义：每个 `scope_id` 只接受第一个 payload，绑定
-在 mount 前应用，不能运行时 unbind、回滚或直接编辑已挂载 Widget 树。OverlayEntry
-是 runtime State/Widget lifecycle，不是 Define 的第二条内容入口。
+当前实现仍保持初始化期 Define 语义：每个 `scope_id` 只接受第一个成功 payload。
+贡献先 transaction staging，seal 后由一个 assembler 生成 fresh Widget description；
+Binding 只 mount/update/dispose，不能运行时 unbind、回滚或直接编辑已挂载 Widget 树。
+OverlayEntry 是 runtime State/Widget lifecycle，不是 Define 的第二条内容入口。
 
 ## 应用区域所有权
 

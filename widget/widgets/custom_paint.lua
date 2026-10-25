@@ -17,7 +17,6 @@ local M = {}
 ---@field preferred_size Size?
 ---@field child Widget?
 ---@field key any?
----@field id string?
 
 ---@class CustomPaint : SingleChildRenderObjectWidget
 ---@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
@@ -27,7 +26,6 @@ local CustomPaint = std.class.new('CustomPaint', { SingleChildRenderObjectWidget
 function CustomPaint:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
     self.draw = options.draw
     self.preferred_size = options.preferred_size

@@ -15,14 +15,12 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field child? Widget
 ---@field constraints? Constraints
 ---@field key? any
----@field id? string
 
 ---@class _LimitedBoxOptions
 ---@field child? Widget
 ---@field max_width? number
 ---@field max_height? number
 ---@field key? any
----@field id? string
 
 ---@class ConstrainedBox : SingleChildRenderObjectWidget
 ---@field constraints Constraints
@@ -33,7 +31,6 @@ local ConstrainedBox = std.class.new('ConstrainedBox', { SingleChildRenderObject
 function ConstrainedBox:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
     self.constraints = options.constraints or Constraints.unbounded()
 end
@@ -58,7 +55,6 @@ local LimitedBox = std.class.new('LimitedBox', { SingleChildRenderObjectWidget }
 function LimitedBox:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
     self.max_width = options.max_width
     self.max_height = options.max_height

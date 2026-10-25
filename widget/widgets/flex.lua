@@ -15,12 +15,10 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 ---@field flex? number
 ---@field fit? FlexFit
 ---@field key? any
----@field id? string
 
 ---@class _ExpandedOptions
 ---@field flex? number
 ---@field key? any
----@field id? string
 
 ---@class _FlexOptions
 ---@field children? Widget[]
@@ -29,7 +27,6 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 ---@field cross_alignment? CrossAlignment
 ---@field spacing? number
 ---@field key? any
----@field id? string
 
 ---@class Flexible : ParentDataWidget
 ---@field flex number
@@ -42,7 +39,6 @@ local Flexible = std.class.new('Flexible', { ParentDataWidget })
 function Flexible:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.flex = options.flex or 1
     -- `Flexible` defaults to a loose fit; `Expanded` passes 'tight'.
@@ -66,7 +62,7 @@ end
 ---@return Flexible
 local function Expanded(child, options)
     options = options or {}
-    return Flexible(child, { key = options.key, id = options.id, flex = options.flex or 1, fit = 'tight' })
+    return Flexible(child, { key = options.key, flex = options.flex or 1, fit = 'tight' })
 end
 
 ---@param options? _ExpandedOptions
@@ -74,7 +70,7 @@ end
 local function Spacer(options)
     options = options or {}
     -- Flutter's `Spacer` is `Expanded(child: SizedBox.shrink())`.
-    return Expanded(SizedBox.shrink(), { key = options.key, id = options.id, flex = options.flex or 1 })
+    return Expanded(SizedBox.shrink(), { key = options.key, flex = options.flex or 1 })
 end
 
 ---@class Flex : MultiChildRenderObjectWidget
@@ -92,7 +88,6 @@ local Flex = std.class.new('Flex', { MultiChildRenderObjectWidget })
 function Flex:__init(direction, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.direction = direction or 'row'
     self.children = options.children or {}
     self.main_alignment = options.main_alignment or 'start'

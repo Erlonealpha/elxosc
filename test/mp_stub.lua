@@ -110,7 +110,13 @@ function S.install()
         fake.log['event:' .. name] = cb
     end
 
-    function mp.unregister_event() end
+    function mp.unregister_event(callback)
+        for name, registered in pairs(fake.log) do
+            if name:sub(1, 6) == 'event:' and registered == callback then
+                fake.log[name] = nil
+            end
+        end
+    end
 
     function mp.wait_event() end
 

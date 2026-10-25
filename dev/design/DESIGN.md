@@ -95,8 +95,11 @@ Define 是用户扩展内容进入播放器的唯一入口。它负责 transport
 只在初始化期把扩展 Widget 放入允许的内容位置。N2 `Overlay`/`Theatre` 只管理同一
 logical root 内的 Entry lifecycle，不是第二条 Define 内容入口。
 
-当前 Define 仍是初始化期协议：每个 `scope_id` 只接受第一个 payload，绑定在 mount
-前按注册顺序应用；不存在运行时 unbind、scope 关闭、树回滚或通用 root rebuild。
+当前 Define 仍是初始化期协议：每个 `scope_id` 只接受第一个成功 payload。payload
+在 transaction 中执行，成功后才提交 Contribution 和 module publish；失败 payload
+整体拒绝且不消耗 scope。seal 后由一个 `CompositionAssembler` 按 `SlotSpec` 生成
+fresh Widget description，`WidgetsBinding` 只负责 mount/update/dispose，不重复 apply。
+不存在运行时 unbind、已挂载树回滚或通用 root rebuild。
 后续配置/API 热更新是数据和事件更新，不是第二条扩展内容入口，也不重新加载扩展
 Lua 源码。改变这些语义必须先更新本目录的设计和测试。
 
@@ -110,7 +113,7 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-10-25 的 N1/N2 工作区为 **1348 Lua checks**、EmmyLua
+2026-10-26 的 P0/R1/R2 + N1/N2 工作区为 **1371 Lua checks**、EmmyLua
 **No issues found**、real-host **9 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 

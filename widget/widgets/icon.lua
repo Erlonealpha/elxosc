@@ -42,7 +42,6 @@ local DEFAULT_SIZE = 24
 ---@field text_layout TextLayout?
 ---@field optical_offset Offset? visual correction applied to the center target
 ---@field key any?
----@field id string?
 
 ---@class Icon : StatelessWidget
 ---@field name FluentIconNames
@@ -59,7 +58,6 @@ local Icon = std.class.new('Icon', { StatelessWidget })
 function Icon:__init(name, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.name = name
     self.size = options.size or DEFAULT_SIZE
     self.color = options.color or Color.argb(0xFFFFFFFF)

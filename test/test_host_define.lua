@@ -13,7 +13,7 @@ local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
-local bind_mod = require('widget.bind')
+local slot_mod = require('widget.slot')
 local player_context = require('widget.player_context')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
@@ -21,7 +21,8 @@ local basic_widgets = require('widget.widgets.basic')
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
-local Slot = bind_mod.Slot
+local SlotSpec = slot_mod.SlotSpec
+local SlotWrap = slot_mod.SlotWrap
 local PlayerStore = player_context.PlayerStore
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
@@ -49,14 +50,16 @@ local MpDefine = mpv_define.MpDefine
 ---@param root Widget
 ---@return Widget
 local function scaffold(root)
-    return Column({ children = { Slot('slot'), root } })
+    return Column({ children = {
+        SlotWrap(SlotSpec({ id = 'slot', allow = { 'set' }, default_op = 'set' })),
+        root,
+    } })
 end
 
 ---@param widget Widget
----@param binds BindRegistry
-local function mount(widget, binds)
+local function mount(widget)
     local owner = RenderOwner()
-    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, binds)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.loose(1000, 1000))
     owner:layout()
     return owner, binding
@@ -126,6 +129,17 @@ F.test('on_prop returns a disposable observer', function()
     F.eq(fake.unobserved[1], callback, 'the original callback is unobserved')
 end)
 
+F.test('on_event returns a disposable observer', function()
+    reset_fake()
+    local define = MpDefine()
+    local mp_env = {}
+    define.session.modules:import_into('mp', mp_env, 'scope_a')
+    local subscription = mp_env.on_event('file-loaded', function() end)
+    F.ok(subscription:is_active(), 'event observer starts active')
+    F.ok(subscription:dispose(), 'event observer disposes')
+    F.ok(not subscription:dispose(), 'event disposal is idempotent')
+end)
+
 F.section('host define: player module')
 
 F.test('player module exposes read-only snapshots and subscriptions', function()
@@ -165,7 +179,8 @@ F.test('define_start / define / define_end seal through the messages', function(
 
     F.eq(define:is_sealed(), true, 'sealed')
     F.eq(sealed, 1, 'on_sealed fired')
-    local owner = mount(scaffold(Text('x')), define.binds)
+    local assembled = define:assemble(scaffold(Text('x')))
+    local owner = mount(assembled)
     F.eq(owner.root:children()[1].paragraph.text, 'hi', 'the bind landed')
 end)
 
@@ -212,6 +227,18 @@ F.test('close is idempotent when the session is idle', function()
     F.eq(define.session.phase, 'idle', 'nothing to seal')
 end)
 
+F.test('shutdown disposes Define-owned host observers', function()
+    reset_fake()
+    local define = MpDefine()
+    local mp_env = {}
+    define.session.modules:import_into('mp', mp_env, 'scope_a')
+    local subscription = mp_env.on_prop('pause', function() end)
+    F.ok(subscription:is_active(), 'observer is active before shutdown')
+    F.ok(define:shutdown(), 'shutdown runs once')
+    F.ok(not subscription:is_active(), 'observer is disposed by shutdown')
+    F.ok(not define:shutdown(), 'shutdown is idempotent')
+end)
+
 F.test('a broken payload is logged, not raised', function()
     reset_fake()
     local define = MpDefine()
@@ -225,4 +252,20 @@ F.test('a broken payload is logged, not raised', function()
     end
     F.eq(logged, true, 'reported through mp.msg.error')
     F.eq(define.session.phase, 'defining', 'the window stays open for the others')
+end)
+
+F.test('failed payloads dispose host subscriptions created during staging', function()
+    reset_fake()
+    local define = MpDefine()
+    define:listen()
+    local log = dispatcher()
+    log.define_start()
+    log.define('scope_a', [[
+        import('mp')
+        subscription = on_prop('pause', function() end)
+        missing_call()
+    ]])
+    F.eq(#fake.unobserved, 1, 'staged property observer is rolled back')
+    F.ok(define.session:env_for('scope_a').subscription == nil,
+        'failed payload does not publish the subscription')
 end)

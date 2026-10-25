@@ -13,7 +13,6 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class _PaddingOptions
 ---@field padding? EdgeInsets
 ---@field key? any
----@field id? string
 
 ---@class Padding : SingleChildRenderObjectWidget
 ---@field padding EdgeInsets
@@ -25,7 +24,6 @@ local Padding = std.class.new('Padding', { SingleChildRenderObjectWidget })
 function Padding:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.padding = options.padding or EdgeInsets.zero()
 end

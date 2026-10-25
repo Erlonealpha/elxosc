@@ -12,7 +12,6 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class _DecoratedBoxOptions
 ---@field decoration? Decoration
 ---@field key? any
----@field id? string
 
 ---@class DecoratedBox : SingleChildRenderObjectWidget
 ---@field decoration Decoration
@@ -24,7 +23,6 @@ local DecoratedBox = std.class.new('DecoratedBox', { SingleChildRenderObjectWidg
 function DecoratedBox:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.decoration = options.decoration or Decoration()
 end

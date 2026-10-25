@@ -17,7 +17,7 @@ local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
-local bind_mod = require('widget.bind')
+local slot_mod = require('widget.slot')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
 
@@ -26,7 +26,9 @@ local DefineSession = define_mod.DefineSession
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
-local Slot = bind_mod.Slot
+local SlotSpec = slot_mod.SlotSpec
+local SlotWrap = slot_mod.SlotWrap
+local CompositionAssembler = slot_mod.CompositionAssembler
 local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 
@@ -38,13 +40,16 @@ end
 text_layout.set_default(FixedLayout() --[[@as TextLayout]])
 
 ---@param widget Widget
----@param binds BindRegistry?
-local function mount(widget, binds)
+local function mount(widget)
     local owner = RenderOwner()
-    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, binds)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.loose(1000, 1000))
     owner:layout()
     return owner, binding
+end
+
+local function empty_slot(id)
+    return SlotWrap(SlotSpec({ id = id, allow = { 'set' }, default_op = 'set' }))
 end
 
 --== environment primitives ================================================
@@ -312,7 +317,9 @@ F.test('bind inside a chunk lands in the session registry', function()
     session:define('scope_a', "bind('slot', Text('hi'))")
     session:define_end()
 
-    local owner = mount(Column({ children = { Slot('slot') } }), session.binds)
+    local assembled = CompositionAssembler(session:contribution_snapshot()):assemble(
+        Column({ children = { empty_slot('slot') } }))
+    local owner = mount(assembled)
     F.eq(owner.root:children()[1].paragraph.text, 'hi', 'bound into the slot')
 end)
 
@@ -322,8 +329,8 @@ F.test('define bind entries belong to their declaring scopes', function()
     session:define('scope_a', "bind('a', Text('a'))")
     session:define('scope_b', "bind('b', Text('b'))")
 
-    local entries_a = session.binds:entries('scope_a')
-    local entries_b = session.binds:entries('scope_b')
+    local entries_a = session.contributions:entries_for_scope('scope_a')
+    local entries_b = session.contributions:entries_for_scope('scope_b')
     F.eq(#entries_a, 1, 'scope a entry')
     F.eq(#entries_b, 1, 'scope b entry')
     F.eq(entries_a[1].scope_id, 'scope_a', 'scope a recorded')
@@ -335,11 +342,12 @@ F.test('removing one define scope leaves another scope bindable', function()
     session:define_start()
     session:define('scope_a', "bind('a', Text('a'))")
     session:define('scope_b', "bind('b', Text('b'))")
-    session.binds:remove_scope('scope_a')
+    session.contributions:remove_scope('scope_a')
 
-    local owner = mount(Column({
-        children = { Slot('a'), Slot('b') },
-    }), session.binds)
+    local assembled = CompositionAssembler(session:contribution_snapshot()):assemble(Column({
+        children = { empty_slot('a'), empty_slot('b') },
+    }))
+    local owner = mount(assembled)
     F.eq(#owner.root:children(), 1, 'only scope b rendered')
     F.eq(owner.root:children()[1].paragraph.text, 'b', 'scope b remains')
 end)
@@ -356,4 +364,35 @@ F.test('a scope accepts only its first define payload', function()
     session:define_end()
     F.eq(warnings, 1, 'duplicate scope warning')
     F.eq(session:env_for('scope_once').first, 'accepted', 'first payload retained')
+end)
+
+F.test('a failed payload contributes nothing and does not consume its scope', function()
+    local errors = 0
+    local session = DefineSession({ builtins = { Text = Text } })
+    session.on_error = function() errors = errors + 1 end
+    session:define_start()
+    session:define('scope_retry', "bind('title', Text('discarded'))\nmissing_call()")
+    F.eq(#session.contributions:entries(), 0, 'failed payload is rolled back')
+    session:define('scope_retry', "bind('title', Text('accepted'))")
+    F.eq(#session.contributions:entries(), 1, 'scope can retry after failure')
+    F.eq(errors, 1, 'failure is reported once')
+end)
+
+F.test('modules publish only after a payload succeeds', function()
+    local session = DefineSession({ builtins = { Text = Text } })
+    session.on_error = function() end
+    session:define_start()
+    session:define('bad', "value = 1\nmod('delayed')\nmissing_call()")
+    F.ok(not session.modules:has('delayed'), 'failed module is not visible')
+    session:define('good', "value = 2\nmod('published')")
+    F.ok(session.modules:has('published'), 'successful module is published')
+end)
+
+F.test('the bind builtin rejects contributions after seal', function()
+    local session = DefineSession({ builtins = { Text = Text } })
+    session:define_start()
+    session:define_end()
+    F.raises(function()
+        session.api.bind('late', Text('late'))
+    end, 'RuntimeError', 'sealed bind')
 end)

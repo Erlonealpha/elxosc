@@ -25,7 +25,6 @@ local ButtonStyle = style_mod.ButtonStyle
 
 ---@class _ButtonBaseOptions : _ButtonStyleOptions
 ---@field key any?
----@field id string?
 ---@field label string|number?
 ---@field child Widget?
 ---@field on_click fun()?
@@ -131,7 +130,6 @@ local ButtonBase = std.class.new('ButtonBase', { StatefulWidget })
 function ButtonBase:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.label = options.label
     self.child = options.child
     self.on_click = options.on_click
@@ -161,11 +159,6 @@ function ButtonBase:child_widgets()
         return { self.child }
     end
     return {}
-end
-
----@return 'child'
-function ButtonBase:bind_target()
-    return 'child'
 end
 
 return { ButtonBase = ButtonBase, ButtonStyle = ButtonStyle, copy_options = copy_options }

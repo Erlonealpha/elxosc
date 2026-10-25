@@ -34,8 +34,9 @@ EmmyLua checker; the real-host run reports **9 passed**. Commands and scope are 
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
-values and dispatch results; the PlayerContext 6.3 contracts are implemented, while
-Pages, Main composition and multi-overlay contracts remain planned.
+values and dispatch results; the PlayerContext 6.3 contracts are implemented. R1/R2
+now cover SlotSpec/Contribution assembly, transactional Define payloads and mount-only
+WidgetTree behavior; Pages, Navigator and multi-overlay contracts remain planned.
 
 ## Real host (Python + uv, first stage)
 
@@ -88,9 +89,9 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_widget.lua` | Widget -> element -> render object, reuse, state rebuilds, constrained text anchors, paint-only updates and scale boxes |
 | `test_button_contract.lua` | Button options/style immutability and PointerEvent/KeyEvent construction |
 | `test_icon.lua` | Icon options, nominal box/center anchor, optical offset, font/style propagation and aggregate identity |
-| `test_bind.lua` | Inherited widgets and `bind` (define-time named targets) |
+| `test_bind.lua` | Inherited widgets and immutable SlotSpec/Contribution assembly |
 | `test_player_context.lua` | Provider lookup, immutable snapshot views, Store subscriptions and State lifecycle |
-| `test_define.lua` | Sandbox env primitives, the module registry (data + loaders), the define protocol |
+| `test_define.lua` | Sandbox env primitives, transactional module/contribution publish and the define protocol |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
 | `test_host_player_context.lua` | mpv property bridge, observer disposal and Define player updates (`mp` stubbed) |

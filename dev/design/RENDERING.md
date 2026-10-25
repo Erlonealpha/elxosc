@@ -90,8 +90,8 @@ ASS `osd-overlay` 的 `ass-events` 不提供本框架需要的 PTS 动画推进�
 3. **未来 host overlay.z** 才决定不同 `osd_overlay` layer 的最终视觉层级。
 
 `OverlayEntry` 的 visible/opaque/occluded/paint/input plan 属于同一 Widget runtime，
-不创建第二个 owner，也不进入 BindRegistry priority。`overlay.z` 只属于未来 host
-presentation，不进入 Widget、Element、RenderObject 或 BindRegistry。未来 OverlayHost
+不创建第二个 owner，也不进入 Slot contribution priority。`overlay.z` 只属于未来 host
+presentation，不进入 Widget、Element、RenderObject 或 SlotSpec。未来 OverlayHost
 为每个命名 layer 保存独立的 root、RenderOwner、Canvas、presenter、dirty/cache、visible
 和 input policy。较高 z 视觉上位于较低 z 之上；相同 z 使用稳定注册顺序，不能依赖表遍历
 顺序。

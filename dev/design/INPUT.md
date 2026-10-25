@@ -8,6 +8,11 @@
 target/focus、Gesture arena 和真实宿主的结构化字段回归仍未完成；实施顺序和依赖见
 [ROADMAP.md](ROADMAP.md)。
 
+P0/R1/R2 的初始化 assembly 不改变输入 owner：Define seal 只生成一个 fresh Widget
+description，mounted WidgetTree 仍由同一个 RenderOwner 导出 regions、capture 和 section
+policy。普通 mouse move 不因 assembly 或 root swap 合成 hover；结构变化后等待下一次真实
+move，旧 capture 仍按 RenderOwner 的卸载/root replacement/shutdown 规则清理。
+
 ## 当前基线
 
 当前宿主输入层使用 `elxosc-input`、`elxosc-wheel` 以及按区域追加编号的 section，

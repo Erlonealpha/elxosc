@@ -21,7 +21,6 @@ local M = {}
 ---@field offstage boolean?
 ---@field child Widget?
 ---@field key any?
----@field id string?
 
 ---@class Offstage : SingleChildRenderObjectWidget
 ---@field offstage boolean
@@ -32,7 +31,6 @@ local Offstage = std.class.new('Offstage', { SingleChildRenderObjectWidget })
 function Offstage:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.offstage = options.offstage == true
     self.child = options.child
 end
@@ -53,7 +51,6 @@ end
 ---@field maintain_state boolean?
 ---@field child Widget?
 ---@field key any?
----@field id string?
 
 ---@class Visibility : StatelessWidget
 ---@field visible boolean
@@ -65,7 +62,6 @@ local Visibility = std.class.new('Visibility', { StatelessWidget })
 function Visibility:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.visible = options.visible ~= false
     self.maintain_state = options.maintain_state ~= false
     self.child = options.child

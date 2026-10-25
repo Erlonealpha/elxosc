@@ -68,7 +68,7 @@ end
 
 local function mount(widget, scheduler)
     local owner = RenderOwner()
-    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, nil, scheduler)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, scheduler)
     owner:set_viewport(Constraints.tight(300, 180))
     owner:layout()
     return owner, binding

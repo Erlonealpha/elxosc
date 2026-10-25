@@ -19,7 +19,6 @@ local M = {}
 
 ---@class Widget : std.object
 ---@field key any?
----@field id string? name used as a `bind` target (see widget/bind.lua)
 ---@field __class std.Class
 ---@overload fun(key: any?): self
 local Widget = std.class.new('Widget', {})
@@ -40,18 +39,6 @@ end
 ---@return Widget[]
 function Widget:child_widgets()
     return {}
-end
-
----@alias BindTarget
---- | 'child'
---- | 'children'
---- | nil
-
---- Which child slot `bind` may write to: `'child'`, `'children'`, or `nil`
---- when this widget cannot receive children.
----@return BindTarget
-function Widget:bind_target()
-    return nil
 end
 
 --- Reuse rule: same widget class and equal key (Flutter's `Widget.canUpdate`).
@@ -100,10 +87,6 @@ local ProxyWidget = std.class.new('ProxyWidget', { Widget })
 
 function ProxyWidget:child_widgets()
     return self.child and { self.child } or {}
-end
-
-function ProxyWidget:bind_target()
-    return 'child'
 end
 
 --- A proxy that only contributes parent data to its child's render object
@@ -165,10 +148,6 @@ function SingleChildRenderObjectWidget:child_widgets()
     return self.child and { self.child } or {}
 end
 
-function SingleChildRenderObjectWidget:bind_target()
-    return 'child'
-end
-
 ---@class MultiChildRenderObjectWidget : RenderObjectWidget
 ---@field children Widget[]
 ---@overload fun(key: any?): self
@@ -177,10 +156,6 @@ local MultiChildRenderObjectWidget =
 
 function MultiChildRenderObjectWidget:child_widgets()
     return self.children or {}
-end
-
-function MultiChildRenderObjectWidget:bind_target()
-    return 'children'
 end
 
 M.Widget = Widget

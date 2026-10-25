@@ -30,10 +30,10 @@ local M = {}
 ---@field root_element Element?
 ---@field on_dirty fun()?
 ---@field _disposed boolean
----@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, binds: BindRegistry?, scheduler: Scheduler?): self
+---@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, scheduler: Scheduler?): self
 local WidgetTree = std.class.new('WidgetTree', {})
 
-function WidgetTree:__init(binding, root_widget, render_owner, binds, scheduler)
+function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.binding = binding
     self.render_owner = render_owner
     self.scheduler = scheduler
@@ -45,9 +45,6 @@ function WidgetTree:__init(binding, root_widget, render_owner, binds, scheduler)
         if self.on_dirty then
             self.on_dirty()
         end
-    end
-    if binds then
-        binds:apply(root_widget)
     end
     self:_mount(root_widget)
 end
@@ -163,13 +160,12 @@ end
 
 ---@param root_widget Widget
 ---@param render_owner RenderOwner?
----@param binds BindRegistry?
 ---@param scheduler Scheduler?
 ---@return WidgetTree
-function WidgetsBinding:attach(root_widget, render_owner, binds, scheduler)
+function WidgetsBinding:attach(root_widget, render_owner, scheduler)
     self:assert_alive()
     render_owner = render_owner or self:create_pipeline_owner()
-    local tree = WidgetTree(self, root_widget, render_owner, binds, scheduler)
+    local tree = WidgetTree(self, root_widget, render_owner, scheduler)
     self._trees[tree] = true
     return tree
 end

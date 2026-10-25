@@ -68,8 +68,11 @@ Widget constructors、`new_widget`、`new_state`、DefaultApp/Slot 接口和宿�
 注入。Define 负责传入扩展内容，不规定扩展内部的运行时行为；扩展可以自行实现
 State、消息和页面逻辑，也可以使用播放器预先提供的配置/API 更新接口。
 
-代码在 `define_end` 前登记声明，BindRegistry/DefaultApp assembly 在挂载前组装目标 Widget
-树。协议明确不提供运行时 unbind、scope 关闭、已挂载树回滚、通用 root rebuild、
+代码在 `define_end` 前登记声明；每个 payload 先在 transaction 中执行，成功后才提交
+Contribution 和 module publish。seal 后由一个 `CompositionAssembler` 按 `SlotSpec` 生成
+fresh Widget root，`WidgetTree` 只负责 mount/update/dispose，不重复 apply，也不修改
+caller-owned Widget。BindRegistry/DefaultApp assembly 不再作为运行时路径。失败 payload
+整体丢弃且不消耗 scope。协议明确不提供运行时 unbind、已挂载树回滚、
 priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容入口，不重新执行扩展
 源代码；扩展需要响应更新时，通过自己的 State/Provider 或公开 setter 处理。
 
@@ -103,8 +106,9 @@ dispose 时调用 `mp.unobserve_property`。Define 的 `player` 模块只提供�
 - `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
 
 它不提供替换快照、编辑已挂载 Widget、重新执行 Define 源码或改变 Widget class
-identity 的能力。`mp.on_prop` 也返回 disposable observer，扩展必须在 State/扩展
-销毁时清理它。
+identity 的能力。`mp.on_prop`、`mp.on_event` 和 scope `on_message` 都返回幂等
+disposable；`MpDefine:shutdown()` 会清理 host-owned handles，State/扩展也应在
+自己的 dispose 生命周期中释放仍由自己持有的句柄。
 
 ## 多层 overlay
 

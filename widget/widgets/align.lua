@@ -15,13 +15,11 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field width_factor? number
 ---@field height_factor? number
 ---@field key? any
----@field id? string
 
 ---@class _CenterOptions
 ---@field width_factor? number
 ---@field height_factor? number
 ---@field key? any
----@field id? string
 
 ---@class Align : SingleChildRenderObjectWidget
 ---@field alignment Offset
@@ -35,7 +33,6 @@ local Align = std.class.new('Align', { SingleChildRenderObjectWidget })
 function Align:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.alignment = options.alignment or Offset(0.5, 0.5)
     self.width_factor = options.width_factor
@@ -61,7 +58,6 @@ local function Center(child, options)
     options = options or {}
     return Align(child, {
         key = options.key,
-        id = options.id,
         alignment = Offset(0.5, 0.5),
         width_factor = options.width_factor,
         height_factor = options.height_factor,

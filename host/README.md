@@ -29,8 +29,10 @@ the sole extension-content ingress.
 
 `App` accepts an optional `player_store` and wraps its root in `PlayerScope`. The
 `player` Define module exposes only `get_snapshot()` and `on_update()`; updates do not
-re-run Define source. Property observers and Define `mp.on_prop` subscriptions return
-disposable handles and must be released on shutdown or extension disposal.
+re-run Define source. Define contributions are assembled once after seal, before the
+WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Property,
+event and scope-message subscriptions return idempotent disposable handles and
+`MpDefine:shutdown()` releases the host-owned handles.
 
 See [host design](../dev/design/HOST.md), [input](../dev/design/INPUT.md),
 [player application](../dev/design/PLAYER.md), and [testing](../dev/design/TESTING.md).

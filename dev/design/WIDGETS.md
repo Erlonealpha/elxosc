@@ -72,13 +72,22 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 
 ## 绑定和插槽
 
-`Widget.id` 为 Define 期命名目标。`BindRegistry` 在 mount 前静态遍历 Widget 树，
-向可接收 `child` 或 `children` 的目标写入 Widget：单子节点默认 replace，多子
-节点默认 append；显式操作包括 replace_if_empty 和 insert。
+Define 的公共组合边界由 `SlotSpec` 声明。`SlotWrap(SlotSpec(...))` 只存在于
+初始化 Widget 描述中；`CompositionAssembler` 在 seal 后按当前组合树解析它，输出
+fresh Widget 描述，mounted tree 不保留 Slot wrapper。普通 Widget 的 `id`、
+`child/children` 不是自动公开的 Define target。
 
-绑定完成后不再管理运行时 Widget 树。后续 UI 变化必须由 State rebuild；绑定注册
-表不提供回滚、运行时 unbind、scope shutdown 或 root rebuild。一个 scope 的多个
-绑定按注册顺序保留，不引入 priority。
+`bind(slot_id, widget, opts)` 收集不可变 `Contribution` 快照。允许的操作是：
+
+- `replace`：最后一个有效贡献胜出，并重新读取 replacement 的 SlotSpec；
+- `set`：保留 Slot host 的组合边界，首个有效贡献生效，后来者产生诊断；
+- `append`：由 SlotSpec 处理 priority、生成 identity、数量限制和 `first`/`last`/
+  `before`/`after` 相对位置。
+
+贡献、默认值和 opts 在收集/组装时复制；caller 不能设置 append identity/key。
+非法、未知或最终 unresolved 的贡献只产生带 scope/slot/op 的诊断并忽略，不修改
+默认描述，也不执行 runtime unbind、rollback 或 root rebuild。`WidgetTree`/Binding
+只负责 mount、update、rebuild、dispose，不再接受 bind registry 或执行 apply。
 
 ## WidgetsApp、DefaultApp、Main 与扩展区域
 

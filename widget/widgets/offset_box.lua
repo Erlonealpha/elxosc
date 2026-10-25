@@ -16,7 +16,6 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field offset? Offset defaults to Offset.zero()
 ---@field child? Widget
 ---@field key? any
----@field id? string
 
 ---@class OffsetBox : SingleChildRenderObjectWidget
 ---@field offset Offset
@@ -27,7 +26,6 @@ local OffsetBox = std.class.new('OffsetBox', { SingleChildRenderObjectWidget })
 function OffsetBox:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.offset = options.offset or Offset.zero()
     self.child = options.child
 end

@@ -9,7 +9,7 @@
 - Canvas/Paint/Path/TextPaint 契约，ASS 和 Record 后端；
 - Constraints、RenderObject/RenderOwner、布局控件、绘制和命中测试；
 - FrameClock/Scheduler/Ticker、Curve/Tween/AnimationController；
-- Widget/Element/State/Inherited/Key、WidgetBinding、控件和 Define 期 bind；
+- Widget/Element/State/Inherited/Key、WidgetsBinding、控件和初始化期 Slot assembly；
 - ASS 文本 `left/center/right` 锚点、正轴向有限缩放、TransformBox、
   LayoutScaleBox、paint/layout dirty 分类；
 - mpv frame loop、ASS presenter、鼠标输入、Define transport 和真实宿主 fixture。
@@ -64,6 +64,17 @@
   `player` module；
 - 配置/API 更新不支持 Lua 源码热重载，不重新执行扩展代码，不改变 Widget class
   identity。完整播放器字段 schema 由后续应用层按实际消费点增加。
+
+### P0/R1/R2 初始化组合（已实现）
+
+- 当前设计、模块 README 和测试矩阵统一到单 Canvas、单 presenter、输入 section 栈和
+  延期边界；
+- `SlotSpec`/`SlotWrap`/`Contribution`/`CompositionAssembler` 取代旧的 BindRegistry
+  原地写入，支持 replace/set/append、当前树深度和诊断；
+- Define payload 使用 transaction，失败不消耗 scope，module publish 在成功后提交；
+- seal 后只组装一次 fresh Widget description，WidgetTree 只负责 mount/update/dispose；
+- host `on_prop`、`on_event` 和 scope message 句柄可 dispose，`MpDefine:shutdown()` 清理
+  Define-owned host resources。
 
 ### 6.4 N1 DefaultApp/Main 与扩展内容（已实现）
 

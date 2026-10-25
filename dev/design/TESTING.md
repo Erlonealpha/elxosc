@@ -14,7 +14,7 @@ uv run --group test python -m pytest -q test/real_host
 ```
 
 历史基线（2026-10-16）为 **1315 Lua checks passed**、EmmyLua **No issues found**、
-real-host **9 passed**。当前 N1/N2 工作区（2026-10-25）为 **1351 Lua checks passed**、
+real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**、
 EmmyLua **No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主
 设计文档同步更新。
 
@@ -27,7 +27,8 @@ runner。测试按层覆盖：
 - layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；
 - animation/scheduler：假时钟、重复/反向、监听替换和 State 资源生命周期；
 - widget：Widget/Element 复用、State rebuild、聚合 identity、控件行为；
-- libs/Define：沙箱、模块、scope 首次 payload、bind 顺序和错误边界；
+- libs/Define：沙箱、模块、scope 首次 payload、transaction 失败隔离、module 延迟发布、
+  bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；
 - Flutter runtime：BuildScope/inactive/finalize、PipelineOwner/RenderOwner identity、
   PaintingContext Canvas 边界、Binding singleton/role identity、copied-owner isolation、

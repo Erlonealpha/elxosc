@@ -33,7 +33,6 @@ local StatelessWidget = widget_mod.StatelessWidget
 ---@field border_width? number
 ---@field border_color? Color
 ---@field key? any
----@field id? string
 
 --- A convenience composition of margin / sizing / decoration / alignment /
 --- padding (Flutter's `Container`). It owns no render object of its own; the
@@ -52,7 +51,6 @@ local Container = std.class.new('Container', { StatelessWidget })
 function Container:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
     self.padding = options.padding
     self.margin = options.margin
@@ -106,10 +104,6 @@ end
 
 function Container:child_widgets()
     return self.child and { self.child } or {}
-end
-
-function Container:bind_target()
-    return 'child'
 end
 
 return { Container = Container }

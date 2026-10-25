@@ -23,7 +23,7 @@ local mpv_define = require('host.mpv_define')
 local demo_mod = require('demo')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
-local bind_mod = require('widget.bind')
+local slot_mod = require('widget.slot')
 local state_mod = require('widget.state')
 local widget_mod = require('widget.widget')
 local player_context = require('widget.player_context')
@@ -32,7 +32,9 @@ local Color = color.Color
 local Offset = geometry.Offset
 local TextStyle = text_style.TextStyle
 local MpDefine = mpv_define.MpDefine
-local Slot = bind_mod.Slot
+local SlotSpec = slot_mod.SlotSpec
+local SlotWrap = slot_mod.SlotWrap
+local CompositionAssembler = slot_mod.CompositionAssembler
 local State = state_mod.State
 local StatefulWidget = widget_mod.StatefulWidget
 local Column = layout_widgets.Column
@@ -60,10 +62,18 @@ local function find_widget_element(element, widget_class)
 end
 
 ---@return Widget
-local function scaffold()
-    return Column({ children = { Slot('slot'), Text('body', {
+local function scaffold_description()
+    return Column({ children = {
+        SlotWrap(SlotSpec({ id = 'slot', allow = { 'set' }, default_op = 'set' })),
+        Text('body', {
         style = TextStyle({ font_size = 16, color = Color.rgba255(0xFF, 0xFF, 0xFF) }),
-    }) } })
+        }),
+    } })
+end
+
+local function scaffold()
+    local result = CompositionAssembler():assemble(scaffold_description())
+    return result
 end
 
 --== frame clock ===========================================================
@@ -528,7 +538,7 @@ F.test('binds are applied to a fresh scaffold and mounted', function()
     fake.log['define_end']()
 
     local app = mpv_app.App(scaffold())
-    app:set_root_widget(define:apply(scaffold()))
+    app:set_root_widget(define:assemble(scaffold_description()))
     app.binding:flush_build()
     app.owner:layout()
 
@@ -537,9 +547,7 @@ end)
 
 F.test('an unbound slot costs no render node', function()
     mp_stub.reset()
-    local define = MpDefine()
-    define:listen()
-    local app = mpv_app.App(define:apply(scaffold()))
+    local app = mpv_app.App(scaffold())
     app.binding:flush_build()
     app.owner:layout()
     F.eq(#app.owner.root:children(), 1, 'only the body remains')

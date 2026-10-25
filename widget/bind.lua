@@ -1,224 +1,30 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- `bind`: attach a widget to a named node while the tree is being assembled.
+-- Define-time contribution entry point.
 --
--- The point is the define phase: the host names the nodes a script may fill
--- (`Widget.id`), the script calls `bind(id, widget)`, and the registry writes
--- the widget into that node's child slot **before the tree is mounted**.
--- There is deliberately no runtime mutation of the widget tree: after `apply`
--- the tree is fixed, and only `set_state` rebuilds drive change.
---
--- Today the operation is just "set the target's `child` / `children`". Richer
--- behaviours (more ops, changing part of the target's own settings) layer on
--- the same registry without changing the call shape.
+-- The old BindRegistry wrote directly into caller-owned Widgets.  R1 replaces
+-- that mutation path with a sealed ContributionRegistry and a fresh-description
+-- CompositionAssembler.  `bind()` is intentionally only a small DSL helper;
+-- it does not know about Element, State, BuildContext or the host.
 
-local std = require 'elxlibs.std'
-local widget_mod = require 'widget.widget'
-
-local StatelessWidget = widget_mod.StatelessWidget
-local raise = std.raise
+local slot_mod = require 'widget.slot'
 
 local M = {}
 
---- How a bound widget is written into its target node.
----@alias BindOp
---- |>'replace'
---- | 'replace_if_empty'
---- | 'append'
---- | 'insert'
+M.SlotSpec = slot_mod.SlotSpec
+M.SlotWrap = slot_mod.SlotWrap
+M.Contribution = slot_mod.Contribution
+M.ContributionRegistry = slot_mod.ContributionRegistry
+M.CompositionAssembler = slot_mod.CompositionAssembler
 
----@class BindOpts
----@field op BindOp? defaults to "replace" for a `child` target, "append" for `children`
----@field position integer? 1-based index, used by "insert"
-
----@class BindEntry
----@field id string
----@field widget Widget
----@field opts BindOpts
----@field scope_id string? scope that declared the binding, when declared by define
-
----@class BindRegistry : std.object
----@overload fun(): self
-local BindRegistry = std.class.new('BindRegistry', {})
-
-function BindRegistry:__init()
-    self._binds = {}
-end
-
----@param id string
+---@param registry ContributionRegistry
+---@param slot_id string
 ---@param widget Widget
----@param opts BindOpts?
----@param scope_id string? scope that owns this binding
-function BindRegistry:add(id, widget, opts, scope_id)
-    local entries = self._binds[id]
-    if not entries then
-        entries = {}
-        self._binds[id] = entries
-    end
-    entries[#entries + 1] = {
-        id = id,
-        widget = widget,
-        opts = opts or {},
-        scope_id = scope_id,
-    }
-end
-
----@param id string
----@return BindEntry[]
-function BindRegistry:get(id)
-    return self._binds[id] or {}
-end
-
----@param id string
----@return boolean
-function BindRegistry:has(id)
-    return self._binds[id] ~= nil
-end
-
---- Return all pending bindings, optionally limited to one scope.
---- The returned array is a snapshot and changing it does not change the registry.
+---@param opts table<string, any>?
 ---@param scope_id string?
----@return BindEntry[]
-function BindRegistry:entries(scope_id)
-    local result = {}
-    for _, entries in pairs(self._binds) do
-        for _, entry in ipairs(entries) do
-            if scope_id == nil or entry.scope_id == scope_id then
-                result[#result + 1] = entry
-            end
-        end
-    end
-    return result
+function M.bind(registry, slot_id, widget, opts, scope_id)
+    return registry:add(slot_id, widget, opts, scope_id)
 end
-
---- Remove all pending bindings declared by `scope_id`.
---- Bindings already applied to a widget tree are not reverted.
----@param scope_id string
-function BindRegistry:remove_scope(scope_id)
-    for id, entries in pairs(self._binds) do
-        local kept = {}
-        for _, entry in ipairs(entries) do
-            if entry.scope_id ~= scope_id then
-                kept[#kept + 1] = entry
-            end
-        end
-        if #kept == 0 then
-            self._binds[id] = nil
-        else
-            self._binds[id] = kept
-        end
-    end
-end
-
---- Alias for remove_scope, named for callers that manage a scope lifecycle.
----@param scope_id string
-function BindRegistry:clear_scope(scope_id)
-    self:remove_scope(scope_id)
-end
-
-function BindRegistry:clear()
-    self._binds = {}
-end
-
---- Write every recorded binding into `root` and its declared descendants.
---- Call once, after the define phase and before mounting.
----@param root Widget
----@return Widget root
-function BindRegistry:apply(root)
-    self:_visit(root)
-    return root
-end
-
----@param widget Widget
----@param entry { id: string, widget: Widget, opts: BindOpts }
-local function apply_binding(widget, entry)
-    local target = widget:bind_target()
-    if target == nil then
-        raise(std.RuntimeError(string.format(
-            "bind('%s'): %s cannot receive children", entry.id, tostring(widget))))
-    end
-    local opts = entry.opts
-    if target == 'child' then
-        local op = opts.op or 'replace'
-        if op == 'replace' then
-            widget.child = entry.widget
-        elseif op == 'replace_if_empty' then
-            if widget.child == nil then
-                widget.child = entry.widget
-            end
-        else
-            raise(std.ValueError(string.format(
-                "bind('%s'): op '%s' is not valid for a single-child target", entry.id, op)))
-        end
-        return
-    end
-    local op = opts.op or 'append'
-    local children = widget.children
-    if children == nil then
-        children = {}
-        widget.children = children
-    end
-    if op == 'append' then
-        children[#children + 1] = entry.widget
-    elseif op == 'insert' then
-        table.insert(children, opts.position or (#children + 1), entry.widget)
-    else
-        raise(std.ValueError(string.format(
-            "bind('%s'): op '%s' is not valid for a multi-child target", entry.id, op)))
-    end
-end
-
----@param widget Widget
-function BindRegistry:_visit(widget)
-    local id = widget.id
-    if id ~= nil and self:has(id) then
-        for _, entry in ipairs(self:get(id)) do
-            apply_binding(widget, entry)
-        end
-    end
-    for _, child in ipairs(widget:child_widgets()) do
-        self:_visit(child)
-    end
-end
-
---- Sugar for the definition sandbox: `bind(registry, 'title_bar', widget)`.
----@param registry BindRegistry
----@param id string
----@param widget Widget
----@param opts BindOpts?
----@param scope_id string?
-function M.bind(registry, id, widget, opts, scope_id)
-    registry:add(id, widget, opts, scope_id)
-end
-
---- An empty place a script can fill: a node carrying an `id` and no children
---- of its own. Unbound it contributes nothing to the render tree.
----@class Slot : StatelessWidget
----@field child Widget?
----@overload fun(id: string, options: { key: any? }?): self
-local Slot = std.class.new('Slot', { StatelessWidget })
-
-function Slot:__init(id, options)
-    options = options or {}
-    self.key = options.key
-    self.id = id
-    self.child = nil
-end
-
-function Slot:child_widgets()
-    return self.child and { self.child } or {}
-end
-
-function Slot:bind_target()
-    return 'child'
-end
-
-function Slot:build()
-    return self.child
-end
-
-M.BindRegistry = BindRegistry
-M.Slot = Slot
 
 return M

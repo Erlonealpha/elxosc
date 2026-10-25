@@ -22,7 +22,6 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field scale_controller? AnimationController
 ---@field scale_tween? Tween<Size>
 ---@field key? any
----@field id? string
 
 ---@class TransformBox : SingleChildRenderObjectWidget
 ---@field scale Size
@@ -38,7 +37,6 @@ local TransformBox = std.class.new('TransformBox', { SingleChildRenderObjectWidg
 function TransformBox:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.scale = options.scale == nil and Size(1, 1) or options.scale
     self.alignment = options.alignment == nil and Offset(0.5, 0.5) or options.alignment
@@ -76,7 +74,6 @@ end
 ---@field alignment? Offset 0..1 alignment for extra outer space
 ---@field clip? boolean clip transformed paint to the layout box
 ---@field key? any
----@field id? string
 
 ---@class LayoutScaleBox : SingleChildRenderObjectWidget
 ---@field scale Size
@@ -90,7 +87,6 @@ local LayoutScaleBox = std.class.new('LayoutScaleBox', { SingleChildRenderObject
 function LayoutScaleBox:__init(child, options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = child
     self.scale = options.scale == nil and Size(1, 1) or options.scale
     self.alignment = options.alignment == nil and Offset(0.5, 0.5) or options.alignment

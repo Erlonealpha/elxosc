@@ -124,7 +124,6 @@ end
 ---@field bottom Widget?
 ---@field scale number?
 ---@field key any?
----@field id string?
 
 ---@class Main : StatelessWidget
 ---@field title string
@@ -138,7 +137,6 @@ local Main = std.class.new('Main', { StatelessWidget })
 function Main:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.title = options.title or 'elxosc'
     self.title_bar = options.title_bar
     self.window_controls = options.window_controls
@@ -294,7 +292,6 @@ end
 ---@class _WindowLayerOptions
 ---@field child Widget?
 ---@field key any?
----@field id string?
 
 ---@class WindowLayer : StatelessWidget
 ---@field child Widget?
@@ -304,7 +301,6 @@ local WindowLayer = std.class.new('WindowLayer', { StatelessWidget })
 function WindowLayer:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
 end
 

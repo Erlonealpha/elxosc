@@ -60,6 +60,8 @@ F runtime 的生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPres
 `osd-overlay`。Layer/compositing、Semantics、multi-view 和 GlobalKey 跨父节点 reparent
 不因名称对齐而进入当前 API。
 
+初始化组合位于 WidgetTree 之前：Define payload → Contribution snapshot →
+`CompositionAssembler` → fresh Widget description → `WidgetsBinding:attach()`。
 `DefaultApp` 是播放器应用层的 Widget 组合契约，不是第四棵底层运行时树。它把稳定的
 Main、Extension 和 WindowLayer 作为同一个 `Theatre` 的逻辑 entries 组装；最终仍由
 Widget/Element/RenderObject 三棵树完成挂载和绘制。Define/Slot 是初始化期扩展内容进入

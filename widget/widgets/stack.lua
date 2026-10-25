@@ -14,7 +14,6 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 ---@field children? Widget[]
 ---@field alignment? Offset
 ---@field key? any
----@field id? string
 
 ---@class Stack : MultiChildRenderObjectWidget
 ---@field children Widget[]
@@ -26,7 +25,6 @@ local Stack = std.class.new('Stack', { MultiChildRenderObjectWidget })
 function Stack:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.children = options.children or {}
     -- `Stack.alignment` defaults to `AlignmentDirectional.topStart`.
     self.alignment = options.alignment or Offset(0, 0)

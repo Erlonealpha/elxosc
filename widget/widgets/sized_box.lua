@@ -13,12 +13,10 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field height? number
 ---@field child? Widget
 ---@field key? any
----@field id? string
 
 ---@class _SizedBoxChildOptions
 ---@field child? Widget
 ---@field key? any
----@field id? string
 
 ---@class SizedBox : SingleChildRenderObjectWidget
 ---@field width? number
@@ -30,7 +28,6 @@ local SizedBox = std.class.new('SizedBox', { SingleChildRenderObjectWidget })
 function SizedBox:__init(options)
     options = options or {}
     self.key = options.key
-    self.id = options.id
     self.child = options.child
     self.width = options.width
     self.height = options.height
@@ -54,7 +51,6 @@ function SizedBox.expand(options)
     options = options or {}
     return SizedBox({
         key = options.key,
-        id = options.id,
         child = options.child,
         width = math.huge,
         height = math.huge,
@@ -68,7 +64,6 @@ function SizedBox.shrink(options)
     options = options or {}
     return SizedBox({
         key = options.key,
-        id = options.id,
         child = options.child,
         width = 0,
         height = 0,
@@ -82,7 +77,6 @@ function SizedBox.from_size(size, options)
     options = options or {}
     return SizedBox({
         key = options.key,
-        id = options.id,
         child = options.child,
         width = size.width,
         height = size.height,

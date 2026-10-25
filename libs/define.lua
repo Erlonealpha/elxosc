@@ -21,14 +21,14 @@ local bind_mod = require 'widget.bind'
 
 local raise = std.raise
 local ModuleRegistry = modules_mod.ModuleRegistry
-local BindRegistry = bind_mod.BindRegistry
+local ContributionRegistry = bind_mod.ContributionRegistry
 
 local M = {}
 
 ---@class DefineOptions
 ---@field builtins table<string, any>? names every scope can read as-is
 ---@field modules ModuleRegistry? shared module registry
----@field binds BindRegistry? shared bind registry
+---@field contributions ContributionRegistry? shared contribution registry
 ---@field protected_names table<string, true>? names a chunk may not overwrite
 
 ---@alias DefineSessionPhase
@@ -40,29 +40,37 @@ local M = {}
 --- know which scope is currently running.
 ---@class DefineSession : std.object
 ---@field modules ModuleRegistry
----@field binds BindRegistry
+---@field contributions ContributionRegistry
 ---@field api table<string, any>
 ---@field protected_names table<string, true>
 ---@field phase DefineSessionPhase
 ---@field current_define string?
 ---@field current_env table?
 ---@field on_error fun(scope_id: string, err: any)? called instead of raising when set
+---@field on_payload_begin fun(scope_id: string)?
+---@field on_payload_commit fun(scope_id: string)?
+---@field on_payload_rollback fun(scope_id: string)?
 ---@field _scopes table<string, table>
 ---@field _defined_scopes table<string, true> scopes with an accepted initial payload
+---@field _sealed_contributions Contribution[]?
 ---@overload fun(options: DefineOptions?): self
 local DefineSession = std.class.new('DefineSession', {})
 
 function DefineSession:__init(options)
     options = options or {}
     self.modules = options.modules or ModuleRegistry()
-    self.binds = options.binds or BindRegistry()
+    self.contributions = options.contributions or ContributionRegistry()
     self.phase = 'idle'
     self.defining_count = 0
     self.current_define = nil
     self.current_env = nil
     self.on_error = nil
+    self.on_payload_begin = nil
+    self.on_payload_commit = nil
+    self.on_payload_rollback = nil
     self._scopes = {}
     self._defined_scopes = {}
+    self._sealed_contributions = nil
     self.protected_names = {}
     for name in pairs(options.protected_names or {}) do
         self.protected_names[name] = true
@@ -79,7 +87,10 @@ function DefineSession:__init(options)
         self:_mod(name, data)
     end
     api['bind'] = function(id, widget, opts)
-        self.binds:add(id, widget, opts, self.current_define)
+        if self.phase == 'sealed' then
+            raise(std.RuntimeError('bind(...) is not allowed after define_end'))
+        end
+        self.contributions:add(id, widget, opts, self.current_define)
     end
     self.api = api
 end
@@ -159,8 +170,26 @@ function DefineSession:define(scope_id, code)
         return self:env_for(scope_id)
     end
     local env = self:env_for(scope_id)
+    if self.on_payload_begin ~= nil then
+        self.on_payload_begin(scope_id)
+    end
+    local previous_modules = self.modules
+    local previous_contributions = self.contributions
+    local transaction_modules = previous_modules:fork()
+    local transaction_contributions = previous_contributions:fork()
+    local previous_env = {}
+    for key, value in pairs(env) do
+        previous_env[key] = value
+    end
+    self.modules = transaction_modules
+    self.contributions = transaction_contributions
     local chunk, err = sandbox.load_chunk(code, '@define:' .. scope_id, env)
     if chunk == nil then
+        self.modules = previous_modules
+        self.contributions = previous_contributions
+        if self.on_payload_rollback ~= nil then
+            self.on_payload_rollback(scope_id)
+        end
         self:_fail(scope_id, string.format("define('%s'): %s", scope_id, tostring(err)))
         return env
     end
@@ -168,15 +197,33 @@ function DefineSession:define(scope_id, code)
     local ok, run_err = pcall(chunk)
     self.current_define, self.current_env = nil, nil
     if not ok then
+        for key in pairs(env) do
+            rawset(env, key, nil)
+        end
+        for key, value in pairs(previous_env) do
+            rawset(env, key, value)
+        end
+        self.modules = previous_modules
+        self.contributions = previous_contributions
+        if self.on_payload_rollback ~= nil then
+            self.on_payload_rollback(scope_id)
+        end
         self:_fail(scope_id, run_err)
     else
+        previous_modules:commit_from(transaction_modules)
+        previous_contributions:commit_from(transaction_contributions)
+        self.modules = previous_modules
+        self.contributions = previous_contributions
         self._defined_scopes[scope_id] = true
+        if self.on_payload_commit ~= nil then
+            self.on_payload_commit(scope_id)
+        end
     end
     return env
 end
 
---- Seal the tree: no more definitions. The host then applies `self.binds` to the
---- scaffold and mounts it.
+--- Seal the Define contributions. The host then assembles a fresh Widget root
+--- and mounts it.
 function DefineSession:define_end()
     if self.phase == 'idle' then
         raise(std.RuntimeError('define_end: the session is not defining yet'))
@@ -186,7 +233,16 @@ function DefineSession:define_end()
     self.defining_count = self.defining_count - 1
     if self.defining_count <= 0 then
         self.phase = 'sealed'
+        self._sealed_contributions = self.contributions:seal()
     end
+end
+
+---@return Contribution[]
+function DefineSession:contribution_snapshot()
+    if self._sealed_contributions ~= nil then
+        return self.contributions:snapshot()
+    end
+    return self.contributions:entries()
 end
 
 M.ModuleRegistry = ModuleRegistry

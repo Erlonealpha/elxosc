@@ -1,19 +1,18 @@
--- Inherited widgets and `bind` (named targets, define-time only).
+-- Initialization-only Slot contributions and immutable assembly.
 
--- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
 
+local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
 local widget_mod = require('widget.widget')
 local binding_mod = require('widget.binding')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
-local bind_mod = require('widget.bind')
+local slot_mod = require('widget.slot')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -23,24 +22,35 @@ local InheritedWidget = widget_mod.InheritedWidget
 local Column = layout_widgets.Column
 local SizedBox = layout_widgets.SizedBox
 local Text = basic_widgets.Text
-local BindRegistry = bind_mod.BindRegistry
-local Slot = bind_mod.Slot
+local SlotSpec = slot_mod.SlotSpec
+local SlotWrap = slot_mod.SlotWrap
+local ContributionRegistry = slot_mod.ContributionRegistry
+local CompositionAssembler = slot_mod.CompositionAssembler
 
----@param widget Widget
----@param binds BindRegistry?
-local function mount(widget, binds)
+local FixedLayout = std.class.new('test.bind.FixedLayout', { text_layout.TextLayout })
+function FixedLayout:line_width(line, style)
+    return #line * style.font_size * 0.5
+end
+text_layout.set_default(FixedLayout())
+
+local function mount(widget)
     local owner = RenderOwner()
-    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, binds)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.loose(1000, 1000))
     owner:layout()
     return owner, binding
 end
 
---== inherited widgets =====================================================
+local function assemble(root, registry)
+    local assembler = CompositionAssembler(registry and registry:seal() or {})
+    return assembler:assemble(root)
+end
+
+--== inherited widgets ======================================================
 
 F.section('bind: inherited widgets')
 
-local Theme = std.class.new('test.Theme', { InheritedWidget })
+local Theme = std.class.new('test.bind.Theme', { InheritedWidget })
 function Theme:__init(value, options)
     options = options or {}
     self.key = options.key
@@ -48,7 +58,7 @@ function Theme:__init(value, options)
     self.child = options.child
 end
 
-local Show = std.class.new('test.Show', { StatelessWidget })
+local Show = std.class.new('test.bind.Show', { StatelessWidget })
 function Show:build(context)
     local theme = context:depend_on_inherited(Theme)
     return Text(theme and theme.value or 'none')
@@ -71,117 +81,100 @@ F.test('replacing the provider updates dependents', function()
     F.eq(owner.root:children()[1].paragraph.text, 'light', 'rebuilt with the new value')
 end)
 
---== bind ==================================================================
+--== Slot protocol ==========================================================
 
-F.section('bind: named targets')
+F.section('bind: Slot contributions')
 
-F.test('writes the bound widget into the target child slot', function()
-    local binds = BindRegistry()
-    binds:add('title', Text('bound'))
-    local owner = mount(Column({ children = { SizedBox({ id = 'title' }) } }), binds)
-    local target = owner.root:children()[1]
-    F.eq(target:children()[1].paragraph.text, 'bound', 'bound into the target')
+F.test('set replaces the Slot value without mutating the input description', function()
+    local default = Text('default')
+    local spec = SlotSpec({ id = 'title', allow = { 'set' }, default_op = 'set' })
+    local root = SlotWrap(spec, default)
+    local registry = ContributionRegistry()
+    local options = { op = 'set', marker = 'caller' }
+    registry:add('title', Text('bound'), options, 'scope_a')
+    local assembled = assemble(root, registry)
+    local owner = mount(assembled)
+
+    F.eq(owner.root.paragraph.text, 'bound', 'set value is mounted')
+    F.eq(root.default_value, default, 'caller-owned default remains unchanged')
+    F.eq(options.op, 'set', 'caller-owned options remain unchanged')
 end)
 
-F.test('replace is the default and overwrites an existing child', function()
-    local binds = BindRegistry()
-    binds:add('title', Text('new'))
-    local owner = mount(SizedBox({ id = 'title', child = Text('old') }), binds)
-    F.eq(owner.root:children()[1].paragraph.text, 'new', 'replaced')
+F.test('set keeps the first valid contribution and diagnoses later values', function()
+    local spec = SlotSpec({ id = 'title', allow = { 'set' }, default_op = 'set' })
+    local registry = ContributionRegistry()
+    registry:add('title', Text('first'), { op = 'set' }, 'a')
+    registry:add('title', Text('second'), { op = 'set' }, 'b')
+    local assembler = CompositionAssembler(registry:seal())
+    local assembled = assembler:assemble(SlotWrap(spec, Text('default')))
+    local owner = mount(assembled)
+
+    F.eq(owner.root.paragraph.text, 'first', 'first set wins')
+    F.eq(#assembler.diagnostics, 1, 'later set is diagnosed')
 end)
 
-F.test('replace_if_empty leaves an existing child alone', function()
-    local binds = BindRegistry()
-    binds:add('title', Text('new'), { op = 'replace_if_empty' })
-    local owner = mount(SizedBox({ id = 'title', child = Text('old') }), binds)
-    F.eq(owner.root:children()[1].paragraph.text, 'old', 'kept')
+F.test('replace is repeatable and the last valid replacement wins', function()
+    local spec = SlotSpec({ id = 'app', allow = { 'replace' }, default_op = 'replace' })
+    local registry = ContributionRegistry()
+    registry:add('app', Text('first'), { op = 'replace' }, 'a')
+    registry:add('app', Text('last'), { op = 'replace' }, 'b')
+    local assembled = assemble(SlotWrap(spec, Text('default')), registry)
+    local owner = mount(assembled)
+    F.eq(owner.root.paragraph.text, 'last', 'last replacement wins')
 end)
 
-F.test('appends into a multi-child target', function()
-    local binds = BindRegistry()
-    binds:add('bar', Text('b'))
-    local owner = mount(Column({ id = 'bar', children = { Text('a') } }), binds)
-    F.eq(#owner.root:children(), 2, 'appended')
-    F.eq(owner.root:children()[2].paragraph.text, 'b', 'at the end')
+F.test('append uses SlotSpec ordering and generated identities', function()
+    local spec = SlotSpec({
+        id = 'actions',
+        allow = { 'append' },
+        default_op = 'append',
+        default_value = { Text('default') },
+        builder = function(value)
+            local children = value
+            ---@cast children Widget[]
+            return Column({ children = children })
+        end,
+    })
+    local registry = ContributionRegistry()
+    registry:add('actions', Text('last'), { op = 'append', name = 'last', priority = 1 }, 'a')
+    registry:add('actions', Text('first'), { op = 'append', name = 'first', pos = 'first', priority = 2 }, 'b')
+    local assembled = assemble(SlotWrap(spec), registry)
+    local owner = mount(assembled)
+    local children = owner.root:children()
+    F.eq(children[1].paragraph.text, 'first', 'first position is honored')
+    F.eq(children[2].paragraph.text, 'default', 'default content is retained')
+    F.eq(children[3].paragraph.text, 'last', 'append content is present')
 end)
 
-F.test('inserts at a position in a multi-child target', function()
-    local binds = BindRegistry()
-    binds:add('bar', Text('b'), { op = 'insert', position = 1 })
-    local owner = mount(Column({ id = 'bar', children = { Text('a') } }), binds)
-    F.eq(owner.root:children()[1].paragraph.text, 'b', 'inserted first')
-    F.eq(owner.root:children()[2].paragraph.text, 'a', 'original shifted')
+F.test('deep contributions resolve after a shallow replacement', function()
+    local title_spec = SlotSpec({ id = 'title', allow = { 'set' }, default_op = 'set' })
+    local app_spec = SlotSpec({ id = 'app', allow = { 'replace' }, default_op = 'replace' })
+    local custom_app = Column({ children = { SlotWrap(title_spec, Text('custom default')) } })
+    local registry = ContributionRegistry()
+    registry:add('title', Text('deep'), { op = 'set' }, 'deep')
+    registry:add('app', custom_app, { op = 'replace' }, 'shallow')
+    local assembled = assemble(SlotWrap(app_spec, Text('default app')), registry)
+    local owner = mount(assembled)
+    F.eq(owner.root:children()[1].paragraph.text, 'deep', 'deep bind reaches replacement tree')
 end)
 
-F.test('binds reach widgets added by other binds', function()
-    local binds = BindRegistry()
-    binds:add('outer', Column({ id = 'inner', children = {} }))
-    binds:add('inner', Text('deep'))
-    local owner = mount(SizedBox({ id = 'outer' }), binds)
-    local inner = owner.root:children()[1]
-    F.eq(inner:children()[1].paragraph.text, 'deep', 'nested bind applied')
+F.test('unknown and invalid contributions are ignored with diagnostics', function()
+    local spec = SlotSpec({ id = 'known', allow = { 'set' }, default_op = 'set' })
+    local registry = ContributionRegistry()
+    registry:add('known', Text('bad'), { op = 'append' }, 'bad-op')
+    registry:add('unknown', Text('lost'), { op = 'set' }, 'unknown')
+    local assembler = CompositionAssembler(registry:seal())
+    local assembled = assembler:assemble(SlotWrap(spec, Text('default')))
+    local owner = mount(assembled)
+    F.eq(owner.root.paragraph.text, 'default', 'invalid values do not replace defaults')
+    F.eq(#assembler.diagnostics, 2, 'both failures are diagnosed')
 end)
 
-F.test('unknown ids are ignored', function()
-    local binds = BindRegistry()
-    binds:add('nope', Text('x'))
-    local owner = mount(Column({ children = { Text('a') } }), binds)
-    F.eq(#owner.root:children(), 1, 'nothing added')
-end)
-
-F.test('binding to a widget that cannot take children raises', function()
-    local binds = BindRegistry()
-    binds:add('t', Text('x'))
+F.test('sealed contributions reject new bind calls', function()
+    local registry = ContributionRegistry()
+    registry:add('title', Text('one'), nil, 'scope')
+    registry:seal()
     F.raises(function()
-        binds:apply(Text('y', { id = 't' }))
-    end, 'RuntimeError', 'single leaf target')
-end)
-
-F.test('an op that does not match the target kind raises', function()
-    local binds = BindRegistry()
-    binds:add('t', Text('x'), { op = 'append' })
-    F.raises(function()
-        binds:apply(SizedBox({ id = 't' }))
-    end, 'ValueError', 'append on a single-child target')
-end)
-
-F.test('Slot is an empty target a script can fill', function()
-    local binds = BindRegistry()
-    binds:add('slot', Text('filled'))
-    local owner = mount(Column({ children = { Slot('slot'), Slot('empty') } }), binds)
-    F.eq(#owner.root:children(), 1, 'unbound slot contributes nothing')
-    F.eq(owner.root:children()[1].paragraph.text, 'filled', 'bound slot rendered')
-end)
-
-F.test('bindings added after apply do not mutate the mounted tree', function()
-    local binds = BindRegistry()
-    binds:add('title', Text('first'))
-    local owner, binding = mount(SizedBox({ id = 'title' }), binds)
-    F.eq(owner.root:children()[1].paragraph.text, 'first', 'initial')
-
-    binds:add('title', Text('late'))
-    binding:flush_build()
-    owner:layout()
-    F.eq(owner.root:children()[1].paragraph.text, 'first', 'tree stays fixed at runtime')
-end)
-
-F.test('scope removal keeps other pending bindings', function()
-    local binds = BindRegistry()
-    binds:add('a', Text('scope a'), nil, 'scope_a')
-    binds:add('b', Text('scope b'), nil, 'scope_b')
-
-    binds:remove_scope('scope_a')
-    F.eq(#binds:entries(), 1, 'one binding remains')
-    F.eq(binds:entries()[1].scope_id, 'scope_b', 'other scope remains')
-end)
-
-F.test('scope removal after apply does not undo the applied tree', function()
-    local binds = BindRegistry()
-    binds:add('slot', Text('applied'), nil, 'scope_a')
-    local root = SizedBox({ id = 'slot' })
-    binds:apply(root)
-
-    binds:clear_scope('scope_a')
-    F.eq(#binds:entries(), 0, 'pending entry was removed')
-    F.eq(root.child.text, 'applied', 'applied tree remains')
+        registry:add('title', Text('two'), nil, 'scope')
+    end, 'RuntimeError', 'sealed registry')
 end)
