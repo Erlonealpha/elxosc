@@ -70,9 +70,10 @@ next build flush. `OverlayState` publishes a generation-stamped eligibility plan
 single Widget/Element/RenderObject owner remains authoritative.
 
 The old nine-region scaffold, fixed grid ids and `more` are not part of the current application
-entry. Extensions enter through the initialization Define/Slot path; config/API hot updates only
-feed State/Provider or explicit setters. They do not mutate mounted Widgets or reload extension
-code.
+entry. The default application exposes one Define/Slot content boundary, `app.extension`, with
+`set` and `replace`; Main shell fields and the empty WindowLayer are not implicit extension
+targets. Config/API hot updates only feed State/Provider or explicit setters. They do not mutate
+mounted Widgets or reload extension code.
 
 See [widgets](../dev/design/WIDGETS.md), [host/Define](../dev/design/HOST.md), and
 [player application](../dev/design/PLAYER.md).

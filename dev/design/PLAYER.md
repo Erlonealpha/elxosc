@@ -22,6 +22,10 @@ WidgetsApp
 由播放器定义，scale 是统一正数配置并使用流式布局。`ExtensionEntry` 是当前唯一的
 扩展内容边界；`WindowLayer` 为空时只有空根语义，不创建额外 presenter/root。
 
+当前默认入口公开的 Define/Slot 清单只有 `app.extension`（`set`/`replace`）。Main
+标题栏、窗口控制、底部播放器骨架和 `window_layer` 不是扩展的隐式 target；它们只能
+由播放器入口或未来另行批准的应用组合提供。
+
 `AutoHide` 只包裹 MainEntry。Main 隐藏时通过 `Offstage` 禁止绘制、命中和 pointer
 regions，但 ExtensionEntry 的 Element/State 不被卸载或重置。
 

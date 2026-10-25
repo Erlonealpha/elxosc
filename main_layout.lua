@@ -1,6 +1,7 @@
 -- Default player composition: one DefaultApp with explicit Main, Extension and
--- WindowLayer boundaries.  Demo content is supplied by the entry point rather
--- than being hidden inside this application-layer module.
+-- WindowLayer boundaries.  `app.extension` is the only Define content slot;
+-- shell and root replacement targets are intentionally not exposed here. Demo
+-- content is supplied by the entry point rather than hidden in this module.
 
 local app_mod = require 'widget.app'
 local slot_mod = require 'widget.slot'
@@ -22,35 +23,10 @@ local M = {}
 ---@param extension Widget?
 ---@return Widget
 local function build_description(extension)
-    local title_bar_slot = SlotSpec({
-        id = 'app.title_bar',
-        allow = { 'set', 'replace' },
-        default_op = 'set',
-    })
-    local window_controls_slot = SlotSpec({
-        id = 'app.window_controls',
-        allow = { 'set', 'replace' },
-        default_op = 'set',
-    })
-    local bottom_slot = SlotSpec({
-        id = 'app.bottom_controls',
-        allow = { 'set', 'replace' },
-        default_op = 'set',
-    })
     local extension_slot_spec = SlotSpec({
         id = 'app.extension',
         allow = { 'set', 'replace' },
         default_op = 'set',
-    })
-    local window_layer_slot = SlotSpec({
-        id = 'app.window_layer',
-        allow = { 'set', 'replace' },
-        default_op = 'set',
-    })
-    local app_slot = SlotSpec({
-        id = 'app',
-        allow = { 'replace' },
-        default_op = 'replace',
     })
     local title_bar = Container({
         child = Text('elxosc'),
@@ -74,14 +50,14 @@ local function build_description(extension)
         title = 'elxosc',
         main = Main({
             title = 'elxosc',
-            title_bar = SlotWrap(title_bar_slot, title_bar),
-            window_controls = SlotWrap(window_controls_slot, window_controls),
-            bottom = SlotWrap(bottom_slot, bottom),
+            title_bar = title_bar,
+            window_controls = window_controls,
+            bottom = bottom,
         }),
         extension = SlotWrap(extension_slot_spec, extension_slot),
-        window_layer = SlotWrap(window_layer_slot, window_layer),
+        window_layer = window_layer,
     })
-    return SlotWrap(app_slot, app)
+    return app
 end
 
 ---@param extension Widget?

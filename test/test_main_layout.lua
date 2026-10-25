@@ -10,6 +10,7 @@ local constraints_mod = require('layout.constraints')
 local text_layout = require('text.text_layout')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
+local slot_mod = require('widget.slot')
 local basic_widgets = require('widget.widgets.basic')
 local layout_widgets = require('widget.widgets.layout')
 local widget_mod = require('widget.widget')
@@ -36,6 +37,9 @@ local Main = app_mod.Main
 local ThemeData = ambient_mod.ThemeData
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local HostActions = actions_mod.HostActions
+local SlotWrap = slot_mod.SlotWrap
+local ContributionRegistry = slot_mod.ContributionRegistry
+local CompositionAssembler = slot_mod.CompositionAssembler
 local AutoHide = visibility_mod.AutoHide
 local AutoHideController = visibility_mod.AutoHideController
 local FrameClock = frame_clock_mod.FrameClock
@@ -90,6 +94,29 @@ local function find_widget_element(element, widget_class)
     return nil
 end
 
+local function count_widget_elements(element, widget_class)
+    if element == nil then
+        return 0
+    end
+    local count = element.widget and element.widget.__class == widget_class and 1 or 0
+    for _, child in ipairs(element:element_children()) do
+        count = count + count_widget_elements(child, widget_class)
+    end
+    return count
+end
+
+local function collect_slot_ids(widget, ids)
+    if widget.__class == SlotWrap then
+        ids[widget.spec.id] = (ids[widget.spec.id] or 0) + 1
+    end
+    if type(widget.child_widgets) ~= 'function' then
+        return
+    end
+    for _, child in ipairs(widget:child_widgets()) do
+        collect_slot_ids(child, ids)
+    end
+end
+
 F.section('main layout: DefaultApp composition')
 
 F.test('the entry point builds one DefaultApp without the old grid contract', function()
@@ -97,6 +124,35 @@ F.test('the entry point builds one DefaultApp without the old grid contract', fu
     F.eq(root.__class, DefaultApp, 'DefaultApp is the content root')
     F.ok(main_layout.SLOT == nil, 'old nine-region SLOT table is removed')
     F.eq(#root:child_widgets(), 3, 'main, extension and window layer are explicit children')
+end)
+
+F.test('the production description exposes one Extension content boundary', function()
+    local ids = {}
+    collect_slot_ids(main_layout.build_app_description(Text('extension')), ids)
+    F.eq(ids['app.extension'], 1, 'one extension slot is declared')
+    F.eq(next(ids, 'app.extension'), nil, 'no shell or root replacement slots are declared')
+
+    local Extension = std.class.new('test.mainlayout.ExtensionBoundary', { StatelessWidget })
+    function Extension:build()
+        return Text('extension-boundary')
+    end
+
+    local registry = ContributionRegistry()
+    for _, id in ipairs({
+        'top_left', 'top', 'top_right',
+        'left', 'middle', 'right',
+        'bottom_left', 'bottom', 'bottom_right',
+    }) do
+        registry:add(id, Text('old-grid'), { op = 'set' }, 'old-grid')
+    end
+    registry:add('app.extension', Extension(), { op = 'set' }, 'extension')
+
+    local assembler = CompositionAssembler(registry:seal())
+    local root = assembler:assemble(main_layout.build_app_description(Text('default')))
+    F.eq(#assembler.diagnostics, 9, 'all old grid ids are rejected')
+    local _, binding = mount(root)
+    F.eq(count_widget_elements(binding.root_element, Extension), 1,
+        'extension content has one mounted owner')
 end)
 
 F.test('WidgetsApp exposes stable theme, display, text and action ambients', function()
