@@ -17,6 +17,8 @@ local color = require('foundation.color')
 local geometry = require('foundation.geometry')
 local text_style = require('text.text_style')
 local mpv_app = require('host.mpv_app')
+local mpv_input = require('host.mpv_input')
+local mpv_primitives = require('host.mpv_primitives')
 local main_layout = require('main_layout')
 local app_widgets = require('widget.app')
 local mpv_define = require('host.mpv_define')
@@ -44,6 +46,7 @@ local Demo = demo_mod.Demo
 local DefaultApp = app_widgets.DefaultApp
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
+local MpInput = mpv_input.MpInput
 
 local function find_widget_element(element, widget_class)
     if element == nil then
@@ -348,6 +351,51 @@ F.test('set_root_widget swaps the tree', function()
     app.binding:flush_build()
     app.owner:layout()
     F.eq(app.owner.root:children()[1].paragraph.text, 'one', 'root replaced')
+end)
+
+F.test('host primitives and input use minimal owner interfaces', function()
+    mp_stub.reset()
+    F.eq(mpv_app.MpFrameClock, mpv_primitives.MpFrameClock,
+        'App re-exports the single clock class')
+    F.eq(mpv_app.AssPresenter, mpv_primitives.AssPresenter,
+        'App re-exports the single presenter class')
+
+    local events = {}
+    local activity = 0
+    local frames = 0
+    local owner = {} --[[@as any]]
+    owner.dispatch_pointer_result = function(_, event)
+        events[#events + 1] = event
+        return { capture = false }
+    end
+    owner.pointer_regions = function()
+        return {}
+    end
+    owner.clear_hover = function() end
+    owner.cancel_pointer = function() end
+    owner.has_pointer_capture = function()
+        return false
+    end
+    local input = MpInput({
+        owner = owner,
+        get_viewport = function()
+            return geometry.Rect(0, 0, 1280, 720)
+        end,
+        notify_activity = function()
+            activity = activity + 1
+        end,
+        request_frame = function()
+            frames = frames + 1
+        end,
+    })
+
+    F.eq(input.app, nil, 'input does not retain the whole App')
+    input.x, input.y = 10, 20
+    input:_dispatch('wheel', 1)
+    F.eq(#events, 1, 'minimal owner receives structured input')
+    F.eq(activity, 1, 'activity callback is invoked')
+    F.eq(frames, 1, 'frame callback is invoked')
+    input:shutdown()
 end)
 
 F.test('DefaultApp extension controls remain clickable above Main activity surface', function()

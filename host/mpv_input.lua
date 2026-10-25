@@ -17,6 +17,7 @@ local pointer_event = require 'foundation.pointer_event'
 
 local Offset = geometry.Offset
 local PointerEvent = pointer_event.PointerEvent
+local raise = std.raise
 local math = math
 local floor = math.floor
 local ceil = math.ceil
@@ -43,8 +44,24 @@ local WHEEL_SECTION = 'elxosc-wheel'
 local BINDING_FLAGS = 'allow-hide-cursor'
 local owned_sections = {}
 
+---@class MpInputOwner
+---@field clear_hover fun(self: MpInputOwner)
+---@field cancel_pointer fun(self: MpInputOwner)
+---@field dispatch_pointer_result fun(self: MpInputOwner, event: PointerEvent): DispatchResult
+---@field has_pointer_capture fun(self: MpInputOwner): boolean
+---@field pointer_regions fun(self: MpInputOwner): PointerRegion[]
+
+---@class MpInputOptions
+---@field owner MpInputOwner receives structured pointer events
+---@field get_viewport fun(): Rect returns the current root-space viewport
+---@field notify_activity fun() informs application visibility policies
+---@field request_frame fun() schedules a frame after input
+
 ---@class MpInput : std.object
----@field app App
+---@field owner MpInputOwner
+---@field get_viewport fun(): Rect
+---@field notify_activity fun()
+---@field request_frame fun()
 ---@field hover boolean
 ---@field _regions PointerRegion[]
 ---@field _region_signature string?
@@ -54,11 +71,27 @@ local owned_sections = {}
 ---@field _buttons table<PointerButton, true>
 ---@field _mouse_callback fun(name: string, mouse: table)?
 ---@field _shutdown boolean
----@overload fun(app: App): self
+---@overload fun(options: MpInputOptions): self
 local MpInput = std.class.new('MpInput', {})
 
-function MpInput:__init(app)
-    self.app = app
+function MpInput:__init(options)
+    options = options or {}
+    if options.owner == nil then
+        raise(std.TypeError('MpInput.owner is required'))
+    end
+    if type(options.get_viewport) ~= 'function' then
+        raise(std.TypeError('MpInput.get_viewport is required'))
+    end
+    if type(options.notify_activity) ~= 'function' then
+        raise(std.TypeError('MpInput.notify_activity is required'))
+    end
+    if type(options.request_frame) ~= 'function' then
+        raise(std.TypeError('MpInput.request_frame is required'))
+    end
+    self.owner = options.owner
+    self.get_viewport = options.get_viewport
+    self.notify_activity = options.notify_activity
+    self.request_frame = options.request_frame
     self.x, self.y = huge, huge
     self.hover = false
     self._pressed = false
@@ -99,10 +132,10 @@ function MpInput:_bind_mouse()
         if not mouse.hover then
             if self.hover then
                 self.hover = false
-                self.app.owner:clear_hover()
+                self.owner:clear_hover()
             end
             if self._pressed then
-                self.app.owner:cancel_pointer()
+                self.owner:cancel_pointer()
                 self._pressed = false
                 self._pressed_section = nil
                 self:update_regions()
@@ -155,7 +188,7 @@ function MpInput:_dispatch(event, data, section)
     end
     debug_msgf('MpInput:_dispatch(%s)', event)
     if event == 'move' or event == 'down' or event == 'double' or event == 'wheel' then
-        self.app:notify_activity()
+        self.notify_activity()
     end
     if event == 'down' or event == 'double' then
         self:_refresh_position()
@@ -186,7 +219,7 @@ function MpInput:_dispatch(event, data, section)
         source = 'mouse',
         timestamp = mp.get_time(),
     })
-    local result = self.app.owner:dispatch_pointer_result(pointer)
+    local result = self.owner:dispatch_pointer_result(pointer)
     if event == 'down' then
         if result.capture and not self._pressed then
             self._pressed = true
@@ -194,13 +227,13 @@ function MpInput:_dispatch(event, data, section)
         end
         self:update_regions()
     elseif event == 'up' then
-        if not self.app.owner:has_pointer_capture() then
+        if not self.owner:has_pointer_capture() then
             self._pressed = false
             self._pressed_section = nil
         end
         self:update_regions()
     end
-    self.app:request_frame()
+    self.request_frame()
 end
 
 function MpInput:_input_section(index)
@@ -272,12 +305,7 @@ end
 
 ---@return Rect
 function MpInput:_viewport_rect()
-    local display = self.app.display
-    local width, height = display.width, display.height
-    if width <= 0 or height <= 0 then
-        width, height = mp.get_osd_size()
-    end
-    return geometry.Rect(0, 0, width, height)
+    return self.get_viewport()
 end
 
 ---@param rect Rect
@@ -373,7 +401,7 @@ function MpInput:update_regions()
     if self._shutdown then
         return
     end
-    local regions = self.app.owner:pointer_regions()
+    local regions = self.owner:pointer_regions()
     local signature = region_signature(regions) .. (self._pressed and ':pressed' or '')
     if signature == self._region_signature then
         return
@@ -385,7 +413,7 @@ end
 
 --- Cancel host-side pointer capture and restore the normal region policy.
 function MpInput:cancel_capture()
-    self.app.owner:cancel_pointer()
+    self.owner:cancel_pointer()
     self._pressed = false
     self._pressed_section = nil
     self._buttons = {}
@@ -402,7 +430,7 @@ function MpInput:shutdown()
         mp.unobserve_property(self._mouse_callback)
         self._mouse_callback = nil
     end
-    self.app.owner:clear_hover()
+    self.owner:clear_hover()
     self._pressed = false
     self._pressed_section = nil
     self._buttons = {}

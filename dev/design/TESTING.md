@@ -14,9 +14,10 @@ uv run --group test python -m pytest -q test/real_host
 ```
 
 历史基线（2026-10-16）为 **1315 Lua checks passed**、EmmyLua **No issues found**、
-real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**、
-EmmyLua **No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主
-设计文档同步更新。
+real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**；
+加入 R3/R4 回归后为 **1381 Lua checks passed**、EmmyLua **No issues found**、Python
+integration **9 passed**、real-host **9 passed**。测试数量变化时，应在本文件和主设计文档
+同步更新。
 
 ## Lua suite
 
@@ -37,6 +38,8 @@ runner。测试按层覆盖：
   HostActions、AutoHide/Visibility、Main 隐藏不影响 Extension 和空 WindowLayer；
 - N2 Overlay：mounted builder context、single Entry owner、opaque occlusion、
   maintain_state、paint/input eligibility、plan generation、remove/dispose lifecycle；
+- R3/R4：唯一 `app.extension` Define/Slot boundary、旧 grid target rejection、single
+  mounted extension owner、host primitive identity 和不持有整个 App 的 `MpInput`；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
 
 聚合模块必须和直接模块返回同一类对象；新增公共 API 时要有加载测试，而非只测

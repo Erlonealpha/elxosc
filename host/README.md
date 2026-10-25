@@ -6,7 +6,9 @@ outside the reusable layers.
 
 ## Public entry points
 
-- `mpv_app.lua` — `App`, `MpFrameClock`, `AssPresenter`, and the frame loop.
+- `mpv_app.lua` — the single `App` owner and frame loop.
+- `mpv_primitives.lua` — `MpFrameClock` and `AssPresenter`, the mpv-backed
+  framework adapters owned by `App`.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
 - `mpv_define.lua` — script-message Define transport and host module facade.
 - `mpv_player_context.lua` — mpv property observers bridged to `PlayerStore`.
@@ -15,7 +17,8 @@ The app flushes Widget rebuilds, lays out and paints through a backend, then pre
 only changed ASS output. Input is routed through `RenderOwner`; host code must not
 call widget callbacks directly.
 
-`MpInput` translates mpv mouse bindings into structured `PointerEvent` values with
+`MpInput` receives a small owner/callback interface rather than an `App` reference.
+It translates mpv mouse bindings into structured `PointerEvent` values with
 button, held-button, wheel delta, click-count, source, pointer-id and timestamp
 fields. Tree dispatch results are separate from mpv's section claim policy; the
 host uses the result's capture field only for pointer capture. Modifier fields
@@ -27,7 +30,8 @@ application stage adds config/API hot updates and multiple named OSD overlay lay
 Overlay z-order is a presentation policy, not Widget or Define priority. Define remains
 the sole extension-content ingress.
 
-`App` accepts an optional `player_store` and wraps its root in `PlayerScope`. The
+`App` is the sole lifecycle owner for the clock, scheduler, display observers,
+input, canvas, presenter and shutdown. It accepts an optional `player_store` and wraps its root in `PlayerScope`. The
 `player` Define module exposes only `get_snapshot()` and `on_update()`; updates do not
 re-run Define source. Define contributions are assembled once after seal, before the
 WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Property,

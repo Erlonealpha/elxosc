@@ -105,7 +105,12 @@ Define/Slot 提供内容。Main 隐藏只改变自己的 AutoHide/Offstage entry
 State。`Theatre`/`OverlayEntry` 负责同一逻辑 root 内的 entry 生命周期和 eligibility plan，
 不创建第二个 owner、presenter 或 surface。旧九宫格和 `more` 不属于当前生产入口。
 
-### Host overlay layers
+### Host owner and overlay layers
+
+当前 `host.mpv_app.App` 是单一 host owner，负责 clock、scheduler、display observers、
+input、AssCanvas、AssPresenter 和 shutdown。`MpInput` 通过最小的 RenderOwner/viewport/
+callback 接口接入；它不持有整个 App。`MpFrameClock` 和 `AssPresenter` 位于 host primitive
+模块，但不创建第二个 runtime owner。
 
 多个 `osd_overlay` 属于 host/presentation 层，不属于 Widget z-order。每个命名
 layer 可以有独立的 root、RenderOwner、Canvas、presenter、dirty 状态、可见性和
