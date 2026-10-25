@@ -224,7 +224,7 @@ F.test('close is idempotent when the session is idle', function()
     define:listen()
     define:close()
     define:close()
-    F.eq(define.session.phase, 'idle', 'nothing to seal')
+    F.eq(define.session.phase, 'sealed', 'idle close seals the session')
 end)
 
 F.test('shutdown disposes Define-owned host observers', function()

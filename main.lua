@@ -19,6 +19,7 @@ local mp = require 'mp'
 
 require 'elxlib_load' -- sets up elxlibs.*
 
+local std = require 'elxlibs.std'
 local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
 local mpv_player_context = require 'host.mpv_player_context'
@@ -104,7 +105,7 @@ local define_timer = mp.add_timeout(define_window, function()
     end
     define:close()
     remount()
-    mp.msg.info('elxosc: define window closed')
+    debug_msg('elxosc: define window closed')
 end)
 
 ---@type fun(ev: table)
@@ -120,3 +121,12 @@ shutdown_callback = function(_event)
     define:shutdown()
 end
 mp.register_event('shutdown', shutdown_callback)
+
+local ev_loop = _G.mp_event_loop
+_G.mp_event_loop = function ()
+    -- Ensure that the type of the thrown exception is a string.
+    local ok, err = xpcall(ev_loop, std.traceback)
+    if err then
+        error(tostring(err), 0)
+    end
+end

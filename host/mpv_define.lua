@@ -300,7 +300,11 @@ end
 function MpDefine:close()
     self._allow_start = false
     self:unlisten()
-    while self.session.phase == 'defining' do
+    if self.session.phase == 'idle' then
+        self.session.phase = 'sealed'
+        return
+    end
+    while self.session.phase ~= 'sealed' do
         self.session:define_end()
     end
 end
