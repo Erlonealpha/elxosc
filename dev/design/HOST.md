@@ -26,6 +26,11 @@ mp property / input / dirty callback
     → AssPresenter.push only when data or resolution changed
 ```
 
+App 将内容根包在 `WidgetsApp` 中，注入 `DisplaySnapshot`、`ThemeData`、默认文字样式和
+host-independent `HostActions`。显示尺寸变化只替换 immutable snapshot 并沿正常 Widget/
+Inherited dirty 管线更新，不把 `mp` 传入 framework。默认 mpv actions 由
+`host/mpv_actions.lua` 实现为受控 `cycle`/`seek`/`quit` 命令。
+
 根 viewport 使用 mpv OSD 的紧尺寸。presenter 设置 `res_x/res_y`，使逻辑像素和
 ASS 坐标一致；不要让 render 层读取 overlay 字符串来做布局。
 
@@ -43,7 +48,7 @@ host 负责把 mpv section、mouse area、double-click、modifier 和键盘事�
 结构化输入值。内容画到布局盒外并不自动扩大可点击区域，除非所属 RenderObject
 明确实现新的命中边界语义。详细输入规划见 [INPUT.md](INPUT.md)。
 
-输入区域只在 layout、viewport、visibility、Pages/overlay 或 policy 变化时更新，
+输入区域只在 layout、viewport、visibility、DefaultApp/overlay 或 policy 变化时更新，
 不应随普通 mouse move 每帧重建。输入行为变化必须同时覆盖 `test/mp_stub.lua` 和
 真实宿主 fixture。
 
@@ -59,11 +64,11 @@ define_end
 ```
 
 每个 scope 使用受限 env。`import`/`require`、`mod` 和 `bind` 由 DefineSession 提供；
-Widget constructors、`new_widget`、`new_state`、Pages 注册接口和宿主 facade 由外部
+Widget constructors、`new_widget`、`new_state`、DefaultApp/Slot 接口和宿主 facade 由外部
 注入。Define 负责传入扩展内容，不规定扩展内部的运行时行为；扩展可以自行实现
 State、消息和页面逻辑，也可以使用播放器预先提供的配置/API 更新接口。
 
-代码在 `define_end` 前登记声明，BindRegistry/Pages registry 在挂载前组装目标 Widget
+代码在 `define_end` 前登记声明，BindRegistry/DefaultApp assembly 在挂载前组装目标 Widget
 树。协议明确不提供运行时 unbind、scope 关闭、已挂载树回滚、通用 root rebuild、
 priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容入口，不重新执行扩展
 源代码；扩展需要响应更新时，通过自己的 State/Provider 或公开 setter 处理。
@@ -103,11 +108,10 @@ identity 的能力。`mp.on_prop` 也返回 disposable observer，扩展必须�
 
 ## 多层 overlay
 
-当前 App 只有一个 `AssPresenter`；下一阶段引入 host-level OverlayHost/Registry，
-让 Pages 或扩展使用多个独立 `osd_overlay`。每个 layer 拥有独立 root、Canvas、
-PipelineOwner/RenderOwner、presenter、visible、z、dirty/cache 和 input policy。较高 `overlay.z`
-视觉上在前，同 z 用稳定注册顺序；z 只影响呈现，不影响 Widget/Pages/Define 优先级。
+当前 App 只有一个 `AssPresenter`。N2 `Overlay`/`Theatre` 是 framework 内单一逻辑 root
+中的 Entry runtime，不是 host-level 多 `osd_overlay`，也不创建独立 root、Canvas 或
+PipelineOwner。Entry 的 `visible`、`opaque`、`maintain_state` 和 plan 只控制同一
+RenderOwner 的 paint/input eligibility；WindowLayer 空根也只产生空内容，不释放 presenter。
 
-overlay 的创建、更新、移除、分辨率变化和隐藏都必须可重复，ASS 仍是静态逐帧输出。
-如果 layer 可交互，输入从高 z 到低 z 选择第一个 interactive layer，再交给该层的
-RenderOwner；passive layer 不自动阻止背景输入。
+host-level 多 overlay、独立 presenter、z 排序和跨 surface 输入策略仍属于后续 N4，不得把
+`OverlayEntry` 的逻辑顺序当成 `overlay.z` 或 Define priority。

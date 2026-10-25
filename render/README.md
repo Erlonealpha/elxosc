@@ -16,6 +16,8 @@ not import Widget modules or mpv.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.
+- `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,
+  hit testing and pointer regions while hidden.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.
 
 RenderObject layout must return finite sizes within Constraints. Paint-only setters

@@ -25,10 +25,12 @@ local mpv_define = require 'host.mpv_define'
 local mpv_player_context = require 'host.mpv_player_context'
 local player_context = require 'widget.player_context'
 local main_layout = require 'main_layout'
+local demo_mod = require 'demo'
 
 local MpDefine = mpv_define.MpDefine
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local PlayerStore = player_context.PlayerStore
+local Demo = demo_mod.Demo
 
 -- Seconds the define window stays open. Long enough for every script to have
 -- sent its payload, short enough not to be noticed; `define_end` from all
@@ -70,7 +72,11 @@ end)
 local define = MpDefine({ player_store = player_store })
 define:listen()
 
-local app = mpv_app.start(main_layout.build_scaffold, {
+local function build_app()
+    return main_layout.build_app(Demo())
+end
+
+local app = mpv_app.start(build_app, {
     player_store = player_store,
     player_context = player_updates,
 })
@@ -81,7 +87,7 @@ local function remount()
     if shutting_down then
         return
     end
-    app:set_root_widget(define:apply(main_layout.build_scaffold()))
+    app:set_root_widget(define:apply(build_app()))
 end
 
 -- Fast path: every starter sent its `define_end`.

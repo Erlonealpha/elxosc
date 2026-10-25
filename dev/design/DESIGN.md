@@ -14,7 +14,7 @@
 | [INPUT.md](INPUT.md) | `set_mouse_area`、输入 section、默认行为和事件重构 |
 | [WIDGETS.md](WIDGETS.md) | Widget/Element/State、控件和绑定 |
 | [HOST.md](HOST.md) | mpv 帧循环、输入、Define 传输和宿主边界 |
-| [PLAYER.md](PLAYER.md) | Root/Pages/Main、扩展区域、配置热更新和多层 overlay |
+| [PLAYER.md](PLAYER.md) | WidgetsApp/DefaultApp/Main、扩展边界、配置热更新和 OverlayEntry |
 | [TESTING.md](TESTING.md) | 测试分层、命令、fixture 和回归要求 |
 | [ROADMAP.md](ROADMAP.md) | 已完成能力、已知限制和后续路线 |
 
@@ -87,12 +87,13 @@ setter 选择 `paint` 或 `layout + paint` 失效类型。
 - `TextPaint.offset` 是绘制层视觉偏移，不改变布局尺寸或命中区域。
 - 不使用 PTS 相关的 `\move`、`\t` 生成动画。
 
-### Define、Pages 和更新边界
+### Define、应用组合和更新边界
 
 Define 是用户扩展内容进入播放器的唯一入口。它负责 transport、sandbox、scope、
 模块和内容交付；扩展内容的页面行为、状态机、事件处理和更新策略由扩展自己决定。
-Pages 会提供受控接口，让 Define 内容把页面或 Widget 加入 `Main` 允许的区域、
-3×3 grid、`more` 或公开 overlay layer。
+当前应用组合使用 `DefaultApp` 的 Main、Extension 和 WindowLayer 边界；Define/Slot
+只在初始化期把扩展 Widget 放入允许的内容位置。N2 `Overlay`/`Theatre` 只管理同一
+logical root 内的 Entry lifecycle，不是第二条 Define 内容入口。
 
 当前 Define 仍是初始化期协议：每个 `scope_id` 只接受第一个 payload，绑定在 mount
 前按注册顺序应用；不存在运行时 unbind、scope 关闭、树回滚或通用 root rebuild。
@@ -101,21 +102,22 @@ Lua 源码。改变这些语义必须先更新本目录的设计和测试。
 
 ### 播放器应用层
 
-播放器应用层计划采用 `Root → Pages → Main / 3x3 grid / more` 的组合。Main 负责
-标题栏、时间线、底部和两侧按钮等固定区域；扩展通过 Define 暴露的 Pages 接口
-提供内容。Pages 的组合布局与 host-level 多层 `osd_overlay` 分开；overlay 使用
-`overlay.z` 控制视觉层级，不改变 Widget reconciliation、bind priority 或 Define
-scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
+播放器应用层当前采用 `WidgetsApp → DefaultApp → Theatre → Extension / Main / WindowLayer`
+的组合。Main 负责标题栏、时间线、底部信息和受控 host actions；扩展通过初始化
+Define/Slot 提供内容。Theatre 的 entry paint/input eligibility 与 host-level 多层
+`osd_overlay` 分开；`overlay.z` 仍只属于未来 presentation 层，不改变 Widget
+reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
 
-2026-10-16 的本地 6.3 修复基线为 **1315 Lua checks**、EmmyLua
+2026-10-25 的 N1/N2 工作区为 **1348 Lua checks**、EmmyLua
 **No issues found**、real-host **9 passed**。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 
 6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，
 State 支持 `did_change_dependencies`，并对 init/dispose 的 listening lookup 做边界
-诊断。6.4 Pages 实现仍需遵守这些 Provider 和生命周期契约。
+诊断。N1/N2 的 DefaultApp、ambient、AutoHide、OverlayEntry lifecycle 实现继续遵守
+这些 Provider 和生命周期契约；Navigator/Route 和 host-level 多 overlay 仍延期。
 
 ## 变更决策规则
 

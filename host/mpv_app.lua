@@ -25,6 +25,9 @@ local ass_canvas = require 'backends.ass_canvas'
 local ass_text_layout = require 'backends.ass_text_layout'
 local text_layout = require 'text.text_layout'
 local binding_mod = require 'widget.widgets_binding'
+local app_widgets = require 'widget.app'
+local ambient_mod = require 'widget.ambient'
+local mpv_actions = require 'host.mpv_actions'
 local mpv_input = require 'host.mpv_input'
 local player_context = require 'widget.player_context'
 
@@ -36,6 +39,9 @@ local PipelineOwner = pipeline_owner.PipelineOwner
 local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetsBinding = binding_mod.WidgetsBinding
+local WidgetsApp = app_widgets.WidgetsApp
+local ThemeData = ambient_mod.ThemeData
+local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local MpInput = mpv_input.MpInput
 local PlayerScope = player_context.PlayerScope
 
@@ -153,6 +159,10 @@ end
 ---@field owner PipelineOwner
 ---@field widgets_binding WidgetsBinding
 ---@field binding WidgetTree
+---@field root_widget Widget
+---@field display_snapshot DisplaySnapshot
+---@field theme ThemeData
+---@field actions HostActions
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
@@ -162,17 +172,22 @@ end
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext? }?): self
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, binds: BindRegistry?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
 local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
     options = options or {}
+    self.root_widget = root_widget
     self.player_store = options.player_store
     self.player_context = options.player_context
+    self.theme = options.theme or ThemeData()
+    self.actions = options.actions or mpv_actions.default()
+    self.default_text_style = options.default_text_style
     self._shutdown = false
     self._property_callbacks = {}
     ---@type Display
     self.display = { width = 1280, height = 720, initialized = false }
+    self.display_snapshot = DisplaySnapshot({ width = 0, height = 0, initialized = false })
     self.clock = MpFrameClock(options.delay)
     self.scheduler = Scheduler(self.clock)
     self.canvas = AssCanvas()
@@ -192,7 +207,7 @@ function App:__init(root_widget, options)
     text_layout.set_default(AssTextLayout())
 
     self.binding = self.widgets_binding:attach(
-        self:_wrap_root(root_widget), self.owner, options.binds, self.scheduler)
+        self:_wrap_root(self.root_widget), self.owner, options.binds, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end
@@ -206,12 +221,21 @@ end
 ---@param root_widget Widget
 ---@return Widget
 function App:_wrap_root(root_widget)
+    local content = root_widget
     if self.player_store == nil then
-        return root_widget
+        content = root_widget
+    else
+        content = PlayerScope({
+            store = self.player_store,
+            child = root_widget,
+        })
     end
-    return PlayerScope({
-        store = self.player_store,
-        child = root_widget,
+    return WidgetsApp({
+        theme = self.theme,
+        display = self.display_snapshot,
+        default_text_style = self.default_text_style,
+        actions = self.actions,
+        child = content,
     })
 end
 
@@ -232,6 +256,7 @@ function App:set_root_widget(root_widget)
     if self.input then
         self.input:cancel_capture()
     end
+    self.root_widget = root_widget
     self.binding:set_root_widget(self:_wrap_root(root_widget))
     self:request_frame()
 end
@@ -310,6 +335,18 @@ function App:_update_display()
     end
     self.display.width, self.display.height = width, height
     self.display.initialized = true
+    if self.display_snapshot.width ~= width
+        or self.display_snapshot.height ~= height
+        or not self.display_snapshot.initialized then
+        self.display_snapshot = DisplaySnapshot({
+            width = width,
+            height = height,
+            initialized = true,
+        })
+        if self.binding then
+            self.binding:set_root_widget(self:_wrap_root(self.root_widget))
+        end
+    end
     -- The root gets tight constraints (Flutter's `RenderView` forces the
     -- application's child to exactly fill the viewport), which is what makes
     -- the doc's Example 1/2 fill the screen.

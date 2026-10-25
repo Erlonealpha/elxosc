@@ -1,4 +1,5 @@
--- The entry-point scaffold is a stable, bindable three-by-three grid.
+-- N1 application composition: one DefaultApp with stable Main, Extension and
+-- WindowLayer boundaries.  The old nine-region scaffold is intentionally gone.
 
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, generic-constraint-mismatch
 
@@ -10,14 +11,35 @@ local text_layout = require('text.text_layout')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
 local basic_widgets = require('widget.widgets.basic')
-local bind_mod = require('widget.bind')
+local layout_widgets = require('widget.widgets.layout')
+local widget_mod = require('widget.widget')
+local state_mod = require('widget.state')
+local frame_clock_mod = require('scheduler.frame_clock')
+local scheduler_mod = require('scheduler.scheduler')
+local app_mod = require('widget.app')
+local ambient_mod = require('widget.ambient')
+local actions_mod = require('widget.actions')
+local visibility_mod = require('widget.visibility')
 local main_layout = require('main_layout')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local Text = basic_widgets.Text
-local BindRegistry = bind_mod.BindRegistry
+local Column = layout_widgets.Column
+local StatelessWidget = widget_mod.StatelessWidget
+local StatefulWidget = widget_mod.StatefulWidget
+local State = state_mod.State
+local WidgetsApp = app_mod.WidgetsApp
+local DefaultApp = app_mod.DefaultApp
+local Main = app_mod.Main
+local ThemeData = ambient_mod.ThemeData
+local DisplaySnapshot = ambient_mod.DisplaySnapshot
+local HostActions = actions_mod.HostActions
+local AutoHide = visibility_mod.AutoHide
+local AutoHideController = visibility_mod.AutoHideController
+local FrameClock = frame_clock_mod.FrameClock
+local Scheduler = scheduler_mod.Scheduler
 
 local FixedLayout = std.class.new('test.mainlayout.FixedLayout', { text_layout.TextLayout })
 function FixedLayout:line_width(line, style)
@@ -25,74 +47,141 @@ function FixedLayout:line_width(line, style)
 end
 text_layout.set_default(FixedLayout())
 
-local mp_stub = require('mp_stub')
-mp_stub.install()
+local ManualClock = std.class.new('test.mainlayout.ManualClock', { FrameClock })
+function ManualClock:__init()
+    self.time = 0
+    self.pending = false
+end
+function ManualClock:now()
+    return self.time
+end
+function ManualClock:request_frame()
+    self.pending = true
+end
+function ManualClock:tick(dt)
+    self.time = self.time + dt
+    if self.pending then
+        self.pending = false
+        self:_emit()
+    end
+end
 
-local function mount(binds)
+local function mount(widget, scheduler)
     local owner = RenderOwner()
-    WidgetBinding.ensure_initialized():attach(main_layout.build_scaffold(Text('demo')), owner, binds)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner, nil, scheduler)
     owner:set_viewport(Constraints.tight(300, 180))
     owner:layout()
-    return owner
+    return owner, binding
 end
 
-local function global_offset(render_object)
-    local x = 0
-    local y = 0
-    local node = render_object
-    while node do
-        local offset = node.parent_data and node.parent_data.offset
-        if offset then
-            x = x + offset.x
-            y = y + offset.y
-        end
-        node = node.parent
+local function find_widget_element(element, widget_class)
+    if element == nil then
+        return nil
     end
-    return x, y
+    if element.widget and element.widget.__class == widget_class then
+        return element
+    end
+    for _, child in ipairs(element:element_children()) do
+        local found = find_widget_element(child, widget_class)
+        if found then
+            return found
+        end
+    end
+    return nil
 end
 
-F.section('main layout: nine-region scaffold')
+F.section('main layout: DefaultApp composition')
 
-F.test('the scaffold fills a three-by-three grid', function()
-    mp_stub.reset()
-    local owner = mount()
-    local rows = owner.root:children()
-
-    F.eq(#rows, 3, 'three rows')
-    for row_index, row in ipairs(rows) do
-        F.eq(row.size.width, 300, 'row width')
-        F.eq(row.size.height, 60, 'row height')
-        F.eq(#row:children(), 3, 'three cells per row')
-        F.eq(row.parent_data.offset.y, (row_index - 1) * 60, 'row y offset')
-
-        for cell_index, cell in ipairs(row:children()) do
-            F.eq(cell.size.width, 100, 'cell width')
-            F.eq(cell.size.height, 60, 'cell height')
-            F.eq(cell.parent_data.offset.x, (cell_index - 1) * 100, 'cell x offset')
-        end
-    end
+F.test('the entry point builds one DefaultApp without the old grid contract', function()
+    local root = main_layout.build_app(Text('extension'))
+    F.eq(root.__class, DefaultApp, 'DefaultApp is the content root')
+    F.ok(main_layout.SLOT == nil, 'old nine-region SLOT table is removed')
+    F.eq(#root:child_widgets(), 3, 'main, extension and window layer are explicit children')
 end)
 
-F.test('all nine region ids bind without changing their positions', function()
-    mp_stub.reset()
-    local binds = BindRegistry()
-    local ids = {
-        'top_left', 'top', 'top_right',
-        'left', 'middle', 'right',
-        'bottom_left', 'bottom', 'bottom_right',
-    }
-    for index = #ids, 1, -1 do
-        binds:add(ids[index], Text(ids[index]))
+F.test('WidgetsApp exposes stable theme, display, text and action ambients', function()
+    local Reader = std.class.new('test.mainlayout.AmbientReader', { StatelessWidget })
+    function Reader:build(context)
+        local theme = ambient_mod.Theme.of(context)
+        local display = ambient_mod.DisplayScope.of(context)
+        local style = ambient_mod.DefaultTextStyle.of(context)
+        local actions = HostActions.maybe_of(context)
+        return Text(string.format('%g/%g/%g/%s',
+            theme.data.scale, display.snapshot.width, style.style.font_size,
+            actions and 'actions' or 'no-actions'))
     end
 
-    local owner = mount(binds)
-    local rows = owner.root:children()
-    for row_index, row in ipairs(rows) do
-        for cell_index, cell in ipairs(row:children()) do
-            local x, y = global_offset(cell)
-            F.eq(x, (cell_index - 1) * 100, 'bound cell x position')
-            F.eq(y, (row_index - 1) * 60, 'bound cell y position')
-            F.eq(cell:children()[1].paragraph.text, ids[(row_index - 1) * 3 + cell_index], 'bound id order')
-        end
+    local owner = mount(WidgetsApp({
+        theme = ThemeData({ scale = 1.25 }),
+        display = DisplaySnapshot({ width = 300, height = 180, initialized = true }),
+        actions = HostActions({ play_pause = function() end }),
+        child = Reader(),
+    }))
+    F.eq(owner.root.paragraph.text, '1.25/300/14/actions', 'ambient values reach descendants')
+end)
+
+local ProbeState = std.class.new('test.mainlayout.ProbeState', { State })
+function ProbeState:init_state()
+    self.mounts = (self.mounts or 0) + 1
+    self.disposed = false
+end
+function ProbeState:dispose()
+    self.disposed = true
+end
+function ProbeState:build()
+    return Text('extension-state')
+end
+
+local Probe = std.class.new('test.mainlayout.Probe', { StatefulWidget })
+function Probe:create_state()
+    return ProbeState()
+end
+
+F.test('hiding Main keeps the Extension entry mounted and rendered', function()
+    local owner, binding = mount(main_layout.build_app(Probe()))
+    local default_element = find_widget_element(binding.root_element, DefaultApp)
+    F.ok(default_element ~= nil, 'DefaultApp element is mounted')
+    if default_element == nil then
+        return
     end
+    local extension_element = find_widget_element(binding.root_element, Probe)
+    F.ok(extension_element ~= nil, 'Extension element is mounted')
+    if extension_element == nil then
+        return
+    end
+    local extension_state = extension_element.state
+    default_element.state:hide_main()
+    binding:flush_build()
+    owner:layout()
+    F.ok(extension_state:is_mounted(), 'Extension State survives Main visibility changes')
+    F.ok(not extension_state.disposed, 'Extension State is not disposed')
+    F.eq(owner.root ~= nil, true, 'single logical render root remains')
+end)
+
+F.test('Main has a configurable uniform scale and explicit player actions', function()
+    local called = 0
+    local actions = HostActions({ play_pause = function() called = called + 1 end })
+    local owner = mount(WidgetsApp({
+        theme = ThemeData({ scale = 1.1 }),
+        actions = actions,
+        child = Main({ title = 'Player' }),
+    }))
+    F.ok(owner.root ~= nil, 'Main produces a render tree')
+    F.ok(owner.root.size.width == 300 and owner.root.size.height == 180, 'Main fills the viewport')
+    actions:play_pause()
+    F.eq(called, 1, 'actions are explicit callbacks')
+end)
+
+F.test('AutoHide uses the frame clock and activity restores Main visibility', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    mount(AutoHide({ controller = controller, timeout = 0.5, child = Text('main') }), scheduler)
+    F.ok(controller.visible, 'AutoHide starts visible')
+    clock:tick(0.1)
+    clock:tick(0.5)
+    F.ok(not controller.visible, 'timeout hides the entry')
+    controller:activity()
+    F.ok(controller.visible, 'activity restores the entry')
+    scheduler:dispose()
 end)

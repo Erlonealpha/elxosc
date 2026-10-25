@@ -16,6 +16,12 @@ binding, and the public widget library. It must remain independent of mpv.
 - `provider.lua` — inherited Provider lookup with `of` and `maybe_of` helpers.
 - `player_context.lua` — host-independent `PlayerSnapshot`, `PlayerStore`,
   `PlayerScope`, and `PlayerProvider`.
+- `ambient.lua` — `ThemeData`, `Theme`, `DisplaySnapshot`, `DisplayScope` and
+  `DefaultTextStyle` application ambients.
+- `actions.lua` — the host-independent `HostActions` callback contract and scope.
+- `visibility.lua` — `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`.
+- `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.
+- `app.lua` — `WidgetsApp`, `DefaultApp`, `Main` and the empty-root `WindowLayer` boundary.
 - `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
 - `widgets/` — independent layout, content, input, and button widgets; `basic.lua`
   and `layout.lua` are compatibility aggregates.
@@ -40,9 +46,22 @@ Provider Widget, not a `package:provider` value-container result. Lookup uses ex
 class identity. `BuildContext` is currently an `Element` alias for implementation
 simplicity; callers must treat it as a read-only context handle.
 
-The planned Pages application layer composes Main, the extension 3x3 grid, and `more`.
-Extensions enter through Define; config/API hot updates only feed State/Provider or
-explicit setters. They do not mutate mounted Widgets or reload extension code.
+`WidgetsApp` supplies the application ambients without requiring `mp`. `DefaultApp` owns one
+logical `Theatre` with stable Main, Extension and WindowLayer entries. `Main` uses a configurable
+uniform layout scale, a flow-based top/bottom player skeleton and explicitly injected
+`HostActions`. `AutoHide` only changes the Main entry; the Extension entry remains mounted and
+keeps its State when Main is hidden.
+
+`OverlayEntry` builders execute from a mounted entry context. Visible entries paint in insertion
+order; an opaque entry makes lower entries occluded. Occluded or hidden entries remain mounted
+through `Offstage` when `maintain_state` is true, otherwise they are removed and disposed on the
+next build flush. `OverlayState` publishes a generation-stamped eligibility plan, while the
+single Widget/Element/RenderObject owner remains authoritative.
+
+The old nine-region scaffold, fixed grid ids and `more` are not part of the current application
+entry. Extensions enter through the initialization Define/Slot path; config/API hot updates only
+feed State/Provider or explicit setters. They do not mutate mounted Widgets or reload extension
+code.
 
 See [widgets](../dev/design/WIDGETS.md), [host/Define](../dev/design/HOST.md), and
 [player application](../dev/design/PLAYER.md).

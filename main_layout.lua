@@ -1,69 +1,57 @@
--- The application's nine-region scaffold.
+-- Default player composition: one DefaultApp with explicit Main, Extension and
+-- WindowLayer boundaries.  Demo content is supplied by the entry point rather
+-- than being hidden inside this application-layer module.
 
+local app_mod = require 'widget.app'
+local basic_widgets = require 'widget.widgets.basic'
 local layout_widgets = require 'widget.widgets.layout'
 
-local Column = layout_widgets.Column
-local Expanded = layout_widgets.Expanded
-local Row = layout_widgets.Row
+local DefaultApp = app_mod.DefaultApp
+local Main = app_mod.Main
+local WindowLayer = app_mod.WindowLayer
+local Text = basic_widgets.Text
+local Container = layout_widgets.Container
 local SizedBox = layout_widgets.SizedBox
 
 local M = {}
 
--- Every region keeps a render node even before another script binds content.
--- This makes the scaffold a stable three-by-three grid during the define
--- window as well as after bindings have been applied.
-local SLOT = {
-    top_left = 'top_left',
-    top = 'top',
-    top_right = 'top_right',
-    left = 'left',
-    middle = 'middle',
-    right = 'right',
-    bottom_left = 'bottom_left',
-    bottom = 'bottom',
-    bottom_right = 'bottom_right',
-}
-
-local function cell(id, child)
-    return Expanded(SizedBox({
-        id = id,
-        child = child or SizedBox.shrink(),
-    }))
-end
-
-local function grid_row(left_id, middle_id, right_id, middle_child)
-    return Expanded(Row({
-        main_alignment = 'start',
-        main_axis_size = 'max',
-        cross_alignment = 'stretch',
-        children = {
-            cell(left_id),
-            cell(middle_id, middle_child),
-            cell(right_id),
-        },
-    }))
-end
-
----@param middle_child? Widget
+---@param extension Widget?
 ---@return Widget
-function M.build_scaffold(middle_child)
-    if not middle_child then
-        local demo_mod = require 'demo'
-        middle_child = demo_mod.Demo()
-    end
+function M.build_app(extension)
+    local title_bar = Container({
+        id = 'title_bar',
+        child = Text('elxosc'),
+    })
+    local window_controls = Container({
+        id = 'window_controls',
+        child = SizedBox.shrink(),
+    })
+    local bottom = Container({
+        id = 'bottom_controls',
+        child = SizedBox.shrink(),
+    })
+    local extension_slot = Container({
+        id = 'extension',
+        child = extension or SizedBox.shrink(),
+    })
+    local window_layer = WindowLayer({
+        child = Container({
+            id = 'window_layer',
+            child = SizedBox.shrink(),
+        }),
+    })
 
-    return Column({
-        main_alignment = 'start',
-        main_axis_size = 'max',
-        cross_alignment = 'stretch',
-        children = {
-            grid_row(SLOT.top_left, SLOT.top, SLOT.top_right),
-            grid_row(SLOT.left, SLOT.middle, SLOT.right, middle_child),
-            grid_row(SLOT.bottom_left, SLOT.bottom, SLOT.bottom_right),
-        },
+    return DefaultApp({
+        title = 'elxosc',
+        main = Main({
+            title = 'elxosc',
+            title_bar = title_bar,
+            window_controls = window_controls,
+            bottom = bottom,
+        }),
+        extension = extension_slot,
+        window_layer = window_layer,
     })
 end
-
-M.SLOT = SLOT
 
 return M

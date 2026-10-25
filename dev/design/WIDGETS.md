@@ -80,33 +80,55 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 表不提供回滚、运行时 unbind、scope shutdown 或 root rebuild。一个 scope 的多个
 绑定按注册顺序保留，不引入 priority。
 
-## Pages、Main 和扩展区域
+## WidgetsApp、DefaultApp、Main 与扩展区域
 
-播放器应用层计划在 Widget 组合层提供：
+当前 N1 应用组合为：
 
 ```text
-Root
-└── Pages
-    ├── Main
-    │   ├── title bar
-    │   ├── timeline
-    │   ├── bottom buttons
-    │   └── left/right buttons
-    ├── 3x3 grid
-    └── more
+WidgetsApp
+├── Theme
+├── DisplayScope
+├── DefaultTextStyle
+└── HostActionsScope
+    └── DefaultApp
+        └── Theatre（单一逻辑 Overlay owner）
+            ├── ExtensionEntry
+            ├── MainEntry → AutoHide → Main
+            └── WindowLayer（空根或受控内容）
 ```
 
-Main 的固定结构由播放器拥有；扩展通过 Define 暴露的 Pages/region 接口提供内容，
-而不是绕过 Widget 树直接写入 RenderObject。grid 和 more 的稳定区域 id、single/
-multi-child 规则、ordered append 和冲突诊断由 Pages API 明确规定。
+`WidgetsApp` 只提供 host-independent ambient；`host/mpv_app.lua` 注入当前显示尺寸、
+Theme 和受控 `HostActions`。`Text` 在没有显式 style 时读取 `DefaultTextStyle`。
+Theme 不拥有播放器状态，DisplayScope 不拥有输入 section，HostActions 也不暴露原始
+`mp` 给 Widget 层。
 
-Define 仍是扩展内容的唯一入口。它只负责传入扩展内容，不规定扩展页面内部的行为；
-扩展可以在自己的 StatefulWidget 中处理状态、消息和配置/API 更新。配置/API 热更新
-是数据事件，不是第二条 Widget 注入路径，也不重新执行扩展源代码。
+`DefaultApp` 是可替换的播放器应用根。`Main` 负责首版 ModernX 方向的顶部标题/窗口
+控制、底部信息/时间线/播放控制和统一正数 scale；默认布局是流式布局而不是九宫格。
+`AutoHide` 只包裹 MainEntry，隐藏 Main 不卸载或重置 Extension/Page 状态。WindowLayer
+为空时返回 `SizedBox.shrink()`，不创建第二个 presenter 或 runtime root。
 
-Pages 是应用组合层，不是 Navigator，也不提供运行时 unbind、树回滚或外部直接修改
-mounted Widget。区域结构变化应通过 Pages 的受控更新接口或扩展自己的 State/build
-完成。
+旧三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。Define/Slot 仍是
+初始化期扩展内容入口；扩展自己的 State、消息和配置/API 更新继续走正常 Widget/State/
+Provider 生命周期，不能运行时 unbind、回滚或直接编辑 mounted Widget。
+
+## OverlayEntry 与 Theatre
+
+N2 的 `Overlay`/`Theatre` 是同一个 class object，不是第二套 runtime。一个 Entry 和它的
+内容 subtree 只有一个 owner，builder 在 `OverlayEntryMountState` 的 mounted context 中
+调用。Entries 按插入顺序生成单一 Stack：
+
+- `visible` 决定自身是否参与绘制和输入；
+- 顶部可见 `opaque` entry 使下方 entry `occluded`；
+- `maintain_state = true` 时下方/隐藏内容保留 State，通过 `Offstage` 禁止 paint、命中和
+  pointer regions；
+- `maintain_state = false` 时内容从 child list 移除，并在下一次 build flush 中正常 unmount；
+- `OverlayState` 发布 generation-stamped plan，分别记录 visible、occluded、paint、input
+  和 mounted 状态；
+- `remove()`、visibility/opaque/maintain_state 变化和 `mark_needs_build()` 都通过
+  OverlayState 的唯一 authoritative entry list 驱动 reconciliation。
+
+N2 不实现 Navigator、Route、PopupRoute、barrier 或 multi-surface；这些仍属于后续阶段
+的决策范围。
 
 ## BuildContext、Provider 与播放器状态
 

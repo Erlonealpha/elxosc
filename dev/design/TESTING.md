@@ -13,9 +13,10 @@ emmylua_check .
 uv run --group test python -m pytest -q test/real_host
 ```
 
-当前本地基线（2026-10-16）：**1315 Lua checks passed**、EmmyLua
-**No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主设计
-文档同步更新。
+历史基线（2026-10-16）为 **1315 Lua checks passed**、EmmyLua **No issues found**、
+real-host **9 passed**。当前 N1/N2 工作区（2026-10-25）为 **1351 Lua checks passed**、
+EmmyLua **No issues found**、real-host **9 passed**。测试数量变化时，应在本文件和主
+设计文档同步更新。
 
 ## Lua suite
 
@@ -31,6 +32,10 @@ runner。测试按层覆盖：
 - Flutter runtime：BuildScope/inactive/finalize、PipelineOwner/RenderOwner identity、
   PaintingContext Canvas 边界、Binding singleton/role identity、copied-owner isolation、
   Key equality/duplicate 和 GlobalKey registry/stale cleanup；
+- N1 application：WidgetsApp ambients、DefaultApp/Main composition、uniform scale、
+  HostActions、AutoHide/Visibility、Main 隐藏不影响 Extension 和空 WindowLayer；
+- N2 Overlay：mounted builder context、single Entry owner、opaque occlusion、
+  maintain_state、paint/input eligibility、plan generation、remove/dispose lifecycle；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
 
 聚合模块必须和直接模块返回同一类对象；新增公共 API 时要有加载测试，而非只测
@@ -49,16 +54,17 @@ runner。测试按层覆盖：
 - Define 是唯一扩展内容入口；重复 scope payload、bind 顺序和错误边界保持覆盖；
 - 配置/API 热更新验证 snapshot、Provider/State/setter 传播、订阅清理，并证明不会
   重新执行扩展源代码或重复注册 class/host callback；
-- Pages/Main、3×3 grid 的全部稳定区域、`more`、扩展内容冲突和 ordered append；
+- DefaultApp/Main、Extension/WindowLayer 边界、Define/Slot 初始化贡献和 ordered append；
 - `set_mouse_area` 坐标换算、passive/interactive/exclusive policy、双击拦截和背景
   默认绑定透传；
 - 结构化 PointerEvent/KeyEvent 字段、字段快照/边界、legacy payload 兼容、structured
   dispatch result 和显式 capture；
 - input section 的 enable/disable、resize、hidden layer、root swap、capture 和
   shutdown 清理；
-- 多 overlay 的创建、更新、移除、z 顺序、同 z 稳定排序、独立 presenter/cache 和
-  overlap input policy；
-- 顶层控件 visible/hidden、auto/always/never 和 modal 输入策略。
+- 同一逻辑 Overlay 的 entry 创建、更新、移除、opaque/maintain_state plan 和 overlap
+  input eligibility；host-level 多 overlay、独立 presenter/cache 和 z policy 仍延期；
+- 顶层控件 visible/hidden、AutoHide 和 Offstage 生命周期；完整 modal/Navigator 输入策略
+  仍属于 N3/N5。
 
 ## EmmyLua
 

@@ -38,6 +38,22 @@ local Demo = demo_mod.Demo
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 
+local function find_widget_element(element, widget_class)
+    if element == nil then
+        return nil
+    end
+    if element.widget and element.widget.__class == widget_class then
+        return element
+    end
+    for _, child in ipairs(element:element_children()) do
+        local found = find_widget_element(child, widget_class)
+        if found then
+            return found
+        end
+    end
+    return nil
+end
+
 ---@return Widget
 local function scaffold()
     return Column({ children = { Slot('slot'), Text('body', {
@@ -337,8 +353,11 @@ F.test('a set_state rebuild lands in the next frame', function()
 
     local app = mpv_app.App(Column({ children = { Counter() } }))
     -- reach the live state through the element tree
-    local element = app.binding.root_element
-    local child = element:element_children()[1]
+    local child = find_widget_element(app.binding.root_element, Counter)
+    F.ok(child ~= nil, 'counter element is mounted below WidgetsApp')
+    if child == nil then
+        return
+    end
     child.state:set_state(function()
         child.state.value = 7
     end)
@@ -376,7 +395,12 @@ F.test('shutdown unmounts PlayerScope subscriptions', function()
     local store = PlayerStore({ value = 1 })
     local app = mpv_app.App(Reader(), { player_store = store })
     app:render()
-    local scope_state = app.binding.root_element.state
+    local scope_element = find_widget_element(app.binding.root_element, player_context.PlayerScope)
+    F.ok(scope_element ~= nil, 'PlayerScope is mounted below WidgetsApp')
+    if scope_element == nil then
+        return
+    end
+    local scope_state = scope_element.state
     F.ok(scope_state.subscription and scope_state.subscription:is_active(), 'scope is subscribed')
 
     fake.log['event:shutdown']()

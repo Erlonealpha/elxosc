@@ -65,18 +65,24 @@
 - 配置/API 更新不支持 Lua 源码热重载，不重新执行扩展代码，不改变 Widget class
   identity。完整播放器字段 schema 由后续应用层按实际消费点增加。
 
-### 6.4 Pages/Main 与扩展内容
+### 6.4 N1 DefaultApp/Main 与扩展内容（已实现）
 
-- 启动门槛：6.3 的 exact lookup、read API、依赖生命周期和 lookup 边界测试必须先
-  完成；Pages 注册阶段只能使用不可变输入和非监听读取，consumer Widget 才能在
-  build/did_change_dependencies 中建立依赖；
-- 建立 `Root → Pages → Main / 3x3 grid / more` 的应用组合层；
-- Main 拥有标题栏、时间线、底部按钮、两侧按钮及其稳定 id/快捷绑定元数据；
-- Define 作为扩展唯一入口，提供将扩展页面加入 Pages 和区域内容的公开接口；
-- 明确 region single/multi-child、ordered append、冲突诊断和 mounted 生命周期；
-- 不在本阶段引入 Navigator 或把 Define 改成 runtime tree manager。
+- 6.3 的 exact lookup、read API、依赖生命周期和 lookup 边界测试已完成；
+- 建立 `WidgetsApp → DefaultApp → Theatre → Main / Extension / WindowLayer` 应用组合；
+- Main 拥有标题栏、窗口控制、时间线、底部信息和受控 playback/window actions；
+- Define/Slot 作为扩展唯一初始化入口，Extension 是单一内容边界；
+- AutoHide/Visibility/Offstage 隐藏 Main 时不卸载 Extension State；
+- 旧九宫格、固定 region id 和 `more` 不再是生产入口；Navigator 不在本阶段引入。
 
-### 6.5 多层 overlay
+### 6.5 N2 逻辑 Overlay runtime（已实现）
+
+- Entry/State/Element 只有一个挂载 owner，builder 在 mounted context 执行；
+- opaque/occluded/visible/maintain_state 和 generation plan 有行为测试；
+- paint/input eligibility 分离，hidden/occluded entry 的 pointer regions 清理；
+- remove、mark_needs_build 和 State dispose 经过真实 Widget reconciliation；
+- Route、PopupRoute、barrier、ESC result 和 host-level 多 overlay 继续延期。
+
+### 6.6 多层 overlay
 
 - 建立 host-level OverlayHost/Registry，支持多个独立 `osd_overlay` layer；
 - 每个 layer 保有 root、RenderOwner、Canvas、presenter、visible、z、dirty/cache 和
@@ -88,11 +94,11 @@
   priority；
 - 隐藏/移除 layer 时清理 ASS、mouse area、hover、capture 和订阅。
 
-### 6.6 播放器 Shell
+### 6.7 播放器 Shell
 
 - 顶层控件支持 visible/hidden 和 auto/always/never 策略；
 - hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；
-- 将当前 scaffold 逐步收敛为 Pages/Main/grid/more，而不是一次性重写全部控件；
+- 将 Main/Extension/WindowLayer 继续扩展为经过审阅的播放器 Shell，而不是恢复九宫格；
 - Shell build 使用监听式 Provider，init/event/resource callback 使用非监听 read，
   依赖资源变化通过 `did_change_dependencies` 处理；
 - 使用已有 Scheduler、State、dirty 和 ASS presenter 管线，先做可观察行为再优化性能。

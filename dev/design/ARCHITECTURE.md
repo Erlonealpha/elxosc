@@ -1,6 +1,6 @@
 # 架构与模块边界
 
-本文说明各层负责什么、允许依赖什么，以及三棵运行时树、Pages 组合层和 host overlay
+本文说明各层负责什么、允许依赖什么，以及三棵运行时树、应用组合层和 host overlay
 如何连接。更高层不能绕过契约
 直接操作低层实现；需要新能力时应在拥有该语义的层增加接口。
 
@@ -60,11 +60,10 @@ F runtime 的生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPres
 `osd-overlay`。Layer/compositing、Semantics、multi-view 和 GlobalKey 跨父节点 reparent
 不因名称对齐而进入当前 API。
 
-Pages 是播放器应用层的 Widget 组合契约，不是第四棵底层运行时树。它负责把固定
-播放器 Main、3×3 grid 和 `more` 区域组装成一个或多个 Widget root，并暴露稳定的
-扩展入口；最终仍由 Widget/Element/RenderObject 三棵树完成挂载和绘制。Define 是
-扩展内容进入 Pages 的唯一入口，配置/API 热更新只是数据或事件输入，不是新的内容
-注入通道。
+`DefaultApp` 是播放器应用层的 Widget 组合契约，不是第四棵底层运行时树。它把稳定的
+Main、Extension 和 WindowLayer 作为同一个 `Theatre` 的逻辑 entries 组装；最终仍由
+Widget/Element/RenderObject 三棵树完成挂载和绘制。Define/Slot 是初始化期扩展内容进入
+应用的唯一入口，配置/API 热更新只是数据或事件输入，不是新的内容注入通道。
 
 ## 三棵树的职责
 
@@ -86,21 +85,23 @@ RenderObject 是跨帧持久的可变节点，负责 layout、paint、hit test�
 dirty propagation。父节点把约束传下去，子节点返回尺寸，父节点写入
 `parent_data.offset`。owner 负责 viewport、根节点、布局绘制和输入分发。
 
-### Pages composition
+### Application composition
 
-Pages 位于播放器 Shell 和 Widget tree 之间的应用组合层：
+应用组合位于 host service 和 Widget tree 之间：
 
 ```text
-Root
-└── Pages
-    ├── Main
-    ├── extension grid (3 × 3 stable regions)
-    └── more (extension container)
+WidgetsApp
+└── DefaultApp
+    └── Theatre
+        ├── ExtensionEntry
+        ├── MainEntry → AutoHide → Main
+        └── WindowLayer
 ```
 
-Main 的标题栏、时间线、底部和两侧按钮由播放器拥有；扩展通过 Define 提供的
-Pages/region API 填充允许的区域。Pages 不拥有运行时 unbind、树回滚或外部直接修改
-mounted Widget 的能力。
+Main 的标题栏、时间线、底部信息和受控 host actions 由播放器拥有；扩展通过初始化
+Define/Slot 提供内容。Main 隐藏只改变自己的 AutoHide/Offstage entry，不卸载 Extension
+State。`Theatre`/`OverlayEntry` 负责同一逻辑 root 内的 entry 生命周期和 eligibility plan，
+不创建第二个 owner、presenter 或 surface。旧九宫格和 `more` 不属于当前生产入口。
 
 ### Host overlay layers
 
@@ -139,5 +140,5 @@ config/API snapshot, State/set_state or host input
 - 新的宿主服务通过 `host` 或 Define module 注入，不能把 `mp` 下沉到核心层。
 - 配置/API 热更新先形成不可变 snapshot，再通过 Provider/State 或明确的
   RenderObject setter 进入现有 dirty 管线；不得重新执行扩展源代码。
-- Pages 只负责应用组合和扩展区域契约；overlay 管理只负责 presentation 和 z/input
-  policy，不能把两者混成一个 Widget priority 系统。
+- DefaultApp 只负责应用组合和扩展边界；Theatre/OverlayEntry 只负责同一逻辑 root 的
+  entry 生命周期与 paint/input eligibility，不能把 entry 状态混成 Define priority 系统。
