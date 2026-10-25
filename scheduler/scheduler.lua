@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- Frame pipeline driver (a trimmed `SchedulerBinding`).
+-- Frame pipeline driver used by a SchedulerBinding owner scope.
 --
 -- One frame runs in two phases:
 --   1. transient callbacks -- animations/tickers, given the elapsed seconds;

@@ -20,12 +20,9 @@ local std = require 'elxlibs.std'
 local constraints_mod = require 'layout.constraints'
 local frame_clock = require 'scheduler.frame_clock'
 local scheduler_mod = require 'scheduler.scheduler'
-local scheduler_binding_mod = require 'scheduler.scheduler_binding'
 local pipeline_owner = require 'render.pipeline_owner'
-local renderer_binding_mod = require 'render.renderer_binding'
 local ass_canvas = require 'backends.ass_canvas'
 local ass_text_layout = require 'backends.ass_text_layout'
-local painting_binding_mod = require 'painting.painting_binding'
 local text_layout = require 'text.text_layout'
 local binding_mod = require 'widget.widgets_binding'
 local mpv_input = require 'host.mpv_input'
@@ -34,12 +31,10 @@ local player_context = require 'widget.player_context'
 local Constraints = constraints_mod.Constraints
 local FrameClock = frame_clock.FrameClock
 local Scheduler = scheduler_mod.Scheduler
-local SchedulerBinding = scheduler_binding_mod.SchedulerBinding
+---@alias PipelineOwner RenderOwner
 local PipelineOwner = pipeline_owner.PipelineOwner
-local RendererBinding = renderer_binding_mod.RendererBinding
 local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
-local PaintingBinding = painting_binding_mod.PaintingBinding
 local WidgetsBinding = binding_mod.WidgetsBinding
 local MpInput = mpv_input.MpInput
 local PlayerScope = player_context.PlayerScope
@@ -155,12 +150,10 @@ end
 ---@field display Display
 ---@field clock MpFrameClock
 ---@field scheduler Scheduler
----@field scheduler_binding SchedulerBinding
 ---@field owner PipelineOwner
----@field renderer_binding RendererBinding
----@field binding WidgetsBinding
+---@field widgets_binding WidgetsBinding
+---@field binding WidgetTree
 ---@field canvas AssCanvas
----@field painting_binding PaintingBinding
 ---@field presenter AssPresenter
 ---@field input MpInput
 ---@field player_store PlayerStore?
@@ -183,10 +176,8 @@ function App:__init(root_widget, options)
     self.clock = MpFrameClock(options.delay)
     self.scheduler = Scheduler(self.clock)
     self.canvas = AssCanvas()
-    self.scheduler_binding = SchedulerBinding(self.scheduler)
-    self.owner = PipelineOwner()
-    self.renderer_binding = RendererBinding(self.owner, self.canvas)
-    self.painting_binding = PaintingBinding(self.canvas)
+    self.widgets_binding = WidgetsBinding.ensure_initialized()
+    self.owner = self.widgets_binding:create_pipeline_owner()
     self.presenter = AssPresenter(options.z)
 
     self.owner.on_dirty = function()
@@ -200,7 +191,8 @@ function App:__init(root_widget, options)
     -- the engine stand-in: `RenderText` falls back to this measurer
     text_layout.set_default(AssTextLayout())
 
-    self.binding = WidgetsBinding(self:_wrap_root(root_widget), self.owner, options.binds, self.scheduler)
+    self.binding = self.widgets_binding:attach(
+        self:_wrap_root(root_widget), self.owner, options.binds, self.scheduler)
     self.binding.on_dirty = function()
         self.scheduler:schedule_frame()
     end
@@ -288,18 +280,13 @@ function App:shutdown()
     end
     if self.scheduler then
         self.scheduler:remove_persistent(self._render_callback)
+        self.scheduler:dispose()
     end
     if self.binding then
         self.binding:dispose()
     end
-    if self.renderer_binding then
-        self.renderer_binding:dispose()
-    end
-    if self.painting_binding then
-        self.painting_binding:dispose()
-    end
-    if self.scheduler_binding then
-        self.scheduler_binding:dispose()
+    if self.owner then
+        self.owner:dispose()
     end
     if self.clock then
         self.clock:dispose()

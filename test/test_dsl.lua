@@ -53,7 +53,7 @@ text_layout.set_default(FixedLayout() --[[@as TextLayout]])
 ---@param widget Widget
 local function mount(widget)
     local owner = RenderOwner()
-    local binding = WidgetBinding(widget, owner)
+    local binding = WidgetBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.loose(1000, 1000))
     owner:layout()
     return owner, binding

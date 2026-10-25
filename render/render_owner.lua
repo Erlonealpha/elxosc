@@ -2,7 +2,7 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Tree owner: the viewport, the dirty flag and the layout/paint entry points
--- (a trimmed `PipelineOwner` + `RendererBinding`).
+-- (the single-root `PipelineOwner`; RendererBinding is a shared role facade).
 --
 -- `on_dirty` is the hook the host backend wires to its frame clock, so a dirty
 -- node schedules a frame -- and an idle tree schedules nothing.

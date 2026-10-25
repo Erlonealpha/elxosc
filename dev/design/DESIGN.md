@@ -59,9 +59,10 @@ libs provides sandbox/Define services and is consumed by host/entry assembly
 3. **RenderObject tree**：保存尺寸、父子位置、绘制状态、命中测试和 dirty 标记，
    在 Widget 更新时尽量复用。
 
-`WidgetBinding` 把三棵树连接到 `RenderOwner`。布局和绘制不会修改 Widget；结构性
-变化只能通过 rebuild，运行时属性变化则由 RenderObject setter 选择 `paint` 或
-`layout + paint` 失效类型。
+一个 concrete `WidgetsBinding` composition 把三棵树的 frame lifecycle 连接起来；每个
+attached `WidgetTree` 复制自己的 `BuildOwner` 和 `PipelineOwner`/`RenderOwner`。布局和
+绘制不会修改 Widget；结构性变化只能通过 rebuild，运行时属性变化则由 RenderObject
+setter 选择 `paint` 或 `layout + paint` 失效类型。
 
 ## 不可破坏的契约
 

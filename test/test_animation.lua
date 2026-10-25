@@ -263,7 +263,7 @@ F.test('TransformBox widget binds a paint-only scale animation', function()
     local scheduler = Scheduler(clock)
     local controller = AnimationController(scheduler, { duration = 1 })
     local owner = RenderOwner()
-    WidgetBinding(TransformBox(SizedBox({ width = 20, height = 10 }), {
+    WidgetBinding.ensure_initialized():attach(TransformBox(SizedBox({ width = 20, height = 10 }), {
         scale_controller = controller,
         scale_tween = Tween(Size(1, 1), Size(2, 2))--[[@as Tween<Size>]],
     }), owner, nil, scheduler)
@@ -408,7 +408,7 @@ F.test('State-owned controllers receive a scheduler and dispose on unmount', fun
         return AnimationState()
     end
     local owner = RenderOwner()
-    local binding = WidgetBinding(AnimationWidget(), owner, nil, scheduler)
+    local binding = WidgetBinding.ensure_initialized():attach(AnimationWidget(), owner, nil, scheduler)
     owner:set_viewport(Constraints.loose(100, 100))
     owner:layout()
     local state = binding.root_element.state

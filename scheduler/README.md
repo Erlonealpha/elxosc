@@ -9,7 +9,8 @@ about mpv or ASS.
 - `scheduler.lua` — transient animation callbacks, persistent frame callbacks, and
   post-frame callbacks with request coalescing.
 - `ticker.lua` — start/stop/dispose time source for controllers.
-- `scheduler_binding.lua` — instance-scoped binding facade over Scheduler and FrameClock.
+- `scheduler_binding.lua` — SchedulerBinding role facade over the shared concrete
+  WidgetsBinding; per-tree Scheduler/FrameClock resources remain owner-scope inputs.
 
 The normal order is transient animation sampling, Widget/build work, layout, paint,
 and presentation. A ticker resets its start time for each animation so idle host time

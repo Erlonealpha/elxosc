@@ -11,7 +11,8 @@ not import Widget modules or mpv.
 - `pipeline_owner.lua` — canonical `PipelineOwner` name; exports the same class as
   `RenderOwner`.
 - `painting_context.lua` — Canvas/child paint/clip boundary without a Layer tree.
-- `renderer_binding.lua` — instance-scoped PipelineOwner/Canvas binding facade.
+- `renderer_binding.lua` — RendererBinding role facade; it resolves to the shared WidgetsBinding
+  composition and creates per-tree PipelineOwner copies.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.

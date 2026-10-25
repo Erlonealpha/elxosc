@@ -100,7 +100,7 @@ local EXPECTED = {
 ---@return Size root_size
 local function render(widget)
     local owner = RenderOwner()
-    WidgetBinding(widget, owner)
+    WidgetBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.tight(W, H))
     owner:layout()
     local canvas = AssCanvas()

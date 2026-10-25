@@ -16,5 +16,7 @@ in `backends/`.
 
 `PaintingContext` belongs to `render/`, not this contract layer. It owns the current Canvas
 for a paint pass and forwards backend-neutral operations without exposing ASS details.
+`PaintingBinding` is a role facade over the shared concrete WidgetsBinding; Canvas resources
+remain owned by the attached host/tree scope.
 
 See [rendering](../dev/design/RENDERING.md).

@@ -14,15 +14,15 @@
 
 ## App 帧循环
 
-`host.mpv_app.App` 将 WidgetsBinding、PipelineOwner、Scheduler、AssCanvas 和
-AssPresenter 组装起来：
+`host.mpv_app.App` 获取共享的 `WidgetsBinding` composition，再为自己的 tree 创建
+独立 PipelineOwner/BuildOwner、Scheduler、AssCanvas 和 AssPresenter：
 
 ```text
 mp property / input / dirty callback
     → schedule_frame (coalesced + refresh-rate limited)
     → transient ticker/controller callbacks
     → flush Widget rebuilds
-    → RenderOwner layout and paint
+    → PipelineOwner layout and paint
     → AssPresenter.push only when data or resolution changed
 ```
 
@@ -38,7 +38,7 @@ modal/exclusive layer 可以显式阻止穿透。默认情况下，Button 区域
 `mbtn_left_dbl`，避免触发用户 `input.conf` 的 `cycle fullscreen`；没有 interactive
 区域的播放器背景仍保留用户默认绑定。
 
-RenderOwner 继续负责命中路径、hover enter/leave、按下 capture 和冒泡停止规则；
+PipelineOwner/RenderOwner 继续负责命中路径、hover enter/leave、按下 capture 和冒泡停止规则；
 host 负责把 mpv section、mouse area、double-click、modifier 和键盘事件翻译成
 结构化输入值。内容画到布局盒外并不自动扩大可点击区域，除非所属 RenderObject
 明确实现新的命中边界语义。详细输入规划见 [INPUT.md](INPUT.md)。
@@ -105,7 +105,7 @@ identity 的能力。`mp.on_prop` 也返回 disposable observer，扩展必须�
 
 当前 App 只有一个 `AssPresenter`；下一阶段引入 host-level OverlayHost/Registry，
 让 Pages 或扩展使用多个独立 `osd_overlay`。每个 layer 拥有独立 root、Canvas、
-RenderOwner、presenter、visible、z、dirty/cache 和 input policy。较高 `overlay.z`
+PipelineOwner/RenderOwner、presenter、visible、z、dirty/cache 和 input policy。较高 `overlay.z`
 视觉上在前，同 z 用稳定注册顺序；z 只影响呈现，不影响 Widget/Pages/Define 优先级。
 
 overlay 的创建、更新、移除、分辨率变化和隐藏都必须可重复，ASS 仍是静态逐帧输出。

@@ -29,8 +29,8 @@ runner。测试按层覆盖：
 - libs/Define：沙箱、模块、scope 首次 payload、bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；
 - Flutter runtime：BuildScope/inactive/finalize、PipelineOwner/RenderOwner identity、
-  PaintingContext Canvas 边界、Binding 实例隔离、Key equality/duplicate 和 GlobalKey
-  registry/stale cleanup；
+  PaintingContext Canvas 边界、Binding singleton/role identity、copied-owner isolation、
+  Key equality/duplicate 和 GlobalKey registry/stale cleanup；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
 
 聚合模块必须和直接模块返回同一类对象；新增公共 API 时要有加载测试，而非只测

@@ -12,10 +12,10 @@
 | `painting/` | 绘制契约和值对象 | `Canvas`, `Paint`, `Path`, `TextPaint` |
 | `text/` | 文本意图和布局结果 | `TextStyle`, `Paragraph`, `TextLayout` |
 | `layout/` | 约束代数 | `Constraints` |
-| `render/` | 持久化渲染树 | `RenderObject`, `RenderOwner` 及 RenderBox |
+| `render/` | 持久化渲染树 | `RenderObject`, `PipelineOwner`/`RenderOwner` 及 RenderBox |
 | `animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
 | `scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
-| `widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetBinding`, `PlayerStore` |
+| `widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `PlayerStore` |
 | `backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
 | `libs/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
 | `host/` | mpv 接线 | `App`, `MpFrameClock`, `MpInput`, `MpDefine` |
@@ -35,20 +35,26 @@ libs → widget/bind and host assembly
 
 ## Flutter runtime 对齐
 
-运行时采用实例作用域的 owner 拓扑，不复制 Flutter 全局 binding singleton：
+运行时采用 Flutter-style concrete Binding singleton 加 owner scope 拓扑：
 
 ```text
-App instance
-├── SchedulerBinding → Scheduler → FrameClock
-├── WidgetsBinding → BuildOwner → BuildScope → Element tree
-├── RendererBinding → PipelineOwner → RenderObject tree
-└── PaintingBinding → backend Canvas（需要共享绘制资源时）
+Lua runtime / host isolate
+└── WidgetsBinding composition（一个 concrete instance）
+    ├── SchedulerBinding role
+    ├── RendererBinding role
+    ├── PaintingBinding role
+    └── attached owner scopes
+        ├── BuildOwner → BuildScope → Element tree
+        │              └── PipelineOwner → RenderObject tree → Canvas
+        └── BuildOwner → BuildScope → Element tree
+                       └── PipelineOwner → RenderObject tree → Canvas
 ```
 
 `BuildOwner` 管 dirty Element、BuildScope、inactive/finalize 和 GlobalKey registry；
 `PipelineOwner` 是现有 `RenderOwner` 的规范名称，迁移期两个入口返回同一 class object；
 `PaintingContext` 是 RenderObject 到 Canvas 的最小绘制上下文，不是 Layer tree。Binding
-只拥有由调用方传入的资源，host 可以组合它们但不能让 framework 依赖 mpv 或模块级默认实例。
+composition 只初始化一次；多树通过 `WidgetsBinding:attach()` 复制 BuildOwner、
+PipelineOwner 和 root Element，不复制第二套 Binding。
 
 F runtime 的生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPresenter` 和单
 `osd-overlay`。Layer/compositing、Semantics、multi-view 和 GlobalKey 跨父节点 reparent

@@ -27,10 +27,12 @@ build 中反复注册一次性宿主资源。
 
 ## BuildOwner、BuildScope 与 Binding
 
-`BuildOwner` 是实例作用域的 Widget tree owner。它按 `BuildScope` 对 dirty Element 去重，
-以 depth 顺序 flush，并在每个 build pass 结束时处理 inactive Element 的 `finalize_tree()`。
-parent rebuild 已经更新的 child 不得在同一 frame 重复 build。`WidgetsBinding` 持有
-BuildOwner 和 root Element；旧 `WidgetBinding` 入口在迁移期返回同一 class object。
+`BuildOwner` 是 Widget tree owner。它按 `BuildScope` 对 dirty Element 去重，以 depth 顺序
+flush，并在每个 build pass 结束时处理 inactive Element 的 `finalize_tree()`。parent
+rebuild 已经更新的 child 不得在同一 frame 重复 build。`WidgetsBinding` 是 Flutter-style
+concrete singleton；每次 `WidgetsBinding:attach()` 创建一个 `WidgetTree` handle，handle
+持有自己的 BuildOwner、root Element 和 RenderOwner/PipelineOwner。旧 `WidgetBinding`
+入口仍是同一 class object，但直接构造应迁移到 `ensure_initialized():attach()`。
 
 Element 的 runtime 生命周期允许：
 
@@ -39,8 +41,10 @@ active → inactive → active
                  ↘ finalize → unmounted
 ```
 
-本阶段只提供 inactive/finalize 基础语义，不宣称 GlobalKey 跨父节点 reparent。Binding
-实例之间不得共享 dirty queue、Scheduler、GlobalKey registry 或 frame 状态。
+本阶段只提供 inactive/finalize 基础语义，不宣称 GlobalKey 跨父节点 reparent。不同
+tree handle 不得共享 dirty queue、BuildOwner、PipelineOwner、GlobalKey registry 或 root
+frame state；它们共享 concrete Binding composition。App shutdown 只释放自己的 tree/owner，
+不自动 dispose 共享 Binding。
 
 ## Key identity
 

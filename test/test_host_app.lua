@@ -62,9 +62,8 @@ F.test('the display fps sets the delay', function()
     fake.fps = 30
     local app = mpv_app.App(scaffold())
     F.close(app.clock.delay, 1 / 30, 'delay follows display-fps')
-    F.ok(app.scheduler_binding:is_initialized(), 'scheduler binding initialized')
-    F.eq(app.renderer_binding.pipeline_owner, app.owner, 'renderer binding owns pipeline')
-    F.eq(app.painting_binding.canvas, app.canvas, 'painting binding owns canvas')
+    F.ok(app.widgets_binding:is_initialized(), 'shared widgets binding initialized')
+    F.eq(app.binding.binding, app.widgets_binding, 'tree attaches to shared binding')
 end)
 
 --== presenter =============================================================
@@ -230,9 +229,8 @@ F.test('shutdown removes App and mouse property observers', function()
         callbacks[#callbacks + 1] = event.cb
     end
     app:shutdown()
-    F.ok(not app.scheduler_binding:is_initialized(), 'scheduler binding disposed')
-    F.ok(not app.renderer_binding:is_initialized(), 'renderer binding disposed')
-    F.ok(not app.painting_binding:is_initialized(), 'painting binding disposed')
+    F.ok(app.widgets_binding:is_initialized(), 'shared binding survives App shutdown')
+    F.ok(app.binding._disposed, 'tree owner is disposed')
     F.eq(#fake.unobserved, #callbacks, 'all App and mouse observers are removed')
     for _, callback in ipairs(callbacks) do
         callback('stale', nil)

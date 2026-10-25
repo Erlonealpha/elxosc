@@ -48,10 +48,10 @@ local SizedBox = layout_widgets.SizedBox
 local Column = layout_widgets.Column
 
 ---@param widget Widget
----@return RenderOwner, WidgetsBinding
+---@return RenderOwner, WidgetTree
 local function mount(widget)
     local owner = RenderOwner()
-    local binding = WidgetsBinding(widget, owner)
+    local binding = WidgetsBinding.ensure_initialized():attach(widget, owner)
     owner:set_viewport(Constraints.loose(100, 100))
     owner:layout()
     return owner, binding
@@ -223,25 +223,27 @@ F.test('RenderObject painting accepts both Canvas and PaintingContext', function
     F.ok(#canvas.ops >= 0, 'direct Canvas paint remains compatible')
 end)
 
-F.section('flutter runtime: instance bindings')
+F.section('flutter runtime: binding composition and owner scopes')
 
-F.test('BindingBase is instance scoped and disposes once', function()
-    local first = BindingBase()
-    local second = BindingBase()
-    F.ok(first ~= second, 'independent binding instances')
-    F.ok(first:is_initialized(), 'first initialized')
-    F.ok(first:dispose(), 'first dispose')
-    F.ok(not first:dispose(), 'dispose is idempotent')
-    F.ok(second:is_initialized(), 'second remains alive')
-    second:dispose()
+F.test('WidgetsBinding follows Flutter singleton lifecycle', function()
+    local first = WidgetsBinding.ensure_initialized()
+    local second = WidgetsBinding.ensure_initialized()
+    F.eq(first, second, 'ensure_initialized returns one binding')
+    F.eq(BindingBase.current_instance(), first, 'BindingBase tracks the composition')
+    F.raises(function()
+        WidgetsBinding()
+    end, 'already initialized', 'a second binding is rejected')
 end)
 
-F.test('WidgetsBinding canonical and compatibility names share identity', function()
+F.test('WidgetsBinding copies owners for independent trees', function()
     F.eq(WidgetsBinding, WidgetBinding, 'WidgetsBinding identity')
     local key = GlobalKey('binding-isolation')
-    local first = WidgetsBinding(SizedBox({ key = key, width = 1, height = 1 }), RenderOwner())
-    local second = WidgetsBinding(SizedBox({ key = key, width = 1, height = 1 }), RenderOwner())
+    local composition = WidgetsBinding.ensure_initialized()
+    local first = composition:attach(SizedBox({ key = key, width = 1, height = 1 }))
+    local second = composition:attach(SizedBox({ key = key, width = 1, height = 1 }))
+    F.ok(first ~= second, 'independent tree handles')
     F.ok(first.build_owner ~= second.build_owner, 'independent BuildOwners')
+    F.ok(first.render_owner ~= second.render_owner, 'independent PipelineOwners')
     F.eq(first.build_owner.global_key_registry[key], first.root_element,
         'first GlobalKey registry')
     F.eq(second.build_owner.global_key_registry[key], second.root_element,
@@ -252,50 +254,23 @@ F.test('WidgetsBinding canonical and compatibility names share identity', functi
     second:dispose()
 end)
 
-F.test('SchedulerBinding instances do not share lifecycle state', function()
-    local first_frames = 0
-    local second_frames = 0
-    local first_scheduler = {
-        _handle_frame = function()
-            first_frames = first_frames + 1
-        end,
-        dispose = function() end,
-    }
-    local second_scheduler = {
-        _handle_frame = function()
-            second_frames = second_frames + 1
-        end,
-        dispose = function() end,
-    }
-    local first = SchedulerBinding(first_scheduler)
-    local second = SchedulerBinding(second_scheduler)
-    F.ok(first ~= second, 'independent scheduler bindings')
-    first:handle_frame(1)
-    F.eq(first_frames, 1, 'first scheduler receives its frame')
-    F.eq(second_frames, 0, 'second scheduler is isolated')
-    first:dispose()
-    F.ok(second:is_initialized(), 'second scheduler binding remains alive')
-    second:dispose()
+F.test('binding roles resolve to the same Flutter-style composition', function()
+    local composition = WidgetsBinding.ensure_initialized()
+    F.eq(SchedulerBinding.ensure_initialized(), composition, 'scheduler role identity')
+    F.eq(RendererBinding.ensure_initialized(), composition, 'renderer role identity')
+    F.eq(PaintingBinding.ensure_initialized(), composition, 'painting role identity')
+    F.eq(WidgetsBinding.instance(), composition, 'widgets instance identity')
+    F.eq(SchedulerBinding.instance(), composition, 'scheduler instance identity')
+    F.eq(RendererBinding.instance(), composition, 'renderer instance identity')
+    F.eq(PaintingBinding.instance(), composition, 'painting instance identity')
 end)
 
-F.test('Renderer and Painting bindings own independent resources', function()
-    local first_owner = RenderOwner()
-    local second_owner = RenderOwner()
-    local first_canvas = RecordCanvas()
-    local second_canvas = RecordCanvas()
-    local first_painting = PaintingBinding(first_canvas)
-    local second_painting = PaintingBinding(second_canvas)
-    local first_renderer = RendererBinding(first_owner, first_canvas)
-    local second_renderer = RendererBinding(second_owner, second_canvas)
-    first_renderer:draw_frame()
-    F.eq(#first_canvas.ops, 0, 'empty first renderer frame')
-    F.eq(#second_canvas.ops, 0, 'second canvas remains independent')
-    first_renderer:dispose()
-    first_painting:dispose()
-    F.ok(second_renderer:is_initialized(), 'second renderer remains alive')
-    F.ok(second_painting:is_initialized(), 'second painting binding remains alive')
-    second_renderer:dispose()
-    second_painting:dispose()
+F.test('RendererBinding creates independent PipelineOwners', function()
+    local first_owner = RendererBinding.create_pipeline_owner()
+    local second_owner = RendererBinding.create_pipeline_owner()
+    F.ok(first_owner ~= second_owner, 'owner copies are independent')
+    first_owner:dispose()
+    second_owner:dispose()
 end)
 
 return true

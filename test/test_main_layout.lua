@@ -30,7 +30,7 @@ mp_stub.install()
 
 local function mount(binds)
     local owner = RenderOwner()
-    WidgetBinding(main_layout.build_scaffold(Text('demo')), owner, binds)
+    WidgetBinding.ensure_initialized():attach(main_layout.build_scaffold(Text('demo')), owner, binds)
     owner:set_viewport(Constraints.tight(300, 180))
     owner:layout()
     return owner

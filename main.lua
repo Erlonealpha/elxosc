@@ -11,6 +11,11 @@
 -- `bind` writes into the widget tree *before* it is mounted (dev/design/WIDGETS.md), so
 -- the re-mount builds a fresh scaffold rather than mutating the live one.
 
+local enable = true
+if not enable then
+    return
+end
+
 local mp = require 'mp'
 
 require 'elxlib_load' -- sets up elxlibs.*

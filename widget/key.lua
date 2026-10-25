@@ -12,11 +12,14 @@
 local std = require 'elxlibs.std'
 local foundation_key = require 'foundation.key'
 
-local M = {}
+local string = string
+local rawequal = rawequal
+local tostring = tostring
 local kindof = std.kindof
-
 local LocalKey = foundation_key.LocalKey
 local Key = foundation_key.Key
+
+local M = {}
 
 local ObjectKey = std.class.new('ObjectKey', { LocalKey })
 

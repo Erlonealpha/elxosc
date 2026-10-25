@@ -35,7 +35,8 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 `PipelineOwner` 是 RenderObject pipeline 的规范名称；当前单根实现由
 `render/pipeline_owner.lua` 重导出既有 `RenderOwner` class，两个入口保持相同 identity。
 它负责 viewport、layout/paint dirty、`flush_layout()`、`flush_paint()` 和 visual update
-通知，不负责 mpv input section、hover/capture 或 presenter 产品策略。
+通知；每个 attached WidgetTree 拥有自己的 PipelineOwner，不负责 mpv input section、
+hover/capture 或 presenter 产品策略。
 
 RenderObject 的 paint 边界使用 `PaintingContext`：context 持有当前 Canvas，统一 child
 paint、offset、clip 和 save/restore；现有 Canvas 入口在迁移期间仍可直接调用。它不是
@@ -43,7 +44,8 @@ Flutter Layer tree，不暴露 ASS `Layer`/`ReadOrder`，不改变布局或 hit 
 
 当前 frame 顺序为：transient/ticker → Widget build scopes → inactive finalize → layout
 → input region snapshot → PaintingContext paint → presenter → post-frame callbacks。
-F runtime 首版仍只支持一个 production root 和一个 Canvas。
+F runtime 首版每个 production owner scope 仍只支持一个 root 和一个 Canvas；Binding
+composition 不因 attached owner scope 增加而复制。
 
 ## Canvas 和文本
 
