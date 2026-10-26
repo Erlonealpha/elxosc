@@ -39,6 +39,7 @@ local files = {
     'test_host_define',
     'test_host_player_context',
     'test_host_app',
+    'test_demo_navigation',
     'test_main_layout',
     'test_overlay',
     'test_navigation',

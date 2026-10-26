@@ -113,11 +113,11 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-10-26 的 P0/R1/R2 + N1/N2 + R3/R4 + N3 工作区为 **1426 Lua checks**、EmmyLua
-**No issues found**、Python integration **9 passed**、real-host **9 passed**。R3 已将
+2026-10-26 的 P0/R1/R2 + N1/N2 + R3/R4 + N3 Demo 工作区为 **1458 Lua checks**、EmmyLua
+**No issues found**、real-host **10 passed**。R3 已将
 默认入口收敛为唯一 `app.extension` 内容边界；R4 已将 mpv clock/presenter primitive
 从 `App` 实现中拆出，并让 `MpInput` 使用最小 owner/callback 接口；N3 已将 Page/Route
-和 Popup/ESC 接入同一 Theatre。命令和测试职责以
+和 Popup/ESC 接入同一 Theatre；Demo 展示页面/弹窗、返回结果及首页 State 保留。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 
 6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，

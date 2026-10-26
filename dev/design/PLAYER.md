@@ -151,6 +151,25 @@ navigation section，无可 pop 内容时不抢占用户默认 ESC 绑定，KeyE
 后交给 NavigatorState。首版不提供 focus traversal、Hero、restoration、browser parser、
 nested Navigator 状态恢复或复杂 transition 协商。
 
+### N3 Demo
+
+`main.lua` 通过 `demo.initial_pages()` 把演示首页放进 WindowLayer 的 Navigator。
+`demo.lua` 的 Page builder 在 mounted context 中取得 Navigator handle；按钮事件复用
+该 handle，返回结果通过 `RouteResult` 更新首页 State。
+
+- 首页 **N3 Navigation → Open Page** 打开 opaque Page；**Back with result** 返回
+  `Page: done`，ESC 返回 `Page: dismissed`。
+- **Open Popup** 显示遮罩和居中卡片；**Confirm / Cancel** 分别返回
+  `Popup: confirmed / cancelled`。点击遮罩或 ESC 显示 `Popup: dismissed`，点击卡片
+  空白处保持弹窗打开。
+- 首页的 **Result / Returns** 显示最近结果和完成次数；打开页面前修改原有计数，返回后
+  可检查其 State 保留。首页不占用 ESC，继续执行宿主自己的绑定。
+
+也可在 mpv 控制台执行 `script-message elxosc-demo page` 或
+`script-message elxosc-demo popup`；不带参数仍为原有计数演示。页面打开期间重复打开命令
+会被忽略。`user-data/elxosc-demo-route`、`elxosc-demo-result` 和 `elxosc-demo-returns`
+提供对应观测值，Demo dispose 会释放消息注册及待完成的 result 订阅。
+
 ## N2 逻辑 Overlay 与未来 host layers
 
 当前 `Overlay`/`Theatre` 是 framework 内单一 logical root 的 runtime；它不是 host-level

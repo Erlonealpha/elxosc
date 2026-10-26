@@ -16,6 +16,7 @@ local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
 local player_context = require 'widget.player_context'
 local tween_mod = require 'animation.tween'
+local navigation_mod = require 'widget.navigation'
 
 local Color = color.Color
 local Anchor = anchor_mod.Anchor
@@ -43,20 +44,52 @@ local TextButton = basic_widgets.TextButton
 local IconButton = basic_widgets.IconButton
 local Icon = icon_mod.Icon
 local Text = basic_widgets.Text
+local GestureDetector = basic_widgets.GestureDetector
+local Page = navigation_mod.Page
+local PopupPage = navigation_mod.PopupPage
+local Navigator = navigation_mod.Navigator
 
 local M = {}
+
+---@param children Widget[]
+---@return Widget
+local function navigation_card(children)
+    -- Only the card consumes interior clicks; the surrounding area belongs to
+    -- PopupRoute's barrier. Passive labels must not dismiss the popup.
+    return GestureDetector(Container({
+        key = 'demo-navigation-card',
+        width = 440,
+        padding = EdgeInsets.all(20),
+        color = Color.rgba(0x182536FF),
+        radius = 8,
+        child = Column({
+            main_axis_size = 'min',
+            spacing = 14,
+            children = children,
+        }),
+    }), {
+        on_down = function()
+        end,
+        on_up = function()
+        end,
+    })
+end
 
 -- Replaces the old hand-built RenderObject smoke tree: a stateful widget that
 -- counts the `elxosc-demo` script messages, so `set_state` -> rebuild -> ASS
 -- output can be eyeballed in mpv.
 
 ---@class DemoState : State
+---@field widget Demo
 ---@field count integer
 ---@field selected string
 ---@field motion number frame-clock animation progress
 ---@field motion_controller AnimationController
 ---@field button_scale_controller AnimationController
 ---@field button_scale_tween Tween<Size>
+---@field navigation_result string
+---@field navigation_returns integer
+---@field result_unsubscribe (fun(): boolean)?
 ---@overload fun(): self
 local DemoState = std.class.new('DemoState', { State })
 
@@ -67,6 +100,9 @@ function DemoState:__init()
     self.motion = 0
     self.button_scale_controller = nil
     self.button_scale_tween = nil
+    self.navigation_result = 'No route closed yet'
+    self.navigation_returns = 0
+    self.result_unsubscribe = nil
 end
 
 function DemoState:init_state()
@@ -82,7 +118,16 @@ function DemoState:init_state()
     -- `set_root_widget` may mount a fresh element (rather than reusing this
     -- one), so registering is made idempotent instead of assuming it runs once.
     mp.unregister_script_message('elxosc-demo')
-    mp.register_script_message('elxosc-demo', function()
+    mp.register_script_message('elxosc-demo', function(action)
+        if action == 'page' then
+            self:_open_page()
+            return
+        elseif action == 'popup' then
+            self:_open_popup()
+            return
+        elseif action ~= nil and action ~= '' then
+            return
+        end
         self:set_state(function()
             self.count = self.count + 1
             self.selected = 'message'
@@ -92,10 +137,17 @@ function DemoState:init_state()
     end)
     mp.set_property('user-data/elxosc-demo-count', tostring(self.count))
     mp.set_property('user-data/elxosc-demo-event', self.selected)
+    mp.set_property('user-data/elxosc-demo-route', 'home')
+    mp.set_property('user-data/elxosc-demo-result', self.navigation_result)
+    mp.set_property('user-data/elxosc-demo-returns', '0')
 end
 
 function DemoState:dispose()
     mp.unregister_script_message('elxosc-demo')
+    if self.result_unsubscribe then
+        self.result_unsubscribe()
+        self.result_unsubscribe = nil
+    end
 end
 
 function DemoState:_set_event(name)
@@ -112,6 +164,167 @@ function DemoState:_animate(name)
     end)
     self.motion_controller:repeat_animation({ reverse = true, count = 1 })
     mp.set_property('user-data/elxosc-demo-event', name)
+end
+
+---@return NavigatorState?
+function DemoState:_ready_navigator()
+    local navigator = self.widget.navigator
+    if not navigator or not self:is_mounted() or self.result_unsubscribe then
+        return nil
+    end
+    local route = navigator:current_route()
+    if route and route.page.key == 'demo-home' then
+        return navigator
+    end
+    return nil
+end
+
+---@param route Route
+---@param label string
+function DemoState:_watch_result(route, label)
+    mp.set_property('user-data/elxosc-demo-route', route.page.name)
+    self.result_unsubscribe = route.result:add_listener(function(value)
+        self.result_unsubscribe = nil
+        self:set_state(function()
+            self.navigation_result = label .. ': ' .. (value == nil and 'dismissed' or tostring(value))
+            self.navigation_returns = self.navigation_returns + 1
+            mp.set_property('user-data/elxosc-demo-route', 'home')
+            mp.set_property('user-data/elxosc-demo-result', self.navigation_result)
+            mp.set_property('user-data/elxosc-demo-returns', tostring(self.navigation_returns))
+        end)
+    end)
+end
+
+function DemoState:_open_page()
+    local navigator = self:_ready_navigator()
+    if not navigator then
+        return
+    end
+    local route = navigator:push(Page({
+        key = 'demo-details',
+        name = 'details',
+        builder = function(context)
+            local current = Navigator.of(context)
+            return Container({
+                alignment = Offset(0.5, 0.5),
+                padding = EdgeInsets.all(16),
+                color = Color.rgba(0x101824FF),
+                child = navigation_card({
+                    Text('N3 / Page + Route', { style = TextStyle({ font_size = 22, bold = true }) }),
+                    Text('The home Page stays mounted while this opaque Page is visible.', {
+                        style = TextStyle({ font_size = 15 }),
+                    }),
+                    Text('Back returns "done". ESC returns no value.', {
+                        style = TextStyle({ font_size = 15 }),
+                    }),
+                    ElevatedButton({
+                        key = 'demo-page-back',
+                        label = 'Back with result',
+                        on_click = function()
+                            current:pop('done')
+                        end,
+                    }),
+                }),
+            })
+        end,
+    }))
+    self:_watch_result(route, 'Page')
+end
+
+function DemoState:_open_popup()
+    local navigator = self:_ready_navigator()
+    if not navigator then
+        return
+    end
+    local route = navigator:push_popup(PopupPage({
+        key = 'demo-popup',
+        name = 'popup',
+        barrier_color = Color.rgba(0x000000A0),
+        barrier_dismissible = true,
+        builder = function(context)
+            local current = Navigator.of(context)
+            return Container({
+                alignment = Offset(0.5, 0.5),
+                padding = EdgeInsets.all(16),
+                child = navigation_card({
+                    Text('N3 / PopupRoute', { style = TextStyle({ font_size = 22, bold = true }) }),
+                    Text('The home Page remains visible beneath the modal barrier.', {
+                        style = TextStyle({ font_size = 15 }),
+                    }),
+                    Text('Click outside or press ESC to dismiss without a result.', {
+                        style = TextStyle({ font_size = 15 }),
+                    }),
+                    Row({
+                        main_axis_size = 'min',
+                        spacing = 12,
+                        children = {
+                            OutlinedButton({
+                                key = 'demo-popup-cancel',
+                                label = 'Cancel',
+                                on_click = function()
+                                    current:pop('cancelled')
+                                end,
+                            }),
+                            ElevatedButton({
+                                key = 'demo-popup-confirm',
+                                label = 'Confirm',
+                                on_click = function()
+                                    current:pop('confirmed')
+                                end,
+                            }),
+                        },
+                    }),
+                }),
+            })
+        end,
+    }))
+    self:_watch_result(route, 'Popup')
+end
+
+---@return Widget
+function DemoState:_navigation_panel()
+    if not self.widget.navigator then
+        return SizedBox.shrink()
+    end
+    return Container({
+        padding = EdgeInsets.all(10),
+        color = Color.rgba(0x183048E8),
+        radius = 6,
+        child = Column({
+            main_axis_size = 'min',
+            spacing = 6,
+            children = {
+                Text('N3 Navigation', { style = TextStyle({ font_size = 18, bold = true }) }),
+                Text('Change the counter above, open a route, then return: State is retained.', {
+                    style = TextStyle({ font_size = 13 }),
+                }),
+                Row({
+                    main_axis_size = 'min',
+                    spacing = 10,
+                    children = {
+                        ElevatedButton({
+                            key = 'demo-open-page',
+                            label = 'Open Page',
+                            on_click = function()
+                                self:_open_page()
+                            end,
+                        }),
+                        OutlinedButton({
+                            key = 'demo-open-popup',
+                            label = 'Open Popup',
+                            on_click = function()
+                                self:_open_popup()
+                            end,
+                        }),
+                    },
+                }),
+                Text(string.format('Result: %s | Returns: %d',
+                    self.navigation_result, self.navigation_returns), {
+                    style = TextStyle({ font_size = 14, color = Color.rgba(0xA7E5C4FF) }),
+                }),
+            },
+        }),
+    })
 end
 
 ---@param context BuildContext
@@ -332,17 +545,44 @@ function DemoState:build(context)
                         },
                     },
                 }),
+                self:_navigation_panel(),
             },
         }),
     }
 end
 
+---@class _DemoOptions
+---@field navigator NavigatorState?
+---@field key any?
+
 ---@class Demo : StatefulWidget
----@overload fun(): self
+---@field navigator NavigatorState?
+---@overload fun(options?: _DemoOptions): self
 local Demo = std.class.new('Demo', { StatefulWidget })
+
+function Demo:__init(options)
+    options = options or {}
+    self.key = options.key
+    self.navigator = options.navigator
+end
 
 function Demo:create_state()
     return DemoState()
+end
+
+--- Use the application's WindowLayer Navigator, so ESC targets this stack.
+--- The builder supplies a mounted lookup context; events reuse the handle.
+---@return Page[]
+function M.initial_pages()
+    return {
+        Page({
+            key = 'demo-home',
+            name = 'home',
+            builder = function(context)
+                return Demo({ navigator = Navigator.of(context) })
+            end,
+        }),
+    }
 end
 
 M.DemoState = DemoState

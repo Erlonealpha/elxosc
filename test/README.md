@@ -29,8 +29,8 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current local baseline (2026-10-16): **0 diagnostics / 1315 checks** from the
-EmmyLua checker; the real-host run reports **9 passed**. Commands and scope are recorded in
+Current local baseline (2026-10-26): **0 EmmyLua diagnostics / 1458 Lua checks**;
+the real-host run reports **10 passed**. Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
@@ -70,7 +70,9 @@ command or assertion failures fail the test.
 
 The suite also includes elxosc integration tests. It loads
 `main.lua`, sends `elxosc-demo`, checks that the host remains alive, and reads
-back `osd-dimensions`. The button fixture also sends real mpv `mouse` commands
+back `osd-dimensions`. The N3 demo test opens Page/Popup routes, sends real ESC
+keypresses, checks results and retained State, then verifies that home releases ESC
+to a separate host-script binding. The button fixture also sends real mpv `mouse` commands
 through an isolated user `input.conf` to verify interactive double-click capture
 and background fullscreen passthrough. These tests are not pixel-level OSD checks.
 
@@ -97,6 +99,7 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
 | `test_host_player_context.lua` | mpv property bridge, observer disposal and Define player updates (`mp` stubbed) |
 | `test_host_app.lua` | `App`: frame clock, overlay, input areas/capture, demo output and the define window (`mp` stubbed) |
+| `test_demo_navigation.lua` | Mounted demo buttons, retained home State, results, popup card/barrier hit testing, ESC and cleanup |
 | `test_navigation.lua` | Page/Route reconciliation, push/pop results, Popup barrier and ESC |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |

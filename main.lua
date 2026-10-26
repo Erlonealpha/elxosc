@@ -30,7 +30,6 @@ local demo_mod = require 'demo'
 local MpDefine = mpv_define.MpDefine
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local PlayerStore = player_context.PlayerStore
-local Demo = demo_mod.Demo
 
 -- Seconds the define window stays open. Long enough for every script to have
 -- sent its payload, short enough not to be noticed; `define_end` from all
@@ -73,7 +72,7 @@ local define = MpDefine({ player_store = player_store })
 define:listen()
 
 local function build_app()
-    return main_layout.build_app(Demo())
+    return main_layout.build_app(nil, demo_mod.initial_pages())
 end
 
 local app = mpv_app.start(build_app, {
@@ -88,7 +87,7 @@ local function remount()
     if shutting_down then
         return
     end
-    app:set_root_widget(define:assemble(main_layout.build_app_description(Demo())))
+    app:set_root_widget(define:assemble(main_layout.build_app_description(nil, demo_mod.initial_pages())))
 end
 
 -- Fast path: every starter sent its `define_end`.
