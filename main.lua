@@ -122,11 +122,15 @@ shutdown_callback = function(_event)
 end
 mp.register_event('shutdown', shutdown_callback)
 
-local ev_loop = _G.mp_event_loop
-_G.mp_event_loop = function ()
-    -- Ensure that the type of the thrown exception is a string.
-    local ok, err = xpcall(ev_loop, std.traceback)
-    if err then
-        error(tostring(err), 0)
+if not _G.mp_event_loop_wrap then
+    local ev_loop = _G.mp_event_loop
+    _G.mp_event_loop = function ()
+        -- Ensure that the type of the thrown exception is a string.
+        local ok, err = xpcall(ev_loop, std.traceback)
+        if err then
+            error(tostring(err), 0)
+        end
     end
+    _G.mp_event_loop_wrap = true
+    _G.mp_event_loop_wrap_origin = ev_loop
 end
