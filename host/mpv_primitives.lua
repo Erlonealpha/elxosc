@@ -87,6 +87,7 @@ end
 ---@field _last_data string?
 ---@field _last_w number
 ---@field _last_h number
+---@field _removed boolean
 ---@overload fun(z: number?): self
 local AssPresenter = std.class.new('AssPresenter', {})
 
@@ -95,26 +96,42 @@ function AssPresenter:__init(z)
     self.overlay.z = z or 2000
     self._last_data = nil
     self._last_w, self._last_h = -1, -1
+    self._removed = false
 end
 
 ---@param canvas AssCanvas
 ---@param width number
 ---@param height number
+---@return boolean submitted
 function AssPresenter:present(canvas, width, height)
+    if self._removed then
+        return false
+    end
     local res_x, res_y = math.floor(width), math.floor(height)
     local data = canvas:text()
     if data == self._last_data and res_x == self._last_w and res_y == self._last_h then
-        return
+        return false
+    end
+    self.overlay.res_x, self.overlay.res_y = res_x, res_y
+    self.overlay.data = data
+    local _, err = self.overlay:update()
+    if err then
+        std.raise(std.RuntimeError('ASS submission failed: ' .. tostring(err)))
     end
     self._last_data = data
     self._last_w, self._last_h = res_x, res_y
-    self.overlay.res_x, self.overlay.res_y = res_x, res_y
-    self.overlay.data = data
-    self.overlay:update()
+    return true
 end
 
+---@return boolean removed
 function AssPresenter:remove()
+    if self._removed then
+        return false
+    end
     self.overlay:remove()
+    self._removed = true
+    self._last_data = nil
+    return true
 end
 
 M.MpFrameClock = MpFrameClock

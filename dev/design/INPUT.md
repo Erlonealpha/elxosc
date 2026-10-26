@@ -135,8 +135,22 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 分别配置，不把当前全局 flags 原样复制到所有分组。
 
 所有 section 在初始化和关闭时清理旧 mouse area；不可见 layer 不留旧区域或 enable
-状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。离开区域、
-窗口失焦和强制隐藏时，宿主必须继续清理已捕获序列并发送 cancel。
+状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。移出窗口时取消
+capture 是当前 MpInput 的产品策略；resize、Popup 出现和 Main 隐藏不构成通用取消规则。
+
+### N5 RegionSnapshot 与 section cache
+
+单 RenderOwner 按 input generation 缓存 `RegionSnapshot`，快照复制 root-space rect、
+目标和事件资格。layout/tree/visibility 变化使快照失效；paint-only transform 与输入能力
+setter 显式调用 `mark_needs_input()`，普通颜色变化和无状态改变的 mouse move 复用快照。
+`pointer_regions()` 返回快照的副本，host 不修改 owner 的缓存。
+
+MpInput 每个 section 只定义一次，按照区域的后绘制/后注册顺序启用；后启用者位于栈顶。
+几何更新只改 mouse area，不重复注册闭包或改变优先级。disable 只移除指定 section；
+区域顺序改变时才重建本应用的活动 section 顺序。capture 使用原 section 的 viewport
+区域，最后一个 button 释放后恢复区域 policy。更新同时验证 capture 目标仍属于当前树，
+不能让卸载后的全窗口 section 残留。未来区域更新不对静止鼠标合成 hover，下一次真实
+move 才重新命中；目标卸载只做生命周期清理。
 
 ## 事件模型
 
@@ -180,11 +194,11 @@ key、down/up/press、modifier、repeat 和 timestamp，并在构造边界校验
 通用 keyboard target、focus owner、焦点遍历或全局 key policy。Gesture arena 仍属于
 原有交互路线。
 
-capture 归属至少包含 layer、target 和按键序列；在 capture 期间优先投递到原目标，
-不能因为移到另一个 overlay 就重新命中。补齐离开命中区后的可用 local 坐标及
-inside/outside 状态，便于时间线拖动；目标卸载、失焦或强制隐藏必须 cancel。鼠标
-不移动而布局/变换变化时也重新核对 hover，避免旧状态残留。当前 owner 以按钮集合
-维持同一目标的多按钮 capture，最后一个按钮释放后才结束 capture。
+capture 归属包含当前 owner、target 和按键序列；在 capture 期间优先投递到原目标，
+不能因为移到另一个 entry 就重新命中。当前 legacy local point 在区域外为 nil；root-space
+event.point 仍有效。框架保证 target 卸载、root replacement、shutdown 时 cancel，并按
+button 消耗旧序列剩余的 up，不投递给替代目标。其他取消时机属于 host/控件策略。
+最后一个捕获 button 释放后才结束 capture；鼠标静止时不因布局变化主动合成 hover。
 
 ## 分期
 

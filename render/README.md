@@ -8,6 +8,8 @@ not import Widget modules or mpv.
 - `render_object.lua` — child ownership, layout/paint, hit testing, pointer paths,
   root-space pointer regions, parent data, and dirty propagation.
 - `render_owner.lua` — compatibility implementation for the single-root owner.
+- `region_snapshot.lua` — immutable copies of one root's effective pointer regions;
+  `RenderOwner:region_snapshot()` caches one snapshot per input generation.
 - `pipeline_owner.lua` — canonical `PipelineOwner` name; exports the same class as
   `RenderOwner`.
 - `painting_context.lua` — Canvas/child paint/clip boundary without a Layer tree.
@@ -33,6 +35,10 @@ cancelled sequence's stale up/cancel is not retargeted to the replacement tree.
 Capture keeps the original target while additional button sequences are active;
 the target is released only after the final captured button is released or the
 sequence is cancelled.
+
+`RegionSnapshot` is invalidated by layout/tree changes and explicit paint-only
+input changes. Host code receives copied region values and cannot mutate the
+owner's cache. Snapshot invalidation never synthesizes a hover event.
 
 `RenderOwner:dispatch_pointer_result()` returns a structured result with separate
 `handled`, `capture`, and `stop_propagation` fields. `dispatch_pointer()` remains

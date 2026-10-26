@@ -356,6 +356,27 @@ F.test('set_root_widget swaps the tree', function()
     F.eq(app.owner.root:children()[1].paragraph.text, 'one', 'root replaced')
 end)
 
+F.test('input section callbacks and stack order are cached across geometry-only frames', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Column({
+        children = {
+            Button({ label = 'one', on_click = function() end }),
+            Button({ label = 'two', on_click = function() end }),
+        },
+    }))
+    app:render()
+    local first = fake.binding_sections['elxosc-input']
+    local second = fake.binding_sections['elxosc-input-2']
+    local enables = #fake.enable_history
+    app.owner:mark_needs_layout()
+    app:render()
+    F.eq(fake.binding_sections['elxosc-input'], first, 'first callback table is reused')
+    F.eq(fake.binding_sections['elxosc-input-2'], second, 'second callback table is reused')
+    F.eq(#fake.enable_history, enables, 'same section stack is not re-enabled')
+    F.eq(fake.enable_history[1], 'elxosc-input', 'first region is registered first')
+    F.eq(fake.enable_history[2], 'elxosc-input-2', 'later region is on top')
+end)
+
 F.test('host primitives and input use minimal owner interfaces', function()
     mp_stub.reset()
     F.eq(mpv_app.MpFrameClock, mpv_primitives.MpFrameClock,

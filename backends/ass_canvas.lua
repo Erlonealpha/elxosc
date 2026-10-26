@@ -16,6 +16,8 @@
 --   * colour   -> `\1c&HBBGGRR&` (note the BGR order)
 --   * alpha    -> `\1a&HAA&` with AA = 255 - opacity (00 = opaque)
 --   * reset    -> `\rDefault` neutralises the `OSD` style mpv applies
+-- mpv assigns Layer=0 and monotonically increasing ReadOrder to these lines.
+-- Keep each call in one event; neither field is a public Canvas parameter.
 
 local std = require 'elxlibs.std'
 local canvas = require 'painting.canvas'
@@ -149,6 +151,9 @@ end
 
 ---@param text string
 function AssCanvas:_push(text)
+    if type(text) ~= 'string' or text == '' or text:find('[\r\n%z]') then
+        raise(std.ValueError('ASS events must be single non-empty lines without NUL'))
+    end
     self.events[#self.events + 1] = text
 end
 

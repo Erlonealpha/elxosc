@@ -124,5 +124,5 @@ disposable；`MpDefine:shutdown()` 会清理 host-owned handles，State/扩展�
 PipelineOwner。Entry 的 `visible`、`opaque`、`maintain_state` 和 plan 只控制同一
 RenderOwner 的 paint/input eligibility；WindowLayer 空根也只产生空内容，不释放 presenter。
 
-host-level 多 overlay、独立 presenter、z 排序和跨 surface 输入策略仍属于后续 N4，不得把
+N4 保持单 Canvas/presenter；host-level 多 overlay、独立 presenter、z 排序和跨 surface 输入延期，不得把
 `OverlayEntry` 的逻辑顺序当成 `overlay.z` 或 Define priority。

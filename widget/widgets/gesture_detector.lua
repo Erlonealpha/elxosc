@@ -28,11 +28,7 @@ function GestureDetector:create_render_object()
 end
 
 function GestureDetector:update_render_object(render_object)
-    render_object.handlers = self.handlers
-    if not render_object:wants_pointer('down') then
-        render_object.pressed = false
-    end
-    render_object:mark_needs_paint()
+    render_object:set_handlers(self.handlers)
 end
 
 M.GestureDetector = GestureDetector

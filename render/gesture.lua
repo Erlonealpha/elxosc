@@ -59,6 +59,21 @@ function RenderGesture:__perform_layout(constraints)
     end
 end
 
+---@param handlers GestureHandlers
+function RenderGesture:set_handlers(handlers)
+    local down, wheel = self:wants_pointer('down'), self:wants_pointer('wheel')
+    local expand = self.handlers.expand or 0
+    self.handlers = handlers
+    if down ~= self:wants_pointer('down') or wheel ~= self:wants_pointer('wheel')
+        or expand ~= (handlers.expand or 0) then
+        self:mark_needs_input()
+    end
+    if not self:wants_pointer('down') then
+        self.pressed = false
+    end
+    self:mark_needs_paint()
+end
+
 function RenderGesture:__hit_test_bounds(point)
     local expand = self.handlers.expand or 0
     return point.x >= -expand and point.y >= -expand

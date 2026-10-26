@@ -12,11 +12,13 @@ local geometry = require 'foundation.geometry'
 local constraints_mod = require 'layout.constraints'
 local pointer_event = require 'foundation.pointer_event'
 local painting_context = require 'render.painting_context'
+local region_snapshot = require 'render.region_snapshot'
 
 local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
 local PointerEvent = pointer_event.PointerEvent
 local PaintingContext = painting_context.PaintingContext
+local RegionSnapshot = region_snapshot.RegionSnapshot
 local raise = std.raise
 local POINTER_BUTTONS = { left = true, middle = true, right = true }
 
@@ -93,6 +95,9 @@ end
 ---@field root RenderObject?
 ---@field viewport Constraints
 ---@field on_dirty fun()?
+---@field private _input_generation integer
+---@field private _region_snapshot RegionSnapshot?
+---@field private _cancelled_buttons table<PointerButton, true>
 ---@overload fun(root: RenderObject?): self
 local RenderOwner = std.class.new('RenderOwner', {})
 
@@ -102,6 +107,8 @@ function RenderOwner:__init(root)
     -- default `BoxConstraints()`), not a tightly infinite one.
     self.viewport = Constraints.unbounded()
     self.on_dirty = nil
+    self._input_generation = 0
+    self._region_snapshot = nil
     self._needs_layout = false
     self._needs_paint = false
     ---@type table<RenderObject, true>
@@ -112,6 +119,7 @@ function RenderOwner:__init(root)
     ---@type table<PointerButton, true>
     self._capture_buttons = {}
     self._cancelled_sequence = false
+    self._cancelled_buttons = {}
     if root then
         self:set_root(root)
     end
@@ -130,6 +138,7 @@ function RenderOwner:set_root(root, notify)
     if root then
         root:_set_owner(self)
     end
+    self:mark_needs_input()
     if notify == false then
         self._needs_layout = false
         self._needs_paint = false
@@ -145,11 +154,18 @@ function RenderOwner:set_viewport(constraints)
 end
 
 function RenderOwner:mark_needs_layout()
+    self:mark_needs_input()
     self._needs_layout = true
     self._needs_paint = true
     if self.on_dirty then
         self.on_dirty()
     end
+end
+
+--- Input geometry/policy invalidation does not synthesize pointer movement.
+function RenderOwner:mark_needs_input()
+    self._input_generation = self._input_generation + 1
+    self._region_snapshot = nil
 end
 
 function RenderOwner:mark_needs_paint()
@@ -174,6 +190,7 @@ function RenderOwner:layout()
     self:_cleanup_detached_pointer_state()
     local root = self.root
     if root == nil then
+        self._needs_layout = false
         return
     end
     if not self._needs_layout and root.constraints == self.viewport then
@@ -182,14 +199,15 @@ function RenderOwner:layout()
     self._needs_layout = false
     self._needs_paint = true
     root:layout(self.viewport)
+    self:mark_needs_input()
 end
 
 ---@param canvas Canvas
 function RenderOwner:paint(canvas)
     if self.root and self._needs_paint then
         self.root:paint(PaintingContext(canvas), Offset.zero())
-        self._needs_paint = false
     end
+    self._needs_paint = false
 end
 
 --- Flutter-aligned pipeline names on the existing single-root owner.
@@ -227,10 +245,19 @@ end
 
 ---@return PointerRegion[]
 function RenderOwner:pointer_regions()
-    if not self.root then
-        return {}
+    return self:region_snapshot():regions()
+end
+
+---@return RegionSnapshot
+function RenderOwner:region_snapshot()
+    if not self._region_snapshot then
+        self._region_snapshot = RegionSnapshot({
+            generation = self._input_generation,
+            root = self.root,
+            regions = self.root and self.root:collect_pointer_regions() or {},
+        })
     end
-    return self.root:collect_pointer_regions()
+    return self._region_snapshot
 end
 
 --- Return whether a pointer sequence is captured by a mounted node. If a
@@ -277,14 +304,21 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         pointer = PointerEvent(event, point, data)
     end
 
-    local detached_capture = self:_cleanup_detached_pointer_state()
-    local cancelled_sequence = detached_capture or self._cancelled_sequence
+    self:_cleanup_detached_pointer_state()
+    local button = pointer_button(pointer)
     if pointer.type == 'down' then
         self._cancelled_sequence = false
+        if button then
+            self._cancelled_buttons[button] = nil
+        end
     end
-    if cancelled_sequence and (pointer.type == 'up' or pointer.type == 'cancel') then
+    if pointer.type == 'up' and (self._cancelled_sequence
+        or (button and self._cancelled_buttons[button])) then
         self._cancelled_sequence = false
-        return { handled = true, capture = false, stop_propagation = true }
+        if button then
+            self._cancelled_buttons[button] = nil
+        end
+        return { handled = true, capture = self:has_pointer_capture(), stop_propagation = true }
     end
 
     local path = pointer.point and self:pointer_path(pointer.point) or {}
@@ -316,7 +350,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
     end
 
     if pointer.type == 'down' then
-        local button = pointer_button(pointer)
+        button = pointer_button(pointer)
         if self._capture and button ~= nil and not self._capture_buttons[button] then
             local captured = self._capture
             self._capture_buttons[button] = true
@@ -329,6 +363,11 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         end
         if self._capture then
             self:cancel_pointer()
+            -- A new down for the same button supersedes the cancelled
+            -- sequence; its later up belongs to the new target.
+            if button then
+                self._cancelled_buttons[button] = nil
+            end
         end
         self._cancelled_sequence = false
     elseif pointer.type == 'up' or pointer.type == 'cancel' then
@@ -340,7 +379,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
                 self._capture = nil
                 self._capture_buttons = {}
             else
-                local button = pointer_button(pointer)
+                button = pointer_button(pointer)
                 if button == nil then
                     self._capture_buttons = {}
                 else
@@ -366,7 +405,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
             and entry.node.owner == self and self._capture == nil then
             self._capture = entry.node
             self._capture_buttons = {}
-            local button = pointer_button(pointer)
+            button = pointer_button(pointer)
             if button ~= nil then
                 self._capture_buttons[button] = true
             end
@@ -405,11 +444,15 @@ end
 function RenderOwner:cancel_pointer()
     local captured = self._capture
     self._capture = nil
-    self._capture_buttons = {}
     if captured then
-        self._cancelled_sequence = true
+        self._cancelled_sequence = next(self._capture_buttons) == nil
+        for button in pairs(self._capture_buttons) do
+            self._cancelled_buttons[button] = true
+        end
+        self._capture_buttons = {}
         captured:on_pointer_event(PointerEvent('cancel'), nil)
     end
+    self._capture_buttons = {}
 end
 
 --- Mark every currently hovered node as left (pointer left the window).
@@ -431,7 +474,6 @@ function RenderOwner:_cleanup_detached_pointer_state()
     end
     for node in pairs(self._hovered) do
         if node.owner ~= self then
-            node:on_pointer_event(PointerEvent('leave'), nil)
             self._hovered[node] = nil
         end
     end

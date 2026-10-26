@@ -94,19 +94,34 @@
 - N3 已提供同一 Theatre 内的 Route、PopupRoute、barrier、ESC 和 result/dispose；完整
   focus/restoration、复杂 transition 和 host-level 多 overlay 继续延期。
 
-### 6.6 多层 overlay
+### 6.6 N4 单 Canvas presentation（已实现）
 
-- 建立 host-level OverlayHost/Registry，支持多个独立 `osd_overlay` layer；
-- 每个 layer 保有 root、RenderOwner、Canvas、presenter、visible、z、dirty/cache 和
-  input policy；
-- overlay policy、input callback 和 remove/shutdown 流程使用非监听 Provider read，
-  不在 host callback 中建立 Widget 依赖；
-- `overlay.z` 只决定视觉顺序，较高 z 在前，同 z 使用稳定注册顺序；
-- overlay 可用于 Pages 的 main/extension/popup/system 层，但不成为 Widget 或 bind
-  priority；
-- 隐藏/移除 layer 时清理 ASS、mouse area、hover、capture 和订阅。
+- App 只有一个 `AssCanvas`、一个 `AssPresenter` 和一个 `osd-overlay` 资源；
+- logical Stack/Overlay 的绘制顺序保持为 ASS event 顺序，不把 Layer/ReadOrder 暴露给
+  Widget/Entry/Slot；每个事件必须是单个非空行；
+- presenter 只在成功提交后更新 data/resolution cache；空 ASS 清除旧内容，shutdown 幂等
+  移除同一 presenter；空 root 不持续 dirty；
+- Record/host tests 覆盖重叠事件顺序、失败重试、去重、clear、resize 和单资源 identity；
+- 多 `AssCanvas`、多 presenter、独立 surface root、`overlay.z` 排序仍延期。
 
-### 6.7 播放器 Shell
+### 6.7 N5 单 Host input snapshot/cache（已实现）
+
+- RenderOwner 按 generation 缓存不可变副本 `RegionSnapshot`，layout/tree 和显式
+  paint-only input 变化使其失效；普通 mouse move 不重建 snapshot 或合成 hover；
+- MpInput 复用已定义 section callback，按区域顺序维护活动 section，几何变化只更新
+  mouse area；指定 disable、passive 透传、capture、root swap 和 shutdown 清理有回归；
+- 多按钮 capture 的框架保证、旧 up 清理和下一次真实 move 的区域更新保持独立于控件产品策略；
+- 完整 keyboard focus、Tab、IME、多 surface router 仍延期。
+
+### 6.8 N6 real-host + manual approval（证据进行中）
+
+- Windows real-host 已覆盖生产 `main.lua`、N3 Demo Page/Popup、ESC、结果、状态保留和
+  首页宿主 ESC 透传；全套 real-host 继续验证 ASS、resize、input.conf 和 shutdown；
+- Linux host 可用性已知，但当前工作区未映射到 WSL 的 source path，未宣称 Linux 通过；
+- 视觉、交互、手感和真实窗口行为仍需用户依照 `acceptance/manual.md` 人工批准，自动
+  evidence 不替代该结论。
+
+### 6.9 播放器 Shell
 
 - 顶层控件支持 visible/hidden 和 auto/always/never 策略；
 - hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；

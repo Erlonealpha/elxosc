@@ -17,7 +17,8 @@ uv run --group test python -m pytest -q test/real_host
 real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**；
 加入 R3/R4 回归后为 **1381 Lua checks passed**，加入 N3 回归后为 **1426 Lua checks passed**；
 当时 EmmyLua **No issues found**、Python integration **9 passed**、real-host **9 passed**。
-N3 Demo 回归后的当前基线为 **1458 Lua checks passed**、EmmyLua **No issues found**、
+N3 Demo 回归后的基线为 **1458 Lua checks passed**；N4/N5 回归后的当前基线为
+**1491 Lua checks passed**、EmmyLua **No issues found**、
 real-host **10 passed**。测试数量变化时，应在本文件和主设计文档同步更新。
 
 ## Lua suite
@@ -43,6 +44,10 @@ runner。测试按层覆盖：
   push/pop、result/dispose ordering、Popup barrier and ESC claim policy；
 - N3 Demo：真实 mounted button 的 pointer 路径、首页 State/计数保留、返回结果展示、
   popup 卡片与遮罩命中、ESC、重复打开命令及 dispose 清理；
+- N4 presentation：ASS event 行边界/顺序、单 Canvas/Presenter identity、提交失败重试、
+  空 ASS clear、resolution cache 和幂等 shutdown；
+- N5 input：RegionSnapshot identity/副本、paint-only input invalidation、section callback
+  cache/顺序、指定 disable、passive 透传、capture 取消和 root replacement；
 - R3/R4：唯一 `app.extension` Define/Slot boundary、旧 grid target rejection、single
   mounted extension owner、host primitive identity 和不持有整个 App 的 `MpInput`；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
@@ -94,9 +99,9 @@ host 确实不可用时 skip；禁止使用按进程名杀 mpv 的清理命令�
 证据；按钮点击、卡片与遮罩的命中由 Lua stub 回归覆盖，不代表人工视觉验收。
 
 阶段 6 的 real-host fixture 已使用真实用户 `mbtn_left_dbl` 绑定验证：交互控件区域
-不触发默认 fullscreen，背景区域仍保留该绑定；OSD resize 后的 mouse area 坐标目前
-由 Lua host stub 覆盖，真实宿主回归仍需补齐。多 overlay 需要验证真实 `overlay.z`
-的视觉顺序和隐藏/移除后的清理行为。
+不触发默认 fullscreen，背景区域仍保留该绑定；Demo Page/Popup 的真实 ESC 和结果已覆盖。
+OSD resize 后的 mouse area 坐标仍主要由 Lua host stub 覆盖；Linux 本轮未运行。多 overlay
+仍是延期项，不把它写成 N4 通过。
 
 ## 改动后的检查顺序
 

@@ -14,9 +14,13 @@ local mp = require 'mp'
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
 local pointer_event = require 'foundation.pointer_event'
+local key_event = require 'foundation.key_event'
+local region_snapshot = require 'render.region_snapshot'
 
 local Offset = geometry.Offset
 local PointerEvent = pointer_event.PointerEvent
+local KeyEvent = key_event.KeyEvent
+local RegionSnapshot = region_snapshot.RegionSnapshot
 local raise = std.raise
 local math = math
 local floor = math.floor
@@ -51,6 +55,7 @@ local owned_sections = {}
 ---@field dispatch_pointer_result fun(self: MpInputOwner, event: PointerEvent): DispatchResult
 ---@field has_pointer_capture fun(self: MpInputOwner): boolean
 ---@field pointer_regions fun(self: MpInputOwner): PointerRegion[]
+---@field region_snapshot (fun(self: MpInputOwner): RegionSnapshot)?
 
 ---@class MpInputOptions
 ---@field owner MpInputOwner receives structured pointer events
@@ -69,12 +74,19 @@ local owned_sections = {}
 ---@field handle_key fun(event: KeyEvent): boolean?
 ---@field hover boolean
 ---@field _regions PointerRegion[]
----@field _region_signature string?
+---@field _snapshot RegionSnapshot?
+---@field _last_viewport Rect?
+---@field _last_pressed_section string?
+---@field _last_pressed boolean?
+---@field _defined_sections table<string, true>
+---@field _active_sections table<string, Rect>
+---@field _section_order string[]
 ---@field _input_sections string[]
 ---@field _wheel_sections string[]
 ---@field _navigation_enabled boolean
 ---@field _pressed_section string?
 ---@field _buttons table<PointerButton, true>
+---@field _cancelled_buttons table<PointerButton, true>
 ---@field _mouse_callback fun(name: string, mouse: table)?
 ---@field _shutdown boolean
 ---@overload fun(options: MpInputOptions): self
@@ -106,7 +118,13 @@ function MpInput:__init(options)
     self.hover = false
     self._pressed = false
     self._regions = {}
-    self._region_signature = nil
+    self._snapshot = nil
+    self._last_viewport = nil
+    self._last_pressed_section = nil
+    self._last_pressed = nil
+    self._defined_sections = {}
+    self._active_sections = {}
+    self._section_order = {}
     self._input_sections = {}
     self._wheel_sections = {}
     self._navigation_enabled = false
@@ -268,7 +286,11 @@ end
 
 ---@param section string
 function MpInput:_define_input_section(section)
+    if self._defined_sections[section] then
+        return
+    end
     self:_register_section(section)
+    self._defined_sections[section] = true
     mp.set_key_bindings({
         { 'mbtn_left', function() self:_dispatch('up', 'left', section) end, function()
             self:_dispatch('down', 'left', section)
@@ -286,7 +308,11 @@ end
 
 ---@param section string
 function MpInput:_define_wheel_section(section)
+    if self._defined_sections[section] then
+        return
+    end
     self:_register_section(section)
+    self._defined_sections[section] = true
     mp.set_key_bindings({
         { 'wheel_up', function() self:_dispatch('wheel', 1) end },
         { 'wheel_down', function() self:_dispatch('wheel', -1) end },
@@ -319,7 +345,7 @@ function MpInput:_dispatch_key(key)
     if self._shutdown then
         return
     end
-    local event = require('foundation.key_event').KeyEvent({
+    local event = KeyEvent({
         key = key,
         type = 'press',
         timestamp = mp.get_time(),
@@ -364,63 +390,90 @@ end
 function MpInput:_disable_section(section)
     self:_clear_mouse_area(section)
     mp.disable_key_bindings(section)
+    self._active_sections[section] = nil
+    for index, current in ipairs(self._section_order) do
+        if current == section then
+            table.remove(self._section_order, index)
+            break
+        end
+    end
 end
 
 ---@param regions PointerRegion[]
 function MpInput:_apply_regions(regions)
-    for _, section in ipairs(self._input_sections) do
-        self:_disable_section(section)
-    end
-    for _, section in ipairs(self._wheel_sections) do
-        self:_disable_section(section)
-    end
     self._input_sections = {}
     self._wheel_sections = {}
-
-    local down_index, wheel_index = 0, 0
-    ---@type string?
-    local pressed_section = nil
-    if self._pressed then
-        pressed_section = self._pressed_section
+    local desired, order = {}, {}
+    local viewport = self:_viewport_rect()
+    local function add(section, rect, family)
+        local area = rect:intersect(viewport)
+        if area:is_empty() then
+            return
+        end
+        desired[section] = area
+        order[#order + 1] = section
+        family[#family + 1] = section
     end
-    local pressed_section_found = false
-    for _, region in ipairs(regions) do
-        if region.down then
-            down_index = down_index + 1
-            local section = self:_input_section(down_index)
-            if down_index > 1 then
+    local down_index, wheel_index = 0, 0
+    if self._pressed then
+        local section = self._pressed_section or INPUT_SECTION
+        self:_define_input_section(section)
+        add(section, viewport, self._input_sections)
+    else
+        for _, region in ipairs(regions) do
+            if region.down then
+                down_index = down_index + 1
+                local section = self:_input_section(down_index)
                 self:_define_input_section(section)
+                add(section, region.rect, self._input_sections)
             end
-            if pressed_section == nil or pressed_section == section then
-                self._input_sections[#self._input_sections + 1] = section
-                local area = region.rect
-                if pressed_section == section then
-                    area = self:_viewport_rect()
-                    pressed_section_found = true
-                end
-                self:_set_mouse_area(area, section)
-                mp.enable_key_bindings(section, BINDING_FLAGS)
+            if region.wheel then
+                wheel_index = wheel_index + 1
+                local section = self:_wheel_section(wheel_index)
+                self:_define_wheel_section(section)
+                add(section, region.rect, self._wheel_sections)
             end
         end
-        if pressed_section == nil and region.wheel then
-            wheel_index = wheel_index + 1
-            local section = self:_wheel_section(wheel_index)
-            if wheel_index > 1 then
-                self:_define_wheel_section(section)
+    end
+
+    -- Remove only obsolete sections. Geometry updates must not reorder mpv's
+    -- active stack or allocate new Lua script-binding callbacks.
+    for index = #self._section_order, 1, -1 do
+        local section = self._section_order[index]
+        if not desired[section] then
+            self:_disable_section(section)
+        end
+    end
+    local predicted = {}
+    for _, section in ipairs(self._section_order) do
+        predicted[#predicted + 1] = section
+    end
+    for _, section in ipairs(order) do
+        if not self._active_sections[section] then
+            predicted[#predicted + 1] = section
+        end
+    end
+    for index, section in ipairs(order) do
+        if predicted[index] ~= section then
+            for old_index = #self._section_order, 1, -1 do
+                self:_disable_section(self._section_order[old_index])
             end
-            self._wheel_sections[#self._wheel_sections + 1] = section
-            self:_set_mouse_area(region.rect, section)
+            break
+        end
+    end
+    for _, section in ipairs(order) do
+        local previous = self._active_sections[section]
+        ---@type Rect
+        local area = desired[section]
+        if previous ~= area then
+            self:_set_mouse_area(area, section)
+        end
+        if previous == nil then
             mp.enable_key_bindings(section, BINDING_FLAGS)
         end
+        self._active_sections[section] = area
     end
-
-    if pressed_section ~= nil and not pressed_section_found then
-        local capture_section = pressed_section --[[@as string]]
-        self:_define_input_section(capture_section)
-        self._input_sections[#self._input_sections + 1] = capture_section
-        self:_set_mouse_area(self:_viewport_rect(), capture_section)
-        mp.enable_key_bindings(capture_section, BINDING_FLAGS)
-    end
+    self._section_order = order
 end
 
 function MpInput:_sync_navigation()
@@ -436,33 +489,31 @@ function MpInput:_sync_navigation()
     end
 end
 
----@param regions PointerRegion[]
----@return string
-local function region_signature(regions)
-    local values = {}
-    for _, region in ipairs(regions) do
-        values[#values + 1] = string.format('%g,%g,%g,%g:%d:%d',
-            region.rect.left, region.rect.top, region.rect.right, region.rect.bottom,
-            region.down and 1 or 0, region.wheel and 1 or 0)
-    end
-    return table.concat(values, ';')
-end
-
 --- Synchronize RenderOwner regions with mpv sections and mouse areas.
 function MpInput:update_regions()
     if self._shutdown then
         return
     end
-    local regions = self.owner:pointer_regions()
-    local signature = region_signature(regions) .. (self._pressed and ':pressed' or '')
-        .. (self.get_can_pop() and ':can-pop' or ':no-pop')
-    if signature == self._region_signature then
+    if self._pressed and not self.owner:has_pointer_capture() then
+        self._pressed = false
+        self._pressed_section = nil
+        self._buttons = {}
+    end
+    self:_sync_navigation()
+    local snapshot = self.owner.region_snapshot and self.owner:region_snapshot()
+        or RegionSnapshot({ generation = 0, regions = self.owner:pointer_regions() })
+    local viewport = self:_viewport_rect()
+    if snapshot:same_regions(self._snapshot) and viewport == self._last_viewport
+        and self._pressed == self._last_pressed
+        and self._pressed_section == self._last_pressed_section then
         return
     end
-    self._region_signature = signature
-    self._regions = regions
-    self:_apply_regions(regions)
-    self:_sync_navigation()
+    self._snapshot = snapshot
+    self._last_viewport = viewport
+    self._last_pressed = self._pressed
+    self._last_pressed_section = self._pressed_section
+    self._regions = snapshot:regions()
+    self:_apply_regions(self._regions)
 end
 
 --- Cancel host-side pointer capture and restore the normal region policy.

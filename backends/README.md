@@ -13,4 +13,9 @@ one backend at assembly time.
 ASS output is a presentation format, not a layout input. Do not make RenderObject
 code parse ASS strings or add PTS-based `\move`/`\t` animation tags here.
 
+`AssCanvas` keeps each drawing call as one non-empty ASS event line; raw newline
+and NUL injection is rejected so mpv's internal Layer/ReadOrder mapping remains
+host-owned. `AssPresenter` is the single cache/submit owner for the App and
+deduplicates only after a successful update.
+
 See [rendering](../dev/design/RENDERING.md) and [host](../dev/design/HOST.md).

@@ -74,6 +74,19 @@ ASS `osd-overlay` 的 `ass-events` 不提供本框架需要的 PTS 动画推进�
 生成 `\move`、`\t` 等标签。`AnimationController` 每帧更新框架值，下一帧重新输出
 静态 `\pos`、缩放或颜色参数。这样 UI 动画不依赖媒体播放状态。
 
+### N4 单 Canvas presentation
+
+OverlayState 的 plan 通过同一个 RenderObject tree 的 Offstage/Stack 生效；host 不复制
+Entry list 或再挂载内容。每个 dirty frame 只 reset/paint/submit 一次同一个 AssCanvas。
+`ass-events` 的每个非空行是一条 Text event；mpv 的 `sub/osd_libass.c` 中
+`update_external()` / `add_osd_ass_event()` 使用默认 Layer=0、递增 ReadOrder。后端保持
+绘制调用顺序并拒绝一个 event 中的原始换行/NUL，不把 Dialogue header 或物理排序字段
+暴露给 Widget。重叠颜色的真实宿主像素验证负责证明后写覆盖先写。
+
+AssPresenter 缓存已成功提交的数据与分辨率；失败提交可以重试。隐藏/清空输出提交空 ASS，
+保留同一 presenter；shutdown 幂等移除它，之后不可重新提交。空根完成 layout/paint 后也
+清除 dirty 状态，不能变成持续刷新的空帧。
+
 ## 输入和绘制的变换
 
 绘制变换必须有对应的输入逆映射：`OffsetBox`、`TransformBox`、`FittedBox` 和

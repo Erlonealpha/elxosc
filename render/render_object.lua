@@ -369,6 +369,13 @@ end
 
 --== dirty tracking =======================================================
 
+--- Call when paint-only geometry or event eligibility changes.
+function RenderObject:mark_needs_input()
+    if self.owner then
+        self.owner:mark_needs_input()
+    end
+end
+
 function RenderObject:mark_needs_layout()
     self.needs_layout = true
     self.needs_paint = true

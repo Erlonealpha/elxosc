@@ -18,6 +18,8 @@ local fake = {
     mouse_areas = {},
     binding_sections = {},
     bindings_enabled_sections = {},
+    enable_history = {},
+    disable_history = {},
     unobserved = {},
 }
 
@@ -30,12 +32,15 @@ function S.reset()
     fake.osd_width, fake.osd_height = 1280, 720
     fake.fps = 60
     fake.overlay = nil
+    fake.overlays = {}
     fake.bindings = nil
     fake.bindings_enabled = nil
     fake.bindings_disabled = nil
     fake.mouse_areas = {}
     fake.binding_sections = {}
     fake.bindings_enabled_sections = {}
+    fake.enable_history = {}
+    fake.disable_history = {}
     fake.unobserved = {}
 end
 
@@ -137,11 +142,15 @@ function S.install()
             res_x = nil,
             res_y = nil,
             updates = 0,
+            removes = 0,
         }
         fake.overlay.update = function(self)
             self.updates = self.updates + 1
         end
-        fake.overlay.remove = function() end
+        fake.overlay.remove = function(self)
+            self.removes = self.removes + 1
+        end
+        fake.overlays[#fake.overlays + 1] = fake.overlay
         return fake.overlay
     end
 
@@ -157,14 +166,16 @@ function S.install()
         end
     end
 
-    function mp.enable_key_bindings(section, flags)
+function mp.enable_key_bindings(section, flags)
         local binding = { section = section, flags = flags }
         fake.bindings_enabled_sections[section] = binding
+        fake.enable_history[#fake.enable_history + 1] = section
         fake.bindings_enabled = binding
     end
 
-    function mp.disable_key_bindings(section)
+function mp.disable_key_bindings(section)
         fake.bindings_enabled_sections[section] = nil
+        fake.disable_history[#fake.disable_history + 1] = section
         fake.bindings_enabled = nil
         fake.bindings_disabled = section
     end

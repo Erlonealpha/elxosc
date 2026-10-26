@@ -17,6 +17,12 @@ The app flushes Widget rebuilds, lays out and paints through a backend, then pre
 only changed ASS output. Input is routed through `RenderOwner`; host code must not
 call widget callbacks directly.
 
+`App` owns exactly one `AssCanvas` and `AssPresenter`. Empty frames are submitted
+as empty `ass-events` data to clear the same overlay; shutdown removes that one
+overlay idempotently. `MpInput` consumes a cached `RegionSnapshot`, updates existing
+section areas without recreating bindings, and clears only sections owned by the
+current input instance.
+
 `MpInput` receives a small owner/callback interface rather than an `App` reference.
 It translates mpv mouse bindings into structured `PointerEvent` values with
 button, held-button, wheel delta, click-count, source, pointer-id and timestamp

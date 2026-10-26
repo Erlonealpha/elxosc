@@ -96,6 +96,7 @@ function RenderTransformBox:set_scale(scale)
         return
     end
     self.scale = scale
+    self:mark_needs_input()
     self:mark_needs_paint()
 end
 
@@ -106,6 +107,7 @@ function RenderTransformBox:set_alignment(alignment)
         return
     end
     self.alignment = alignment
+    self:mark_needs_input()
     self:mark_needs_paint()
 end
 
@@ -118,6 +120,7 @@ function RenderTransformBox:set_clip(clip)
         return
     end
     self.clip = clip
+    self:mark_needs_input()
     self:mark_needs_paint()
 end
 
