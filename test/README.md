@@ -101,6 +101,7 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_host_app.lua` | `App`: frame clock, overlay, input areas/capture, demo output and the define window (`mp` stubbed) |
 | `test_demo_navigation.lua` | Mounted demo buttons, retained home State, results, popup card/barrier hit testing, ESC and cleanup |
 | `test_navigation.lua` | Page/Route reconciliation, push/pop results, Popup barrier and ESC |
+| `test_presentation.lua` | RegionSnapshot isolation, ASS event boundaries, presenter retry/cache, clear and shutdown |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |
