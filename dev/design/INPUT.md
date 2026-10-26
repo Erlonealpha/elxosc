@@ -176,8 +176,9 @@ boolean `handled` 不能区分“业务已处理”“请求 capture”和“停
 
 Keyboard 不伪装成 PointerEvent，当前已经提供独立的 `KeyEvent` 值对象，包含
 key、down/up/press、modifier、repeat 和 timestamp，并在构造边界校验和复制 modifier
-快照。它还没有 keyboard target、focus owner、焦点遍历或全局 key policy；这些属于
-后续输入/播放器阶段。Gesture arena 仍属于原有交互路线。
+快照。N3 只为 Navigator 的 ESC 返回提供 host section 和显式 callback；框架仍没有
+通用 keyboard target、focus owner、焦点遍历或全局 key policy。Gesture arena 仍属于
+原有交互路线。
 
 capture 归属至少包含 layer、target 和按键序列；在 capture 期间优先投递到原目标，
 不能因为移到另一个 overlay 就重新命中。补齐离开命中区后的可用 local 坐标及

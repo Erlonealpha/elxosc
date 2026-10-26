@@ -15,8 +15,8 @@ uv run --group test python -m pytest -q test/real_host
 
 历史基线（2026-10-16）为 **1315 Lua checks passed**、EmmyLua **No issues found**、
 real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**；
-加入 R3/R4 回归后为 **1381 Lua checks passed**、EmmyLua **No issues found**、Python
-integration **9 passed**、real-host **9 passed**。测试数量变化时，应在本文件和主设计文档
+加入 R3/R4 回归后为 **1381 Lua checks passed**，加入 N3 回归后为 **1426 Lua checks passed**；
+EmmyLua **No issues found**、Python integration **9 passed**、real-host **9 passed**。测试数量变化时，应在本文件和主设计文档
 同步更新。
 
 ## Lua suite
@@ -38,6 +38,8 @@ runner。测试按层覆盖：
   HostActions、AutoHide/Visibility、Main 隐藏不影响 Extension 和空 WindowLayer；
 - N2 Overlay：mounted builder context、single Entry owner、opaque occlusion、
   maintain_state、paint/input eligibility、plan generation、remove/dispose lifecycle；
+- N3 navigation：lazy Page builder context、class/key route reconciliation、single Theatre
+  push/pop、result/dispose ordering、Popup barrier and ESC claim policy；
 - R3/R4：唯一 `app.extension` Define/Slot boundary、旧 grid target rejection、single
   mounted extension owner、host primitive identity 和不持有整个 App 的 `MpInput`；
 - `test_constraints_examples.lua`：固定 400×670 约束示例的完整 ASS 快照。
@@ -67,8 +69,8 @@ runner。测试按层覆盖：
   shutdown 清理；
 - 同一逻辑 Overlay 的 entry 创建、更新、移除、opaque/maintain_state plan 和 overlap
   input eligibility；host-level 多 overlay、独立 presenter/cache 和 z policy 仍延期；
-- 顶层控件 visible/hidden、AutoHide 和 Offstage 生命周期；完整 modal/Navigator 输入策略
-  仍属于 N3/N5。
+- 顶层控件 visible/hidden、AutoHide 和 Offstage 生命周期；N3 的 ESC section/route pop
+  已覆盖，完整 keyboard focus 和 host modal policy 仍属于后续输入阶段。
 
 ## EmmyLua
 

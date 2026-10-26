@@ -36,7 +36,8 @@ EmmyLua checker; the real-host run reports **9 passed**. Commands and scope are 
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
 values and dispatch results; the PlayerContext 6.3 contracts are implemented. R1/R2
 now cover SlotSpec/Contribution assembly, transactional Define payloads and mount-only
-WidgetTree behavior; Pages, Navigator and multi-overlay contracts remain planned.
+WidgetTree behavior; the N3 Page/Route/Navigator slice is covered by the navigation regression
+file, while multi-overlay contracts remain planned.
 
 ## Real host (Python + uv, first stage)
 
@@ -96,6 +97,7 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
 | `test_host_player_context.lua` | mpv property bridge, observer disposal and Define player updates (`mp` stubbed) |
 | `test_host_app.lua` | `App`: frame clock, overlay, input areas/capture, demo output and the define window (`mp` stubbed) |
+| `test_navigation.lua` | Page/Route reconciliation, push/pop results, Popup barrier and ESC |
 | `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |

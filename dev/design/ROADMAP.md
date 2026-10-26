@@ -91,7 +91,8 @@
 - opaque/occluded/visible/maintain_state 和 generation plan 有行为测试；
 - paint/input eligibility 分离，hidden/occluded entry 的 pointer regions 清理；
 - remove、mark_needs_build 和 State dispose 经过真实 Widget reconciliation；
-- Route、PopupRoute、barrier、ESC result 和 host-level 多 overlay 继续延期。
+- N3 已提供同一 Theatre 内的 Route、PopupRoute、barrier、ESC 和 result/dispose；完整
+  focus/restoration、复杂 transition 和 host-level 多 overlay 继续延期。
 
 ### 6.6 多层 overlay
 

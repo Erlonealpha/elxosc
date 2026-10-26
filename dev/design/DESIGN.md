@@ -113,16 +113,18 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-10-26 的 P0/R1/R2 + N1/N2 + R3/R4 工作区为 **1381 Lua checks**、EmmyLua
+2026-10-26 的 P0/R1/R2 + N1/N2 + R3/R4 + N3 工作区为 **1426 Lua checks**、EmmyLua
 **No issues found**、Python integration **9 passed**、real-host **9 passed**。R3 已将
 默认入口收敛为唯一 `app.extension` 内容边界；R4 已将 mpv clock/presenter primitive
-从 `App` 实现中拆出，并让 `MpInput` 使用最小 owner/callback 接口。命令和测试职责以
+从 `App` 实现中拆出，并让 `MpInput` 使用最小 owner/callback 接口；N3 已将 Page/Route
+和 Popup/ESC 接入同一 Theatre。命令和测试职责以
 [TESTING.md](TESTING.md) 为准。
 
 6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，
 State 支持 `did_change_dependencies`，并对 init/dispose 的 listening lookup 做边界
 诊断。N1/N2 的 DefaultApp、ambient、AutoHide、OverlayEntry lifecycle 实现继续遵守
-这些 Provider 和生命周期契约；Navigator/Route 和 host-level 多 overlay 仍延期。
+这些 Provider 和生命周期契约；N3 已提供同一 Theatre 内的 Navigator/Route/Popup/ESC
+最小切片，完整 focus/restoration 和 host-level 多 overlay 仍延期。
 
 ## 变更决策规则
 

@@ -23,7 +23,9 @@ binding, and the public widget library. It must remain independent of mpv.
 - `actions.lua` — the host-independent `HostActions` callback contract and scope.
 - `visibility.lua` — `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`.
 - `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.
-- `app.lua` — `WidgetsApp`, `DefaultApp`, `Main` and the empty-root `WindowLayer` boundary.
+- `navigation.lua` — immutable `Page`/`PopupPage`, runtime `Route`, `Navigator`, results and
+  the host-independent `ModalBarrier`.
+- `app.lua` — `WidgetsApp`, `DefaultApp`, `Main` and the `WindowLayer` application boundary.
 - `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
 - `widgets/` — independent layout, content, input, and button widgets; `basic.lua`
   and `layout.lua` are compatibility aggregates.
@@ -73,7 +75,14 @@ The old nine-region scaffold, fixed grid ids and `more` are not part of the curr
 entry. The default application exposes one Define/Slot content boundary, `app.extension`, with
 `set` and `replace`; Main shell fields and the empty WindowLayer are not implicit extension
 targets. Config/API hot updates only feed State/Provider or explicit setters. They do not mutate
-mounted Widgets or reload extension code.
+ mounted Widgets or reload extension code.
+
+`Navigator` is the lightweight runtime page owner layered on the same `Theatre`. `Page` builders
+are lazy and run only from mounted route entries. Matching page class/key pairs reuse their
+`Route` and content Element; removed routes are detached from the Theatre before their result is
+completed and their dispose callback runs. `PopupPage` contributes a real barrier/content pair;
+the barrier may dismiss the current route without creating another owner or presenter. A root
+Navigator with no child route ignores pop/ESC.
 
 See [widgets](../dev/design/WIDGETS.md), [host/Define](../dev/design/HOST.md), and
 [player application](../dev/design/PLAYER.md).

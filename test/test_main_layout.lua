@@ -22,6 +22,7 @@ local ambient_mod = require('widget.ambient')
 local actions_mod = require('widget.actions')
 local visibility_mod = require('widget.visibility')
 local main_layout = require('main_layout')
+local navigation_mod = require('widget.navigation')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -40,6 +41,7 @@ local HostActions = actions_mod.HostActions
 local SlotWrap = slot_mod.SlotWrap
 local ContributionRegistry = slot_mod.ContributionRegistry
 local CompositionAssembler = slot_mod.CompositionAssembler
+local Navigator = navigation_mod.Navigator
 local AutoHide = visibility_mod.AutoHide
 local AutoHideController = visibility_mod.AutoHideController
 local FrameClock = frame_clock_mod.FrameClock
@@ -153,6 +155,16 @@ F.test('the production description exposes one Extension content boundary', func
     local _, binding = mount(root)
     F.eq(count_widget_elements(binding.root_element, Extension), 1,
         'extension content has one mounted owner')
+end)
+
+F.test('WindowLayer owns one empty Navigator when no initial Page is provided', function()
+    local root = main_layout.build_app(Text('extension'))
+    local _, binding = mount(root)
+    local navigator = find_widget_element(binding.root_element, Navigator)
+    F.ok(navigator ~= nil, 'WindowLayer contains the Navigator runtime')
+    if navigator then
+        F.eq(#navigator.state.routes, 0, 'empty WindowLayer has no current Page')
+    end
 end)
 
 F.test('WidgetsApp exposes stable theme, display, text and action ambients', function()

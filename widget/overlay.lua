@@ -43,6 +43,7 @@ end
 ---@field maintain_state boolean?
 ---@field visible boolean?
 ---@field key any?
+---@field on_dispose fun(entry: OverlayEntry)? internal lifecycle hook
 
 ---@class OverlayEntry : std.object
 ---@field builder fun(context: BuildContext): Widget?
@@ -53,6 +54,8 @@ end
 ---@field private _overlay OverlayState?
 ---@field private _mounted boolean
 ---@field private _disposed boolean
+---@field private _finalized boolean
+---@field private _on_dispose fun(entry: OverlayEntry)?
 ---@overload fun(options: _OverlayEntryOptions): self
 local OverlayEntry = std.class.new('OverlayEntry', {})
 
@@ -68,9 +71,14 @@ function OverlayEntry:__init(options)
     self.maintain_state = options.maintain_state ~= false
     self.visible = options.visible ~= false
     self.key = options.key or self
+    self._on_dispose = options.on_dispose
+    if self._on_dispose ~= nil and type(self._on_dispose) ~= 'function' then
+        raise(std.TypeError('OverlayEntry.on_dispose must be a function'))
+    end
     self._overlay = nil
     self._mounted = false
     self._disposed = false
+    self._finalized = false
 end
 
 ---@return boolean
@@ -93,6 +101,19 @@ function OverlayEntry:_mark_removed()
     self._disposed = true
 end
 
+function OverlayEntry:_finalize()
+    if self._finalized then
+        return false
+    end
+    self._finalized = true
+    local callback = self._on_dispose
+    self._on_dispose = nil
+    if callback then
+        callback(self)
+    end
+    return true
+end
+
 ---@return boolean
 function OverlayEntry:is_removed()
     return self._overlay == nil and self._disposed
@@ -107,6 +128,7 @@ function OverlayEntry:remove()
         return self._overlay:remove(self)
     end
     self._disposed = true
+    self:_finalize()
     return true
 end
 
@@ -255,7 +277,9 @@ end
 
 function OverlayEntryMountState:dispose()
     if self.entry then
-        self.entry:_set_mounted(false)
+        local entry = self.entry
+        entry:_set_mounted(false)
+        entry:_finalize()
         self.entry = nil
     end
 end
@@ -376,9 +400,45 @@ end
 
 function OverlayState:did_update_widget(old_widget)
     local widget = self.widget --[[@as Overlay]]
+    self:_sync_initial_entries(widget.initial_entries)
     if old_widget.on_plan ~= widget.on_plan then
         self:_notify_plan()
     end
+end
+
+---@param entries OverlayEntry[]
+function OverlayState:_sync_initial_entries(entries)
+    entries = copy_array(entries)
+    local seen = {}
+    for _, entry in ipairs(entries) do
+        if not std.isinstance(entry, OverlayEntry) then
+            raise(std.TypeError('Overlay entries must be OverlayEntry values'))
+        end
+        if seen[entry] then
+            raise(std.ValueError('Overlay entries cannot contain duplicates'))
+        end
+        seen[entry] = true
+    end
+
+    local current = {}
+    for _, entry in ipairs(self.entries) do
+        current[entry] = true
+        if not seen[entry] then
+            entry:_detach(self)
+            entry:_mark_removed()
+            if not entry:is_mounted() then
+                entry:_finalize()
+            end
+        end
+    end
+    for _, entry in ipairs(entries) do
+        if not current[entry] then
+            entry:_attach(self)
+        end
+    end
+    self.entries = entries
+    self.generation = self.generation + 1
+    self:_notify_plan()
 end
 
 ---@param entry OverlayEntry
@@ -420,6 +480,9 @@ function OverlayState:remove(entry)
             table.remove(self.entries, index)
             entry:_detach(self)
             entry:_mark_removed()
+            if not entry:is_mounted() then
+                entry:_finalize()
+            end
             self:_changed()
             return true
         end
@@ -534,6 +597,9 @@ function OverlayState:dispose()
     for _, entry in ipairs(self.entries) do
         entry:_detach(self)
         entry:_mark_removed()
+        if not entry:is_mounted() then
+            entry:_finalize()
+        end
     end
     self.entries = {}
     self.last_plan = nil

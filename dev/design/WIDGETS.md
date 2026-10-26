@@ -136,8 +136,11 @@ N2 的 `Overlay`/`Theatre` 是同一个 class object，不是第二套 runtime�
 - `remove()`、visibility/opaque/maintain_state 变化和 `mark_needs_build()` 都通过
   OverlayState 的唯一 authoritative entry list 驱动 reconciliation。
 
-N2 不实现 Navigator、Route、PopupRoute、barrier 或 multi-surface；这些仍属于后续阶段
-的决策范围。
+N3 在同一 Theatre 上提供轻量 `Navigator`、`Page`、`Route`、`PopupRoute`、结果句柄和
+`ModalBarrier`，不创建第二个 owner、Canvas 或 surface。`Page` builder 延迟到 mounted
+route entry 中执行；相同 page class/key 复用 Route 和内容 Element，删除的 route 先从
+Theatre reconciliation 中移除，再完成 result 和 dispose。空 root Navigator 不处理
+pop/ESC；Popup 的 barrier/content 是同一 Route 的成对 entries。
 
 ## BuildContext、Provider 与播放器状态
 

@@ -20,7 +20,8 @@ WidgetsApp
 
 `Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部信息、时间线和播放控制
 由播放器定义，scale 是统一正数配置并使用流式布局。`ExtensionEntry` 是当前唯一的
-扩展内容边界；`WindowLayer` 为空时只有空根语义，不创建额外 presenter/root。
+扩展内容边界；`WindowLayer` 由一个 Navigator 管理逻辑页面，没有初始 Page 时只有空根
+语义，不创建额外 presenter/root。
 
 当前默认入口公开的 Define/Slot 清单只有 `app.extension`（`set`/`replace`）。Main
 标题栏、窗口控制、底部播放器骨架和 `window_layer` 不是扩展的隐式 target；它们只能
@@ -30,7 +31,7 @@ WidgetsApp
 regions，但 ExtensionEntry 的 Element/State 不被卸载或重置。
 
 旧 `main_layout.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
-Navigator、Route 和 host-level 多 overlay 不因 N1/N2 的实现自动引入。
+Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。
 
 ## Define 是扩展唯一入口
 
@@ -60,11 +61,11 @@ OverlayEntry 是 runtime State/Widget lifecycle，不是 Define 的第二条内�
 | --- | --- | --- |
 | `main` | DefaultApp/Main | 播放器固定 UI；扩展只能通过明确 Slot 影响允许内容 |
 | `extension` | DefaultApp | 一个初始化期 Widget 内容边界，内部布局由扩展负责 |
-| `window_layer` | WindowLayer | 空根或后续受控页面内容，不创建第二个 runtime |
+| `window_layer` | WindowLayer/Navigator | 空根或受控 Page/Popup 内容，不创建第二个 runtime |
 
-区域内容在挂载前组装，运行时变化由扩展自己的 State 或播放器公开更新接口驱动
-rebuild；同一区域冲突仍必须在 mount 前报告 scope、target 和 operation。DefaultApp
-不是 Navigator，N3 仍需单独定义 page/root、route lifecycle 和 result/dispose 顺序。
+Main、Extension 和 WindowLayer 的初始内容在挂载前组装；WindowLayer 的运行时页面变化由
+NavigatorState 的 `push`/`pop`/`set_pages` 驱动，不重新执行 Define。同一区域冲突仍必须
+在 mount 前报告 scope、target 和 operation。
 
 ## 配置和对外接口热更新
 
@@ -124,6 +125,31 @@ class identity。
 监听式 `of` / `maybe_of` 返回 Provider Widget 并建立依赖，非监听式 `read` /
 `maybe_read` 只读取最近的精确运行时类型。State 首次挂载和依赖更新经过
 `did_change_dependencies()`；`init_state`、事件回调和 dispose 不得使用监听式查询。
+
+## N3 Page/Route/Navigator
+
+Navigator 是同一 logical Theatre 内的运行时页面 owner：
+
+```text
+Navigator
+└── NavigatorScope
+    └── Theatre
+        ├── Route content
+        └── PopupRoute barrier + content
+```
+
+`Page` 是不可变、惰性的 key/class/builder 描述；`Route` 保存 entry、状态和
+`RouteResult`。`NavigatorState` 按 Page class/key 对齐并复用 Route；Page class 或 key 变化
+会创建新 Route，重复 key 被拒绝。`push` 追加 Page，`pop(value)` 先移除当前 Page 并让
+Theatre 在下一次 build flush 中卸载 entries，再按顺序调用 `on_pop`、完成 result、调用
+`on_dispose`。同一个 result 只完成一次。
+
+`PopupPage` 使用一个 `PopupRoute` 生成 barrier/content 两个 entries。barrier 是真实
+`ModalBarrier` Widget：dismissible barrier 调用当前 Navigator 的 pop，非 dismissible
+barrier 仍消费其区域输入但不伪造 pop。页面默认注册 ESC；有可 pop route 时 host 才启用
+navigation section，无可 pop 内容时不抢占用户默认 ESC 绑定，KeyEvent 只在 section 已选中
+后交给 NavigatorState。首版不提供 focus traversal、Hero、restoration、browser parser、
+nested Navigator 状态恢复或复杂 transition 协商。
 
 ## N2 逻辑 Overlay 与未来 host layers
 
@@ -196,9 +222,16 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 - visible/opaque/maintain_state、occluded plan 和 paint/input eligibility 有离线证据；
 - remove、visibility/opaque/maintain_state 变更和 mark_needs_build 通过唯一 entry list
   驱动真实 mount/update/dispose；
-- Navigator、Route、PopupRoute、barrier、ESC result 和 multi-surface 仍不在本阶段。
 
-### 6.6 OverlayHost
+### 6.6 N3 Navigator（已实现最小切片）
+
+- Page/Route/Navigator 使用同一个 Theatre，Page builder 只在 mounted context 执行；
+- class/key reconciliation 保留稳定 Route/Element，重复 key 和空 root pop 有明确边界；
+- push/pop、RouteResult、on_pop/on_dispose、PopupRoute barrier/content 和 ESC 已覆盖；
+- host 只在 `NavigatorState:can_pop()` 时启用 `elxosc-navigation`，不创建第二个 presenter；
+- focus、restoration、Hero、复杂 transition、nested state restoration 和 browser parser 延后。
+
+### 6.7 OverlayHost
 
 - 多个 AssPresenter/OSD overlay 的创建、更新、移除和 z 排序；
 - 每层独立 dirty/cache 和 input policy；
@@ -207,11 +240,11 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
   才使用监听式 lookup；
 - 把 DefaultApp/Theatre layer 和未来 host overlay layer 的职责明确分开。
 
-### 6.7 可扩展播放器 Shell
+### 6.8 可扩展播放器 Shell
 
 - Main 的标题栏、时间线、底部和两侧控件；
 - 可隐藏的顶层控件和 auto/always/never visibility 状态；
-- N3 Navigator、Popup 和未来 host layer 的组合；
+- N3 之后的 Shell 页面产品和未来 host layer 的组合；
 - Shell 的 build 使用监听式 Provider，init/event/resource 回调使用非监听 read，
   依赖变化资源通过 `did_change_dependencies` 更新；
 - 配置/API 热更新驱动 State/Provider，而非代码重载。
@@ -222,7 +255,7 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 - 不新增第二条扩展内容注入通道；
 - 不默认支持 Lua 源码热重载；
 - 不把 overlay.z 变成 bind 或页面优先级；
-- 不在本阶段承诺 Navigator 或复杂页面导航；
+- 不在本阶段承诺完整 Navigator API 或复杂页面导航；
 - 不让根布局节点默认拦截播放器输入。
 
 ## 验收标准
@@ -233,4 +266,4 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 - 扩展代码不因配置/API 更新而重新加载或重复注册；
 - 同一逻辑 Overlay 的 entries 支持更新、隐藏、移除和真实 State dispose；
 - hidden/occluded entry 没有绘制输出和交互区域，maintain_state 内容仍可保留；
-- N1/N2 的离线、stub 和 real-host 回归均已记录；host-level layer/Navigator 另行验收。
+- N1/N2/N3 的离线、stub 和 real-host 回归均已记录；host-level layer 仍另行验收。

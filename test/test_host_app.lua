@@ -22,6 +22,7 @@ local mpv_primitives = require('host.mpv_primitives')
 local main_layout = require('main_layout')
 local app_widgets = require('widget.app')
 local mpv_define = require('host.mpv_define')
+local navigation_mod = require('widget.navigation')
 local demo_mod = require('demo')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
@@ -47,6 +48,8 @@ local DefaultApp = app_widgets.DefaultApp
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 local MpInput = mpv_input.MpInput
+local Page = navigation_mod.Page
+local Navigator = navigation_mod.Navigator
 
 local function find_widget_element(element, widget_class)
     if element == nil then
@@ -387,6 +390,12 @@ F.test('host primitives and input use minimal owner interfaces', function()
         request_frame = function()
             frames = frames + 1
         end,
+        get_can_pop = function()
+            return false
+        end,
+        handle_key = function()
+            return false
+        end,
     })
 
     F.eq(input.app, nil, 'input does not retain the whole App')
@@ -396,6 +405,26 @@ F.test('host primitives and input use minimal owner interfaces', function()
     F.eq(activity, 1, 'activity callback is invoked')
     F.eq(frames, 1, 'frame callback is invoked')
     input:shutdown()
+end)
+
+F.test('host ESC section is enabled only when Navigator can pop', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Text('extension'), {
+        Page({ key = 'home', builder = function() return Text('home') end }),
+        Page({ key = 'child', builder = function() return Text('child') end }),
+    }))
+    app:render()
+    F.ok(fake.binding_sections['elxosc-navigation'] ~= nil, 'navigation section is defined')
+    F.ok(fake.bindings_enabled_sections['elxosc-navigation'] ~= nil,
+        'ESC section is enabled with a poppable route')
+    local navigation = fake.binding_sections['elxosc-navigation'].list[1][2]
+    navigation()
+    mp_stub.pump()
+    local navigator_element = find_widget_element(app.binding.root_element, Navigator)
+    F.eq(#navigator_element.state.routes, 1, 'host ESC pops the current Page')
+    app:render()
+    F.ok(fake.bindings_enabled_sections['elxosc-navigation'] == nil,
+        'ESC section is disabled at the root route')
 end)
 
 F.test('DefaultApp extension controls remain clickable above Main activity surface', function()

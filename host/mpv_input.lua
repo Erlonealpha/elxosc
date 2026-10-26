@@ -41,6 +41,7 @@ local M = {}
 
 local INPUT_SECTION = 'elxosc-input'
 local WHEEL_SECTION = 'elxosc-wheel'
+local NAVIGATION_SECTION = 'elxosc-navigation'
 local BINDING_FLAGS = 'allow-hide-cursor'
 local owned_sections = {}
 
@@ -56,17 +57,22 @@ local owned_sections = {}
 ---@field get_viewport fun(): Rect returns the current root-space viewport
 ---@field notify_activity fun() informs application visibility policies
 ---@field request_frame fun() schedules a frame after input
+---@field get_can_pop (fun(): boolean)? whether an ESC action is currently claimed
+---@field handle_key (fun(event: KeyEvent): boolean)? dispatches a structured key event
 
 ---@class MpInput : std.object
 ---@field owner MpInputOwner
 ---@field get_viewport fun(): Rect
 ---@field notify_activity fun()
 ---@field request_frame fun()
+---@field get_can_pop fun(): boolean
+---@field handle_key fun(event: KeyEvent): boolean?
 ---@field hover boolean
 ---@field _regions PointerRegion[]
 ---@field _region_signature string?
 ---@field _input_sections string[]
 ---@field _wheel_sections string[]
+---@field _navigation_enabled boolean
 ---@field _pressed_section string?
 ---@field _buttons table<PointerButton, true>
 ---@field _mouse_callback fun(name: string, mouse: table)?
@@ -92,6 +98,10 @@ function MpInput:__init(options)
     self.get_viewport = options.get_viewport
     self.notify_activity = options.notify_activity
     self.request_frame = options.request_frame
+    self.get_can_pop = type(options.get_can_pop) == 'function'
+        and options.get_can_pop or function() return false end
+    self.handle_key = type(options.handle_key) == 'function'
+        and options.handle_key or function() return false end
     self.x, self.y = huge, huge
     self.hover = false
     self._pressed = false
@@ -99,6 +109,7 @@ function MpInput:__init(options)
     self._region_signature = nil
     self._input_sections = {}
     self._wheel_sections = {}
+    self._navigation_enabled = false
     self._pressed_section = nil
     self._buttons = {}
     self._mouse_callback = nil
@@ -284,11 +295,39 @@ function MpInput:_define_wheel_section(section)
     }, section, 'force')
 end
 
+---@param section string
+function MpInput:_define_navigation_section(section)
+    self:_register_section(section)
+    mp.set_key_bindings({
+        { 'ESC', function()
+            self:_dispatch_key('ESC')
+        end },
+    }, section, 'force')
+end
+
 function MpInput:_bind_keys()
     self:_define_input_section(INPUT_SECTION)
     self:_define_wheel_section(WHEEL_SECTION)
+    self:_define_navigation_section(NAVIGATION_SECTION)
     mp.disable_key_bindings(INPUT_SECTION)
     mp.disable_key_bindings(WHEEL_SECTION)
+    mp.disable_key_bindings(NAVIGATION_SECTION)
+end
+
+---@param key string
+function MpInput:_dispatch_key(key)
+    if self._shutdown then
+        return
+    end
+    local event = require('foundation.key_event').KeyEvent({
+        key = key,
+        type = 'press',
+        timestamp = mp.get_time(),
+    })
+    if self.handle_key(event) then
+        self.notify_activity()
+        self.request_frame()
+    end
 end
 
 ---@param section string
@@ -384,6 +423,19 @@ function MpInput:_apply_regions(regions)
     end
 end
 
+function MpInput:_sync_navigation()
+    local can_pop = self.get_can_pop() == true
+    if can_pop == self._navigation_enabled then
+        return
+    end
+    self._navigation_enabled = can_pop
+    if can_pop then
+        mp.enable_key_bindings(NAVIGATION_SECTION, BINDING_FLAGS)
+    else
+        self:_disable_section(NAVIGATION_SECTION)
+    end
+end
+
 ---@param regions PointerRegion[]
 ---@return string
 local function region_signature(regions)
@@ -403,12 +455,14 @@ function MpInput:update_regions()
     end
     local regions = self.owner:pointer_regions()
     local signature = region_signature(regions) .. (self._pressed and ':pressed' or '')
+        .. (self.get_can_pop() and ':can-pop' or ':no-pop')
     if signature == self._region_signature then
         return
     end
     self._region_signature = signature
     self._regions = regions
     self:_apply_regions(regions)
+    self:_sync_navigation()
 end
 
 --- Cancel host-side pointer capture and restore the normal region policy.
@@ -442,9 +496,11 @@ function MpInput:shutdown()
     end
     self._input_sections = {}
     self._wheel_sections = {}
+    self._navigation_enabled = false
     self:_clear_owned_sections()
     self:_disable_section(INPUT_SECTION)
     self:_disable_section(WHEEL_SECTION)
+    self:_disable_section(NAVIGATION_SECTION)
 end
 
 M.MpInput = MpInput

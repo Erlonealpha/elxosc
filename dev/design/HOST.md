@@ -38,8 +38,8 @@ ASS 坐标一致；不要让 render 层读取 overlay 字符串来做布局。
 
 ## 输入
 
-`MpInput` 只依赖 RenderOwner、viewport getter 和 activity/frame callbacks，不依赖整个
-`App`。它监听鼠标位置和按键，把事件交给 RenderOwner。当前输入阶段已经接入
+`MpInput` 只依赖 RenderOwner、viewport getter、activity/frame callbacks 和可选的
+Navigator key callbacks，不依赖整个 `App`。它监听鼠标位置和按键，把事件交给 RenderOwner。当前输入阶段已经接入
 `mp.set_mouse_area()` 区域同步和按区域拆分的 input sections：passive 的 Root/排版
 节点不创建输入区域，interactive 控件只在自己的 root-space 区域消费相关事件，
 modal/exclusive layer 可以显式阻止穿透。默认情况下，Button 区域会消费
@@ -50,6 +50,10 @@ PipelineOwner/RenderOwner 继续负责命中路径、hover enter/leave、按下 
 host 负责把 mpv section、mouse area、double-click、modifier 和键盘事件翻译成
 结构化输入值。内容画到布局盒外并不自动扩大可点击区域，除非所属 RenderObject
 明确实现新的命中边界语义。详细输入规划见 [INPUT.md](INPUT.md)。
+
+Navigator 的 ESC 处理使用独立的 `elxosc-navigation` section；只有当前 Navigator 有可
+pop route 时才 enable。没有可 pop 内容时不抢占用户默认 ESC 绑定，KeyEvent 只在 section
+已选中后交给 NavigatorState。
 
 输入区域只在 layout、viewport、visibility、DefaultApp/overlay 或 policy 变化时更新，
 不应随普通 mouse move 每帧重建。输入行为变化必须同时覆盖 `test/mp_stub.lua` 和

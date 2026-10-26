@@ -5,6 +5,7 @@
 
 local app_mod = require 'widget.app'
 local slot_mod = require 'widget.slot'
+local navigation_mod = require 'widget.navigation'
 local basic_widgets = require 'widget.widgets.basic'
 local layout_widgets = require 'widget.widgets.layout'
 
@@ -17,12 +18,14 @@ local SizedBox = layout_widgets.SizedBox
 local SlotSpec = slot_mod.SlotSpec
 local SlotWrap = slot_mod.SlotWrap
 local CompositionAssembler = slot_mod.CompositionAssembler
+local Navigator = navigation_mod.Navigator
 
 local M = {}
 
 ---@param extension Widget?
+---@param pages Page[]?
 ---@return Widget
-local function build_description(extension)
+local function build_description(extension, pages)
     local extension_slot_spec = SlotSpec({
         id = 'app.extension',
         allow = { 'set', 'replace' },
@@ -42,7 +45,7 @@ local function build_description(extension)
     })
     local window_layer = WindowLayer({
         child = Container({
-            child = SizedBox.shrink(),
+            child = Navigator({ pages = pages or {} }),
         }),
     })
 
@@ -61,17 +64,19 @@ local function build_description(extension)
 end
 
 ---@param extension Widget?
+---@param pages Page[]?
 ---@return Widget
-function M.build_app(extension)
-    local root = build_description(extension)
+function M.build_app(extension, pages)
+    local root = build_description(extension, pages)
     local app = CompositionAssembler():assemble(root)
     return app
 end
 
 ---@param extension Widget?
+---@param pages Page[]?
 ---@return Widget
-function M.build_app_description(extension)
-    return build_description(extension)
+function M.build_app_description(extension, pages)
+    return build_description(extension, pages)
 end
 
 return M

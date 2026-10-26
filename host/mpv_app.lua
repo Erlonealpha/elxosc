@@ -47,6 +47,7 @@ local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
 local PlayerScope = player_context.PlayerScope
+local Navigator = require('widget.navigation').Navigator
 
 local M = {}
 
@@ -132,7 +133,33 @@ function App:__init(root_widget, options)
         request_frame = function()
             self:request_frame()
         end,
+        get_can_pop = function()
+            local state = self:_navigation_state()
+            return state ~= nil and state:can_pop() or false
+        end,
+        handle_key = function(event)
+            local state = self:_navigation_state()
+            return state and state:handle_key(event) or false
+        end,
     })
+end
+
+---@return NavigatorState?
+function App:_navigation_state()
+    local root = self.binding and self.binding.root_element
+    local function visit(element)
+        if element.widget and element.widget.__class == Navigator then
+            return element.state
+        end
+        for _, child in ipairs(element:element_children()) do
+            local found = visit(child)
+            if found then
+                return found
+            end
+        end
+        return nil
+    end
+    return root and visit(root) or nil
 end
 
 ---@return Rect
