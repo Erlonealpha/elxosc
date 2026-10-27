@@ -8,6 +8,21 @@ local F = {}
 local n_pass, n_fail = 0, 0
 local failures = {}
 local suite = '?'
+local current_file = '?'
+local current_test
+local verbose = false
+
+function F.set_verbose(value)
+    verbose = value == true
+end
+
+function F.file(name)
+    current_file = name
+    suite = '?'
+    if verbose then
+        print('\n-- ' .. name .. ' --')
+    end
+end
 
 local function fmt(v)
     if type(v) == 'string' then
@@ -23,8 +38,13 @@ local function record(ok, msg)
         n_pass = n_pass + 1
     else
         n_fail = n_fail + 1
-        failures[#failures + 1] = suite .. ': ' .. msg
-        print('    FAIL  ' .. msg)
+        local location = current_file .. ' / ' .. suite
+        if current_test then
+            location = location .. ' / ' .. current_test
+        end
+        local failure = location .. ': ' .. msg
+        failures[#failures + 1] = failure
+        print('    FAIL  ' .. failure)
     end
     return ok
 end
@@ -32,7 +52,9 @@ end
 ---@param name string
 function F.section(name)
     suite = name
-    print('\n== ' .. name .. ' ==')
+    if verbose then
+        print('\n== ' .. name .. ' ==')
+    end
 end
 
 --- Run one test body. A raised error fails the test; assertions inside the
@@ -40,12 +62,15 @@ end
 ---@param name string
 ---@param fn fun()
 function F.test(name, fn)
+    local before = n_fail
+    current_test = name
     local ok, err = pcall(fn)
     if not ok then
         record(false, name .. ' -> raised ' .. tostring(err):gsub('\n', ' | '))
-    else
+    elseif verbose and n_fail == before then
         print('    ok    ' .. name)
     end
+    current_test = nil
 end
 
 --- Record a failure from outside a test body (e.g. a crashed test file).

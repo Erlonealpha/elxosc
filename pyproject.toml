@@ -8,5 +8,5 @@ dependencies = ["fontTools"]
 test = ["pytest>=8,<10"]
 
 [tool.pytest.ini_options]
-testpaths = ["test/real_host"]
+testpaths = ["test"]
 markers = ["real_host: requires a working mpv/mpv.net executable and IPC"]

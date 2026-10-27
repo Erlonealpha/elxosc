@@ -180,6 +180,11 @@ Lua tests use `test/run.lua`; new files are named `test_*.lua` and must be
 registered by the runner. Host modules may use `test/mp_stub.lua`, while
 `test/real_host/` verifies behavior against a real process.
 
+Runner update (2026-10-27): registration is now automatic discovery of
+`test_*.lua`, including nested group directories whose names start with `test`.
+Use slash-separated group/file filters and `-v` for full logs; default logs show
+failures and the summary. This supersedes the manual-registration rule above.
+
 ## 8. Documentation and commits
 
 Current design documents live in `dev/design/`; historical records belong in
