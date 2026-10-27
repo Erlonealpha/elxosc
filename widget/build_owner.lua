@@ -26,6 +26,10 @@ local GlobalKey = key_mod.GlobalKey
 ---@field _scopes table<BuildScope, true>
 ---@field _dirty_scopes table<BuildScope, true>
 ---@field _dirty_scope_order BuildScope[]
+---@field _inactive table<Element, true>
+---@field _building boolean
+---@field _state_lock_depth integer
+---@field _post_finalize fun()[]
 ---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): self
 local BuildOwner = std.class.new('BuildOwner', {})
 
@@ -42,6 +46,29 @@ function BuildOwner:__init(render_owner, scheduler)
     self.diagnostics = {}
     self._inactive = {}
     self._building = false
+    self._state_lock_depth = 0
+    self._post_finalize = {}
+end
+
+--- Disposal may observe the tree, but cannot build or schedule mutations.
+function BuildOwner:assert_can_build()
+    if self._state_lock_depth > 0 then
+        local message = 'build is locked during dispose/finalize'
+        self:diagnose(message)
+        error(message, 2)
+    end
+end
+
+---@param callback fun(): any
+---@return any
+function BuildOwner:lock_state(callback)
+    self._state_lock_depth = self._state_lock_depth + 1
+    local ok, result = pcall(callback)
+    self._state_lock_depth = self._state_lock_depth - 1
+    if not ok then
+        error(result, 0)
+    end
+    return result
 end
 
 ---@param scope BuildScope
@@ -115,18 +142,43 @@ function BuildOwner:remove_inactive(element)
     self._inactive[element] = nil
 end
 
+--- Lifecycle notifications may schedule surviving State only after disposal.
+---@param callback fun()
+function BuildOwner:after_finalize(callback)
+    self._post_finalize[#self._post_finalize + 1] = callback
+end
+
 function BuildOwner:finalize_tree()
+    self:assert_can_build()
     local inactive = self._inactive
     self._inactive = {}
-    for element in pairs(inactive) do
-        if element.mounted and not element.active then
-            element:unmount()
+    local failure
+    self:lock_state(function()
+        for element in pairs(inactive) do
+            if element.mounted and not element.active then
+                local ok, err = pcall(element.unmount, element)
+                if not ok then
+                    failure = failure or err
+                end
+            end
         end
+    end)
+    local callbacks = self._post_finalize
+    self._post_finalize = {}
+    for _, callback in ipairs(callbacks) do
+        local ok, err = pcall(callback)
+        if not ok then
+            failure = failure or err
+        end
+    end
+    if failure then
+        error(failure, 0)
     end
 end
 
 ---@param element Element
 function BuildOwner:schedule_build_for(element)
+    self:assert_can_build()
     if element.build_scope == nil then
         element.build_scope = self.root_scope
     end
@@ -187,6 +239,7 @@ end
 --- Rebuild every dirty element that was not already refreshed by an ancestor.
 ---@param scope BuildScope?
 function BuildOwner:rebuild_dirty(scope)
+    self:assert_can_build()
     if self._building then
         error('BuildOwner.rebuild_dirty() is not reentrant', 2)
     end

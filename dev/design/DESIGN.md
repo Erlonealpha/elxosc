@@ -113,7 +113,12 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-10-26 的 P0/R1/R2 + N1/N2 + R3/R4 + N3 Demo + N4/N5 工作区为 **1491 Lua checks**、EmmyLua
+2026-10-27 runtime 与 runner 切片为 **1682 Lua checks**（runtime **252**）、CLI **14 passed**；
+生产静态检查排除本地 ignored tmp 草稿后 **No issues found**，启用入口的隔离副本
+real-host **10 passed**。工作区入口被用户关闭时为 **8 passed, 2 failed**；默认静态扫描
+本地重复类型草稿会产生 warning。详情和实际命令见 [TESTING.md](TESTING.md)。
+
+2026-10-26 的历史 P0/R1/R2 + N1/N2 + R3/R4 + N3 Demo + N4/N5 工作区为 **1491 Lua checks**、EmmyLua
 **No issues found**、real-host **10 passed**。R3 已将
 默认入口收敛为唯一 `app.extension` 内容边界；R4 已将 mpv clock/presenter primitive
 从 `App` 实现中拆出，并让 `MpInput` 使用最小 owner/callback 接口；N3 已将 Page/Route

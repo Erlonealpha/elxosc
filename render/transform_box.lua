@@ -146,7 +146,6 @@ function RenderTransformBox:_mapping()
     return matrix, matrix:inverse() -- positive scales are always invertible
 end
 
----@param canvas Canvas
 ---@param offset Offset
 ---@param canvas PaintingContext
 function RenderTransformBox:__paint(canvas, offset)
@@ -155,15 +154,15 @@ function RenderTransformBox:__paint(canvas, offset)
         return
     end
     local origin = Offset(self.size.width * self.alignment.x, self.size.height * self.alignment.y)
-    canvas:save()
-    if self.clip then
-        canvas:clip_rect(Rect.from_offset_size(offset, self.size))
-    end
-    canvas:translate(offset.x + origin.x, offset.y + origin.y)
-    canvas:scale(self.scale.width, self.scale.height)
-    canvas:translate(-origin.x, -origin.y)
-    child:paint(canvas, Offset.zero())
-    canvas:restore()
+    canvas:with_save(function()
+        if self.clip then
+            canvas:clip_rect(Rect.from_offset_size(offset, self.size))
+        end
+        canvas:translate(offset.x + origin.x, offset.y + origin.y)
+        canvas:scale(self.scale.width, self.scale.height)
+        canvas:translate(-origin.x, -origin.y)
+        canvas:paint_child(child, Offset.zero())
+    end)
 end
 
 ---@param position Offset

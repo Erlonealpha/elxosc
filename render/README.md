@@ -13,6 +13,8 @@ not import Widget modules or mpv.
 - `pipeline_owner.lua` — canonical `PipelineOwner` name; exports the same class as
   `RenderOwner`.
 - `painting_context.lua` — Canvas/child paint/clip boundary without a Layer tree.
+  All built-in child traversal uses `paint_child`/`paint_children`; `with_save` and
+  `clip_rect_and_paint` restore Canvas state on failure as well as success.
 - `renderer_binding.lua` — RendererBinding role facade; it resolves to the shared WidgetsBinding
   composition and creates per-tree PipelineOwner copies.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
@@ -48,3 +50,6 @@ the default adapter preserves existing `on_pointer(event, local_point, data)`
 implementations.
 
 See [rendering](../dev/design/RENDERING.md) and [architecture](../dev/design/ARCHITECTURE.md).
+
+Owner naming migration and alias removal conditions are recorded in
+[widget migration aliases](../widget/README.md#migration-aliases).

@@ -21,6 +21,8 @@ local Key = foundation_key.Key
 
 local M = {}
 
+---@class ObjectKey : LocalKey
+---@overload fun(value: any): self
 local ObjectKey = std.class.new('ObjectKey', { LocalKey })
 
 function ObjectKey:__init(value)
@@ -39,6 +41,10 @@ function ObjectKey:__tostring()
     return string.format('ObjectKey(%s)', tostring(self.value))
 end
 
+---@class GlobalKey : Key
+---@field debug_label string?
+---@field _registrations table<BuildOwner, Element>
+---@overload fun(debug_label: string?): self
 local GlobalKey = std.class.new('GlobalKey', { Key })
 
 function GlobalKey:__init(debug_label)

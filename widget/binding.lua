@@ -30,6 +30,7 @@ local M = {}
 ---@field root_element Element?
 ---@field on_dirty fun()?
 ---@field _disposed boolean
+---@field _owns_pipeline_owner boolean
 ---@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, scheduler: Scheduler?): self
 local WidgetTree = std.class.new('WidgetTree', {})
 
@@ -41,12 +42,17 @@ function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.root_element = nil
     self.on_dirty = nil
     self._disposed = false
+    self._owns_pipeline_owner = false
     self.build_owner.on_dirty = function()
         if self.on_dirty then
             self.on_dirty()
         end
     end
-    self:_mount(root_widget)
+    local ok, err = pcall(self._mount, self, root_widget)
+    if not ok then
+        pcall(self.dispose, self)
+        error(err, 0)
+    end
 end
 
 --- Replace the root widget (the old tree is discarded).
@@ -55,16 +61,17 @@ function WidgetTree:set_root_widget(widget)
     if self._disposed then
         return
     end
+    self.build_owner:assert_can_build()
     local element = self.root_element
-    if element and can_update(element.widget, widget) then
+    if element and element:is_active() and can_update(element.widget, widget) then
         element:update(widget)
     else
         if element then
             element:unmount()
         end
         element = widget:create_element()
-        element:mount(nil, self.build_owner)
         self.root_element = element
+        element:mount(nil, self.build_owner)
         element:rebuild()
     end
     self:_sync_root()
@@ -76,15 +83,16 @@ end
 ---@param widget Widget
 function WidgetTree:_mount(widget)
     local element = widget:create_element()
-    element:mount(nil, self.build_owner)
     self.root_element = element
+    element:mount(nil, self.build_owner)
     element:rebuild()
     self:_sync_root()
 end
 
 function WidgetTree:_sync_root()
-    local render_object = self.root_element and self.root_element:first_render_object()
-    if render_object and self.render_owner.root ~= render_object then
+    local element = self.root_element
+    local render_object = element and element:is_active() and element:first_render_object() or nil
+    if self.render_owner.root ~= render_object then
         self.render_owner:set_root(render_object)
     end
 end
@@ -94,8 +102,10 @@ function WidgetTree:flush_build()
     if self._disposed then
         return
     end
-    self.build_owner:rebuild_dirty()
-    self.build_owner:finalize_tree()
+    repeat
+        self.build_owner:rebuild_dirty()
+        self.build_owner:finalize_tree()
+    until not self.build_owner:has_dirty()
     self:_sync_root()
 end
 
@@ -108,15 +118,31 @@ function WidgetTree:dispose()
     self.on_dirty = nil
     self.build_owner:clear_dirty()
     local element = self.root_element
+    local failure
     if element then
-        element:unmount()
+        local ok, err = pcall(element.unmount, element)
+        if not ok then
+            failure = err
+        end
         self.root_element = nil
     end
+    local ok, err = pcall(self.build_owner.finalize_tree, self.build_owner)
+    if not ok then
+        failure = failure or err
+    end
+    self.build_owner:clear_dirty()
+    self.build_owner.on_dirty = nil
     self.render_owner:set_root(nil, false)
+    if self._owns_pipeline_owner then
+        self.render_owner:dispose()
+    end
     if self.binding then
         self.binding:_detach(self)
     end
     self.binding = nil
+    if failure then
+        error(failure, 0)
+    end
     return true
 end
 
@@ -164,8 +190,17 @@ end
 ---@return WidgetTree
 function WidgetsBinding:attach(root_widget, render_owner, scheduler)
     self:assert_alive()
+    local owns_pipeline_owner = render_owner == nil
     render_owner = render_owner or self:create_pipeline_owner()
-    local tree = WidgetTree(self, root_widget, render_owner, scheduler)
+    local ok, tree = pcall(WidgetTree, self, root_widget, render_owner, scheduler)
+    if not ok then
+        if owns_pipeline_owner then
+            render_owner:dispose()
+        end
+        error(tree, 0)
+    end
+    ---@cast tree WidgetTree
+    tree._owns_pipeline_owner = owns_pipeline_owner
     self._trees[tree] = true
     return tree
 end
@@ -189,17 +224,37 @@ function WidgetsBinding:flush_build(tree)
 end
 
 function WidgetsBinding:dispose()
-    if self._disposed then
+    if self._disposed or self._disposing then
         return false
     end
+    self._disposing = true
     local trees = {}
     for tree in pairs(self._trees) do
         trees[#trees + 1] = tree
     end
+    local failure
     for _, tree in ipairs(trees) do
-        tree:dispose()
+        local ok, err = pcall(tree.dispose, tree)
+        if not ok then
+            failure = failure or err
+        end
     end
-    return BindingBase.dispose(self)
+    BindingBase.dispose(self)
+    self._disposing = false
+    if failure then
+        error(failure, 0)
+    end
+    return true
+end
+
+--- Explicit runtime teardown. Host Apps normally only dispose their own tree.
+---@return boolean
+function WidgetsBinding.shutdown()
+    local binding = WidgetsBinding.instance()
+    if not binding then
+        return false
+    end
+    return binding:dispose()
 end
 
 -- The old name remains the same concrete binding class.  Existing callers

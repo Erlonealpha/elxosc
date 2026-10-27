@@ -191,7 +191,6 @@ function RenderLayoutScaleBox:_mapping()
     return matrix, matrix:inverse()
 end
 
----@param canvas Canvas
 ---@param offset Offset
 ---@param canvas PaintingContext
 function RenderLayoutScaleBox:__paint(canvas, offset)
@@ -204,14 +203,14 @@ function RenderLayoutScaleBox:__paint(canvas, offset)
         multiply_size(child.size.height, self.scale.height))
     local left = (self.size.width - destination.width) * self.alignment.x
     local top = (self.size.height - destination.height) * self.alignment.y
-    canvas:save()
-    if self.clip then
-        canvas:clip_rect(Rect.from_offset_size(offset, self.size))
-    end
-    canvas:translate(offset.x + left, offset.y + top)
-    canvas:scale(self.scale.width, self.scale.height)
-    child:paint(canvas, Offset.zero())
-    canvas:restore()
+    canvas:with_save(function()
+        if self.clip then
+            canvas:clip_rect(Rect.from_offset_size(offset, self.size))
+        end
+        canvas:translate(offset.x + left, offset.y + top)
+        canvas:scale(self.scale.width, self.scale.height)
+        canvas:paint_child(child, Offset.zero())
+    end)
 end
 
 ---@param position Offset

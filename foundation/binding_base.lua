@@ -10,13 +10,21 @@ local std = require 'elxlibs.std'
 
 local M = {}
 local raise = std.raise
+---@type BindingBase?
 local current_binding
 
+---@class BindingBase : std.object
+---@field _initialized boolean
+---@field _disposed boolean
+---@field _disposing boolean
+---@field phase string
+---@overload fun(): self
 local BindingBase = std.class.new('BindingBase', {})
 
 function BindingBase:__init()
     self._initialized = true
     self._disposed = false
+    self._disposing = false
     self.phase = 'idle'
 end
 
@@ -39,6 +47,7 @@ end
 ---@return BindingBase
 function BindingBase.ensure_initialized(factory)
     if current_binding ~= nil then
+        current_binding:assert_alive()
         return current_binding --[[@as BindingBase]]
     end
     local binding = factory()
@@ -50,7 +59,7 @@ end
 
 ---@return boolean
 function BindingBase:is_initialized()
-    return self._initialized and not self._disposed
+    return self._initialized and not self._disposed and not self._disposing
 end
 
 function BindingBase:assert_alive()

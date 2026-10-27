@@ -84,14 +84,20 @@ end
 
 --- Internal lifecycle hook called after the user-visible dispose method.
 function State:_dispose_resources()
+    local failure
     for i = #self._resources, 1, -1 do
         local resource = self._resources[i]
-        if resource.dispose then
-            resource:dispose()
-        elseif resource.stop then
-            resource:stop()
+        local release = resource.dispose or resource.stop
+        if release then
+            local ok, err = pcall(release, resource)
+            if not ok then
+                failure = failure or err
+            end
         end
         self._resources[i] = nil
+    end
+    if failure then
+        error(failure, 0)
     end
 end
 
@@ -107,6 +113,10 @@ end
 ---@param apply fun()?
 ---@return boolean scheduled
 function State:set_state(apply)
+    local context = self.context
+    if context and context.owner then
+        context.owner:assert_can_build()
+    end
     -- Do not silently mutate a disposed State. Flutter reports this as a
     -- lifecycle error; returning false keeps the Lua API usable by callers
     -- while making the invalid transition observable and side-effect free.
@@ -116,7 +126,6 @@ function State:set_state(apply)
     if apply then
         apply()
     end
-    local context = self.context
     if context then
         context:mark_dirty()
     end

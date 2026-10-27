@@ -262,6 +262,14 @@ function App:shutdown()
         return false
     end
     self._shutdown = true
+    local failure
+    ---@param callback fun()
+    local function release(callback)
+        local ok, err = pcall(callback)
+        if not ok then
+            failure = failure or err
+        end
+    end
     for _, callback in ipairs(self._property_callbacks) do
         mp.unobserve_property(callback)
     end
@@ -270,7 +278,9 @@ function App:shutdown()
         mp.unregister_event(self._shutdown_callback)
     end
     if self.input then
-        self.input:shutdown()
+        release(function()
+            self.input:shutdown()
+        end)
     end
     if self.owner then
         self.owner.on_dirty = nil
@@ -280,19 +290,32 @@ function App:shutdown()
         self.scheduler:dispose()
     end
     if self.binding then
-        self.binding:dispose()
+        release(function()
+            self.binding:dispose()
+        end)
     end
     if self.owner then
-        self.owner:dispose()
+        release(function()
+            self.owner:dispose()
+        end)
     end
     if self.clock then
-        self.clock:dispose()
+        release(function()
+            self.clock:dispose()
+        end)
     end
     if self.player_context then
-        self.player_context:dispose()
+        release(function()
+            self.player_context:dispose()
+        end)
     end
     if self.presenter then
-        self.presenter:remove()
+        release(function()
+            self.presenter:remove()
+        end)
+    end
+    if failure then
+        error(failure, 0)
     end
     return true
 end

@@ -279,7 +279,14 @@ function OverlayEntryMountState:dispose()
     if self.entry then
         local entry = self.entry
         entry:_set_mounted(false)
-        entry:_finalize()
+        local owner = self.context and self.context.owner
+        if owner then
+            owner:after_finalize(function()
+                entry:_finalize()
+            end)
+        else
+            entry:_finalize()
+        end
         self.entry = nil
     end
 end
@@ -594,11 +601,18 @@ function OverlayState:build()
 end
 
 function OverlayState:dispose()
+    local owner = self.context and self.context.owner
     for _, entry in ipairs(self.entries) do
         entry:_detach(self)
         entry:_mark_removed()
         if not entry:is_mounted() then
-            entry:_finalize()
+            if owner then
+                owner:after_finalize(function()
+                    entry:_finalize()
+                end)
+            else
+                entry:_finalize()
+            end
         end
     end
     self.entries = {}

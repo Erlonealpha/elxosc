@@ -46,6 +46,29 @@ The concrete WidgetsBinding is shared within one runtime. Each attached WidgetTr
 BuildOwner, root Element, PipelineOwner/RenderOwner scope, dirty state and GlobalKey registry;
 disposing one tree does not dispose the shared Binding or other trees.
 
+Disposal/finalization locks the BuildOwner against rebuilds and State mutations.
+Failed disposal still releases child States, resources and keys; failed mounts clean
+up their partial tree. Overlay/Route result notifications run after finalization,
+when surviving State may safely rebuild. `WidgetsBinding.shutdown()` explicitly
+ends the runtime and permits a later clean initialization. Injected schedulers and
+PipelineOwners remain caller-owned; internally created PipelineOwners are released
+with their tree. App shutdown also finishes host cleanup when user disposal throws.
+
+### Migration aliases
+
+`WidgetBinding` and `RenderOwner` remain identity aliases during migration. Production
+App construction uses `widget.widgets_binding` and `render.pipeline_owner`; retained
+callers are the `widget/binding.lua`/`build_owner.lua` ownership annotations, render
+node owner annotations, the implementation in `render/render_owner.lua`, and older
+flat `test/test_*.lua` fixtures. `widget/framework.lua` is not a runtime entry point.
+The Key hierarchy is defined only in `foundation/key.lua` and `widget/key.lua`.
+
+Delete the old exports in the next breaking-name migration after converting those
+callers/annotations and documenting external migration. Keep identity regression
+tests until that removal commit; migrate the RenderOwner implementation and its type
+name together. Roll back a failed migration as one commit, never introduce a second
+class or fallback constructor. New callers use canonical names.
+
 `PlayerStore` replaces immutable snapshots and exposes disposable subscriptions.
 `PlayerScope` owns the subscription and rebuilds a `PlayerProvider` through the normal
 State/BuildOwner frame pipeline. `SomeProvider.of(context)` and

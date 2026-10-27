@@ -43,8 +43,16 @@ end
 ---@param rect Rect
 ---@param painter fun()
 function PaintingContext:clip_rect_and_paint(rect, painter)
+    self:with_save(function()
+        self.canvas:clip_rect(rect)
+        painter()
+    end)
+end
+
+--- Restore clipping/transforms even if a child's painter fails.
+---@param painter fun()
+function PaintingContext:with_save(painter)
     self.canvas:save()
-    self.canvas:clip_rect(rect)
     local ok, err = pcall(painter)
     self.canvas:restore()
     if not ok then

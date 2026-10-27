@@ -44,5 +44,8 @@ WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Proper
 event and scope-message subscriptions return idempotent disposable handles and
 `MpDefine:shutdown()` releases the host-owned handles.
 
+App teardown preserves the shared Binding and other owner trees. A user State.dispose
+error is rethrown after the App releases its render root, clock and presenter.
+
 See [host design](../dev/design/HOST.md), [input](../dev/design/INPUT.md),
 [player application](../dev/design/PLAYER.md), and [testing](../dev/design/TESTING.md).

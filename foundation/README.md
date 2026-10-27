@@ -22,6 +22,8 @@ It must remain usable without mpv.
   primitives used by Widget reconciliation.
 - `binding_base.lua` — host-independent concrete Binding lifecycle and singleton registry.
   Per-tree owners are created by the WidgetsBinding composition instead of by another Binding.
+  Explicit `WidgetsBinding.shutdown()` releases the concrete registry; shutdown in
+  progress rejects initialization/attachment until cleanup finishes.
 
 Value helpers return new objects and do not mutate caller-owned geometry. This layer
 does not know about layout, ASS, widgets, focus, routing, or `mp`. Pointer events

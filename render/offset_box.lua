@@ -74,13 +74,13 @@ function RenderOffsetBox:__paint(canvas, offset)
     end
     local child_offset = self:_child_offset(child.parent_data and child.parent_data.offset)
     if child_offset.x == 0 and child_offset.y == 0 then
-        child:paint(canvas, offset)
+        canvas:paint_child(child, offset)
         return
     end
-    canvas:save()
-    canvas:translate(offset.x + child_offset.x, offset.y + child_offset.y)
-    child:paint(canvas, Offset.zero())
-    canvas:restore()
+    canvas:with_save(function()
+        canvas:translate(offset.x + child_offset.x, offset.y + child_offset.y)
+        canvas:paint_child(child, Offset.zero())
+    end)
 end
 
 ---@param position Offset

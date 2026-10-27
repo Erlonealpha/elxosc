@@ -1,4 +1,4 @@
--- Flutter runtime alignment: owners, build scopes, paint context and keys.
+-- Flutter runtime foundations: owners, build scopes, paint context and keys.
 
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused, param-type-mismatch, missing-parameter, missing-fields
 
@@ -216,11 +216,20 @@ F.test('PaintingContext brackets clipping and forwards Canvas operations', funct
 end)
 
 F.test('RenderObject painting accepts both Canvas and PaintingContext', function()
-    local owner = mount(SizedBox({ width = 10, height = 10 }))
+    local color = require 'foundation.color'
+    local owner, tree = mount(layout_widgets.Container({
+        width = 10, height = 10, color = color.Color.rgba255(255, 0, 0),
+    }))
     local canvas = RecordCanvas()
     owner:flush_layout()
     owner:flush_paint(canvas)
-    F.ok(#canvas.ops >= 0, 'direct Canvas paint remains compatible')
+    F.eq(canvas:count('draw_rect'), 1, 'direct Canvas produces visible output')
+    local explicit = RecordCanvas()
+    owner.root:paint(PaintingContext(explicit), Offset.zero())
+    F.eq(explicit:count('draw_rect'), 1, 'explicit context produces visible output')
+    F.eq(canvas.ops[1][1], explicit.ops[1][1], 'same rectangle geometry')
+    F.eq(canvas.ops[1][2].color, explicit.ops[1][2].color, 'same paint color')
+    tree:dispose()
 end)
 
 F.section('flutter runtime: binding composition and owner scopes')

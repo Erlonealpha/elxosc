@@ -193,15 +193,15 @@ function RenderFittedBox:__paint(canvas, offset)
     if child == nil or mapping == nil then
         return
     end
-    canvas:save()
-    if self.clip then
-        canvas:clip_rect(Rect.from_offset_size(offset, self.size))
-    end
-    canvas:translate(offset.x + mapping.dest_rect.left, offset.y + mapping.dest_rect.top)
-    canvas:scale(mapping.scale_x, mapping.scale_y)
-    canvas:translate(-mapping.source_rect.left, -mapping.source_rect.top)
-    child:paint(canvas, Offset.zero())
-    canvas:restore()
+    canvas:with_save(function()
+        if self.clip then
+            canvas:clip_rect(Rect.from_offset_size(offset, self.size))
+        end
+        canvas:translate(offset.x + mapping.dest_rect.left, offset.y + mapping.dest_rect.top)
+        canvas:scale(mapping.scale_x, mapping.scale_y)
+        canvas:translate(-mapping.source_rect.left, -mapping.source_rect.top)
+        canvas:paint_child(child, Offset.zero())
+    end)
 end
 
 ---@param position Offset

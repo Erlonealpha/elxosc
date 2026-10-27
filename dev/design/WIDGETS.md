@@ -46,6 +46,21 @@ tree handle 不得共享 dirty queue、BuildOwner、PipelineOwner、GlobalKey re
 frame state；它们共享 concrete Binding composition。App shutdown 只释放自己的 tree/owner，
 不自动 dispose 共享 Binding。
 
+dispose/finalize 在 BuildOwner 的锁定阶段执行；该阶段的 `set_state`、dirty scheduling、
+直接 rebuild 和 root update 必须在产生副作用前报错。异常仍释放 State resources、
+GlobalKey 和 Element/tree 引用，锁定状态在异常后恢复。已卸载 State 的 `set_state`
+继续返回 false。`WidgetsBinding.shutdown()` 是显式 runtime 结束入口：清理 attached
+trees 并释放 singleton registry；App shutdown 仍只结束自己的 owner scope。
+
+`WidgetTree` 释放自己创建的 PipelineOwner；调用方注入的 PipelineOwner/Scheduler 由
+调用方释放。Binding 不接管 host timer、presenter 或输入 section。
+
+Overlay/Route 的完成通知通过 `BuildOwner:after_finalize()` 在子树 dispose 和锁释放后
+执行，顺序为内容 State 清理 → Page.on_pop → result listeners → Page.on_dispose。
+结果监听器可更新仍存活的 State；WidgetTree 在 layout 前处理这轮新增 dirty。
+
+迁移期 alias 的调用方和删除门槛见 `widget/README.md`；相等名称只导出同一 class。
+
 ## Key identity
 
 Key 层级位于 `foundation/key.lua`：`Key → LocalKey → ValueKey/UniqueKey`；

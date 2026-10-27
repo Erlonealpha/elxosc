@@ -10,10 +10,21 @@ elxlib's real `init.lua` (no ffi / DLL-path setup).
 ```sh
 cd scripts/elxosc
 luajit test/run.lua             # whole suite
-luajit test/run.lua geometry    # only matching files
+luajit test/run.lua flutter_runtime/lifecycle # matching group/file components
+luajit test/run.lua -v          # full file/section/success logs
+uv run --group test python -m pytest -q test/test_runner.py # CLI regression tests
 ```
 
 Exit code is `0` when everything passes, `1` otherwise.
+
+Discovery is automatic and sorted by relative path: `test_*.lua` files at the root
+or recursively below directories starting with `test`. Other directories are ignored.
+Each slash-separated filter component is a literal substring, with optional `test_`
+prefix and `.lua` suffix. For example, `player/layout` selects
+`test_player/test_layout.lua`; `flutter_runtime` selects the entire runtime group.
+Both `-v filter` and `filter -v` work. Default output contains failures (with file,
+section and test name) and the summary. `-h` shows usage; invalid options and empty
+matches fail. Tests with failed assertions are never printed as successful.
 
 ## Static analysis
 
@@ -29,8 +40,11 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current local baseline (2026-10-26): **0 EmmyLua diagnostics / 1491 Lua checks**;
-the real-host run reports **10 passed**. Commands and scope are recorded in
+Current baseline (2026-10-27): **1682 Lua checks**, including **252 runtime checks**;
+runner CLI regression: **14 passed**. Production EmmyLua checks are clean with
+`--ignore 'tmp/**'` (local ignored drafts otherwise produce 18 duplicate-type/field
+warnings). Real-host: **10 passed** in an isolated source copy with the entry enabled;
+the user's disabled workspace entry gives **8 passed, 2 failed**. Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
@@ -80,7 +94,10 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 
 | File | Contents |
 | --- | --- |
-| `run.lua` | Entry point; sets up `package.path`, runs every `test_*.lua` |
+| `run.lua`, `runner.lua` | Bootstrap, recursive discovery, component filters and CLI options |
+| `test_runner.py` | Real CLI subprocess checks: groups, filters, verbosity, failures, paths with spaces |
+| `test_flutter_runtime/` | `core`, `binding`, `lifecycle`, `keys`, `paint`, `host_pipeline` runtime groups |
+| `runtime_support.lua` | Mounted State probe and deterministic clocks for runtime tests |
 | `support.lua` | Bootstrap: makes the elxosc modules / `elxlibs.*` require-able |
 | `framework.lua` | Tiny assertion/reporting helpers |
 | `test_foundation.lua` | Geometry value types, colour, paint, path, canvas contract |

@@ -17,14 +17,28 @@ uv run --group test python -m pytest -q test/real_host
 real-host **9 passed**。P0/R1/R2 + N1/N2 工作区（2026-10-26）为 **1371 Lua checks passed**；
 加入 R3/R4 回归后为 **1381 Lua checks passed**，加入 N3 回归后为 **1426 Lua checks passed**；
 当时 EmmyLua **No issues found**、Python integration **9 passed**、real-host **9 passed**。
-N3 Demo 回归后的基线为 **1458 Lua checks passed**；N4/N5 回归后的当前基线为
+N3 Demo 回归后的基线为 **1458 Lua checks passed**；N4/N5 回归后的历史基线为
 **1491 Lua checks passed**、EmmyLua **No issues found**、
 real-host **10 passed**。测试数量变化时，应在本文件和主设计文档同步更新。
 
+2026-10-27 runtime 完成与测试运行器更新后：**1682 Lua checks**（runtime 组 **252**），
+CLI 子进程测试 **14 passed**。`emmylua_check . --ignore 'tmp/**'` 无诊断；默认扫描
+包含本地 Git-ignored 类型草稿时有 **18 个重复类型/字段 warning**，正式 Key/Binding
+类型声明位于生产模块，不依赖草稿。工作区 `main.lua` 用户开关为 false 时 real-host
+为 **8 passed, 2 failed**（Demo 启动）；仅启用入口的隔离源码副本为 **10 passed**。
+这些结果分别记录，未将隔离副本通过写成禁用入口工作区通过。
+
 ## Lua suite
 
-`test/run.lua` 是无 mpv 依赖的总入口，新文件命名为 `test/test_*.lua` 并注册到
-runner。测试按层覆盖：
+`test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`
+开头的测试组目录；其他目录（包括 `real_host` 和 fixtures）不进入 Lua suite。
+文件按相对路径排序。筛选器各段按字面子串匹配，并允许省略 `test_` 和 `.lua`：
+`player/layout` 匹配 `test_player/test_layout.lua`；单段可匹配任意深度的组或文件。
+默认只输出错误和总结，`-v` 显示文件、section 和成功用例；空匹配/非法参数返回非零。
+
+runtime identity、生命周期和 frame 顺序由离线/host stub 测试验收，人工仅负责最终
+视觉和交互手感。测试运行器 CLI 本身由 `test/test_runner.py` 的独立子进程测试覆盖。
+测试按层覆盖：
 
 - foundation/painting/text：值语义、边界校验、Canvas/TextLayout 契约；
 - layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；

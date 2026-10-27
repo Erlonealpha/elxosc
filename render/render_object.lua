@@ -210,13 +210,7 @@ end
 ---@param canvas PaintingContext
 ---@param offset Offset
 function RenderObject:paint_children(canvas, offset)
-    for _, child in ipairs(self._children) do
-        local child_offset = offset
-        if child.parent_data and child.parent_data.offset then
-            child_offset = (offset + child.parent_data.offset) --[[@as Offset]]
-        end
-        canvas:paint_child(child, child_offset)
-    end
+    canvas:paint_children(self._children, offset)
 end
 
 --== hit testing ==========================================================

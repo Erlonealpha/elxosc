@@ -39,6 +39,8 @@ end
 ---@overload fun(value: any?): self
 local LocalKey = std.class.new('LocalKey', { Key })
 
+---@class ValueKey : LocalKey
+---@overload fun(value: any): self
 local ValueKey = std.class.new('ValueKey', { LocalKey })
 
 function ValueKey:__init(value)

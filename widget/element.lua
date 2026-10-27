@@ -101,13 +101,23 @@ function Element:unmount()
     if key and std.isinstance(key, GlobalKey) and self.owner then
         self.owner:unregister_global_key(key, self)
     end
+    if self.owner then
+        self.owner:remove_inactive(self)
+    end
+    local failure
     for _, child in ipairs(self:element_children()) do
-        child:unmount()
+        local ok, err = pcall(child.unmount, child)
+        if not ok then
+            failure = failure or err
+        end
     end
     self.parent = nil
     self.owner = nil
     self.build_scope = nil
     self._lifecycle_phase = 'unmounted'
+    if failure then
+        error(failure, 0)
+    end
 end
 
 --- Temporarily remove this subtree from the active tree. The BuildOwner keeps
@@ -157,7 +167,12 @@ end
 function Element:_run_in_phase(phase, callback)
     local previous = self._lifecycle_phase
     self._lifecycle_phase = phase
-    local ok, result = pcall(callback)
+    local ok, result
+    if phase == 'dispose' and self.owner then
+        ok, result = pcall(self.owner.lock_state, self.owner, callback)
+    else
+        ok, result = pcall(callback)
+    end
     self._lifecycle_phase = previous
     if not ok then
         error(result, 0)
@@ -301,6 +316,9 @@ end
 
 ---@return boolean
 function Element:mark_dirty()
+    if self.owner then
+        self.owner:assert_can_build()
+    end
     if not self.mounted or not self.active or self.owner == nil then
         return false
     end
@@ -309,7 +327,20 @@ function Element:mark_dirty()
     return true
 end
 
+function Element:_assert_can_build()
+    if self.owner then
+        self.owner:assert_can_build()
+    end
+    if not self:is_active() then
+        error('cannot rebuild an inactive or unmounted Element', 2)
+    end
+    if self._lifecycle_phase == 'build' then
+        error('Element.rebuild() is not reentrant', 2)
+    end
+end
+
 function Element:rebuild()
+    self:_assert_can_build()
     self.dirty = false
 end
 
@@ -338,8 +369,14 @@ function Element:update_child(previous, widget)
         previous:unmount()
     end
     local child = widget:create_element()
-    child:mount(self, self.owner --[[@as BuildOwner]])
-    child:rebuild()
+    local ok, err = pcall(function()
+        child:mount(self, self.owner --[[@as BuildOwner]])
+        child:rebuild()
+    end)
+    if not ok then
+        pcall(child.unmount, child)
+        error(err, 0)
+    end
     return child
 end
 
@@ -364,6 +401,7 @@ function StatelessElement:first_render_object()
 end
 
 function StatelessElement:rebuild()
+    self:_assert_can_build()
     self:_clear_inherited_dependencies()
     self.dirty = false
     local child = self:_run_in_phase('build', function()
@@ -411,14 +449,32 @@ function StatefulElement:update(new_widget)
 end
 
 function StatefulElement:unmount()
+    if self._lifecycle_phase == 'dispose' then
+        return
+    end
+    local failure
     if self.mounted then
-        self:_run_in_phase('dispose', function()
+        local ok, err = pcall(self._run_in_phase, self, 'dispose', function()
             self.state:dispose()
         end)
-        self.state:_dispose_resources()
+        if not ok then
+            failure = err
+        end
+        ok, err = pcall(self._run_in_phase, self, 'dispose', function()
+            self.state:_dispose_resources()
+        end)
+        if not ok then
+            failure = failure or err
+        end
         self.state.context = nil
     end
-    std.super(StatefulElement, self, Element).unmount(self)
+    local ok, err = pcall(Element.unmount, self)
+    if not ok then
+        failure = failure or err
+    end
+    if failure then
+        error(failure, 0)
+    end
 end
 
 function StatefulElement:element_children()
@@ -430,6 +486,7 @@ function StatefulElement:first_render_object()
 end
 
 function StatefulElement:rebuild()
+    self:_assert_can_build()
     self:_clear_inherited_dependencies()
     self.dirty = false
     if self._dependencies_changed then
@@ -475,6 +532,7 @@ function ProxyElement:first_render_object()
 end
 
 function ProxyElement:rebuild()
+    self:_assert_can_build()
     self.dirty = false
     self.child = self:update_child(self.child, self.widget.child)
     self:_sync_render_children_upwards()
@@ -590,6 +648,7 @@ function RenderObjectElement:sync_render_children()
 end
 
 function RenderObjectElement:rebuild()
+    self:_assert_can_build()
     self.dirty = false
     self:sync_render_children()
 end
@@ -619,6 +678,7 @@ function SingleChildRenderObjectElement:render_children()
 end
 
 function SingleChildRenderObjectElement:rebuild()
+    self:_assert_can_build()
     self.dirty = false
     self.child = self:update_child(self.child, self.widget.child)
     self:sync_render_children()
@@ -656,6 +716,7 @@ function MultiChildRenderObjectElement:render_children()
 end
 
 function MultiChildRenderObjectElement:rebuild()
+    self:_assert_can_build()
     self.dirty = false
     local previous = self.children
     local widgets = self.widget.children or {}
@@ -692,23 +753,40 @@ function MultiChildRenderObjectElement:rebuild()
         return nil, nil
     end
 
-    for i, widget in ipairs(widgets) do
-        local candidate = nil
-        if widget.key ~= nil then
-            candidate = find_keyed(widget.key)
-        elseif previous[i] and previous[i].widget.key == nil
-            and not used[previous[i]] then
-            candidate = previous[i]
+    local ok, err = pcall(function()
+        for i, widget in ipairs(widgets) do
+            local candidate = nil
+            if widget.key ~= nil then
+                candidate = find_keyed(widget.key)
+            elseif previous[i] and previous[i].widget.key == nil
+                and not used[previous[i]] then
+                candidate = previous[i]
+            end
+            children[i] = self:update_child(candidate, widget)
+            if candidate then
+                used[candidate] = true
+            end
         end
-        children[i] = self:update_child(candidate, widget)
-        if candidate then
-            used[candidate] = true
+        for _, old_child in ipairs(previous) do
+            if not used[old_child] then
+                old_child:unmount()
+            end
         end
-    end
-    for _, old_child in ipairs(previous) do
-        if not used[old_child] then
-            old_child:unmount()
+    end)
+    if not ok then
+        -- No rollback of user callbacks, but every surviving old/new child must
+        -- remain reachable for teardown after a failed reconciliation.
+        local retained, seen = {}, {}
+        for _, group in ipairs({ previous, children }) do
+            for _, child in ipairs(group) do
+                if child.mounted and not seen[child] then
+                    retained[#retained + 1] = child
+                    seen[child] = true
+                end
+            end
         end
+        self.children = retained
+        error(err, 0)
     end
     self.children = children
     self:sync_render_children()
