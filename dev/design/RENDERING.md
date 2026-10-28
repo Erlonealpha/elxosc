@@ -134,3 +134,11 @@ capture。
 当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、离屏 group opacity、
 RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸、绘制溢出和输入区域
 的区别，再添加后端和真实宿主回归。
+
+2026-10-28 的 P0.5 评估进一步确认：当前单 Canvas/静态 ASS presenter 没有可公开承诺
+的 Flutter 同义 `RepaintBoundary` 或 `RelayoutBoundary`。paint isolation 和 relayout
+pruning 必须先经过同环境 benchmark、逐事件输出等价和输入/布局回归，再进入独立的
+render/backend 优化切片。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
+paint-only 或 layout + paint；`RenderLayoutScaleBox` 的 alignment 若改变 pointer mapping
+必须同步 invalidates input snapshot。ModernX fade 若进入播放器首批，需要先冻结 subtree
+opacity/alpha 与可见/可交互策略；不得使用 `\move` 或 `\t` 替代 frame-clock 静态输出。

@@ -42,6 +42,13 @@ sequence is cancelled.
 input changes. Host code receives copied region values and cannot mutate the
 owner's cache. Snapshot invalidation never synthesizes a hover event.
 
+The current renderer has no public `RepaintBoundary` or `RelayoutBoundary`. Paint dirty and
+layout dirty propagate to the root, `PaintingContext` has no Layer/cache contract, and the
+single ASS presenter caches only the complete payload. Boundary optimization is deferred until
+benchmark evidence, cache/order semantics, finite-constraint behavior, and pointer-region
+regressions are specified. A paint-only animation that changes transform, offset, alignment or
+input eligibility must still invalidate the input snapshot explicitly.
+
 `RenderOwner:dispatch_pointer_result()` returns a structured result with separate
 `handled`, `capture`, and `stop_propagation` fields. `dispatch_pointer()` remains
 the boolean compatibility wrapper. Render objects may implement
