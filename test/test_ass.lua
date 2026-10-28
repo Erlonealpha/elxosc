@@ -69,6 +69,14 @@ F.test('a stroked rect becomes an outline, not a fill', function()
     F.contains(ev, '\\1a&HFF', 'transparent fill')
 end)
 
+F.test('shape blur intent reaches ASS without raw tags in the widget layer', function()
+    local canvas = AssCanvas()
+    local blur_paint = Paint(Color.rgba255(0x20, 0x30, 0x40, 0xFF))
+    blur_paint.blur_radius = 3
+    canvas:draw_rect(Rect(0, 0, 10, 10), blur_paint)
+    F.contains(canvas:text(), '\\blur3', 'shape blur')
+end)
+
 F.test('rounded rects and ovals use bezier segments', function()
     local canvas = AssCanvas()
     canvas:draw_rrect(Rect(0, 0, 40, 40), 10, Paint(Color(1, 1, 1)))
@@ -107,6 +115,25 @@ F.test('draws a paragraph with size, colour and line breaks', function()
     F.contains(ev, '\\fs10', 'font size')
     F.contains(ev, '\\1c&HFFFFFF&', 'default white')
     F.contains(ev, 'a\\Nb', 'hard line break')
+end)
+
+F.test('text style maps blur, outline and shadow intent to ASS', function()
+    local style = TextStyle({
+        blur_radius = 2,
+        outline_width = 1,
+        outline_color = Color.rgba255(0x10, 0x20, 0x30, 0xFF),
+        shadow_color = Color.rgba255(0x40, 0x50, 0x60, 0x80),
+        shadow_offset = Offset(2, 3),
+        shadow_radius = 4,
+    })
+    local paragraph = AssTextLayout():layout('styled', style)
+    local canvas = AssCanvas()
+    canvas:draw_text(paragraph, Offset(0, 0))
+    F.contains(canvas:text(), '\\blur2', 'text blur')
+    F.contains(canvas:text(), '\\bord1', 'text outline width')
+    F.contains(canvas:text(), '\\3c&H302010&', 'text outline color')
+    F.contains(canvas:text(), '\\xshad2\\yshad3', 'text shadow offset')
+    F.contains(canvas:text(), '\\be4', 'text shadow radius')
 end)
 
 F.test('text positioning uses the translated logical top-left', function()

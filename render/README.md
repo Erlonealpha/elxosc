@@ -21,6 +21,8 @@ not import Widget modules or mpv.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.
+- `RenderDecoratedBox` accepts backend-neutral border, blur and shadow intent;
+  the ASS backend lowers it to static tags.
 - `progress_bar.lua` — fixed-layout progress/buffer/handle painting with explicit
   seek capture; progress values are paint-only while bar height is layout-affecting.
 - `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,

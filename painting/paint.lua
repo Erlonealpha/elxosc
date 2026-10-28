@@ -50,6 +50,7 @@ M.StrokeJoin = {
 ---@field stroke_cap StrokeCap
 ---@field stroke_join StrokeJoin
 ---@field antialias boolean hint for backends that support it
+---@field blur_radius number non-negative backend-neutral blur intent
 ---@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): self
 local Paint = std.class.new('Paint', {})
 
@@ -60,6 +61,7 @@ function Paint:__init(color_, style, stroke_width)
     self.stroke_cap = M.StrokeCap.BUTT
     self.stroke_join = M.StrokeJoin.MITER
     self.antialias = true
+    self.blur_radius = 0
 end
 
 function Paint:__tostring()
@@ -72,6 +74,7 @@ function Paint:copy()
     c.stroke_cap = self.stroke_cap
     c.stroke_join = self.stroke_join
     c.antialias = self.antialias
+    c.blur_radius = self.blur_radius
     return c
 end
 

@@ -124,11 +124,12 @@ end
 local function paint_tags(paint, force_fill, opacity)
     local rgb = M.ass_rgb(paint.color)
     local alpha = ass_alpha_with_opacity(paint.color, opacity)
+    local blur = paint.blur_radius or 0
     if paint.style == 'stroke' and not force_fill then
-        return format('\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF',
-            paint.stroke_width, rgb, alpha, rgb)
+        return format('\\blur%g\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF',
+            blur, paint.stroke_width, rgb, alpha, rgb)
     end
-    return format('\\bord0\\shad0\\1c&H%s&\\1a&H%s&', rgb, alpha)
+    return format('\\blur%g\\bord0\\shad0\\1c&H%s&\\1a&H%s&', blur, rgb, alpha)
 end
 
 --- Escape literal text so it cannot open an ASS override block. Mirrors what
@@ -311,7 +312,7 @@ function AssCanvas:_emit_path(path, paint, force_fill)
         end
     end
 
-    self:_push(format('{\\pos(0,0)\\rDefault\\an7\\blur0%s%s}{\\p%d}%s{\\p0}',
+    self:_push(format('{\\pos(0,0)\\rDefault\\an7%s%s}{\\p%d}%s{\\p0}',
         paint_tags(paint, force_fill, self._opacity), self:_clip_tag(), self.subpixel,
         concat(parts, ' ')))
 end
@@ -371,8 +372,8 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     end
     local tags = {
         format(
-            '{\\pos(%d,%d)\\rDefault\\an%d\\blur0\\fs%g',
-            ri(x), ri(y), ass_anchor, style.font_size),
+            '{\\pos(%d,%d)\\rDefault\\an%d\\blur%g\\fs%g',
+            ri(x), ri(y), ass_anchor, style.blur_radius, style.font_size),
     }
     if style.font_family then
         tags[#tags + 1] = '\\fn' .. style.font_family
@@ -388,7 +389,26 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     end
     tags[#tags + 1] = '\\1c&H' .. M.ass_rgb(style.color) .. '&'
     tags[#tags + 1] = '\\1a&H' .. ass_alpha_with_opacity(style.color, self._opacity) .. '&'
-    tags[#tags + 1] = '\\bord0\\shad0'
+    tags[#tags + 1] = format('\\bord%g', style.outline_width)
+    if style.outline_color then
+        tags[#tags + 1] = '\\3c&H' .. M.ass_rgb(style.outline_color) .. '&'
+        tags[#tags + 1] = '\\3a&H' .. ass_alpha_with_opacity(style.outline_color, self._opacity) .. '&'
+    end
+    if style.shadow_color then
+        tags[#tags + 1] = '\\4c&H' .. M.ass_rgb(style.shadow_color) .. '&'
+        tags[#tags + 1] = '\\4a&H' .. ass_alpha_with_opacity(style.shadow_color, self._opacity) .. '&'
+        local shadow = style.shadow_offset
+        if shadow then
+            tags[#tags + 1] = format('\\xshad%g\\yshad%g', shadow.x, shadow.y)
+        else
+            tags[#tags + 1] = '\\shad0'
+        end
+        if style.shadow_radius > 0 then
+            tags[#tags + 1] = format('\\be%g', style.shadow_radius)
+        end
+    else
+        tags[#tags + 1] = '\\shad0'
+    end
     -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
     -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.
     if self._matrix.a ~= 1 or self._matrix.d ~= 1 then

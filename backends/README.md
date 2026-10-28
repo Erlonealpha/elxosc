@@ -6,7 +6,8 @@ one backend at assembly time.
 ## Public entry points
 
 - `ass_canvas.lua` — converts Canvas calls into static ASS `ass-events` lines,
-  including transforms, clipping, text anchors, colors, opacity scopes, and finite positive scale.
+  including transforms, clipping, text anchors, colors, opacity, blur, outline/shadow intent,
+  and finite positive scale.
 - `ass_text_layout.lua` — deterministic estimated text measurement for ASS.
 - `record.lua` — records drawing calls for unit tests and backend-independent checks.
 

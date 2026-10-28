@@ -15,6 +15,15 @@ local Rect = geometry.Rect
 local Paint = paint_mod.Paint
 local Style = paint_mod.Style
 local RenderObject = render_object.RenderObject
+local huge = math.huge
+
+local function validate_blur(value)
+    if type(value) ~= 'number' or value ~= value or value == huge or value == -huge
+        or value < 0 then
+        error('Decoration.blur_radius must be a finite non-negative number', 3)
+    end
+    return value
+end
 
 local M = {}
 
@@ -26,6 +35,7 @@ local M = {}
 ---@field shadow_color Color?
 ---@field shadow_offset Offset?
 ---@field shadow_radius number?
+---@field blur_radius number? non-negative paint blur intent
 
 ---@class Decoration : std.object
 ---@field color Color?
@@ -35,6 +45,7 @@ local M = {}
 ---@field shadow_color Color?
 ---@field shadow_offset Offset?
 ---@field shadow_radius number?
+---@field blur_radius number
 ---@overload fun(options: _DecorationOptions?): self
 local Decoration = std.class.new('Decoration', {})
 
@@ -47,6 +58,7 @@ function Decoration:__init(options)
     self.shadow_color = options.shadow_color
     self.shadow_offset = options.shadow_offset or Offset(0, 2)
     self.shadow_radius = options.shadow_radius or 0
+    self.blur_radius = validate_blur(options.blur_radius or 0)
 end
 
 ---@class RenderDecoratedBox : RenderObject
@@ -92,6 +104,7 @@ function RenderDecoratedBox:__paint(canvas, offset)
         local shadow_rect = Rect.from_offset_size(
             offset:translate(shadow_offset.x, shadow_offset.y), self.size)
         local shadow = Paint(decoration.shadow_color)
+        shadow.blur_radius = shadow_radius
         if decoration.radius > 0 then
             canvas:draw_rrect(shadow_rect, decoration.radius + shadow_radius, shadow)
         else
@@ -100,6 +113,7 @@ function RenderDecoratedBox:__paint(canvas, offset)
     end
     if decoration.color then
         local fill = Paint(decoration.color)
+        fill.blur_radius = decoration.blur_radius
         if decoration.radius > 0 then
             canvas:draw_rrect(rect, decoration.radius, fill)
         else
@@ -108,6 +122,7 @@ function RenderDecoratedBox:__paint(canvas, offset)
     end
     if decoration.border_width > 0 and decoration.border_color then
         local stroke = Paint(decoration.border_color, Style.STROKE, decoration.border_width)
+        stroke.blur_radius = decoration.blur_radius
         if decoration.radius > 0 then
             canvas:draw_rrect(rect, decoration.radius, stroke)
         else

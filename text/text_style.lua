@@ -8,8 +8,10 @@
 
 local std = require 'elxlibs.std'
 local color_mod = require 'foundation.color'
+local geometry = require 'foundation.geometry'
 
 local Color = color_mod.Color
+local Offset = geometry.Offset
 local raise = std.raise
 
 local M = {}
@@ -40,6 +42,12 @@ M.Align = {
 ---@field line_height number?       non-negative finite multiple of font_size; default 1.2
 ---@field align TextAlign?          default 'left'
 ---@field wrap boolean?             default true
+---@field blur_radius number?       non-negative backend blur intent; default 0
+---@field outline_width number?     non-negative outline width; default 0
+---@field outline_color Color?      outline color intent
+---@field shadow_color Color?       shadow color intent
+---@field shadow_offset Offset?     finite visual shadow offset
+---@field shadow_radius number?     non-negative shadow blur intent; default 0
 ---@field extra TextStyleExtra?     immutable extension data for a supporting backend
 
 ---@type table<string, boolean>
@@ -53,6 +61,12 @@ local option_names = {
     line_height = true,
     align = true,
     wrap = true,
+    blur_radius = true,
+    outline_width = true,
+    outline_color = true,
+    shadow_color = true,
+    shadow_offset = true,
+    shadow_radius = true,
     extra = true,
 }
 
@@ -114,6 +128,12 @@ end
 ---@field line_height number multiple of `font_size`
 ---@field align TextAlign
 ---@field wrap boolean
+---@field blur_radius number
+---@field outline_width number
+---@field outline_color Color?
+---@field shadow_color Color?
+---@field shadow_offset Offset?
+---@field shadow_radius number
 ---@field extra TextStyleExtra?
 ---@overload fun(options: _TextStyleOptions?): self
 local TextStyle = std.class.new('TextStyle', {})
@@ -130,10 +150,17 @@ function TextStyle:__init(options)
     self.line_height = check_finite('line_height', pick(options.line_height, 1.2))
     self.align = pick(options.align, M.Align.LEFT)
     self.wrap = check_boolean('wrap', pick(options.wrap, true))
+    self.blur_radius = check_finite('blur_radius', pick(options.blur_radius, 0))
+    self.outline_width = check_finite('outline_width', pick(options.outline_width, 0))
+    self.outline_color = options.outline_color
+    self.shadow_color = options.shadow_color
+    self.shadow_offset = options.shadow_offset
+    self.shadow_radius = check_finite('shadow_radius', pick(options.shadow_radius, 0))
     self.extra = options.extra
 
-    if self.font_size < 0 or self.line_height < 0 then
-        raise(std.ValueError('TextStyle font_size and line_height must be non-negative'))
+    if self.font_size < 0 or self.line_height < 0 or self.blur_radius < 0
+        or self.outline_width < 0 or self.shadow_radius < 0 then
+        raise(std.ValueError('TextStyle size and effect values must be non-negative'))
     end
     check_finite('line_height_px', self:line_height_px())
     if not std.isinstance(self.color, Color) then
@@ -141,6 +168,19 @@ function TextStyle:__init(options)
     end
     if self.font_family ~= nil and type(self.font_family) ~= 'string' then
         raise(std.TypeError('TextStyle.font_family must be a string'))
+    end
+    if self.outline_color ~= nil and not std.isinstance(self.outline_color, Color) then
+        raise(std.TypeError('TextStyle.outline_color must be a Color'))
+    end
+    if self.shadow_color ~= nil and not std.isinstance(self.shadow_color, Color) then
+        raise(std.TypeError('TextStyle.shadow_color must be a Color'))
+    end
+    if self.shadow_offset ~= nil then
+        if not std.isinstance(self.shadow_offset, Offset) then
+            raise(std.TypeError('TextStyle.shadow_offset must be an Offset'))
+        end
+        check_finite('shadow_offset.x', self.shadow_offset.x)
+        check_finite('shadow_offset.y', self.shadow_offset.y)
     end
     if self.align ~= M.Align.LEFT and self.align ~= M.Align.CENTER and self.align ~= M.Align.RIGHT then
         raise(std.ValueError('TextStyle.align must be left, center or right'))
@@ -168,6 +208,12 @@ function TextStyle:__eq(other)
         or self.line_height ~= other.line_height
         or self.align ~= other.align
         or self.wrap ~= other.wrap
+        or self.blur_radius ~= other.blur_radius
+        or self.outline_width ~= other.outline_width
+        or self.outline_color ~= other.outline_color
+        or self.shadow_color ~= other.shadow_color
+        or self.shadow_offset ~= other.shadow_offset
+        or self.shadow_radius ~= other.shadow_radius
         or not rawequal(self.extra, other.extra))
 end
 
@@ -191,6 +237,12 @@ function TextStyle:copy_with(options)
         line_height = pick(options.line_height, self.line_height),
         align = pick(options.align, self.align),
         wrap = pick(options.wrap, self.wrap),
+        blur_radius = pick(options.blur_radius, self.blur_radius),
+        outline_width = pick(options.outline_width, self.outline_width),
+        outline_color = pick(options.outline_color, self.outline_color),
+        shadow_color = pick(options.shadow_color, self.shadow_color),
+        shadow_offset = pick(options.shadow_offset, self.shadow_offset),
+        shadow_radius = pick(options.shadow_radius, self.shadow_radius),
         extra = pick(options.extra, self.extra),
     })
 end

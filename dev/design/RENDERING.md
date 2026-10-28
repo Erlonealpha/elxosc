@@ -55,7 +55,7 @@ composition 不因 attached owner scope 增加而复制。
 ## Canvas 和文本
 
 `Canvas` 使用逻辑像素，负责 save/restore、平移、正轴向 scale、裁剪和图元绘制。
-`TextStyle` 只表达样式意图，`TextPaint` 负责九宫格 anchor 和视觉偏移；
+`TextStyle` 只表达样式意图（包括受控 blur/outline/shadow），`TextPaint` 负责九宫格 anchor 和视觉偏移；
 `Paragraph.size` 是自然文本尺寸，`RenderText.size` 是受约束的布局盒。
 
 普通文本定位规则：
