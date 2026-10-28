@@ -25,6 +25,9 @@ local State = state_mod.State
 local ButtonStyle = style_mod.ButtonStyle
 local TransformBox = transform_widgets.TransformBox
 local Size = geometry.Size
+local RenderTransformBox = require('render.transform_box').RenderTransformBox
+local RenderDecoratedBox = require('render.decorated_box').RenderDecoratedBox
+local RenderGesture = require('render.gesture').RenderGesture
 
 ---@class _ButtonBaseOptions : _ButtonStyleOptions
 ---@field key any?
@@ -59,6 +62,42 @@ function ButtonState:visual_state()
     end
     return 'normal'
 end
+
+---@param state "normal"|"hover"|"pressed"|"disabled"
+---@return Decoration
+function ButtonState:_decoration(state)
+    local style = self.widget.style
+    return Decoration({
+        color = style:background_for(state),
+        radius = style.radius,
+        border_width = style.border_width,
+        border_color = style.border_color,
+        shadow_color = style:shadow_for(style.elevation),
+        shadow_offset = style.elevation > 0 and Offset(0, style.elevation) or nil,
+        shadow_radius = style.elevation,
+    })
+end
+
+---@param gesture RenderGesture
+function ButtonState:_update_visual(gesture)
+    local button = self.widget
+    self.hovered = gesture.hovered
+    self.pressed = gesture.pressed
+    local state = self:visual_state()
+    local children = gesture:children()
+    local transform = children[1]
+    if not std.isinstance(transform, RenderTransformBox) then
+        return
+    end
+    local factor = state == 'hover' and button.style.hover_scale or 1
+    transform:set_scale(Size(factor, factor))
+    local visual_children = transform:children()
+    local decorated = visual_children[1]
+    if std.isinstance(decorated, RenderDecoratedBox) then
+        decorated:set_decoration(self:_decoration(state))
+    end
+end
+
 ---@return Widget
 function ButtonState:build()
     local button = self.widget
@@ -73,15 +112,7 @@ function ButtonState:build()
             }),
         })
     end
-    local decoration = Decoration({
-        color = style:background_for(state),
-        radius = style.radius,
-        border_width = style.border_width,
-        border_color = style.border_color,
-        shadow_color = style:shadow_for(style.elevation),
-        shadow_offset = style.elevation > 0 and Offset(0, style.elevation) or nil,
-        shadow_radius = style.elevation,
-    })
+    local decoration = self:_decoration(state)
     local body = Container({
         child = child,
         padding = style.padding or EdgeInsets.symmetric(12, 6),
@@ -90,32 +121,12 @@ function ButtonState:build()
     if not button.enabled or not button.on_click then
         return body
     end
-    local visual = body
-    if style.hover_scale ~= 1 then
-        local factor = self.hovered and style.hover_scale or 1
-        visual = TransformBox(body, { scale = Size(factor, factor) })
-    end
+    local visual = TransformBox(body, { scale = Size(1, 1) })
     return GestureDetector(visual, {
-        on_down = function()
-            self:set_state(function()
-                self.pressed = true
-            end)
-        end,
-        on_up = function()
-            self:set_state(function()
-                self.pressed = false
-            end)
-        end,
-        on_enter = function()
-            self:set_state(function()
-                self.hovered = true
-            end)
-        end,
-        on_leave = function()
-            self:set_state(function()
-                self.hovered = false
-                self.pressed = false
-            end)
+        on_enter = function() end,
+        on_leave = function() end,
+        on_state_change = function(gesture)
+            self:_update_visual(gesture)
         end,
         on_tap = function()
             if button.on_click then

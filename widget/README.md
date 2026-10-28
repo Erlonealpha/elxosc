@@ -116,6 +116,10 @@ injected `HostActions`. Progress/buffer/handle updates use paint-only RenderObje
 bar height and layout scale remain layout-affecting. `AutoHide` only changes the Main entry;
 the Extension entry remains mounted and keeps its State when Main is hidden.
 
+Button hover/pressed visual changes use the persistent `RenderGesture`/`RenderTransformBox`/
+`RenderDecoratedBox` setters; they do not default to rebuilding the button subtree. Hover scale
+invalidates input as well as paint, while color/decoration changes remain paint-only.
+
 `OverlayEntry` builders execute from a mounted entry context. Visible entries paint in insertion
 order; an opaque entry makes lower entries occluded. Occluded or hidden entries remain mounted
 through `Offstage` when `maintain_state` is true, otherwise they are removed and disposed on the

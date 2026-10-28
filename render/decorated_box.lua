@@ -62,6 +62,15 @@ function RenderDecoratedBox:__init(decoration, child)
     end
 end
 
+---@param decoration Decoration
+function RenderDecoratedBox:set_decoration(decoration)
+    if not std.isinstance(decoration, Decoration) then
+        error('RenderDecoratedBox.decoration must be a Decoration', 2)
+    end
+    self.decoration = decoration
+    self:mark_needs_paint()
+end
+
 function RenderDecoratedBox:__perform_layout(constraints)
     local child = self._children[1]
     if child then

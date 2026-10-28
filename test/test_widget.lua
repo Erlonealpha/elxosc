@@ -97,6 +97,35 @@ F.test('Button renders and invokes its click callback', function()
     F.eq(clicks, 1, 'button click')
 end)
 
+F.test('button visual states use persistent render setters', function()
+    local normal = Color.rgba255(20, 30, 40)
+    local hover = Color.rgba255(40, 50, 60)
+    local pressed = Color.rgba255(60, 70, 80)
+    local owner = mount(Button({
+        style = ButtonStyle({
+            background_color = normal,
+            hover_color = hover,
+            pressed_color = pressed,
+            hover_scale = 1.2,
+        }),
+        label = 'Play',
+        on_click = function() end,
+    }))
+    local gesture = owner.root
+    local transform = gesture:children()[1]
+    local decorated = transform:children()[1]
+
+    owner:dispatch_pointer('move', Offset(2, 2))
+    F.eq(transform.scale, Size(1.2, 1.2), 'hover scale is set on the persistent transform')
+    F.eq(decorated.decoration.color, hover, 'hover color is set on the persistent decoration')
+    F.ok(not owner:needs_layout(), 'hover visual update does not request layout')
+
+    owner:dispatch_pointer('down', Offset(2, 2), 'left')
+    F.eq(decorated.decoration.color, pressed, 'pressed color is set without rebuilding')
+    owner:dispatch_pointer('up', Offset(2, 2), 'left')
+    F.eq(decorated.decoration.color, hover, 'release restores hover color directly')
+end)
+
 F.test('button variants share the public API and style states', function()
     local variants = { ElevatedButton, OutlinedButton, TextButton, IconButton }
     for _, Variant in ipairs(variants) do

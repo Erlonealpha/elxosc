@@ -29,6 +29,7 @@ local M = {}
 ---@field on_up fun(self: RenderGesture, point: Offset)?
 ---@field on_tap fun(self: RenderGesture, point: Offset)?
 ---@field on_click fun(self: RenderGesture, point: Offset)? alias for on_tap
+---@field on_state_change fun(self: RenderGesture)? called after hovered/pressed changes
 ---@field on_wheel (fun(self: RenderGesture, delta: number): boolean?)?
 
 ---@class RenderGesture : RenderObject
@@ -72,6 +73,17 @@ function RenderGesture:set_handlers(handlers)
         self.pressed = false
     end
     self:mark_needs_paint()
+    if handlers.on_state_change then
+        handlers.on_state_change(self)
+    end
+end
+
+function RenderGesture:_notify_state_change()
+    self:mark_needs_paint()
+    local callback = self.handlers.on_state_change
+    if callback then
+        callback(self)
+    end
 end
 
 function RenderGesture:__hit_test_bounds(point)
@@ -114,6 +126,7 @@ function RenderGesture:on_pointer(event, point, data)
         if h.on_down and point ~= nil then
             h.on_down(self, point)
         end
+        self:_notify_state_change()
         return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
     elseif event == 'up' then
         if not is_primary_button(data) then
@@ -132,9 +145,11 @@ function RenderGesture:on_pointer(event, point, data)
                 h.on_click(self, point)
             end
         end
+        self:_notify_state_change()
         return was_pressed
     elseif event == 'cancel' then
         self.pressed = false
+        self:_notify_state_change()
         return false
     elseif event == 'wheel' then
         if h.on_wheel then
@@ -146,6 +161,7 @@ function RenderGesture:on_pointer(event, point, data)
         if h.on_enter then
             h.on_enter(self)
         end
+        self:_notify_state_change()
         return false
     elseif event == 'leave' then
         if self.hovered then
@@ -154,6 +170,7 @@ function RenderGesture:on_pointer(event, point, data)
                 h.on_leave(self)
             end
         end
+        self:_notify_state_change()
         return false
     elseif event == 'move' then
         if h.on_move and point ~= nil then
