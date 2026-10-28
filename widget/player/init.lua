@@ -2,9 +2,10 @@
 
 local app_mod = require 'widget.player.app'
 local progress_mod = require 'widget.player.progress_bar'
+local icon_map = require 'widget.player.icon_map'
 
 local M = {}
-for _, mod in ipairs({ app_mod, progress_mod }) do
+for _, mod in ipairs({ app_mod, progress_mod, icon_map }) do
     for name, value in pairs(mod) do
         M[name] = value
     end

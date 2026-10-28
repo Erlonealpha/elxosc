@@ -17,6 +17,8 @@ local record = require('backends.record')
 local binding_mod = require('widget.binding')
 local basic_widgets = require('widget.widgets.basic')
 local icon_mod = require('widget.widgets.icon')
+local player_mod = require('widget.player')
+local icon_map = require('widget.player.icon_map')
 
 local Color = color.Color
 local Offset = geometry.Offset
@@ -49,6 +51,22 @@ local function mount(widget, constraints)
 end
 
 F.section('icon: construction')
+
+F.test('ModernX semantic icons map to bundled Material Symbols glyphs', function()
+    F.eq(icon_map.glyph_name('play'), 'play_arrow', 'play glyph')
+    F.eq(icon_map.glyph_name('subtitle_off'), 'subtitles_off', 'subtitle off glyph')
+    F.eq(icon_map.glyph_name('fullscreen_exit'), 'fullscreen_exit', 'fullscreen glyph')
+    F.eq(icon_map.glyph_name('loop_on'), 'repeat_on', 'loop glyph')
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        icon_map.glyph_name('missing')
+    end,
+        'unknown ModernX icon', 'unknown semantic icon is rejected')
+    local mapped = icon_map.icon('play')
+    F.eq(mapped.__class, Icon, 'icon factory returns Icon')
+    F.eq(mapped.name, 'play_arrow', 'icon factory uses mapped glyph')
+    F.eq(player_mod.glyph_name, icon_map.glyph_name, 'player aggregate preserves identity')
+end)
 
 F.test('defaults match the bundled icon font', function()
     local icon = Icon('play_arrow')
