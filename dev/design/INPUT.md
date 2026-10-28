@@ -134,6 +134,12 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 允许窗口拖动；`allow-vo-dragging`、`allow-hide-cursor` 按显示监听、拖动区和控件区
 分别配置，不把当前全局 flags 原样复制到所有分组。
 
+`elxosc-showhide` 的 activity 由应用可见性策略消费，不通过全屏 interactive region
+拦截点击。默认播放器的 `AutoHide` 可分别配置 bottom hover zone 和 top hover zone；
+ModernX 方向默认使用 bottom 175px、top 40px，两个区域均采用半开区间，中心区域不
+唤醒隐藏 Main。top zone 的启用条件由播放器配置/窗口状态提供，通用 AutoHide 不读取
+mpv；没有坐标的键盘或宿主 activity 保持原有的全局唤醒语义。
+
 所有 section 在初始化和关闭时清理旧 mouse area；不可见 layer 不留旧区域或 enable
 状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。移出窗口时取消
 capture 是当前 MpInput 的产品策略；resize、Popup 出现和 Main 隐藏不构成通用取消规则。

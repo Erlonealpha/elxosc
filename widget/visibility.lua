@@ -162,6 +162,8 @@ end
 ---@field maintain_state boolean?
 ---@field bottom_hover boolean? only reveal from the bottom hover zone
 ---@field hover_zone number? bottom hover zone height in logical pixels
+---@field top_hover boolean? reveal from the top hover zone
+---@field top_hover_zone number? top hover zone height in logical pixels
 ---@field key any?
 
 ---@class AutoHide : StatefulWidget
@@ -172,6 +174,8 @@ end
 ---@field maintain_state boolean
 ---@field bottom_hover boolean
 ---@field hover_zone number
+---@field top_hover boolean
+---@field top_hover_zone number
 ---@overload fun(options?: _AutoHideOptions): self
 local AutoHide = std.class.new('AutoHide', { StatefulWidget })
 
@@ -185,6 +189,8 @@ function AutoHide:__init(options)
     self.maintain_state = options.maintain_state ~= false
     self.bottom_hover = options.bottom_hover == true
     self.hover_zone = options.hover_zone == nil and 175 or options.hover_zone
+    self.top_hover = options.top_hover == true
+    self.top_hover_zone = options.top_hover_zone == nil and 40 or options.top_hover_zone
     if type(self.timeout) ~= 'number' or self.timeout < 0
         or self.timeout == math.huge or self.timeout ~= self.timeout then
         error('AutoHide.timeout must be a finite non-negative number', 2)
@@ -192,6 +198,10 @@ function AutoHide:__init(options)
     if type(self.hover_zone) ~= 'number' or self.hover_zone < 0
         or self.hover_zone == math.huge or self.hover_zone ~= self.hover_zone then
         error('AutoHide.hover_zone must be a finite non-negative number', 2)
+    end
+    if type(self.top_hover_zone) ~= 'number' or self.top_hover_zone < 0
+        or self.top_hover_zone == math.huge or self.top_hover_zone ~= self.top_hover_zone then
+        error('AutoHide.top_hover_zone must be a finite non-negative number', 2)
     end
     if not std.isinstance(self.controller, AutoHideController) then
         error('AutoHide.controller must be an AutoHideController', 2)
@@ -229,8 +239,15 @@ function AutoHideState:_controller_event(event, visible, x, y, viewport)
     if event == 'activity' then
         local widget = self.widget --[[@as AutoHide]]
         local in_hover_zone = true
-        if widget.bottom_hover and x ~= nil and y ~= nil and viewport ~= nil then
-            in_hover_zone = y >= viewport.bottom - widget.hover_zone
+        if (widget.bottom_hover or widget.top_hover)
+            and x ~= nil and y ~= nil and viewport ~= nil then
+            local in_viewport = y >= viewport.top and y < viewport.bottom
+            local in_bottom_zone = widget.bottom_hover
+                and y >= viewport.bottom - widget.hover_zone
+            local in_top_zone = widget.top_hover
+                and y >= viewport.top
+                and y < viewport.top + widget.top_hover_zone
+            in_hover_zone = in_viewport and (in_bottom_zone or in_top_zone)
         end
         if in_hover_zone then
             self:_restart_timer()

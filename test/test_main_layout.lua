@@ -7,6 +7,7 @@ local F = require('framework')
 local std = require('elxlibs.std')
 
 local constraints_mod = require('layout.constraints')
+local geometry = require('foundation.geometry')
 local text_layout = require('text.text_layout')
 local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
@@ -286,5 +287,30 @@ F.test('AutoHide uses the frame clock and activity restores Main visibility', fu
     F.ok(not controller.visible, 'timeout hides the entry')
     controller:activity()
     F.ok(controller.visible, 'activity restores the entry')
+    scheduler:dispose()
+end)
+
+F.test('AutoHide validates the top hover zone', function()
+    F.raises(function()
+        AutoHide({ top_hover_zone = -1 })
+    end, 'AutoHide.top_hover_zone', 'negative top hover zone is rejected')
+    F.raises(function()
+        AutoHide({ top_hover_zone = math.huge })
+    end, 'AutoHide.top_hover_zone', 'infinite top hover zone is rejected')
+end)
+
+F.test('AutoHide keeps top hover opt-in', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    mount(AutoHide({
+        controller = controller,
+        bottom_hover = true,
+        top_hover = false,
+        child = Text('main'),
+    }), scheduler)
+    controller:hide()
+    controller:activity(10, 10, geometry.Rect(0, 0, 1280, 720))
+    F.ok(not controller.visible, 'top activity does not reveal when top hover is disabled')
     scheduler:dispose()
 end)

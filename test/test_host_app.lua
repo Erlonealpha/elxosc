@@ -488,12 +488,50 @@ F.test('ModernX bottom hover policy reveals Main only in the hover zone', functi
     end
     local viewport = Rect(0, 0, 1280, 720)
     default_element.state:hide_main()
-    app:notify_activity(10, 10, viewport)
+    app:notify_activity(10, 544, viewport)
     F.ok(not default_element.state.main_controller.visible,
-        'activity outside the bottom zone does not reveal Main')
-    app:notify_activity(10, 700, viewport)
+        'activity one pixel above the bottom zone does not reveal Main')
+    app:notify_activity(10, 545, viewport)
     F.ok(default_element.state.main_controller.visible,
-        'bottom-zone activity reveals Main')
+        'activity at the bottom-zone boundary reveals Main')
+end)
+
+F.test('ModernX top hover policy reveals Main only in the top zone', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local default_element = find_widget_element(app.binding.root_element, DefaultApp)
+    F.ok(default_element ~= nil, 'DefaultApp is mounted')
+    if default_element == nil then
+        return
+    end
+    local viewport = Rect(0, 0, 1280, 720)
+
+    default_element.state:hide_main()
+    app:notify_activity(10, 0, viewport)
+    F.ok(default_element.state.main_controller.visible,
+        'activity at the top edge reveals Main')
+
+    default_element.state:hide_main()
+    app:notify_activity(10, 39, viewport)
+    F.ok(default_element.state.main_controller.visible,
+        'top-zone activity below the 40px boundary reveals Main')
+
+    default_element.state:hide_main()
+    app:notify_activity(10, 40, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'activity at the top-zone boundary does not reveal Main')
+
+    app:notify_activity(10, 41, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'activity below the top zone does not reveal Main')
+
+    app:notify_activity(10, 300, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'middle activity does not reveal hidden Main')
+
+    app:notify_activity(10, 139, Rect(0, 100, 1280, 820))
+    F.ok(default_element.state.main_controller.visible,
+        'top-zone activity follows the resized viewport origin')
 end)
 
 F.test('a set_state rebuild lands in the next frame', function()

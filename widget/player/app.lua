@@ -362,6 +362,8 @@ end
 ---@field auto_hide_enabled boolean?
 ---@field auto_hide_bottom_hover boolean?
 ---@field auto_hide_hover_zone number?
+---@field auto_hide_top_hover boolean?
+---@field auto_hide_top_hover_zone number?
 ---@field auto_hide_controller AutoHideController?
 ---@field key any?
 
@@ -375,6 +377,8 @@ end
 ---@field auto_hide_enabled boolean
 ---@field auto_hide_bottom_hover boolean
 ---@field auto_hide_hover_zone number
+---@field auto_hide_top_hover boolean
+---@field auto_hide_top_hover_zone number
 ---@field auto_hide_controller AutoHideController
 ---@overload fun(options?: _DefaultAppOptions): self
 local DefaultApp = std.class.new('DefaultApp', { StatefulWidget })
@@ -392,6 +396,9 @@ function DefaultApp:__init(options)
     self.auto_hide_bottom_hover = options.auto_hide_bottom_hover == true
     self.auto_hide_hover_zone = options.auto_hide_hover_zone == nil and 175
         or options.auto_hide_hover_zone
+    self.auto_hide_top_hover = options.auto_hide_top_hover == true
+    self.auto_hide_top_hover_zone = options.auto_hide_top_hover_zone == nil and 40
+        or options.auto_hide_top_hover_zone
     self.auto_hide_controller = options.auto_hide_controller or AutoHideController()
     if not std.isinstance(self.auto_hide_controller, AutoHideController) then
         raise(std.TypeError('DefaultApp.auto_hide_controller must be an AutoHideController'))
@@ -446,6 +453,8 @@ function DefaultAppState:init_state()
                 enabled = app.auto_hide_enabled,
                 bottom_hover = app.auto_hide_bottom_hover,
                 hover_zone = app.auto_hide_hover_zone,
+                top_hover = app.auto_hide_top_hover,
+                top_hover_zone = app.auto_hide_top_hover_zone,
                 child = app.main or Main({ title = app.title, scale = app.scale }),
             })
         end,

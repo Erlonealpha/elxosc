@@ -42,7 +42,8 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 - `PlayerSnapshot` 的 `media-title`、`filename`、`pause`、`time-pos`、`duration`、
   `percent-pos` 和 `demuxer-cache-duration` host 映射；
 - 统一正数 scale、ThemeData 颜色/字号、hover color 和 paint-only hover scale；
-- timeout AutoHide 与 bottom hover zone；resize 后同一 root/canvas/presenter 更新输入区域。
+- timeout AutoHide 与 top/bottom hover zone；默认 top zone 为 40px、bottom zone 为 175px；
+  resize 后同一 root/canvas/presenter 更新输入区域。
 
 进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
 结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment

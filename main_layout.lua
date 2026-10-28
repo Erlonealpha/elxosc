@@ -42,6 +42,8 @@ local function build_description(extension, pages)
         title = 'elxosc',
         auto_hide_bottom_hover = true,
         auto_hide_hover_zone = 175,
+        auto_hide_top_hover = true,
+        auto_hide_top_hover_zone = 40,
         main = Main({ title = 'elxosc' }),
         extension = SlotWrap(extension_slot_spec, extension_slot),
         window_layer = window_layer,
