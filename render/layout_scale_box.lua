@@ -145,6 +145,10 @@ function RenderLayoutScaleBox:set_alignment(alignment)
         return
     end
     self.alignment = alignment
+    -- Alignment changes the child-to-root mapping even though the box size
+    -- itself is unchanged.  The input snapshot must not retain the old
+    -- pointer region.
+    self:mark_needs_input()
     self:mark_needs_paint()
 end
 

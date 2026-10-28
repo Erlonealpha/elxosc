@@ -3,16 +3,14 @@
 -- shell and root replacement targets are intentionally not exposed here. Demo
 -- content is supplied by the entry point rather than hidden in this module.
 
-local app_mod = require 'widget.app'
+local app_mod = require 'widget.player.app'
 local slot_mod = require 'widget.slot'
 local navigation_mod = require 'widget.navigation'
-local basic_widgets = require 'widget.widgets.basic'
 local layout_widgets = require 'widget.widgets.layout'
 
 local DefaultApp = app_mod.DefaultApp
 local Main = app_mod.Main
 local WindowLayer = app_mod.WindowLayer
-local Text = basic_widgets.Text
 local Container = layout_widgets.Container
 local SizedBox = layout_widgets.SizedBox
 local SlotSpec = slot_mod.SlotSpec
@@ -31,15 +29,6 @@ local function build_description(extension, pages)
         allow = { 'set', 'replace' },
         default_op = 'set',
     })
-    local title_bar = Container({
-        child = Text('elxosc'),
-    })
-    local window_controls = Container({
-        child = SizedBox.shrink(),
-    })
-    local bottom = Container({
-        child = SizedBox.shrink(),
-    })
     local extension_slot = Container({
         child = extension or SizedBox.shrink(),
     })
@@ -51,12 +40,9 @@ local function build_description(extension, pages)
 
     local app = DefaultApp({
         title = 'elxosc',
-        main = Main({
-            title = 'elxosc',
-            title_bar = title_bar,
-            window_controls = window_controls,
-            bottom = bottom,
-        }),
+        auto_hide_bottom_hover = true,
+        auto_hide_hover_zone = 175,
+        main = Main({ title = 'elxosc' }),
         extension = SlotWrap(extension_slot_spec, extension_slot),
         window_layer = window_layer,
     })

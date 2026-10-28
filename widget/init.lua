@@ -23,6 +23,7 @@ local visibility_mod = require 'widget.visibility'
 local overlay_mod = require 'widget.overlay'
 local navigation_mod = require 'widget.navigation'
 local app_mod = require 'widget.app'
+local player_mod = require 'widget.player'
 
 local M = {}
 
@@ -44,6 +45,7 @@ for _, mod in ipairs({
     overlay_mod,
     navigation_mod,
     app_mod,
+    player_mod,
 }) do
     for name, value in pairs(mod) do
         M[name] = value

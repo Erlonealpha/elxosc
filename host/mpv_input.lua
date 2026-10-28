@@ -60,7 +60,7 @@ local owned_sections = {}
 ---@class MpInputOptions
 ---@field owner MpInputOwner receives structured pointer events
 ---@field get_viewport fun(): Rect returns the current root-space viewport
----@field notify_activity fun() informs application visibility policies
+---@field notify_activity fun(x: number?, y: number?, viewport: Rect?) informs application visibility policies
 ---@field request_frame fun() schedules a frame after input
 ---@field get_can_pop (fun(): boolean)? whether an ESC action is currently claimed
 ---@field handle_key (fun(event: KeyEvent): boolean)? dispatches a structured key event
@@ -68,7 +68,7 @@ local owned_sections = {}
 ---@class MpInput : std.object
 ---@field owner MpInputOwner
 ---@field get_viewport fun(): Rect
----@field notify_activity fun()
+---@field notify_activity fun(x: number?, y: number?, viewport: Rect?)
 ---@field request_frame fun()
 ---@field get_can_pop fun(): boolean
 ---@field handle_key fun(event: KeyEvent): boolean?
@@ -216,11 +216,11 @@ function MpInput:_dispatch(event, data, section)
         return
     end
     debug_msgf('MpInput:_dispatch(%s)', event)
-    if event == 'move' or event == 'down' or event == 'double' or event == 'wheel' then
-        self.notify_activity()
-    end
     if event == 'down' or event == 'double' then
         self:_refresh_position()
+    end
+    if event == 'move' or event == 'down' or event == 'double' or event == 'wheel' then
+        self.notify_activity(self.x, self.y, self:_viewport_rect())
     end
     if not has_position(self) then
         return

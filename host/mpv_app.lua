@@ -87,6 +87,10 @@ function App:__init(root_widget, options)
     self.root_widget = root_widget
     self.player_store = options.player_store
     self.player_context = options.player_context
+    if self.player_context
+        and type(self.player_context.observe_default_properties) == 'function' then
+        self.player_context:observe_default_properties()
+    end
     self.theme = options.theme or ThemeData()
     self.actions = options.actions or mpv_actions.default()
     self.default_text_style = options.default_text_style
@@ -127,8 +131,8 @@ function App:__init(root_widget, options)
         get_viewport = function()
             return self:_input_viewport()
         end,
-        notify_activity = function()
-            self:notify_activity()
+        notify_activity = function(x, y, viewport)
+            self:notify_activity(x, y, viewport)
         end,
         request_frame = function()
             self:request_frame()
@@ -203,14 +207,14 @@ end
 -- Notify application-level visibility policies without installing a full-size
 -- pointer interceptor in the render tree.  A passive Main/background layer must
 -- not swallow clicks destined for an Extension or WindowLayer control.
-function App:notify_activity()
+function App:notify_activity(x, y, viewport)
     if self._shutdown or not self.binding or not self.binding.root_element then
         return
     end
     local function visit(element)
         local state = element.state
         if state and type(state.notify_activity) == 'function' then
-            state:notify_activity()
+            state:notify_activity(x, y, viewport)
         end
         for _, child in ipairs(element:element_children()) do
             visit(child)

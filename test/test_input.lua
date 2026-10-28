@@ -177,6 +177,24 @@ F.test('refreshes regions after a paint-only transform update', function()
     F.ok(after[1].rect == Rect(0, 0, 20, 20), 'region follows the new transform')
 end)
 
+F.test('refreshes regions after a layout-scale alignment update', function()
+    local root = RenderLayoutScaleBox(RenderGesture(box(10, 10), {
+        on_tap = function() end,
+    }), { scale = Size(1, 1), alignment = Offset(0, 0) })
+    local owner = laid_out_with(root, Constraints.loose(20, 20))
+    -- LayoutScaleBox normally shrink-wraps its child.  Give it a larger
+    -- already-laid-out parent box here so the alignment mapping is observable.
+    root.size = Size(20, 20)
+    local before = owner:region_snapshot()
+    F.ok(before:regions()[1].rect == Rect(0, 0, 10, 10), 'initial aligned region')
+
+    root:set_alignment(Offset(1, 1))
+    local after = owner:region_snapshot()
+    F.ok(after ~= before, 'alignment invalidates the input snapshot')
+    F.ok(after:regions()[1].rect == Rect(10, 10, 20, 20),
+        'region follows the new layout-scale alignment')
+end)
+
 F.section('input: gesture')
 
 F.test('a down followed by an up on the same node taps', function()

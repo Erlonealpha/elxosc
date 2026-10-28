@@ -18,8 +18,8 @@ WidgetsApp
         └── WindowLayer
 ```
 
-`Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部信息、时间线和播放控制
-由播放器定义，scale 是统一正数配置并使用流式布局。`ExtensionEntry` 是当前唯一的
+`Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线、进度条
+和播放控制由播放器定义，scale 是统一正数配置并使用流式布局。`ExtensionEntry` 是当前唯一的
 扩展内容边界；`WindowLayer` 由一个 Navigator 管理逻辑页面，没有初始 Page 时只有空根
 语义，不创建额外 presenter/root。
 
@@ -29,6 +29,29 @@ WidgetsApp
 
 `AutoHide` 只包裹 MainEntry。Main 隐藏时通过 `Offstage` 禁止绘制、命中和 pointer
 regions，但 ExtensionEntry 的 Element/State 不被卸载或重置。
+
+## P2 ModernX 首批能力
+
+P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首批能力为：
+
+- 顶部媒体标题、窗口最小化/全屏/关闭按钮；
+- 底部媒体 metadata、播放/暂停、相对 `seek(-/+10)`；
+- 固定布局 `ProgressBar`：当前进度、buffer range、handle、时间显示和拖拽；
+- 拖拽结束通过 `HostActions:seek_to(seconds)` 发送绝对 seek，输入 capture 在移出控件后
+  仍归原目标；
+- `PlayerSnapshot` 的 `media-title`、`filename`、`pause`、`time-pos`、`duration`、
+  `percent-pos` 和 `demuxer-cache-duration` host 映射；
+- 统一正数 scale、ThemeData 颜色/字号、hover color 和 paint-only hover scale；
+- timeout AutoHide 与 bottom hover zone；resize 后同一 root/canvas/presenter 更新输入区域。
+
+进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
+结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
+setter 在 paint invalidation 外同时 invalidates input snapshot。
+
+P2 明确 deferred：subtree fade/opacity alpha policy、章节 marker/tooltip、轨道菜单、音量
+滑块、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
+多 host overlay、focus/IME 和完整 ModernX 配置兼容。当前静态 ASS 输出不使用 `\move` 或
+`\t`。
 
 旧 `main_layout.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
 Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。

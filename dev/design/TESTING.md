@@ -33,6 +33,11 @@ CLI 子进程测试 **14 passed**。`emmylua_check . --ignore 'tmp/**'` 无诊�
 失败原因是用户保持 `main.lua enable = false`，未启动 Demo 入口；未将该结果写成 Builder
 代码失败或通过。
 
+2026-10-28 P2 ModernX 默认播放器完成后：**1753 Lua checks**，其中 ModernX 专项 **31**；
+`emmylua_check . --ignore 'tmp/**'` 无诊断。P2 关联回归为 input **94**、main_layout **26**、
+host_app **106**、flutter_runtime/lifecycle **70**。工作区 real-host 入口仍由用户关闭，
+因此未将 real-host 结果写成 P2 通过。
+
 ## Lua suite
 
 `test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`
@@ -48,7 +53,8 @@ runtime identity、生命周期和 frame 顺序由离线/host stub 测试验收�
 - foundation/painting/text：值语义、边界校验、Canvas/TextLayout 契约；
 - layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；
 - animation/scheduler：假时钟、重复/反向、监听替换和 State 资源生命周期；
-- widget：Widget/Element 复用、State rebuild、Builder contract/失败清理、聚合 identity、控件行为；
+- widget：Widget/Element 复用、State rebuild、Builder contract/失败清理、ModernX Main/
+  ProgressBar/AutoHide、聚合 identity、控件行为；
 - libs/Define：沙箱、模块、scope 首次 payload、transaction 失败隔离、module 延迟发布、
   bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；

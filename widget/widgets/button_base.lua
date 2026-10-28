@@ -11,6 +11,7 @@ local decorated_mod = require 'widget.widgets.decorated_box'
 local widget_mod = require 'widget.widget'
 local state_mod = require 'widget.state'
 local style_mod = require 'widget.widgets.button_style'
+local transform_widgets = require 'widget.widgets.transform_box'
 
 local EdgeInsets = geometry.EdgeInsets
 local Offset = geometry.Offset
@@ -22,6 +23,8 @@ local Decoration = decorated_mod.Decoration
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
 local ButtonStyle = style_mod.ButtonStyle
+local TransformBox = transform_widgets.TransformBox
+local Size = geometry.Size
 
 ---@class _ButtonBaseOptions : _ButtonStyleOptions
 ---@field key any?
@@ -87,7 +90,12 @@ function ButtonState:build()
     if not button.enabled or not button.on_click then
         return body
     end
-    return GestureDetector(body, {
+    local visual = body
+    if style.hover_scale ~= 1 then
+        local factor = self.hovered and style.hover_scale or 1
+        visual = TransformBox(body, { scale = Size(factor, factor) })
+    end
+    return GestureDetector(visual, {
         on_down = function()
             self:set_state(function()
                 self.pressed = true

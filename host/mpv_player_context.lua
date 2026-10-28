@@ -14,6 +14,45 @@ local PlayerStore = player_context.PlayerStore
 
 local M = {}
 
+local DEFAULT_PLAYER_PROPERTIES = {
+    { name = 'pause', field = 'pause' },
+    { name = 'media-title', field = 'media_title' },
+    { name = 'filename', field = 'filename' },
+    { name = 'time-pos', field = 'time_pos' },
+    { name = 'duration', field = 'duration' },
+    { name = 'percent-pos', field = 'percent_pos' },
+    { name = 'demuxer-cache-duration', field = 'buffered_duration' },
+}
+
+local function normalize_number(value)
+    if value == nil then
+        return nil
+    end
+    value = tonumber(value)
+    if value == nil or value ~= value or value == math.huge or value == -math.huge then
+        return nil
+    end
+    return value
+end
+
+local function normalize_text(value)
+    if value == nil then
+        return nil
+    end
+    value = tostring(value)
+    return value ~= '' and value or nil
+end
+
+local function normalize_property(field, value)
+    if field == 'pause' then
+        return value == true
+    end
+    if field == 'media_title' or field == 'filename' then
+        return normalize_text(value)
+    end
+    return normalize_number(value)
+end
+
 ---@class MpPropertySubscription : std.object
 ---@field _active boolean
 ---@field _callback fun(name: string, value: any)?
@@ -146,6 +185,22 @@ function MpPlayerContext:observe(name, transform)
     subscription = MpPropertySubscription(self, name, callback)
     self._properties[name] = subscription
     return subscription
+end
+
+--- Observe the stable playback fields consumed by the default player shell.
+--- The method remains host-side; widgets only receive the immutable snapshot.
+---@return MpPropertySubscription[]
+function MpPlayerContext:observe_default_properties()
+    local subscriptions = {}
+    for _, definition in ipairs(DEFAULT_PLAYER_PROPERTIES) do
+        subscriptions[#subscriptions + 1] = self:observe(definition.name,
+            function(value, current)
+                return current:copy({
+                    [definition.field] = normalize_property(definition.field, value),
+                })
+            end)
+    end
+    return subscriptions
 end
 
 ---@param name string

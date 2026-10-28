@@ -113,8 +113,8 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-10-28 P1 Builder contract 后为 **1708 Lua checks**（Builder **26**，runtime **252**）、
-CLI **14 passed**；
+2026-10-28 P2 ModernX 默认播放器后为 **1753 Lua checks**（ModernX **31**，Builder **26**，
+runtime **252**）、CLI **14 passed**；
 生产静态检查排除本地 ignored tmp 草稿后 **No issues found**，启用入口的隔离副本
 real-host **10 passed**。工作区入口被用户关闭时为 **8 passed, 2 failed**；默认静态扫描
 本地重复类型草稿会产生 warning。详情和实际命令见 [TESTING.md](TESTING.md)。

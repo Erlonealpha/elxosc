@@ -96,7 +96,7 @@ function AutoHideController:__init(visible)
     self._listeners = {}
 end
 
----@param callback fun(event: 'activity'|'visibility', visible: boolean)
+---@param callback fun(event: 'activity'|'visibility', visible: boolean, x: number?, y: number?, viewport: Rect?)
 ---@return fun()
 function AutoHideController:add_listener(callback)
     if type(callback) ~= 'function' then
@@ -141,13 +141,16 @@ function AutoHideController:hide()
     return self:set_visible(false)
 end
 
-function AutoHideController:activity()
+---@param x number?
+---@param y number?
+---@param viewport Rect?
+function AutoHideController:activity(x, y, viewport)
     local listeners = {}
     for callback in pairs(self._listeners) do
         listeners[#listeners + 1] = callback
     end
     for _, callback in ipairs(listeners) do
-        callback('activity', self.visible)
+        callback('activity', self.visible, x, y, viewport)
     end
 end
 
@@ -157,6 +160,8 @@ end
 ---@field timeout number? seconds of inactivity before hiding; zero disables timeout
 ---@field enabled boolean?
 ---@field maintain_state boolean?
+---@field bottom_hover boolean? only reveal from the bottom hover zone
+---@field hover_zone number? bottom hover zone height in logical pixels
 ---@field key any?
 
 ---@class AutoHide : StatefulWidget
@@ -165,6 +170,8 @@ end
 ---@field timeout number
 ---@field enabled boolean
 ---@field maintain_state boolean
+---@field bottom_hover boolean
+---@field hover_zone number
 ---@overload fun(options?: _AutoHideOptions): self
 local AutoHide = std.class.new('AutoHide', { StatefulWidget })
 
@@ -176,9 +183,15 @@ function AutoHide:__init(options)
     self.timeout = options.timeout == nil and 3 or options.timeout
     self.enabled = options.enabled ~= false
     self.maintain_state = options.maintain_state ~= false
+    self.bottom_hover = options.bottom_hover == true
+    self.hover_zone = options.hover_zone == nil and 175 or options.hover_zone
     if type(self.timeout) ~= 'number' or self.timeout < 0
         or self.timeout == math.huge or self.timeout ~= self.timeout then
         error('AutoHide.timeout must be a finite non-negative number', 2)
+    end
+    if type(self.hover_zone) ~= 'number' or self.hover_zone < 0
+        or self.hover_zone == math.huge or self.hover_zone ~= self.hover_zone then
+        error('AutoHide.hover_zone must be a finite non-negative number', 2)
     end
     if not std.isinstance(self.controller, AutoHideController) then
         error('AutoHide.controller must be an AutoHideController', 2)
@@ -212,13 +225,23 @@ function AutoHideState:_restart_timer()
     end
 end
 
-function AutoHideState:_controller_event(event, visible)
+function AutoHideState:_controller_event(event, visible, x, y, viewport)
     if event == 'activity' then
-        self:_restart_timer()
-        if not self.widget.controller.visible and self:is_mounted() then
+        local widget = self.widget --[[@as AutoHide]]
+        local in_hover_zone = true
+        if widget.bottom_hover and x ~= nil and y ~= nil and viewport ~= nil then
+            in_hover_zone = y >= viewport.bottom - widget.hover_zone
+        end
+        if in_hover_zone then
+            self:_restart_timer()
+        else
+            return
+        end
+        if not widget.controller.visible and self:is_mounted() then
             self:set_state(function()
-                self.widget.controller.visible = true
+                widget.controller.visible = true
             end)
+            self:_restart_timer()
         end
         return
     end
@@ -236,8 +259,8 @@ end
 
 function AutoHideState:init_state()
     local widget = self.widget --[[@as AutoHide]]
-    self._remove_listener = widget.controller:add_listener(function(event, visible)
-        self:_controller_event(event, visible)
+    self._remove_listener = widget.controller:add_listener(function(event, visible, x, y, viewport)
+        self:_controller_event(event, visible, x, y, viewport)
     end)
 
     local context = self.context
@@ -270,8 +293,8 @@ function AutoHideState:did_update_widget(old_widget)
         if self._remove_listener then
             self._remove_listener()
         end
-        self._remove_listener = widget.controller:add_listener(function(event, visible)
-            self:_controller_event(event, visible)
+        self._remove_listener = widget.controller:add_listener(function(event, visible, x, y, viewport)
+            self:_controller_event(event, visible, x, y, viewport)
         end)
     end
     self:_restart_timer()

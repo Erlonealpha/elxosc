@@ -4,6 +4,7 @@ local std = require 'elxlibs.std'
 local color_mod = require 'foundation.color'
 
 local Color = color_mod.Color
+local raise = std.raise
 
 ---@class _ButtonStyleOptions
 ---@field background_color Color?
@@ -17,6 +18,7 @@ local Color = color_mod.Color
 ---@field radius number?
 ---@field padding EdgeInsets?
 ---@field elevation number?
+---@field hover_scale number? positive paint-only scale used while hovered
 
 ---@class ButtonStyle : std.object
 ---@field background_color Color?
@@ -29,6 +31,7 @@ local Color = color_mod.Color
 ---@field radius number
 ---@field padding EdgeInsets?
 ---@field elevation number
+---@field hover_scale number
 ---@overload fun(options: _ButtonStyleOptions?): self
 local ButtonStyle = std.class.new('ButtonStyle', {})
 
@@ -45,6 +48,11 @@ function ButtonStyle:__init(options)
     self.radius = options.radius or 4
     self.padding = options.padding
     self.elevation = options.elevation or 0
+    self.hover_scale = options.hover_scale == nil and 1 or options.hover_scale
+    if type(self.hover_scale) ~= 'number' or self.hover_scale <= 0
+        or self.hover_scale == math.huge or self.hover_scale ~= self.hover_scale then
+        raise(std.ValueError('ButtonStyle.hover_scale must be a positive finite number'))
+    end
 end
 
 ---@param state "normal"|"hover"|"pressed"|"disabled"

@@ -20,6 +20,9 @@ function M.default()
         seek = function(seconds)
             mp.commandv('seek', tostring(seconds), 'relative')
         end,
+        seek_to = function(seconds)
+            mp.commandv('seek', tostring(seconds), 'absolute+exact')
+        end,
         toggle_fullscreen = function()
             mp.commandv('cycle', 'fullscreen')
         end,

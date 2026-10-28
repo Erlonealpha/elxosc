@@ -20,6 +20,8 @@ not import Widget modules or mpv.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.
+- `progress_bar.lua` — fixed-layout progress/buffer/handle painting with explicit
+  seek capture; progress values are paint-only while bar height is layout-affecting.
 - `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,
   hit testing and pointer regions while hidden.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.

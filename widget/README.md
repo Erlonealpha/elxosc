@@ -22,15 +22,20 @@ binding, and the public widget library. It must remain independent of mpv.
   `PlayerScope`, and `PlayerProvider`.
 - `ambient.lua` — `ThemeData`, `Theme`, `DisplaySnapshot`, `DisplayScope` and
   `DefaultTextStyle` application ambients.
-- `actions.lua` — the host-independent `HostActions` callback contract and scope.
-- `visibility.lua` — `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`.
+- `actions.lua` — the host-independent `HostActions` callback contract and scope,
+  including relative and absolute seek actions.
+- `visibility.lua` — `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`,
+  including optional bottom-hover reveal policy.
 - `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.
 - `navigation.lua` — immutable `Page`/`PopupPage`, runtime `Route`, `Navigator`, results and
   the host-independent `ModalBarrier`.
-- `app.lua` — `WidgetsApp`, `DefaultApp`, `Main` and the `WindowLayer` application boundary.
+- `app.lua` — generic `WidgetsApp` ambient wrapper and compatibility aggregate for player classes.
+- `player/` — default player shell components (`Main`, `WindowLayer`, `DefaultApp` and
+  `ProgressBar`); `widget/app.lua` retains the `WidgetsApp` ambient wrapper and compatibility
+  exports for the player classes.
 - `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
-- `widgets/` — independent layout, content, input, and button widgets; `basic.lua`
-  and `layout.lua` are compatibility aggregates.
+- `widgets/` — independent layout, content, input, button and progress-bar widgets;
+  `basic.lua` and `layout.lua` are compatibility aggregates.
 
 Widgets are immutable after construction. Runtime changes use State or explicit
 RenderObject setters. Define contributions are sealed and assembled into a fresh
@@ -106,9 +111,10 @@ simplicity; callers must treat it as a read-only context handle.
 
 `WidgetsApp` supplies the application ambients without requiring `mp`. `DefaultApp` owns one
 logical `Theatre` with stable Main, Extension and WindowLayer entries. `Main` uses a configurable
-uniform layout scale, a flow-based top/bottom player skeleton and explicitly injected
-`HostActions`. `AutoHide` only changes the Main entry; the Extension entry remains mounted and
-keeps its State when Main is hidden.
+uniform layout scale, a flow-based player shell, fixed-layout `ProgressBar` and explicitly
+injected `HostActions`. Progress/buffer/handle updates use paint-only RenderObject setters;
+bar height and layout scale remain layout-affecting. `AutoHide` only changes the Main entry;
+the Extension entry remains mounted and keeps its State when Main is hidden.
 
 `OverlayEntry` builders execute from a mounted entry context. Visible entries paint in insertion
 order; an opaque entry makes lower entries occluded. Occluded or hidden entries remain mounted

@@ -12,6 +12,7 @@ local render_owner = require('render.render_owner')
 local binding_mod = require('widget.binding')
 local slot_mod = require('widget.slot')
 local basic_widgets = require('widget.widgets.basic')
+local player_widgets = require('widget.player')
 local layout_widgets = require('widget.widgets.layout')
 local widget_mod = require('widget.widget')
 local state_mod = require('widget.state')
@@ -21,6 +22,7 @@ local app_mod = require('widget.app')
 local ambient_mod = require('widget.ambient')
 local actions_mod = require('widget.actions')
 local visibility_mod = require('widget.visibility')
+local player_context = require('widget.player_context')
 local main_layout = require('main_layout')
 local navigation_mod = require('widget.navigation')
 
@@ -44,6 +46,9 @@ local CompositionAssembler = slot_mod.CompositionAssembler
 local Navigator = navigation_mod.Navigator
 local AutoHide = visibility_mod.AutoHide
 local AutoHideController = visibility_mod.AutoHideController
+local PlayerStore = player_context.PlayerStore
+local PlayerScope = player_context.PlayerScope
+local ProgressBar = player_widgets.ProgressBar
 local FrameClock = frame_clock_mod.FrameClock
 local Scheduler = scheduler_mod.Scheduler
 
@@ -238,6 +243,36 @@ F.test('Main has a configurable uniform scale and explicit player actions', func
     F.ok(owner.root.size.width == 300 and owner.root.size.height == 180, 'Main fills the viewport')
     actions:play_pause()
     F.eq(called, 1, 'actions are explicit callbacks')
+end)
+
+F.test('Main maps PlayerSnapshot time values into an interactive seek bar', function()
+    local sought
+    local actions = HostActions({
+        seek_to = function(seconds)
+            sought = seconds
+        end,
+    })
+    local store = PlayerStore({
+        media_title = 'Episode 7',
+        time_pos = 25,
+        duration = 100,
+        percent_pos = 25,
+        pause = true,
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = actions,
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local progress = find_widget_element(binding.root_element, ProgressBar)
+    F.ok(progress ~= nil, 'Main mounts the ProgressBar')
+    if progress == nil then
+        return
+    end
+    F.close(progress.widget.progress, 0.25, 'snapshot percent reaches progress')
+    F.eq(progress.widget.on_seek ~= nil, true, 'progress bar has a seek callback')
+    actions:seek_to(75)
+    F.eq(sought, 75, 'Main uses the explicit absolute seek action')
+    F.ok(owner.root ~= nil, 'player shell keeps one render root')
 end)
 
 F.test('AutoHide uses the frame clock and activity restores Main visibility', function()

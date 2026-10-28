@@ -19,6 +19,7 @@ local text_style = require('text.text_style')
 local mpv_app = require('host.mpv_app')
 local mpv_input = require('host.mpv_input')
 local mpv_primitives = require('host.mpv_primitives')
+local mpv_player_context = require('host.mpv_player_context')
 local main_layout = require('main_layout')
 local app_widgets = require('widget.app')
 local mpv_define = require('host.mpv_define')
@@ -33,6 +34,7 @@ local player_context = require('widget.player_context')
 
 local Color = color.Color
 local Offset = geometry.Offset
+local Rect = geometry.Rect
 local TextStyle = text_style.TextStyle
 local MpDefine = mpv_define.MpDefine
 local SlotSpec = slot_mod.SlotSpec
@@ -48,6 +50,7 @@ local DefaultApp = app_widgets.DefaultApp
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 local MpInput = mpv_input.MpInput
+local MpPlayerContext = mpv_player_context.MpPlayerContext
 local Page = navigation_mod.Page
 local Navigator = navigation_mod.Navigator
 
@@ -475,6 +478,24 @@ F.test('host mouse activity restores a hidden Main without intercepting clicks',
     F.ok(default_element.state.main_controller.visible, 'mouse activity restores Main')
 end)
 
+F.test('ModernX bottom hover policy reveals Main only in the hover zone', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local default_element = find_widget_element(app.binding.root_element, DefaultApp)
+    F.ok(default_element ~= nil, 'DefaultApp is mounted')
+    if default_element == nil then
+        return
+    end
+    local viewport = Rect(0, 0, 1280, 720)
+    default_element.state:hide_main()
+    app:notify_activity(10, 10, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'activity outside the bottom zone does not reveal Main')
+    app:notify_activity(10, 700, viewport)
+    F.ok(default_element.state.main_controller.visible,
+        'bottom-zone activity reveals Main')
+end)
+
 F.test('a set_state rebuild lands in the next frame', function()
     mp_stub.reset()
 
@@ -523,6 +544,23 @@ F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
     F.ok(#fake.timeouts > 0, 'store update schedules a frame')
     mp_stub.pump()
     F.eq(app.owner.root.paragraph.text, 'v2', 'next frame renders the new snapshot')
+end)
+
+F.test('App attaches and disposes the default player property observers', function()
+    mp_stub.reset()
+    local store = PlayerStore()
+    local context = MpPlayerContext(store)
+    local app = mpv_app.App(Text('player'), {
+        player_store = store,
+        player_context = context,
+    })
+    F.ok(context:subscription('time-pos') ~= nil,
+        'App attaches the default time observer')
+    F.ok(context:subscription('percent-pos') ~= nil,
+        'App attaches the default percent observer')
+    app:shutdown()
+    F.eq(context:subscription('time-pos'), nil,
+        'App shutdown disposes player observers')
 end)
 
 F.test('shutdown unmounts PlayerScope subscriptions', function()

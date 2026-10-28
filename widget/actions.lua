@@ -14,6 +14,7 @@ local M = {}
 ---@class _HostActionsOptions
 ---@field play_pause fun()?
 ---@field seek fun(seconds: number)?
+---@field seek_to fun(seconds: number)? absolute position in seconds
 ---@field toggle_fullscreen fun()?
 ---@field minimize fun()?
 ---@field close fun()?
@@ -23,7 +24,7 @@ local M = {}
 ---@overload fun(options?: _HostActionsOptions): self
 local HostActions = std.class.new('HostActions', {})
 
-local ACTIONS = { 'play_pause', 'seek', 'toggle_fullscreen', 'minimize', 'close' }
+local ACTIONS = { 'play_pause', 'seek', 'seek_to', 'toggle_fullscreen', 'minimize', 'close' }
 
 function HostActions:__init(options)
     options = options or {}
@@ -58,6 +59,11 @@ end
 ---@param seconds number
 function HostActions:seek(seconds)
     return self:call('seek', seconds)
+end
+
+---@param seconds number
+function HostActions:seek_to(seconds)
+    return self:call('seek_to', seconds)
 end
 
 function HostActions:toggle_fullscreen()
