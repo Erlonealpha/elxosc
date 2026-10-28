@@ -14,6 +14,7 @@ local paint = require('painting.paint')
 local path_mod = require('painting.path')
 local text_paint_mod = require('painting.text_paint')
 local text_style = require('text.text_style')
+local painting_context = require('render.painting_context')
 local ass_canvas = require('backends.ass_canvas')
 local ass_text = require('backends.ass_text_layout')
 
@@ -25,6 +26,7 @@ local Path = path_mod.Path
 local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
 local AssCanvas = ass_canvas.AssCanvas
+local PaintingContext = painting_context.PaintingContext
 local AssTextLayout = ass_text.AssTextLayout
 
 --== colour ================================================================
@@ -137,6 +139,23 @@ F.test('ASS accepts only finite positive axis scales', function()
     F.raises(function() canvas:scale(-1) end, 'positive axis scales', 'negative scale')
     F.raises(function() canvas:scale(math.huge) end, 'finite number', 'infinite scale')
     F.raises(function() canvas:translate(0 / 0, 0) end, 'finite number', 'non-finite translation')
+end)
+
+F.test('opacity scopes multiply shape and text alpha and restore state', function()
+    local canvas = AssCanvas()
+    local context = PaintingContext(canvas)
+    local paragraph = AssTextLayout():layout('x', TextStyle())
+
+    context:with_opacity(0.5, function()
+        canvas:draw_rect(Rect(0, 0, 4, 4), Paint(Color.rgba255(0x10, 0x20, 0x30, 0xFF)))
+        canvas:draw_text(paragraph, Offset(0, 0))
+    end)
+    canvas:draw_rect(Rect(0, 0, 4, 4), Paint(Color.rgba255(0x10, 0x20, 0x30, 0xFF)))
+
+    F.contains(canvas.events[1], '\\1a&H7F&', 'shape alpha is multiplied by opacity')
+    F.contains(canvas.events[2], '\\1a&H7F&', 'text alpha is multiplied by opacity')
+    F.contains(canvas.events[3], '\\1a&H00&', 'restore returns to opaque output')
+    F.raises(function() canvas:opacity(1.1) end, 'between 0 and 1', 'opacity is bounded')
 end)
 
 F.test('scales text geometry and glyphs on both axes', function()

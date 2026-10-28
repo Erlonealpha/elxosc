@@ -82,6 +82,21 @@ function PaintingContext:clip_rect(rect)
     return self.canvas:clip_rect(rect)
 end
 
+---@param opacity number 0..1
+function PaintingContext:opacity(opacity)
+    return self.canvas:opacity(opacity)
+end
+
+--- Paint a subtree with a multiplicative opacity scope.
+---@param opacity number 0..1
+---@param painter fun()
+function PaintingContext:with_opacity(opacity, painter)
+    self:with_save(function()
+        self:opacity(opacity)
+        painter()
+    end)
+end
+
 function PaintingContext:draw_rect(rect, paint)
     return self.canvas:draw_rect(rect, paint)
 end

@@ -24,7 +24,7 @@ binding, and the public widget library. It must remain independent of mpv.
   `DefaultTextStyle` application ambients.
 - `actions.lua` — the host-independent `HostActions` callback contract and scope,
   including relative and absolute seek actions.
-- `visibility.lua` — `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`,
+- `visibility.lua` — `Opacity`, `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`,
   including optional top/bottom-hover reveal policies.
 - `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.
 - `navigation.lua` — immutable `Page`/`PopupPage`, runtime `Route`, `Navigator`, results and

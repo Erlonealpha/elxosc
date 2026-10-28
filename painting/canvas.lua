@@ -65,6 +65,12 @@ function Canvas:clip_rect(rect)
     abstract('clip_rect')
 end
 
+--- Multiply the current subtree opacity. The value is preserved by save/restore.
+---@param opacity number 0..1
+function Canvas:opacity(opacity)
+    abstract('opacity')
+end
+
 --== primitives ===========================================================
 
 ---@param rect Rect

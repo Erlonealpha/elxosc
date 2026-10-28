@@ -23,7 +23,7 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 
 | 属性 | 失效 |
 | --- | --- |
-| 平移、视觉偏移、颜色、纯绘制 scale、clip | paint |
+| 平移、视觉偏移、颜色、纯绘制 scale、clip、subtree opacity | paint |
 | 宽高、padding、约束、字号、行距、布局 scale | layout + paint |
 | Widget 子树结构 | build，再按结果 layout/paint |
 
@@ -43,7 +43,9 @@ paint、offset、clip 和 save/restore；现有 Canvas 入口在迁移期间仍�
 Flutter Layer tree，不暴露 ASS `Layer`/`ReadOrder`，不改变布局或 hit testing。
 
 内置变换节点也通过 `paint_child` 遍历；`with_save`/`clip_rect_and_paint` 在子绘制或
-clip 抛错时仍 restore。Record/ASS 等价、命中不变和异常后的画布状态都有离线回归。
+clip 抛错时仍 restore；`with_opacity` 使用同一 save/restore 边界应用 backend-neutral
+子树 alpha，不改变布局、命中或 pointer regions。Record/ASS 等价、命中不变和异常后的
+画布状态都有离线回归。
 
 当前 frame 顺序为：transient/ticker → Widget build scopes → inactive finalize → layout
 → input region snapshot → PaintingContext paint → presenter → post-frame callbacks。
@@ -131,7 +133,7 @@ capture。
 
 ## 当前限制
 
-当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、离屏 group opacity、
+当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、Layer/cache boundary、
 RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸、绘制溢出和输入区域
 的区别，再添加后端和真实宿主回归。
 

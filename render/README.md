@@ -14,7 +14,8 @@ not import Widget modules or mpv.
   `RenderOwner`.
 - `painting_context.lua` — Canvas/child paint/clip boundary without a Layer tree.
   All built-in child traversal uses `paint_child`/`paint_children`; `with_save` and
-  `clip_rect_and_paint` restore Canvas state on failure as well as success.
+  `clip_rect_and_paint` restore Canvas state on failure as well as success; `with_opacity`
+  applies a backend-neutral paint-only subtree alpha scope.
 - `renderer_binding.lua` — RendererBinding role facade; it resolves to the shared WidgetsBinding
   composition and creates per-tree PipelineOwner copies.
 - Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
@@ -24,6 +25,8 @@ not import Widget modules or mpv.
   seek capture; progress values are paint-only while bar height is layout-affecting.
 - `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,
   hit testing and pointer regions while hidden.
+- `opacity.lua` — paint-only subtree alpha; layout, hit testing and pointer regions remain
+  unchanged.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.
 
 RenderObject layout must return finite sizes within Constraints. Paint-only setters

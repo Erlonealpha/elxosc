@@ -99,12 +99,31 @@ local function ri(value)
     return floor(value + 0.5)
 end
 
+---@param value number
+---@return number
+local function validate_opacity(value)
+    if type(value) ~= 'number' or value ~= value
+        or value == math.huge or value == -math.huge
+        or value < 0 or value > 1 then
+        raise(std.ValueError('AssCanvas.opacity must be between 0 and 1'))
+    end
+    return value
+end
+
+---@param color_ Color
+---@param opacity number
+---@return string
+local function ass_alpha_with_opacity(color_, opacity)
+    return format('%02X', 255 - to_byte(color_.a * opacity))
+end
+
 ---@param paint Paint
 ---@param force_fill boolean?
+---@param opacity number
 ---@return string
-local function paint_tags(paint, force_fill)
+local function paint_tags(paint, force_fill, opacity)
     local rgb = M.ass_rgb(paint.color)
-    local alpha = M.ass_alpha(paint.color)
+    local alpha = ass_alpha_with_opacity(paint.color, opacity)
     if paint.style == 'stroke' and not force_fill then
         return format('\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF',
             paint.stroke_width, rgb, alpha, rgb)
@@ -134,6 +153,7 @@ function AssCanvas:__init(subpixel)
     self._stack = {}
     self._matrix = Matrix2D.identity()
     self._clip = nil
+    self._opacity = 1
 end
 
 --- Drop everything produced so far (start of a frame).
@@ -142,6 +162,7 @@ function AssCanvas:reset()
     self._stack = {}
     self._matrix = Matrix2D.identity()
     self._clip = nil
+    self._opacity = 1
 end
 
 ---@return string the `ass-events` payload (one line per event)
@@ -171,14 +192,18 @@ end
 
 function AssCanvas:save()
     local stack = self._stack
-    stack[#stack + 1] = { self._matrix, self._clip }
+    stack[#stack + 1] = { self._matrix, self._clip, self._opacity }
 end
 
 function AssCanvas:restore()
     local frame = table.remove(self._stack)
     if frame then
-        self._matrix, self._clip = frame[1], frame[2]
+        self._matrix, self._clip, self._opacity = frame[1], frame[2], frame[3]
     end
+end
+
+function AssCanvas:opacity(opacity)
+    self._opacity = self._opacity * validate_opacity(opacity)
 end
 
 ---@param name string
@@ -287,7 +312,8 @@ function AssCanvas:_emit_path(path, paint, force_fill)
     end
 
     self:_push(format('{\\pos(0,0)\\rDefault\\an7\\blur0%s%s}{\\p%d}%s{\\p0}',
-        paint_tags(paint, force_fill), self:_clip_tag(), self.subpixel, concat(parts, ' ')))
+        paint_tags(paint, force_fill, self._opacity), self:_clip_tag(), self.subpixel,
+        concat(parts, ' ')))
 end
 
 function AssCanvas:draw_rect(rect, paint)
@@ -361,7 +387,7 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
         tags[#tags + 1] = format('\\fsp%g', style.letter_spacing)
     end
     tags[#tags + 1] = '\\1c&H' .. M.ass_rgb(style.color) .. '&'
-    tags[#tags + 1] = '\\1a&H' .. M.ass_alpha(style.color) .. '&'
+    tags[#tags + 1] = '\\1a&H' .. ass_alpha_with_opacity(style.color, self._opacity) .. '&'
     tags[#tags + 1] = '\\bord0\\shad0'
     -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
     -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.

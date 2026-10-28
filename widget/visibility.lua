@@ -5,15 +5,46 @@
 
 local std = require 'elxlibs.std'
 local offstage_mod = require 'render.offstage'
+local opacity_mod = require 'render.opacity'
 local widget_mod = require 'widget.widget'
 
 local RenderOffstage = offstage_mod.RenderOffstage
+local RenderOpacity = opacity_mod.RenderOpacity
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local State = require('widget.state').State
 
 local M = {}
+
+--== Opacity ================================================================
+
+---@class _OpacityOptions
+---@field opacity number? paint-only alpha from 0 to 1
+---@field child Widget?
+---@field key any?
+
+---@class Opacity : SingleChildRenderObjectWidget
+---@field opacity number
+---@field child Widget?
+---@overload fun(options?: _OpacityOptions): self
+local Opacity = std.class.new('Opacity', { SingleChildRenderObjectWidget })
+
+function Opacity:__init(options)
+    options = options or {}
+    self.key = options.key
+    self.opacity = options.opacity == nil and 1 or options.opacity
+    self.child = options.child
+end
+
+function Opacity:create_render_object()
+    return RenderOpacity(self.opacity)
+end
+
+---@param render_object RenderOpacity
+function Opacity:update_render_object(render_object)
+    render_object:set_opacity(self.opacity)
+end
 
 --== Offstage ===============================================================
 
@@ -348,6 +379,7 @@ function AutoHide:create_state()
     return AutoHideState()
 end
 
+M.Opacity = Opacity
 M.Offstage = Offstage
 M.Visibility = Visibility
 M.AutoHideController = AutoHideController

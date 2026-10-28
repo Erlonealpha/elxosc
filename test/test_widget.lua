@@ -21,6 +21,7 @@ local widget_mod = require('widget.widget')
 local key_mod = require('widget.key')
 local state_mod = require('widget.state')
 local binding_mod = require('widget.binding')
+local visibility_mod = require('widget.visibility')
 local layout_widgets = require('widget.widgets.layout')
 local basic_widgets = require('widget.widgets.basic')
 
@@ -49,6 +50,7 @@ local ElevatedButton = basic_widgets.ElevatedButton
 local OutlinedButton = basic_widgets.OutlinedButton
 local TextButton = basic_widgets.TextButton
 local IconButton = basic_widgets.IconButton
+local Opacity = visibility_mod.Opacity
 
 -- Deterministic measurer: half the font size per character.
 local FixedLayout = std.class.new('test.FixedLayout', { text_layout.TextLayout })
@@ -84,6 +86,7 @@ F.test('the aggregate module exposes the public api', function()
     F.ok(api.ButtonBase ~= nil and api.ButtonStyle ~= nil, 'button base/style')
     F.ok(api.ElevatedButton ~= nil and api.OutlinedButton ~= nil, 'button variants')
     F.ok(api.TextButton ~= nil and api.IconButton ~= nil, 'button variants')
+    F.ok(api.Opacity == Opacity, 'Opacity aggregate identity')
 end)
 
 F.test('Button renders and invokes its click callback', function()
@@ -124,6 +127,29 @@ F.test('mounts a widget tree and paints it', function()
     owner:paint(canvas)
     F.eq(canvas.ops[1].name, 'draw_rrect', 'background first')
     F.eq(canvas.ops[2].name, 'draw_text', 'text on top')
+end)
+
+F.test('Opacity is paint-only and preserves layout and hit testing', function()
+    local owner = mount(Opacity({
+        opacity = 0.5,
+        child = Container({
+            width = 20,
+            height = 10,
+            color = Color.rgba255(0x20, 0x30, 0x40),
+        }),
+    }))
+    local render_object = owner.root
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(render_object.size, Size(20, 10), 'opacity keeps child layout size')
+    F.eq(canvas.ops[1].name, 'save', 'opacity saves canvas state')
+    F.eq(canvas.ops[2].name, 'opacity', 'opacity scope reaches the backend')
+    F.close(canvas.ops[2][1], 0.5, 'recorded opacity value')
+    F.eq(canvas.ops[4].name, 'restore', 'opacity restores canvas state')
+    F.ok(render_object:hit_test(Offset(5, 5)) ~= nil, 'opacity keeps hit testing active')
+    render_object:set_opacity(0.25)
+    F.ok(not render_object.needs_layout, 'opacity setter does not request layout')
+    F.ok(render_object.needs_paint, 'opacity setter requests paint')
 end)
 
 F.test('finite scale widgets expose paint-only and layout-affecting boxes', function()

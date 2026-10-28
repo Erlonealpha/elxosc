@@ -74,6 +74,10 @@ function RecordCanvas:clip_rect(rect)
     self:_add('clip_rect', rect)
 end
 
+function RecordCanvas:opacity(opacity)
+    self:_add('opacity', opacity)
+end
+
 function RecordCanvas:draw_rect(rect, paint)
     self:_add('draw_rect', rect, paint)
 end
