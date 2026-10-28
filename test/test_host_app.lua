@@ -494,6 +494,9 @@ F.test('ModernX bottom hover policy reveals Main only in the hover zone', functi
     app:notify_activity(10, 545, viewport)
     F.ok(default_element.state.main_controller.visible,
         'activity at the bottom-zone boundary reveals Main')
+    app:notify_activity(10, 300, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'activity outside both hover zones hides visible Main')
 end)
 
 F.test('ModernX top hover policy reveals Main only in the top zone', function()

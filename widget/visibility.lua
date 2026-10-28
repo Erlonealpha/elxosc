@@ -160,9 +160,9 @@ end
 ---@field timeout number? seconds of inactivity before hiding; zero disables timeout
 ---@field enabled boolean?
 ---@field maintain_state boolean?
----@field bottom_hover boolean? only reveal from the bottom hover zone
+---@field bottom_hover boolean? reveal and retain only from the bottom hover zone
 ---@field hover_zone number? bottom hover zone height in logical pixels
----@field top_hover boolean? reveal from the top hover zone
+---@field top_hover boolean? reveal and retain only from the top hover zone
 ---@field top_hover_zone number? top hover zone height in logical pixels
 ---@field key any?
 
@@ -249,11 +249,18 @@ function AutoHideState:_controller_event(event, visible, x, y, viewport)
                 and y < viewport.top + widget.top_hover_zone
             in_hover_zone = in_viewport and (in_bottom_zone or in_top_zone)
         end
-        if in_hover_zone then
-            self:_restart_timer()
-        else
+        if not in_hover_zone then
+            if widget.controller.visible and self:is_mounted() then
+                self:set_state(function()
+                    widget.controller.visible = false
+                end)
+            end
+            if self._ticker then
+                self._ticker:stop()
+            end
             return
         end
+        self:_restart_timer()
         if not widget.controller.visible and self:is_mounted() then
             self:set_state(function()
                 widget.controller.visible = true
