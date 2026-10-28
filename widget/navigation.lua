@@ -11,6 +11,7 @@
 local std = require 'elxlibs.std'
 local color_mod = require 'foundation.color'
 local widget_mod = require 'widget.widget'
+local builder_mod = require 'widget.builder'
 local state_mod = require 'widget.state'
 local overlay_mod = require 'widget.overlay'
 local basic_widgets = require 'widget.widgets.basic'
@@ -43,7 +44,7 @@ end
 ---@class _PageOptions
 ---@field key any required stable identity within a Navigator
 ---@field name string?
----@field builder fun(context: BuildContext): Widget?
+---@field builder ContextBuilder
 ---@field opaque boolean? defaults to true
 ---@field maintain_state boolean? defaults to true
 ---@field on_pop fun(route: Route, value: any?)?
@@ -52,7 +53,7 @@ end
 ---@class Page : std.object
 ---@field key any
 ---@field name string?
----@field builder fun(context: BuildContext): Widget?
+---@field builder ContextBuilder
 ---@field opaque boolean
 ---@field maintain_state boolean
 ---@field on_pop fun(route: Route, value: any?)?
@@ -67,9 +68,7 @@ function Page:__init(options)
     if options.key == nil then
         raise(std.ValueError('Page.key is required'))
     end
-    if type(options.builder) ~= 'function' then
-        raise(std.TypeError('Page.builder must be a function'))
-    end
+    builder_mod.validate_callback(options.builder, 'Page.builder')
     if options.name ~= nil and type(options.name) ~= 'string' then
         raise(std.TypeError('Page.name must be a string'))
     end
@@ -91,11 +90,7 @@ end
 ---@param context BuildContext
 ---@return Widget?
 function Page:build(context)
-    local child = self.builder(context)
-    if child ~= nil and not std.isinstance(child, Widget) then
-        raise(std.TypeError('Page.builder must return a Widget or nil'))
-    end
-    return child
+    return builder_mod.call_context(self.builder, context, 'Page.builder')
 end
 
 local function page_matches(left, right)

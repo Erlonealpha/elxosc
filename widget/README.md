@@ -6,6 +6,8 @@ binding, and the public widget library. It must remain independent of mpv.
 ## Public entry points
 
 - `widget.lua` — Widget base classes and type/key reuse rules.
+- `builder.lua` — semantic `ContextBuilder`/`SlotBuilder` contracts and runtime
+  callback, mounted-context and `Widget|nil` result validation.
 - `element.lua` — mounted Element classes and Widget-to-RenderObject connection.
 - `state.lua` — State lifecycle, `set_state`, ticker/controller ownership.
 - `build_scope.lua`, `build_owner.lua`, `binding.lua` and `widgets_binding.lua` — BuildScope,
@@ -34,6 +36,26 @@ Widgets are immutable after construction. Runtime changes use State or explicit
 RenderObject setters. Define contributions are sealed and assembled into a fresh
 Widget description before mounting; the binding only mounts, updates and disposes
 that description and never applies contributions itself.
+
+### Builder contract
+
+Builders remain semantic categories rather than one variadic callback:
+
+- `ContextBuilder`: `BuildContext -> Widget?`; used by `Page` and `OverlayEntry`,
+  and called only from an active mounted Element context;
+- `SlotBuilder`: `(Widget|Widget[]|nil, opts) -> Widget?`; used during sealed
+  initialization assembly and never receives a mounted context;
+- `StatelessWidget:build` and `State:build`: mounted Element rebuild callbacks,
+  validated through the same `Widget|nil` result boundary.
+
+`widget.builder.call_context` rejects an inactive/unmounted context, while
+`call_slot` preserves the pre-mount assembly boundary. All categories allow nil
+to mean an empty subtree and reject other return values with a named `TypeError`.
+Builder exceptions preserve their original error; failed child creation is cleaned
+up by the normal Element/BuildOwner mount path, and a failed rebuild keeps the
+previous child reachable until a later successful rebuild. Repeated invalidation
+is coalesced by the owning BuildScope. Builders must not register one-shot host
+resources, mutate mounted Widgets, or reload Define source.
 
 The R1 operations are `replace`, `set` and `append`. `replace` is last-valid-wins,
 `set` is first-valid-wins with a diagnostic for later values, and `append` is

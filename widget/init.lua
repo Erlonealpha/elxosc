@@ -7,6 +7,7 @@
 -- what the (later) definition sandbox will expose to other scripts.
 
 local widget_mod = require 'widget.widget'
+local builder_mod = require 'widget.builder'
 local element_mod = require 'widget.element'
 local state_mod = require 'widget.state'
 local key_mod = require 'widget.key'
@@ -27,6 +28,7 @@ local M = {}
 
 for _, mod in ipairs({
     widget_mod,
+    builder_mod,
     element_mod,
     state_mod,
     key_mod,

@@ -55,6 +55,25 @@ trees 并释放 singleton registry；App shutdown 仍只结束自己的 owner sc
 `WidgetTree` 释放自己创建的 PipelineOwner；调用方注入的 PipelineOwner/Scheduler 由
 调用方释放。Binding 不接管 host timer、presenter 或输入 section。
 
+## Builder contract
+
+Builder 回调按语义分为三类，不提供接受任意参数的统一回调：
+
+1. `ContextBuilder`：`BuildContext -> Widget?`，由 `Page` 和 `OverlayEntry` 使用，只能在
+   active mounted Element 的 build 阶段执行；
+2. `SlotBuilder`：`(Widget|Widget[]|nil, opts) -> Widget?`，由 `SlotSpec` 在 seal 后的
+   `CompositionAssembler` 阶段执行，此时不能读取 mounted context 或 Provider；
+3. `StatelessWidget:build` / `State:build`：由 Element rebuild 管线调用，使用同一个
+   `Widget|nil` 返回值边界。
+
+`widget/builder.lua` 提供 `call_context`、`call_slot`、`validate_context` 和
+`validate_result`。它们只负责 callback/context/result 的边界验证，不持有 Widget tree 或
+host 状态。nil 表示空子树；其他返回值在所属边界报 `TypeError`。Builder 抛出的原始错误
+保持不变；失败 mount/rebuild 由 Element 的既有部分树清理和后续恢复语义处理。BuildScope
+对重复 dirty 通知去重，因此同一 Entry 的多次 invalidation 在一次 flush 中只执行一次
+builder。Builder 不得在 build 中注册一次性 host observer、修改 mounted Widget 或执行
+Define source reload。
+
 Overlay/Route 的完成通知通过 `BuildOwner:after_finalize()` 在子树 dispose 和锁释放后
 执行，顺序为内容 State 清理 → Page.on_pop → result listeners → Page.on_dispose。
 结果监听器可更新仍存活的 State；WidgetTree 在 layout 前处理这轮新增 dirty。

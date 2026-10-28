@@ -12,6 +12,7 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
+local builder_mod = require 'widget.builder'
 local state_mod = require 'widget.state'
 local layout_widgets = require 'widget.widgets.layout'
 local offstage_mod = require 'widget.visibility'
@@ -38,7 +39,7 @@ end
 --== entries ================================================================
 
 ---@class _OverlayEntryOptions
----@field builder fun(context: BuildContext): Widget?
+---@field builder ContextBuilder
 ---@field opaque boolean?
 ---@field maintain_state boolean?
 ---@field visible boolean?
@@ -46,7 +47,7 @@ end
 ---@field on_dispose fun(entry: OverlayEntry)? internal lifecycle hook
 
 ---@class OverlayEntry : std.object
----@field builder fun(context: BuildContext): Widget?
+---@field builder ContextBuilder
 ---@field opaque boolean
 ---@field maintain_state boolean
 ---@field visible boolean
@@ -63,9 +64,7 @@ function OverlayEntry:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('OverlayEntry expects an options table'))
     end
-    if type(options.builder) ~= 'function' then
-        raise(std.TypeError('OverlayEntry.builder must be a function'))
-    end
+    builder_mod.validate_callback(options.builder, 'OverlayEntry.builder')
     self.builder = options.builder
     self.opaque = options.opaque == true
     self.maintain_state = options.maintain_state ~= false
@@ -293,7 +292,8 @@ end
 
 function OverlayEntryMountState:build(context)
     local widget = self.widget --[[@as OverlayEntryWidget]]
-    local child = widget.entry.builder(context)
+    local child = builder_mod.call_context(
+        widget.entry.builder, context, 'OverlayEntry.builder')
     return Offstage({
         offstage = not widget.paint_visible,
         child = child,

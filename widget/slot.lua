@@ -10,6 +10,7 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
+local builder_mod = require 'widget.builder'
 
 local Widget = widget_mod.Widget
 local StatelessWidget = widget_mod.StatelessWidget
@@ -42,7 +43,7 @@ end
 ---@field default_op SlotOperation?
 ---@field default_opts table<string, any>?
 ---@field default_value Widget|Widget[]?
----@field builder? fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
+---@field builder? SlotBuilder
 ---@field append_limit integer?
 ---@field identity? fun(opts: table<string, any>, contribution: Contribution): string?
 ---@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
@@ -53,7 +54,7 @@ end
 ---@field default_op SlotOperation?
 ---@field default_opts table<string, any>
 ---@field default_value Widget|Widget[]?
----@field builder fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
+---@field builder SlotBuilder
 ---@field append_limit integer?
 ---@field identity fun(opts: table<string, any>, contribution: Contribution): string?
 ---@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
@@ -104,8 +105,8 @@ function SlotSpec:__init(options)
     if type(options.id) ~= 'string' or options.id == '' then
         raise(std.ValueError('SlotSpec.id must be a non-empty string'))
     end
-    if options.builder ~= nil and type(options.builder) ~= 'function' then
-        raise(std.TypeError('SlotSpec.builder must be a function'))
+    if options.builder ~= nil then
+        builder_mod.validate_callback(options.builder, 'SlotSpec.builder')
     end
     if options.append_limit ~= nil
         and (type(options.append_limit) ~= 'number' or options.append_limit < 0
@@ -157,12 +158,8 @@ end
 ---@param opts table<string, any>?
 ---@return Widget?
 function SlotSpec:build(value, opts)
-    local result = self.builder(value, opts)
-    if result ~= nil and not std.isinstance(result, Widget) then
-        raise(std.TypeError(string.format(
-            "SlotSpec '%s' builder must return a Widget or nil", self.id)))
-    end
-    return result
+    return builder_mod.call_slot(self.builder, value, opts,
+        string.format("SlotSpec '%s' builder", self.id))
 end
 
 ---@class SlotWrap : StatelessWidget

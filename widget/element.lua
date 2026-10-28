@@ -14,6 +14,7 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
+local builder_mod = require 'widget.builder'
 local key_mod = require 'widget.key'
 local foundation_key = require 'foundation.key'
 
@@ -405,7 +406,9 @@ function StatelessElement:rebuild()
     self:_clear_inherited_dependencies()
     self.dirty = false
     local child = self:_run_in_phase('build', function()
-        return self.widget:build(self)
+        return builder_mod.call_context(function(context)
+            return self.widget:build(context)
+        end, self, 'StatelessWidget.build')
     end)
     self.child = self:update_child(self.child, child)
     self:_sync_render_children_upwards()
@@ -496,7 +499,9 @@ function StatefulElement:rebuild()
         end)
     end
     local child = self:_run_in_phase('build', function()
-        return self.state:build(self)
+        return builder_mod.call_context(function(context)
+            return self.state:build(context)
+        end, self, 'State.build')
     end)
     self.child = self:update_child(self.child, child)
     self:_sync_render_children_upwards()
