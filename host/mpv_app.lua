@@ -89,7 +89,7 @@ function App:__init(root_widget, options)
     self.player_context = options.player_context
     if self.player_context
         and type(self.player_context.observe_default_properties) == 'function' then
-        self.player_context:observe_default_properties()
+        self.player_context:observe_default_properties({ batch = true })
     end
     self.theme = options.theme or ThemeData()
     self.actions = options.actions or mpv_actions.default()

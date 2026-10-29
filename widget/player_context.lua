@@ -5,6 +5,7 @@
 -- scope that exposes the current snapshot to descendants.
 
 local std = require 'elxlibs.std'
+local builder_mod = require 'widget.builder'
 local provider_mod = require 'widget.provider'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
@@ -12,6 +13,7 @@ local widget_mod = require 'widget.widget'
 local raise = std.raise
 local Provider = provider_mod.Provider
 local State = state_mod.State
+local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 
 local M = {}
@@ -20,6 +22,45 @@ local readonly_table_views = setmetatable({}, { __mode = 'k' })
 local readonly_table_values = setmetatable({}, { __mode = 'k' })
 local snapshot_views = setmetatable({}, { __mode = 'k' })
 local snapshot_view_values = setmetatable({}, { __mode = 'k' })
+
+local function unwrap_readonly(value)
+    return readonly_table_values[value] or value
+end
+
+---@param left any
+---@param right any
+---@param seen table<table, table>?
+---@return boolean
+local function data_equal(left, right, seen)
+    if left == right then
+        return true
+    end
+    if type(left) ~= 'table' or type(right) ~= 'table' then
+        return false
+    end
+    left = unwrap_readonly(left)
+    right = unwrap_readonly(right)
+    if left == right then
+        return true
+    end
+    seen = seen or {}
+    if seen[left] and seen[left][right] then
+        return true
+    end
+    seen[left] = seen[left] or {}
+    seen[left][right] = true
+    for key, value in pairs(left) do
+        if not data_equal(value, right[key], seen) then
+            return false
+        end
+    end
+    for key in pairs(right) do
+        if left[key] == nil then
+            return false
+        end
+    end
+    return true
+end
 
 ---@alias PlayerSnapshotValue string|number|boolean|table
 ---@alias PlayerSnapshotFields table<string, PlayerSnapshotValue>
@@ -226,16 +267,19 @@ function PlayerSnapshot:get(name)
 end
 
 ---@param name string
----@return CapabilityInfo?
+---@return CapabilityInfo
 function PlayerSnapshot:capability(name)
     if type(name) ~= 'string' or name == '' then
         raise(std.TypeError('PlayerSnapshot.capability expects a non-empty name'))
     end
     local capabilities = self.capabilities
-    if type(capabilities) ~= 'table' then
-        return nil
+    if type(capabilities) ~= 'table' or capabilities[name] == nil then
+        return readonly_value({
+            status = 'unavailable',
+            detail = 'not provided',
+        }) --[[@as CapabilityInfo]]
     end
-    return readonly_value(capabilities[name]) --[[@as CapabilityInfo?]]
+    return readonly_value(capabilities[name]) --[[@as CapabilityInfo]]
 end
 
 ---@return PlayerSnapshotFields
@@ -263,17 +307,29 @@ end
 ---@class PlayerSubscription : std.object
 ---@field private _active boolean
 ---@field private _listener fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)?
+---@field private _selector fun(snapshot: PlayerSnapshot): any?
+---@field private _selector_listener fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)?
+---@field private _equals fun(left: any?, right: any?): boolean
+---@field private _selected any?
 ---@field private _store PlayerStore?
 ---@overload fun(options: _PlayerSubscriptionOptions): self
 local PlayerSubscription = std.class.new('PlayerSubscription', {})
 
 ---@class _PlayerSubscriptionOptions
 ---@field store PlayerStore
----@field listener fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)
+---@field listener? fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)
+---@field selector? fun(snapshot: PlayerSnapshot): any?
+---@field selector_listener? fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)
+---@field equals? fun(left: any?, right: any?): boolean
+---@field selected? any
 
 function PlayerSubscription:__init(options)
     self._active = true
     self._listener = options.listener
+    self._selector = options.selector
+    self._selector_listener = options.selector_listener
+    self._equals = options.equals or data_equal
+    self._selected = options.selected
     self._store = options.store
 end
 
@@ -301,6 +357,19 @@ end
 ---@param previous PlayerSnapshot
 function PlayerSubscription:notify(snapshot, previous)
     if not self._active then
+        return
+    end
+    if self._selector then
+        local selected = self._selector(snapshot)
+        local previous_selected = self._selected
+        self._selected = selected
+        if self._equals(selected, previous_selected) then
+            return
+        end
+        local selector_listener = self._selector_listener
+        if selector_listener then
+            selector_listener(selected, previous_selected, snapshot, previous)
+        end
         return
     end
     local listener = self._listener
@@ -435,6 +504,33 @@ function PlayerStore:subscribe(listener)
     return subscription
 end
 
+---@param selector fun(snapshot: PlayerSnapshot): any?
+---@param listener fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)
+---@param equals? fun(left: any?, right: any?): boolean
+---@return PlayerSubscription
+function PlayerStore:subscribe_selector(selector, listener, equals)
+    if type(selector) ~= 'function' then
+        raise(std.TypeError('PlayerStore.subscribe_selector expects a selector function'))
+    end
+    if type(listener) ~= 'function' then
+        raise(std.TypeError('PlayerStore.subscribe_selector expects a listener function'))
+    end
+    if equals ~= nil and type(equals) ~= 'function' then
+        raise(std.TypeError('PlayerStore.subscribe_selector equals must be a function'))
+    end
+    local current = self._snapshot:readonly()
+    local selected = selector(current)
+    local subscription = PlayerSubscription({
+        store = self,
+        selector = selector,
+        selector_listener = listener,
+        equals = equals or data_equal,
+        selected = selected,
+    })
+    self._subscriptions[#self._subscriptions + 1] = subscription
+    return subscription
+end
+
 ---@class _PlayerProviderOptions
 ---@field snapshot PlayerSnapshot
 ---@field child Widget?
@@ -490,6 +586,42 @@ end
 ---@return PlayerSnapshot
 function PlayerProvider.snapshot_of(context)
     return PlayerProvider.of(context).snapshot
+end
+
+---@alias PlayerCapabilityBuilder fun(info: CapabilityInfo, snapshot: PlayerSnapshot, context: BuildContext): Widget?
+
+---@class _PlayerCapabilityOptions
+---@field name string
+---@field builder PlayerCapabilityBuilder
+---@field key any?
+
+---@class PlayerCapability : StatelessWidget
+---@field name string
+---@field builder PlayerCapabilityBuilder
+---@overload fun(options: _PlayerCapabilityOptions): self
+local PlayerCapability = std.class.new('PlayerCapability', { StatelessWidget })
+
+function PlayerCapability:__init(options)
+    if type(options) ~= 'table' then
+        raise(std.TypeError('PlayerCapability expects an options table'))
+    end
+    if type(options.name) ~= 'string' or options.name == '' then
+        raise(std.ValueError('PlayerCapability.name must be non-empty'))
+    end
+    builder_mod.validate_callback(options.builder, 'PlayerCapability.builder')
+    self.key = options.key
+    self.name = options.name
+    self.builder = options.builder
+end
+
+---@param context BuildContext
+---@return Widget?
+function PlayerCapability:build(context)
+    local provider = PlayerProvider.of(context)
+    local snapshot = provider.snapshot
+    local info = snapshot:capability(self.name)
+    return builder_mod.validate_result(
+        self.builder(info, snapshot, context), 'PlayerCapability.builder')
 end
 
 ---@class _PlayerScopeOptions
@@ -587,6 +719,7 @@ M.PlayerSnapshot = PlayerSnapshot
 M.PlayerSubscription = PlayerSubscription
 M.PlayerStore = PlayerStore
 M.PlayerProvider = PlayerProvider
+M.PlayerCapability = PlayerCapability
 M.PlayerScopeState = PlayerScopeState
 M.PlayerScope = PlayerScope
 

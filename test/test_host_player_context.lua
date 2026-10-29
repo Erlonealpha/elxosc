@@ -30,6 +30,32 @@ F.test('a property update replaces the current snapshot', function()
     F.eq(store:get().pause, true, 'property update is visible')
 end)
 
+F.test('batched property observers publish related fields in one snapshot', function()
+    mp_stub.reset()
+    local store = PlayerStore({ time_pos = 0, duration = 0 })
+    local updates = 0
+    store:subscribe(function()
+        updates = updates + 1
+    end)
+    local context = MpPlayerContext(store)
+    context:observe_batch({
+        { name = 'time-pos', field = 'time_pos', normalize = tonumber },
+        { name = 'duration', field = 'duration', normalize = tonumber },
+    })
+    local by_name = {}
+    for _, event in ipairs(fake.events) do
+        by_name[event.name] = event.cb
+    end
+    by_name['time-pos']('time-pos', 12)
+    by_name.duration('duration', 120)
+    F.eq(store:get().time_pos, 0, 'batch waits for the coalesced flush')
+    mp_stub.pump()
+    F.eq(store:get().time_pos, 12, 'batched position reaches the store')
+    F.eq(store:get().duration, 120, 'batched duration reaches the store')
+    F.eq(updates, 1, 'related properties publish one store update')
+    context:dispose()
+end)
+
 F.test('property observers clean up and duplicate names are rejected', function()
     mp_stub.reset()
     local store = PlayerStore()
@@ -92,5 +118,49 @@ F.test('host capability updates use explicit loading/error states', function()
     F.raises(function()
         context:set_capability('thumbfast', 'invalid' --[[@as CapabilityStatus]])
     end, 'status is invalid', 'invalid capability status')
+    context:dispose()
+end)
+
+F.test('capability adapters publish loading, available and error states', function()
+    mp_stub.reset()
+    local store = PlayerStore()
+    local context = MpPlayerContext(store)
+    local report
+    local stopped = false
+    local subscription = context:observe_capability('thumbfast', {
+        start = function(callback)
+            report = callback
+            return function()
+                stopped = true
+            end
+        end,
+    })
+    F.eq(store:get():capability('thumbfast').status, 'loading', 'adapter starts loading')
+    report('available', 'connected')
+    F.eq(store:get():capability('thumbfast').status, 'available', 'adapter reports available')
+    report('error', 'failed', 'not installed')
+    local failure = store:get():capability('thumbfast')
+    F.eq(failure.status, 'error', 'adapter reports error')
+    F.eq(failure.error, 'not installed', 'adapter error detail is retained')
+    subscription:dispose()
+    F.ok(stopped, 'adapter disposable is released')
+    report('available')
+    F.eq(store:get():capability('thumbfast').status, 'error',
+        'disposed adapter callback is ignored')
+    context:dispose()
+end)
+
+F.test('capability adapter startup failures become explicit errors', function()
+    mp_stub.reset()
+    local store = PlayerStore()
+    local context = MpPlayerContext(store)
+    context:observe_capability('yt_dlp', {
+        start = function()
+            error('missing executable')
+        end,
+    })
+    local capability = store:get():capability('yt_dlp')
+    F.eq(capability.status, 'error', 'startup failure is visible')
+    F.contains(capability.error, 'missing executable', 'startup error is retained')
     context:dispose()
 end)

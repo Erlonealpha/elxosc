@@ -23,6 +23,7 @@ local Provider = provider_mod.Provider
 local PlayerSnapshot = player_context.PlayerSnapshot
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
+local PlayerCapability = player_context.PlayerCapability
 local PlayerScope = player_context.PlayerScope
 
 local FixedLayout = std.class.new('test.PlayerContextLayout', { text_layout.TextLayout })
@@ -334,7 +335,8 @@ F.test('PlayerSnapshot exposes explicit capability states', function()
     F.eq(snapshot:capability('thumbfast').status, 'available', 'available capability')
     F.eq(snapshot:capability('sponsorblock').status, 'loading', 'loading capability')
     F.eq(snapshot:capability('yt_dlp').error, 'not installed', 'error capability')
-    F.ok(snapshot:capability('missing') == nil, 'missing capability is unavailable to the caller')
+    F.eq(snapshot:capability('missing').status, 'unavailable',
+        'missing capability is explicitly unavailable to the caller')
     F.raises(function()
         PlayerSnapshot({ capabilities = { bad = { status = 'maybe' } } })
     end, 'status must be available', 'invalid capability status')
@@ -358,6 +360,67 @@ F.test('PlayerStore notifies active subscribers in registration order', function
     F.eq(order[2], 'second:1', 'second listener runs second')
 
     F.ok(first:is_active() and second:is_active(), 'subscriptions start active')
+end)
+
+F.test('PlayerStore selector subscriptions ignore unrelated snapshot fields', function()
+    local store = PlayerStore({ value = 0, title = 'old' })
+    local calls = {}
+    local subscription = store:subscribe_selector(function(snapshot)
+        return snapshot:get('value')
+    end, function(selected, previous_selected, snapshot, previous)
+        calls[#calls + 1] = {
+            selected = selected,
+            previous = previous_selected,
+            current_title = snapshot:get('title'),
+            previous_title = previous:get('title'),
+        }
+    end)
+
+    store:replace({ value = 0, title = 'new' })
+    F.eq(#calls, 0, 'unrelated field does not notify selector')
+    store:replace({ value = 1, title = 'newer' })
+    F.eq(#calls, 1, 'selected field notifies selector')
+    F.eq(calls[1].selected, 1, 'selected value')
+    F.eq(calls[1].previous, 0, 'previous selected value')
+    F.eq(calls[1].current_title, 'newer', 'current snapshot reaches selector')
+    F.eq(calls[1].previous_title, 'new', 'previous snapshot reaches selector')
+    F.ok(subscription:dispose(), 'selector subscription disposes')
+end)
+
+F.test('PlayerStore selector subscriptions compare nested readonly data', function()
+    local store = PlayerStore({ metadata = { title = 'A', artist = 'B' } })
+    local calls = 0
+    store:subscribe_selector(function(snapshot)
+        return snapshot:get('metadata')
+    end, function()
+        calls = calls + 1
+    end)
+    store:replace({ metadata = { title = 'A', artist = 'B' }, value = 1 })
+    F.eq(calls, 0, 'structurally equal nested selection is stable')
+    store:replace({ metadata = { title = 'C', artist = 'B' }, value = 1 })
+    F.eq(calls, 1, 'nested selection changes once')
+end)
+
+F.test('PlayerCapability presents explicit capability failure states to a Widget', function()
+    local store = PlayerStore({ capabilities = {
+        thumbfast = { status = 'loading', detail = 'starting' },
+    } })
+    local owner, binding = mount(PlayerScope({
+        store = store,
+        child = PlayerCapability({
+            name = 'thumbfast',
+            builder = function(info)
+                return Text(info.status .. ':' .. (info.error or info.detail or ''))
+            end,
+        }),
+    }))
+    F.eq(owner.root.paragraph.text, 'loading:starting', 'loading state reaches the consumer')
+    store:replace({ capabilities = {
+        thumbfast = { status = 'error', error = 'not installed' },
+    } })
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, 'error:not installed', 'error state reaches the consumer')
 end)
 
 F.test('PlayerStore rejects invalid non-nil initial values', function()
