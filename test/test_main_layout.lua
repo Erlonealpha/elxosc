@@ -431,3 +431,27 @@ F.test('AutoHide drops non-maintained content only after fade completion', funct
     F.close(owner.root.opacity, 1, 'rebuilt content fades in')
     scheduler:dispose()
 end)
+
+F.test('AutoHide disposes fade listeners and tickers with the State', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner, binding = mount(AutoHide({
+        controller = controller,
+        timeout = 0,
+        fade_duration = 0.2,
+        child = Text('main'),
+    }), scheduler)
+    local state = binding.root_element.state
+    controller:hide()
+    clock:tick(0)
+    local fade_controller = state._fade_controller
+    F.ok(fade_controller ~= nil and fade_controller:is_animating(),
+        'fade controller is active before disposal')
+    binding:dispose()
+    F.ok(fade_controller._disposed, 'fade controller is disposed with the State')
+    F.ok(next(scheduler._transient) == nil, 'fade ticker is removed from the Scheduler')
+    clock:tick(0.2)
+    F.ok(owner.root == nil, 'disposed tree has no render root')
+    scheduler:dispose()
+end)

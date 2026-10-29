@@ -28,6 +28,7 @@ local Text = text_widgets.Text
 local Align = layout_widgets.Align
 local SizedBox = layout_widgets.SizedBox
 local StatelessWidget = widget_mod.StatelessWidget
+local raise = std.raise
 
 -- Matches `FluentIconFontName` in fonts/fluent_icon_names.lua.
 local DEFAULT_FONT_FAMILY = 'Material Symbols Rounded'
@@ -41,6 +42,10 @@ local DEFAULT_SIZE = 24
 ---@field font_family FluentIconFontName?
 ---@field text_layout TextLayout?
 ---@field optical_offset Offset? visual correction applied to the center target
+---@field fill number? Material Symbols FILL axis, 0..1
+---@field weight number? Material Symbols wght axis, 100..700
+---@field grade number? Material Symbols GRAD axis, -25..200
+---@field optical_size number? Material Symbols opsz axis, 20..48
 ---@field key any?
 
 ---@class Icon : StatelessWidget
@@ -50,8 +55,27 @@ local DEFAULT_SIZE = 24
 ---@field font_family FluentIconFontName
 ---@field text_layout TextLayout?
 ---@field optical_offset Offset
+---@field fill number
+---@field weight number
+---@field grade number
+---@field optical_size number
 ---@overload fun(name: FluentIconNames, options: _IconOptions?): self
 local Icon = std.class.new('Icon', { StatelessWidget })
+
+---@param name string
+---@param value any
+---@param lower number
+---@param upper number
+---@return number
+local function axis(name, value, lower, upper)
+    if type(value) ~= 'number' or value ~= value
+        or value == math.huge or value == -math.huge
+        or value < lower or value > upper then
+        raise(std.ValueError(string.format(
+            'Icon.%s must be a finite number between %g and %g', name, lower, upper)))
+    end
+    return value
+end
 
 ---@param name FluentIconNames
 ---@param options _IconOptions?
@@ -63,6 +87,11 @@ function Icon:__init(name, options)
     self.color = options.color or Color.argb(0xFFFFFFFF)
     self.font_family = options.font_family or DEFAULT_FONT_FAMILY
     self.text_layout = options.text_layout
+    self.fill = axis('fill', options.fill == nil and 0 or options.fill, 0, 1)
+    self.weight = axis('weight', options.weight == nil and 400 or options.weight, 100, 700)
+    self.grade = axis('grade', options.grade == nil and 0 or options.grade, -25, 200)
+    self.optical_size = axis(
+        'optical_size', options.optical_size == nil and 24 or options.optical_size, 20, 48)
     local optical_offset = options.optical_offset
     self.optical_offset = optical_offset == nil and Offset.zero()
         or TextPaint({ offset = optical_offset }).offset
@@ -81,6 +110,13 @@ function Icon:build()
             color = self.color,
             font_family = self.font_family,
             wrap = false,
+            extra = {
+                type = 'material-symbols',
+                fill = self.fill,
+                weight = self.weight,
+                grade = self.grade,
+                optical_size = self.optical_size,
+            },
         }),
         text_layout = self.text_layout,
         text_paint = TextPaint(paint_options),

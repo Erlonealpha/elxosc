@@ -187,6 +187,15 @@ F.test('Opacity is paint-only and preserves layout and hit testing', function()
     F.ok(render_object:hit_test(Offset(5, 5)) ~= nil, 'unhidden opacity restores hit testing')
 end)
 
+F.test('Opacity rejects invalid alpha at the render boundary', function()
+    F.raises(function()
+        mount(Opacity({ opacity = 1.1, child = SizedBox({ width = 1, height = 1 }) }))
+    end, 'between 0 and 1', 'opacity above one')
+    F.raises(function()
+        mount(Opacity({ opacity = -0.1, child = SizedBox({ width = 1, height = 1 }) }))
+    end, 'between 0 and 1', 'negative opacity')
+end)
+
 F.test('finite scale widgets expose paint-only and layout-affecting boxes', function()
     local paint_owner = mount(TransformBox(SizedBox({ width = 20, height = 10 }), {
         scale = Size(2, 2),

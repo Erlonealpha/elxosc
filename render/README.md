@@ -28,7 +28,7 @@ not import Widget modules or mpv.
 - `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,
   hit testing and pointer regions while hidden.
 - `opacity.lua` — paint-only subtree alpha; layout, hit testing and pointer regions remain
-  unchanged.
+  unchanged until a visibility owner explicitly sets `hidden`.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.
 
 RenderObject layout must return finite sizes within Constraints. Paint-only setters

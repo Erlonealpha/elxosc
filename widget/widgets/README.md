@@ -4,9 +4,11 @@ This directory contains the public Widget wrappers around `render/` nodes.
 
 ## Groups
 
-- Layout: `padding`, `align`, `sized_box`, `container`, `flex`, `stack`,
+- Layout: `padding`, `align`, `sized_box`, `container`, `flex`, `stack`, `positioned`,
   `constraints`, `overflow`, `offset_box`, `transform_box`.
-- Content: `text`, `icon`, `custom_paint`.
+- Content: `text`, `icon`, `custom_paint`. `Icon` uses the bundled Material Symbols
+  Rounded family and carries typed FILL/WGHT/GRAD/opsz variation intent without
+  exposing backend-specific override strings.
 - Input and controls: `gesture_detector`, `button_base`, `button_style`, `button`,
   `elevated_button`, `outlined_button`, `text_button`, `icon_button`.
 - Compatibility aggregates: `basic.lua` and `layout.lua`.
