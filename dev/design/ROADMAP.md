@@ -124,6 +124,8 @@
 ### 6.9 播放器 Shell
 
 - 顶层控件支持 visible/hidden 和 auto/always/never 策略；
+- P2.4 实现切片已增加 `PlayerThemeData`/`PlayerTheme` 和 original/reduced 的
+  root-relative `PlayerLayout`；完整 ModernX 控件状态与人工 parity 仍按 P2.5～P2.7 推进；
 - hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；
 - 将 Main/Extension/WindowLayer 继续扩展为经过审阅的播放器 Shell，而不是恢复九宫格；
 - Shell build 使用监听式 Provider，init/event/resource callback 使用非监听 read，

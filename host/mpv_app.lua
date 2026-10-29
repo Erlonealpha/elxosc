@@ -43,6 +43,7 @@ local WidgetsBinding = binding_mod.WidgetsBinding
 local WidgetsApp = app_widgets.WidgetsApp
 local ThemeData = ambient_mod.ThemeData
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
+local PlayerThemeData = require('widget.player.theme').PlayerThemeData
 local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
@@ -69,6 +70,7 @@ local M = {}
 ---@field root_widget Widget
 ---@field display_snapshot DisplaySnapshot
 ---@field theme ThemeData
+---@field player_theme PlayerThemeData
 ---@field actions HostActions
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
@@ -79,7 +81,7 @@ local M = {}
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
+---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, player_theme: PlayerThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
 local App = std.class.new('App', {})
 
 function App:__init(root_widget, options)
@@ -92,6 +94,7 @@ function App:__init(root_widget, options)
         self.player_context:observe_default_properties({ batch = true })
     end
     self.theme = options.theme or ThemeData()
+    self.player_theme = options.player_theme or PlayerThemeData()
     self.actions = options.actions or mpv_actions.default()
     self.default_text_style = options.default_text_style
     self._shutdown = false
@@ -189,6 +192,7 @@ function App:_wrap_root(root_widget)
     end
     return WidgetsApp({
         theme = self.theme,
+        player_theme = self.player_theme,
         display = self.display_snapshot,
         default_text_style = self.default_text_style,
         actions = self.actions,

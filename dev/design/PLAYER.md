@@ -10,7 +10,7 @@ WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
 ```text
 WidgetsApp
-├── Theme / DisplayScope / DefaultTextStyle / HostActionsScope
+├── Theme / PlayerTheme / DisplayScope / DefaultTextStyle / HostActionsScope
 └── DefaultApp
     └── Theatre（单一逻辑 owner）
         ├── ExtensionEntry
@@ -19,7 +19,8 @@ WidgetsApp
 ```
 
 `Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线、进度条
-和播放控制由播放器定义，scale 是统一正数配置并使用流式布局。`ExtensionEntry` 是当前唯一的
+和播放控制由播放器定义，统一正数 scale 只负责布局外层缩放，控制器内部使用
+`PlayerThemeData` 的 root-relative `Stack`/`Positioned` 几何。`ExtensionEntry` 是当前唯一的
 扩展内容边界；`WindowLayer` 由一个 Navigator 管理逻辑页面，没有初始 Page 时只有空根
 语义，不创建额外 presenter/root。
 
@@ -43,20 +44,24 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 - `PlayerSnapshot` 的播放/EOF、缓存、playlist/chapter/track、metadata、window 和 audio
   字段由 host 映射；外部能力通过 `capabilities[name].status` 表达
   `available`/`unavailable`/`loading`/`error`；
-- 统一正数 scale、ThemeData 颜色/字号、hover color 和 paint-only hover scale；
+- 统一正数 scale、`PlayerThemeData` 颜色/字号、hover color 和 paint-only hover scale；
 - timeout AutoHide 与 frame-clock fade/top/bottom hover zone；默认 fade 为 150ms、top zone
   为 40px、bottom zone 为 175px；
   hidden Main 只在启用 zone 内唤醒，visible Main 在 zone 外 activity 立即隐藏；resize 后
   同一 root/canvas/presenter 更新输入区域。`Main.window_top_bar` 的 `auto` 模式按
   `PlayerSnapshot.fullscreen`、`border`、`title_bar` 决定顶部栏和 top wake zone；`yes`/`no`
   可由播放器组合显式覆盖。
+- `PlayerThemeData` 映射 ModernX 的 `original`/`reduced` layout option、180px controller、
+  seekbar/title/time/chapter/window-control 尺寸、颜色、blur/border intent 和宽度阈值；
+  `PlayerLayout` 通过 `Positioned` 共享同一 root-space offset，使绘制、命中和 pointer
+  regions 保持一致。
 
 进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
 结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
 setter 在 paint invalidation 外同时 invalidates input snapshot。
 
-P2 明确 deferred：完整 ModernX fade 视觉对照和配置兼容、章节 marker/tooltip、轨道菜单、
-音量滑块、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
+P2 明确 deferred：完整 ModernX fade 视觉对照和配置兼容、章节 marker/tooltip、轨道菜单的
+ 完整交互、音量滑块的完整状态行为、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
 多 host overlay、focus/IME 和完整 ModernX 配置兼容。当前静态 ASS 输出不使用 `\move` 或
 `\t`。
 

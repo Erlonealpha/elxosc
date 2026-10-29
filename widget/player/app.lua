@@ -6,20 +6,19 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
-local text_style_mod = require 'text.text_style'
 local widget_mod = require 'widget.widget'
 local ambient_mod = require 'widget.ambient'
 local actions_mod = require 'widget.actions'
 local overlay_mod = require 'widget.overlay'
 local visibility_mod = require 'widget.visibility'
 local layout_widgets = require 'widget.widgets.layout'
-local basic_widgets = require 'widget.widgets.basic'
 local player_context = require 'widget.player_context'
+local player_theme_mod = require 'widget.player.theme'
+local player_layout_mod = require 'widget.player.layout'
 
 local EdgeInsets = geometry.EdgeInsets
 local Offset = geometry.Offset
 local Size = geometry.Size
-local TextStyle = text_style_mod.TextStyle
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local State = require('widget.state').State
@@ -27,20 +26,15 @@ local ThemeData = ambient_mod.ThemeData
 local Theme = ambient_mod.Theme
 local HostActions = actions_mod.HostActions
 local PlayerProvider = player_context.PlayerProvider
+local PlayerThemeData = player_theme_mod.PlayerThemeData
+local PlayerTheme = player_theme_mod.PlayerTheme
+local PlayerLayout = player_layout_mod.PlayerLayout
 local OverlayEntry = overlay_mod.OverlayEntry
 local Theatre = overlay_mod.Theatre
 local AutoHide = visibility_mod.AutoHide
 local AutoHideController = visibility_mod.AutoHideController
-local Container = layout_widgets.Container
-local Column = layout_widgets.Column
-local Row = layout_widgets.Row
-local Expanded = layout_widgets.Expanded
 local SizedBox = layout_widgets.SizedBox
 local LayoutScaleBox = layout_widgets.LayoutScaleBox
-local Text = basic_widgets.Text
-local TextButton = basic_widgets.TextButton
-local ButtonStyle = basic_widgets.ButtonStyle
-local ProgressBar = require('widget.player.progress_bar').ProgressBar
 
 local raise = std.raise
 local M = {}
@@ -61,6 +55,7 @@ end
 ---@field title_bar Widget?
 ---@field window_controls Widget?
 ---@field window_top_bar WindowTopBarMode?
+---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
 ---@field scale number?
 ---@field key any?
@@ -69,7 +64,8 @@ end
 ---@field title string
 ---@field title_bar Widget?
 ---@field window_controls Widget?
----@field window_top_bar WindowTopBarMode
+---@field window_top_bar WindowTopBarMode?
+---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
 ---@field scale number?
 ---@overload fun(options?: _MainOptions): self
@@ -81,10 +77,15 @@ function Main:__init(options)
     self.title = options.title or 'elxosc'
     self.title_bar = options.title_bar
     self.window_controls = options.window_controls
-    self.window_top_bar = options.window_top_bar or 'auto'
-    if self.window_top_bar ~= 'auto' and self.window_top_bar ~= 'yes'
+    self.window_top_bar = options.window_top_bar
+    if self.window_top_bar ~= nil and self.window_top_bar ~= 'auto' and self.window_top_bar ~= 'yes'
         and self.window_top_bar ~= 'no' then
         raise(std.ValueError('Main.window_top_bar must be auto, yes or no'))
+    end
+    self.layout_option = options.layout_option
+    if self.layout_option ~= nil and self.layout_option ~= 'original'
+        and self.layout_option ~= 'reduced' then
+        raise(std.ValueError('Main.layout_option must be original or reduced'))
     end
     self.bottom = options.bottom
     self.scale = options.scale
@@ -116,18 +117,6 @@ local function snapshot_text(snapshot, names, fallback)
     return fallback
 end
 
-local function snapshot_number(snapshot, name)
-    if not snapshot then
-        return nil
-    end
-    local value = snapshot:get(name)
-    if type(value) ~= 'number' or value ~= value
-        or value == math.huge or value == -math.huge then
-        return nil
-    end
-    return value
-end
-
 local function top_hover_enabled(snapshot)
     if snapshot == nil then
         return true
@@ -157,211 +146,28 @@ local function top_bar_visible(snapshot, mode)
     return top_hover_enabled(snapshot)
 end
 
-local function clamp_fraction(value)
-    return math.max(0, math.min(1, value))
-end
-
-local function format_time(value)
-    if value == nil or value < 0 then
-        return '--:--'
-    end
-    local total = math.floor(value + 0.5)
-    local seconds = total % 60
-    local minutes = math.floor(total / 60) % 60
-    local hours = math.floor(total / 3600)
-    if hours > 0 then
-        return string.format('%d:%02d:%02d', hours, minutes, seconds)
-    end
-    return string.format('%02d:%02d', minutes, seconds)
-end
-
-local function player_progress(snapshot)
-    local percent = snapshot_number(snapshot, 'percent_pos')
-    if percent ~= nil then
-        return clamp_fraction(percent / 100)
-    end
-    local position = snapshot_number(snapshot, 'time_pos')
-    local duration = snapshot_number(snapshot, 'duration')
-    if position ~= nil and duration ~= nil and duration > 0 then
-        return clamp_fraction(position / duration)
-    end
-    return 0
-end
-
-local function buffered_progress(snapshot)
-    local explicit = snapshot_number(snapshot, 'buffered_percent')
-    if explicit ~= nil then
-        return clamp_fraction(explicit / 100)
-    end
-    local position = snapshot_number(snapshot, 'time_pos') or 0
-    local duration = snapshot_number(snapshot, 'duration')
-    local buffered_duration = snapshot_number(snapshot, 'buffered_duration')
-    if duration ~= nil and duration > 0 and buffered_duration ~= nil then
-        return clamp_fraction((position + math.max(0, buffered_duration)) / duration)
-    end
-    return 0
-end
-
-local function control_style(theme)
-    return ButtonStyle({
-        background_color = theme.surface_color,
-        hover_color = theme.accent_color:with_alpha(0.42),
-        pressed_color = theme.accent_color:with_alpha(0.62),
-        foreground_color = theme.text_style.color,
-        padding = EdgeInsets.symmetric(10, 4),
-        hover_scale = 1.08,
-    })
-end
-
-function Main:_default_title_bar(theme, snapshot)
-    local title = snapshot_text(snapshot, { 'media_title', 'title', 'filename' }, self.title)
-    return Container({
-        padding = EdgeInsets.symmetric(10, 6),
-        color = theme.surface_color,
-        child = Text(title, {
-            style = theme.text_style:copy_with({ bold = true, font_size = theme.text_style.font_size + 1 }),
-        }),
-    })
-end
-
-function Main:_default_window_controls(actions, theme)
-    local font_size = math.max(11, theme.text_style.font_size - 1)
-    local style = control_style(theme)
-    return Row({
-        spacing = 4,
-        children = {
-            TextButton({ label = '−', font_size = font_size, style = style, on_click = function()
-                actions:minimize()
-            end }),
-            TextButton({ label = '□', font_size = font_size, style = style, on_click = function()
-                actions:toggle_fullscreen()
-            end }),
-            TextButton({ label = '×', font_size = font_size, style = style, on_click = function()
-                actions:close()
-            end }),
-        },
-    })
-end
-
-function Main:_default_bottom(actions, theme, snapshot)
-    local label_style = theme.text_style:copy_with({ font_size = math.max(11, theme.text_style.font_size - 2) })
-    local title = snapshot_text(snapshot, { 'media_title', 'title', 'filename' }, self.title)
-    local position = format_time(snapshot_number(snapshot, 'time_pos'))
-    local duration = format_time(snapshot_number(snapshot, 'duration'))
-    local info = snapshot and snapshot:get('pause') == true and 'paused' or 'playing'
-    local filename = snapshot_text(snapshot, { 'filename' }, '')
-    if filename ~= '' and filename ~= title then
-        info = info .. ' · ' .. filename
-    end
-    local duration_value = snapshot_number(snapshot, 'duration')
-    local progress = player_progress(snapshot)
-    local buffered = buffered_progress(snapshot)
-    local seek = function(fraction)
-        if duration_value ~= nil and duration_value > 0 then
-            actions:seek_to(duration_value * fraction)
-        end
-    end
-    local style = control_style(theme)
-    return Column({
-        main_axis_size = 'min',
-        cross_alignment = 'stretch',
-        children = {
-            Container({
-                padding = EdgeInsets.symmetric(10, 2),
-                color = theme.surface_color,
-                child = Text(title, { style = label_style }),
-            }),
-            Container({
-                padding = EdgeInsets.symmetric(10, 2),
-                child = Text(info, { style = label_style }),
-            }),
-            Container({
-                height = 4,
-                color = theme.accent_color,
-            }),
-            SizedBox({
-                height = 14,
-                child = ProgressBar({
-                    progress = progress,
-                    buffered = buffered,
-                    track_color = theme.text_style.color:with_alpha(0.22),
-                    buffered_color = theme.text_style.color:with_alpha(0.38),
-                    progress_color = theme.accent_color,
-                    handle_color = theme.accent_color,
-                    on_seek = function(fraction)
-                        seek(fraction)
-                    end,
-                }),
-            }),
-            Container({
-                padding = EdgeInsets.symmetric(10, 2),
-                child = Row({
-                    main_axis_size = 'max',
-                    children = {
-                        Text(position, { style = label_style }),
-                        Expanded(SizedBox.shrink()),
-                        Text(duration, { style = label_style }),
-                    },
-                }),
-            }),
-            Container({
-                padding = EdgeInsets.symmetric(8, 3),
-                color = theme.surface_color,
-                child = Row({
-                    spacing = 6,
-                    main_alignment = 'center',
-                    children = {
-                        TextButton({
-                            label = snapshot and snapshot:get('pause') == true and 'Play' or 'Pause',
-                            style = style,
-                            on_click = function() actions:play_pause() end,
-                        }),
-                        TextButton({ label = '−10', style = style, on_click = function()
-                            actions:seek(-10)
-                        end }),
-                        TextButton({ label = '+10', style = style, on_click = function()
-                            actions:seek(10)
-                        end }),
-                    },
-                }),
-            }),
-        },
-    })
-end
-
 ---@param context BuildContext
 function Main:build(context)
     local theme_scope = Theme.maybe_of(context)
     local theme = theme_scope and theme_scope.data or ThemeData()
+    local player_theme_scope = PlayerTheme.maybe_of(context)
+    local player_theme = player_theme_scope and player_theme_scope.data or PlayerThemeData()
     local actions = HostActions.maybe_of(context) or HostActions()
     local player = PlayerProvider.maybe_of(context)
     local snapshot = player and player.snapshot or nil
-    local title_bar = self.title_bar or self:_default_title_bar(theme, snapshot)
-    local window_controls = self.window_controls or self:_default_window_controls(actions, theme)
-    local bottom = self.bottom or self:_default_bottom(actions, theme, snapshot)
+    local mode = self.window_top_bar or player_theme.window_top_bar
     local scale = self.scale or theme.scale
-    local children = {}
-    if top_bar_visible(snapshot, self.window_top_bar) then
-        children[#children + 1] = Container({
-            height = 42,
-            color = theme.surface_color,
-            child = Row({
-                main_axis_size = 'max',
-                cross_alignment = 'center',
-                children = {
-                    Expanded(title_bar),
-                    window_controls,
-                },
-            }),
-        })
-    end
-    children[#children + 1] = Expanded(SizedBox.shrink())
-    children[#children + 1] = bottom
-
-    return LayoutScaleBox(Column({
-        main_axis_size = 'max',
-        cross_alignment = 'stretch',
-        children = children,
+    return LayoutScaleBox(PlayerLayout({
+        theme = player_theme,
+        actions = actions,
+        snapshot = snapshot,
+        title = snapshot_text(snapshot, { 'media_title', 'title', 'filename' }, self.title),
+        title_bar = self.title_bar,
+        window_controls = self.window_controls,
+        bottom = self.bottom,
+        layout_option = self.layout_option or player_theme.layout_option,
+        top_bar_visible = top_bar_visible(snapshot, mode),
+        scale = scale,
     }), {
         scale = Size(scale, scale),
         alignment = Offset(0.5, 1),
@@ -510,7 +316,11 @@ function DefaultAppState:init_state()
             local snapshot = player and player.snapshot or nil
             local top_enabled = current_app.auto_hide_top_hover_enabled
             if top_enabled == nil then
-                local mode = std.isinstance(main, Main) and main.window_top_bar or 'auto'
+                local player_theme_scope = PlayerTheme.maybe_of(context)
+                local player_theme = player_theme_scope and player_theme_scope.data or PlayerThemeData()
+                local mode = std.isinstance(main, Main) and main.window_top_bar
+                    or player_theme.window_top_bar
+                mode = mode or 'auto'
                 top_enabled = top_bar_visible(snapshot, mode)
             end
             return AutoHide({

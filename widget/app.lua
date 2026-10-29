@@ -11,6 +11,7 @@ local std = require 'elxlibs.std'
 local text_style_mod = require 'text.text_style'
 local widget_mod = require 'widget.widget'
 local ambient_mod = require 'widget.ambient'
+local player_theme_mod = require 'widget.player.theme'
 local actions_mod = require 'widget.actions'
 local layout_widgets = require 'widget.widgets.layout'
 
@@ -21,6 +22,8 @@ local Theme = ambient_mod.Theme
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local DisplayScope = ambient_mod.DisplayScope
 local DefaultTextStyle = ambient_mod.DefaultTextStyle
+local PlayerThemeData = player_theme_mod.PlayerThemeData
+local PlayerTheme = player_theme_mod.PlayerTheme
 local HostActions = actions_mod.HostActions
 local HostActionsScope = actions_mod.HostActionsScope
 local SizedBox = layout_widgets.SizedBox
@@ -38,6 +41,7 @@ end
 ---@class _WidgetsAppOptions
 ---@field child Widget?
 ---@field theme ThemeData?
+---@field player_theme PlayerThemeData?
 ---@field display DisplaySnapshot?
 ---@field default_text_style TextStyle?
 ---@field actions HostActions?
@@ -46,6 +50,7 @@ end
 ---@class WidgetsApp : StatelessWidget
 ---@field child Widget?
 ---@field theme ThemeData
+---@field player_theme PlayerThemeData
 ---@field display DisplaySnapshot
 ---@field default_text_style TextStyle
 ---@field actions HostActions
@@ -57,11 +62,15 @@ function WidgetsApp:__init(options)
     self.key = options.key
     self.child = options.child
     self.theme = options.theme or ThemeData()
+    self.player_theme = options.player_theme or PlayerThemeData()
     self.display = options.display or DisplaySnapshot({ width = 0, height = 0 })
     self.default_text_style = options.default_text_style or self.theme.text_style
     self.actions = options.actions or HostActions()
     if not std.isinstance(self.theme, ThemeData) then
         raise(std.TypeError('WidgetsApp.theme must be ThemeData'))
+    end
+    if not std.isinstance(self.player_theme, PlayerThemeData) then
+        raise(std.TypeError('WidgetsApp.player_theme must be PlayerThemeData'))
     end
     if not std.isinstance(self.display, DisplaySnapshot) then
         raise(std.TypeError('WidgetsApp.display must be DisplaySnapshot'))
@@ -77,13 +86,16 @@ end
 function WidgetsApp:build()
     return Theme({
         data = self.theme,
-        child = DisplayScope({
-            snapshot = self.display,
-            child = DefaultTextStyle({
-                style = self.default_text_style,
-                child = HostActionsScope({
-                    actions = self.actions,
-                    child = child_or_empty(self.child),
+        child = PlayerTheme({
+            data = self.player_theme,
+            child = DisplayScope({
+                snapshot = self.display,
+                child = DefaultTextStyle({
+                    style = self.default_text_style,
+                    child = HostActionsScope({
+                        actions = self.actions,
+                        child = child_or_empty(self.child),
+                    }),
                 }),
             }),
         }),
@@ -92,6 +104,8 @@ end
 
 -- Compatibility aggregate: player components now live in widget/player/.
 M.WidgetsApp = WidgetsApp
+M.PlayerThemeData = PlayerThemeData
+M.PlayerTheme = PlayerTheme
 local player_app = require 'widget.player.app'
 for name, value in pairs(player_app) do
     M[name] = value
