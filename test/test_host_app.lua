@@ -537,6 +537,80 @@ F.test('ModernX top hover policy reveals Main only in the top zone', function()
         'top-zone activity follows the resized viewport origin')
 end)
 
+F.test('window snapshot gates top hover and updates the live Main policy', function()
+    mp_stub.reset()
+    local store = PlayerStore({ fullscreen = false, border = true, title_bar = true })
+    local app = mpv_app.App(main_layout.build_app(Text('extension')), {
+        player_store = store,
+    })
+    local default_element = find_widget_element(app.binding.root_element, DefaultApp)
+    F.ok(default_element ~= nil, 'DefaultApp is mounted')
+    if default_element == nil then
+        return
+    end
+    local viewport = Rect(0, 0, 1280, 720)
+
+    default_element.state:hide_main()
+    app:notify_activity(10, 0, viewport)
+    F.ok(not default_element.state.main_controller.visible,
+        'normal bordered window does not create a top wake zone')
+
+    store:replace({ fullscreen = true, border = true, title_bar = true })
+    app.binding:flush_build()
+    default_element.state:hide_main()
+    app:notify_activity(10, 0, viewport)
+    F.ok(default_element.state.main_controller.visible,
+        'fullscreen snapshot enables the top wake zone')
+
+    store:replace({ fullscreen = false, border = false, title_bar = true })
+    app.binding:flush_build()
+    default_element.state:hide_main()
+    app:notify_activity(10, 0, viewport)
+    F.ok(default_element.state.main_controller.visible,
+        'borderless snapshot enables the top wake zone')
+end)
+
+F.test('activity and resize do not cancel an active pointer capture', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Button({
+        label = 'extension',
+        on_click = function() end,
+    })))
+    app:render()
+    local captured = app.owner:dispatch_pointer_result('down', Offset(20, 20), 'left')
+    F.ok(captured.capture and app.owner:has_pointer_capture(),
+        'extension press starts pointer capture')
+
+    app:notify_activity(10, 300, Rect(0, 0, 1280, 720))
+    F.ok(app.owner:has_pointer_capture(),
+        'outside-zone activity does not cancel capture during fade')
+
+    fake.osd_width, fake.osd_height = 640, 360
+    for _, event in ipairs(fake.events) do
+        if event.name == 'osd-dimensions' then
+            event.cb(nil, nil)
+        end
+    end
+    F.ok(app.owner:has_pointer_capture(), 'resize preserves pointer capture')
+end)
+
+F.test('root replacement removes stale Main activity listeners', function()
+    mp_stub.reset()
+    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local old_default = find_widget_element(app.binding.root_element, DefaultApp)
+    F.ok(old_default ~= nil, 'old DefaultApp is mounted')
+    if old_default == nil then
+        return
+    end
+    local old_controller = old_default.state.main_controller
+    app:set_root_widget(main_layout.build_app(Text('replacement')))
+    app.binding:flush_build()
+    F.ok(next(old_controller._listeners) == nil,
+        'old Main listener is removed after root replacement')
+    app:notify_activity(10, 0, Rect(0, 0, 1280, 720))
+    F.ok(app.binding.root_element ~= nil, 'replacement tree remains active')
+end)
+
 F.test('a set_state rebuild lands in the next frame', function()
     mp_stub.reset()
 

@@ -26,6 +26,7 @@ local State = require('widget.state').State
 local ThemeData = ambient_mod.ThemeData
 local Theme = ambient_mod.Theme
 local HostActions = actions_mod.HostActions
+local PlayerProvider = player_context.PlayerProvider
 local OverlayEntry = overlay_mod.OverlayEntry
 local Theatre = overlay_mod.Theatre
 local AutoHide = visibility_mod.AutoHide
@@ -44,6 +45,11 @@ local ProgressBar = require('widget.player.progress_bar').ProgressBar
 local raise = std.raise
 local M = {}
 
+---@alias WindowTopBarMode
+---| 'auto'
+---| 'yes'
+---| 'no'
+
 local function child_or_empty(child)
     return child or SizedBox.shrink()
 end
@@ -54,6 +60,7 @@ end
 ---@field title string?
 ---@field title_bar Widget?
 ---@field window_controls Widget?
+---@field window_top_bar WindowTopBarMode?
 ---@field bottom Widget?
 ---@field scale number?
 ---@field key any?
@@ -62,6 +69,7 @@ end
 ---@field title string
 ---@field title_bar Widget?
 ---@field window_controls Widget?
+---@field window_top_bar WindowTopBarMode
 ---@field bottom Widget?
 ---@field scale number?
 ---@overload fun(options?: _MainOptions): self
@@ -73,6 +81,11 @@ function Main:__init(options)
     self.title = options.title or 'elxosc'
     self.title_bar = options.title_bar
     self.window_controls = options.window_controls
+    self.window_top_bar = options.window_top_bar or 'auto'
+    if self.window_top_bar ~= 'auto' and self.window_top_bar ~= 'yes'
+        and self.window_top_bar ~= 'no' then
+        raise(std.ValueError('Main.window_top_bar must be auto, yes or no'))
+    end
     self.bottom = options.bottom
     self.scale = options.scale
 end
@@ -113,6 +126,35 @@ local function snapshot_number(snapshot, name)
         return nil
     end
     return value
+end
+
+local function top_hover_enabled(snapshot)
+    if snapshot == nil then
+        return true
+    end
+    local fullscreen = snapshot:get('fullscreen')
+    local border = snapshot:get('border')
+    local title_bar = snapshot:get('title_bar')
+    if fullscreen == true or border == false or title_bar == false then
+        return true
+    end
+    if fullscreen ~= nil and border ~= nil and title_bar ~= nil then
+        return false
+    end
+    return true
+end
+
+---@param snapshot PlayerSnapshot?
+---@param mode WindowTopBarMode
+---@return boolean
+local function top_bar_visible(snapshot, mode)
+    if mode == 'yes' then
+        return true
+    end
+    if mode == 'no' then
+        return false
+    end
+    return top_hover_enabled(snapshot)
 end
 
 local function clamp_fraction(value)
@@ -292,32 +334,34 @@ function Main:build(context)
     local theme_scope = Theme.maybe_of(context)
     local theme = theme_scope and theme_scope.data or ThemeData()
     local actions = HostActions.maybe_of(context) or HostActions()
-    local player = player_context.PlayerProvider.maybe_of(context)
+    local player = PlayerProvider.maybe_of(context)
     local snapshot = player and player.snapshot or nil
     local title_bar = self.title_bar or self:_default_title_bar(theme, snapshot)
     local window_controls = self.window_controls or self:_default_window_controls(actions, theme)
     local bottom = self.bottom or self:_default_bottom(actions, theme, snapshot)
     local scale = self.scale or theme.scale
+    local children = {}
+    if top_bar_visible(snapshot, self.window_top_bar) then
+        children[#children + 1] = Container({
+            height = 42,
+            color = theme.surface_color,
+            child = Row({
+                main_axis_size = 'max',
+                cross_alignment = 'center',
+                children = {
+                    Expanded(title_bar),
+                    window_controls,
+                },
+            }),
+        })
+    end
+    children[#children + 1] = Expanded(SizedBox.shrink())
+    children[#children + 1] = bottom
 
     return LayoutScaleBox(Column({
         main_axis_size = 'max',
         cross_alignment = 'stretch',
-        children = {
-            Container({
-                height = 42,
-                color = theme.surface_color,
-                child = Row({
-                    main_axis_size = 'max',
-                    cross_alignment = 'center',
-                    children = {
-                        Expanded(title_bar),
-                        window_controls,
-                    },
-                }),
-            }),
-            Expanded(SizedBox.shrink()),
-            bottom,
-        },
+        children = children,
     }), {
         scale = Size(scale, scale),
         alignment = Offset(0.5, 1),
@@ -364,6 +408,7 @@ end
 ---@field auto_hide_bottom_hover boolean?
 ---@field auto_hide_hover_zone number?
 ---@field auto_hide_top_hover boolean?
+---@field auto_hide_top_hover_enabled boolean?
 ---@field auto_hide_top_hover_zone number?
 ---@field auto_hide_controller AutoHideController?
 ---@field key any?
@@ -380,6 +425,7 @@ end
 ---@field auto_hide_bottom_hover boolean
 ---@field auto_hide_hover_zone number
 ---@field auto_hide_top_hover boolean
+---@field auto_hide_top_hover_enabled boolean?
 ---@field auto_hide_top_hover_zone number
 ---@field auto_hide_controller AutoHideController
 ---@overload fun(options?: _DefaultAppOptions): self
@@ -401,6 +447,11 @@ function DefaultApp:__init(options)
     self.auto_hide_hover_zone = options.auto_hide_hover_zone == nil and 175
         or options.auto_hide_hover_zone
     self.auto_hide_top_hover = options.auto_hide_top_hover == true
+    self.auto_hide_top_hover_enabled = options.auto_hide_top_hover_enabled
+    if self.auto_hide_top_hover_enabled ~= nil
+        and type(self.auto_hide_top_hover_enabled) ~= 'boolean' then
+        raise(std.TypeError('DefaultApp.auto_hide_top_hover_enabled must be a boolean'))
+    end
     self.auto_hide_top_hover_zone = options.auto_hide_top_hover_zone == nil and 40
         or options.auto_hide_top_hover_zone
     self.auto_hide_controller = options.auto_hide_controller or AutoHideController()
@@ -445,29 +496,42 @@ function DefaultAppState:init_state()
     self.extension_entry = OverlayEntry({
         key = 'default-app-extension',
         builder = function()
-            return app.extension
+            local current_app = self.widget --[[@as DefaultApp]]
+            return current_app.extension
         end,
     })
     self.main_entry = OverlayEntry({
         key = 'default-app-main',
         builder = function(context)
+            local current_app = self.widget --[[@as DefaultApp]]
+            local main = current_app.main
+                or Main({ title = current_app.title, scale = current_app.scale })
+            local player = PlayerProvider.maybe_of(context)
+            local snapshot = player and player.snapshot or nil
+            local top_enabled = current_app.auto_hide_top_hover_enabled
+            if top_enabled == nil then
+                local mode = std.isinstance(main, Main) and main.window_top_bar or 'auto'
+                top_enabled = top_bar_visible(snapshot, mode)
+            end
             return AutoHide({
                 controller = self.main_controller,
-                timeout = app.auto_hide_timeout,
-                enabled = app.auto_hide_enabled,
-                fade_duration = app.auto_hide_fade_duration,
-                bottom_hover = app.auto_hide_bottom_hover,
-                hover_zone = app.auto_hide_hover_zone,
-                top_hover = app.auto_hide_top_hover,
-                top_hover_zone = app.auto_hide_top_hover_zone,
-                child = app.main or Main({ title = app.title, scale = app.scale }),
+                timeout = current_app.auto_hide_timeout,
+                enabled = current_app.auto_hide_enabled,
+                fade_duration = current_app.auto_hide_fade_duration,
+                bottom_hover = current_app.auto_hide_bottom_hover,
+                hover_zone = current_app.auto_hide_hover_zone,
+                top_hover = current_app.auto_hide_top_hover,
+                top_hover_enabled = top_enabled,
+                top_hover_zone = current_app.auto_hide_top_hover_zone,
+                child = main,
             })
         end,
     })
     self.window_entry = OverlayEntry({
         key = 'default-app-window-layer',
         builder = function()
-            return app.window_layer or WindowLayer()
+            local current_app = self.widget --[[@as DefaultApp]]
+            return current_app.window_layer or WindowLayer()
         end,
     })
 end

@@ -18,4 +18,6 @@ re-exports the player classes for compatibility; new player composition should
 use `require 'widget.player'` or the direct player modules.
 
 `DefaultApp` passes the 150ms frame-clock AutoHide fade through to Main. The fade is local to
-MainEntry and does not affect Extension or WindowLayer state.
+MainEntry and does not affect Extension or WindowLayer state. `Main.window_top_bar` accepts
+`auto`/`yes`/`no`; `auto` follows the PlayerSnapshot `fullscreen`, `border` and `title_bar`
+fields, so the same policy controls both the visible top bar and the top wake zone.

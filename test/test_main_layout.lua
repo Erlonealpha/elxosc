@@ -103,6 +103,22 @@ local function find_widget_element(element, widget_class)
     return nil
 end
 
+local function find_widget_instance(element, widget)
+    if element == nil then
+        return nil
+    end
+    if element.widget == widget then
+        return element
+    end
+    for _, child in ipairs(element:element_children()) do
+        local found = find_widget_instance(child, widget)
+        if found then
+            return found
+        end
+    end
+    return nil
+end
+
 local function count_widget_elements(element, widget_class)
     if element == nil then
         return 0
@@ -277,6 +293,27 @@ F.test('Main maps PlayerSnapshot time values into an interactive seek bar', func
     F.ok(owner.root ~= nil, 'player shell keeps one render root')
 end)
 
+F.test('Main top bar follows window state while bottom controls remain mounted', function()
+    local store = PlayerStore({ fullscreen = false, border = true, title_bar = true })
+    local top = Text('top-only')
+    local bottom = Text('bottom-only')
+    local _, binding = mount(WidgetsApp({
+        child = PlayerScope({
+            store = store,
+            child = Main({ title_bar = top, bottom = bottom }),
+        }),
+    }))
+    F.ok(find_widget_instance(binding.root_element, top) == nil,
+        'normal bordered window hides the top bar')
+    F.ok(find_widget_instance(binding.root_element, bottom) ~= nil,
+        'normal bordered window keeps bottom controls')
+
+    store:replace({ fullscreen = true, border = true, title_bar = true })
+    binding:flush_build()
+    F.ok(find_widget_instance(binding.root_element, top) ~= nil,
+        'fullscreen window shows the top bar')
+end)
+
 F.test('AutoHide uses the frame clock and activity restores Main visibility', function()
     local clock = ManualClock()
     local scheduler = Scheduler(clock)
@@ -346,6 +383,10 @@ F.test('AutoHide validates the top hover zone', function()
     F.raises(function()
         AutoHide({ fade_duration = -1 })
     end, 'AutoHide.fade_duration', 'negative fade duration is rejected')
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        AutoHide({ top_hover_enabled = 'yes' })
+    end, 'AutoHide.top_hover_enabled', 'top hover policy must be boolean')
 end)
 
 F.test('AutoHide keeps top hover opt-in', function()

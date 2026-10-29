@@ -47,7 +47,9 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 - timeout AutoHide 与 frame-clock fade/top/bottom hover zone；默认 fade 为 150ms、top zone
   为 40px、bottom zone 为 175px；
   hidden Main 只在启用 zone 内唤醒，visible Main 在 zone 外 activity 立即隐藏；resize 后
-  同一 root/canvas/presenter 更新输入区域。
+  同一 root/canvas/presenter 更新输入区域。`Main.window_top_bar` 的 `auto` 模式按
+  `PlayerSnapshot.fullscreen`、`border`、`title_bar` 决定顶部栏和 top wake zone；`yes`/`no`
+  可由播放器组合显式覆盖。
 
 进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
 结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
