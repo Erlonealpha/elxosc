@@ -142,5 +142,6 @@ RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸�
 pruning 必须先经过同环境 benchmark、逐事件输出等价和输入/布局回归，再进入独立的
 render/backend 优化切片。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
 paint-only 或 layout + paint；`RenderLayoutScaleBox` 的 alignment 若改变 pointer mapping
-必须同步 invalidates input snapshot。ModernX fade 若进入播放器首批，需要先冻结 subtree
-opacity/alpha 与可见/可交互策略；不得使用 `\move` 或 `\t` 替代 frame-clock 静态输出。
+必须同步 invalidates input snapshot。ModernX fade 使用 `RenderOpacity.hidden`：fade-out 完成
+前保持 paint/input，完成时才移除 pointer regions；fade-in 先恢复 hidden=false，再由
+AnimationController 逐帧更新 alpha。不得使用 `\move` 或 `\t` 替代 frame-clock 静态输出。

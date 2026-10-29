@@ -27,8 +27,9 @@ WidgetsApp
 标题栏、窗口控制、底部播放器骨架和 `window_layer` 不是扩展的隐式 target；它们只能
 由播放器入口或未来另行批准的应用组合提供。
 
-`AutoHide` 只包裹 MainEntry。Main 隐藏时通过 `Offstage` 禁止绘制、命中和 pointer
-regions，但 ExtensionEntry 的 Element/State 不被卸载或重置。
+`AutoHide` 只包裹 MainEntry。Main 的 fade-out 在完成前保持绘制、命中和 pointer regions；
+完成后由 opacity render object 禁止绘制、命中和 pointer regions。`maintain_state=false` 只
+在 fade 完成后的 build pass 卸载 Main；ExtensionEntry 的 Element/State 不被卸载或重置。
 
 ## P2 ModernX 首批能力
 
@@ -42,7 +43,8 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 - `PlayerSnapshot` 的 `media-title`、`filename`、`pause`、`time-pos`、`duration`、
   `percent-pos` 和 `demuxer-cache-duration` host 映射；
 - 统一正数 scale、ThemeData 颜色/字号、hover color 和 paint-only hover scale；
-- timeout AutoHide 与 top/bottom hover zone；默认 top zone 为 40px、bottom zone 为 175px；
+- timeout AutoHide 与 frame-clock fade/top/bottom hover zone；默认 fade 为 150ms、top zone
+  为 40px、bottom zone 为 175px；
   hidden Main 只在启用 zone 内唤醒，visible Main 在 zone 外 activity 立即隐藏；resize 后
   同一 root/canvas/presenter 更新输入区域。
 
@@ -50,8 +52,8 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
 setter 在 paint invalidation 外同时 invalidates input snapshot。
 
-P2 明确 deferred：subtree fade/opacity alpha policy、章节 marker/tooltip、轨道菜单、音量
-滑块、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
+P2 明确 deferred：完整 ModernX fade 视觉对照和配置兼容、章节 marker/tooltip、轨道菜单、
+音量滑块、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
 多 host overlay、focus/IME 和完整 ModernX 配置兼容。当前静态 ASS 输出不使用 `\move` 或
 `\t`。
 
@@ -256,7 +258,7 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 - `WidgetsApp` 提供 Theme、DisplayScope、DefaultTextStyle 和 HostActionsScope；
 - `DefaultApp` 通过单一 Theatre 组装 Main、Extension 和 WindowLayer；
 - Main 使用统一 scale、流式顶部/底部骨架和受控 window/playback actions；
-- AutoHide/Visibility/Offstage 只隐藏 Main，不卸载 Extension State；
+- AutoHide 的 fade/hidden 只隐藏 Main，不卸载 Extension State；
 - 旧九宫格、固定 region id 和 `more` 从当前生产入口删除；
 - Define/Slot 仍只在 mount 前组装内容，mounted Widget 不被外部直接修改。
 

@@ -25,7 +25,7 @@ binding, and the public widget library. It must remain independent of mpv.
 - `actions.lua` — the host-independent `HostActions` callback contract and scope,
   including relative and absolute seek actions.
 - `visibility.lua` — `Opacity`, `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`,
-  including optional top/bottom-hover reveal policies.
+  including frame-clock fade and optional top/bottom-hover reveal policies.
 - `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.
 - `navigation.lua` — immutable `Page`/`PopupPage`, runtime `Route`, `Navigator`, results and
   the host-independent `ModalBarrier`.
@@ -115,6 +115,10 @@ uniform layout scale, a flow-based player shell, fixed-layout `ProgressBar` and 
 injected `HostActions`. Progress/buffer/handle updates use paint-only RenderObject setters;
 bar height and layout scale remain layout-affecting. `AutoHide` only changes the Main entry;
 the Extension entry remains mounted and keeps its State when Main is hidden.
+
+`AutoHide` uses a persistent `Opacity` render object for fade transitions. Fade-out retains
+painting and pointer capture until completion; completed hidden content has no hit test or pointer
+regions, while `maintain_state=false` unmounts it on the following build pass.
 
 Button hover/pressed visual changes use the persistent `RenderGesture`/`RenderTransformBox`/
 `RenderDecoratedBox` setters; they do not default to rebuilding the button subtree. Hover scale

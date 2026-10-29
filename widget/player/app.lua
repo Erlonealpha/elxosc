@@ -360,6 +360,7 @@ end
 ---@field scale number?
 ---@field auto_hide_timeout number?
 ---@field auto_hide_enabled boolean?
+---@field auto_hide_fade_duration number?
 ---@field auto_hide_bottom_hover boolean?
 ---@field auto_hide_hover_zone number?
 ---@field auto_hide_top_hover boolean?
@@ -375,6 +376,7 @@ end
 ---@field scale number?
 ---@field auto_hide_timeout number
 ---@field auto_hide_enabled boolean
+---@field auto_hide_fade_duration number
 ---@field auto_hide_bottom_hover boolean
 ---@field auto_hide_hover_zone number
 ---@field auto_hide_top_hover boolean
@@ -393,6 +395,8 @@ function DefaultApp:__init(options)
     self.scale = options.scale
     self.auto_hide_timeout = options.auto_hide_timeout == nil and 3 or options.auto_hide_timeout
     self.auto_hide_enabled = options.auto_hide_enabled ~= false
+    self.auto_hide_fade_duration = options.auto_hide_fade_duration == nil and 0.15
+        or options.auto_hide_fade_duration
     self.auto_hide_bottom_hover = options.auto_hide_bottom_hover == true
     self.auto_hide_hover_zone = options.auto_hide_hover_zone == nil and 175
         or options.auto_hide_hover_zone
@@ -451,6 +455,7 @@ function DefaultAppState:init_state()
                 controller = self.main_controller,
                 timeout = app.auto_hide_timeout,
                 enabled = app.auto_hide_enabled,
+                fade_duration = app.auto_hide_fade_duration,
                 bottom_hover = app.auto_hide_bottom_hover,
                 hover_zone = app.auto_hide_hover_zone,
                 top_hover = app.auto_hide_top_hover,

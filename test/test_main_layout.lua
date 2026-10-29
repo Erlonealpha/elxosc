@@ -31,6 +31,7 @@ local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local Text = basic_widgets.Text
+local GestureDetector = basic_widgets.GestureDetector
 local Column = layout_widgets.Column
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
@@ -290,6 +291,51 @@ F.test('AutoHide uses the frame clock and activity restores Main visibility', fu
     scheduler:dispose()
 end)
 
+F.test('AutoHide fades through opacity while retaining input until completion', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner, binding = mount(AutoHide({
+        controller = controller,
+        timeout = 0,
+        fade_duration = 0.2,
+        child = GestureDetector(Text('main'), {
+            on_tap = function() end,
+        }),
+    }), scheduler)
+    local render_opacity = owner.root
+    local state = binding.root_element.state
+    owner:paint(require('backends.record').RecordCanvas())
+
+    F.ok(not render_opacity.hidden, 'AutoHide starts unhidden')
+    F.close(render_opacity.opacity, 1, 'AutoHide starts opaque')
+    F.ok(#owner:pointer_regions() > 0, 'visible Main contributes pointer regions')
+
+    controller:hide()
+    F.ok(not render_opacity.hidden, 'fade-out keeps Main painted initially')
+    clock:tick(0)
+    clock:tick(0.1)
+    F.close(render_opacity.opacity, 0.5, 'fade-out samples at half duration')
+    F.ok(not render_opacity.hidden, 'fade-out keeps Main interactive')
+    F.ok(#owner:pointer_regions() > 0, 'fade-out retains pointer regions')
+    clock:tick(0.1)
+    F.close(render_opacity.opacity, 0, 'fade-out reaches transparent')
+    F.ok(render_opacity.hidden, 'completed fade-out hides the render object')
+    F.eq(#owner:pointer_regions(), 0, 'completed fade-out removes pointer regions')
+    F.ok(state:is_mounted(), 'maintained AutoHide state remains mounted')
+
+    controller:show()
+    F.ok(not render_opacity.hidden, 'fade-in enables the render object first')
+    F.close(render_opacity.opacity, 0, 'fade-in starts transparent')
+    clock:tick(0)
+    clock:tick(0.1)
+    F.close(render_opacity.opacity, 0.5, 'fade-in samples at half duration')
+    clock:tick(0.1)
+    F.close(render_opacity.opacity, 1, 'fade-in reaches opaque')
+    F.ok(#owner:pointer_regions() > 0, 'completed fade-in restores pointer regions')
+    scheduler:dispose()
+end)
+
 F.test('AutoHide validates the top hover zone', function()
     F.raises(function()
         AutoHide({ top_hover_zone = -1 })
@@ -297,6 +343,9 @@ F.test('AutoHide validates the top hover zone', function()
     F.raises(function()
         AutoHide({ top_hover_zone = math.huge })
     end, 'AutoHide.top_hover_zone', 'infinite top hover zone is rejected')
+    F.raises(function()
+        AutoHide({ fade_duration = -1 })
+    end, 'AutoHide.fade_duration', 'negative fade duration is rejected')
 end)
 
 F.test('AutoHide keeps top hover opt-in', function()
@@ -312,5 +361,32 @@ F.test('AutoHide keeps top hover opt-in', function()
     controller:hide()
     controller:activity(10, 10, geometry.Rect(0, 0, 1280, 720))
     F.ok(not controller.visible, 'top activity does not reveal when top hover is disabled')
+    scheduler:dispose()
+end)
+
+F.test('AutoHide drops non-maintained content only after fade completion', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner, binding = mount(AutoHide({
+        controller = controller,
+        timeout = 0,
+        fade_duration = 0.2,
+        maintain_state = false,
+        child = Text('main'),
+    }), scheduler)
+    controller:hide()
+    clock:tick(0)
+    clock:tick(0.2)
+    F.ok(owner.root ~= nil, 'fade completion waits for the build pass')
+    binding:flush_build()
+    F.ok(owner.root == nil, 'non-maintained content is removed after fade')
+    controller:show()
+    binding:flush_build()
+    F.ok(owner.root ~= nil, 'show rebuilds non-maintained content')
+    F.close(owner.root.opacity, 0, 'rebuilt content starts transparent')
+    clock:tick(0)
+    clock:tick(0.2)
+    F.close(owner.root.opacity, 1, 'rebuilt content fades in')
     scheduler:dispose()
 end)
