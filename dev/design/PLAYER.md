@@ -151,6 +151,12 @@ Snapshot 使用新对象表达新状态，Store 不修改调用方数据。订�
 清理 observer/subscription。配置/API 更新不重新执行 Define 源码，也不改变 Widget
 class identity。
 
+需要局部更新的消费者可以通过 `PlayerStore:subscribe_selector()` 选择播放、窗口、列表或
+metadata 子集；只有 selection 结构变化才回调。`MpPlayerContext` 的默认 property bridge
+在 App 中使用 coalesced batch observer，相关属性在一个 Store replacement 中提交，避免
+chapter/track/window 中间快照。thumbfast、yt-dlp 等外部能力由 host adapter 发布明确的
+loading/available/error 状态；缺失能力为 unavailable，不伪造 action 成功。
+
 6.3 的 Provider 语义是最小 InheritedWidget 模型，不是 `package:provider` 兼容层：
 监听式 `of` / `maybe_of` 返回 Provider Widget 并建立依赖，非监听式 `read` /
 `maybe_read` 只读取最近的精确运行时类型。State 首次挂载和依赖更新经过

@@ -18,8 +18,9 @@ binding, and the public widget library. It must remain independent of mpv.
   `Contribution` snapshots and `CompositionAssembler`.
 - `bind.lua` — the small Define `bind(slot_id, widget, opts)` facade.
 - `provider.lua` — inherited Provider lookup with `of` and `maybe_of` helpers.
-- `player_context.lua` — host-independent `PlayerSnapshot`, `PlayerStore`,
-  `PlayerScope`, and `PlayerProvider`.
+- `player_context.lua` — host-independent `PlayerSnapshot`, `PlayerStore`, selector
+  subscriptions, `PlayerScope`, `PlayerProvider`, and the `PlayerCapability` state
+  consumer.
 - `ambient.lua` — `ThemeData`, `Theme`, `DisplaySnapshot`, `DisplayScope` and
   `DefaultTextStyle` application ambients.
 - `actions.lua` — the host-independent `HostActions` callback contract and scope,
@@ -43,6 +44,11 @@ Widgets are immutable after construction. Runtime changes use State or explicit
 RenderObject setters. Define contributions are sealed and assembled into a fresh
 Widget description before mounting; the binding only mounts, updates and disposes
 that description and never applies contributions itself.
+
+`PlayerStore:subscribe_selector()` receives a selected value only when that value
+changes; the default comparison is structural for readonly snapshot tables. Missing
+capabilities return an explicit `unavailable` state, while host adapters publish
+`loading`/`available`/`error` through immutable snapshots.
 
 ### Builder contract
 

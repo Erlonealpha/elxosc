@@ -106,11 +106,18 @@ mp option/property or public API event
 必须有明确的 dispose/清理生命周期。
 
 当前 6.3 实现提供 host-independent `PlayerStore`、`PlayerSnapshot`/capability values 和 host-side
-`MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，并在
-dispose 时调用 `mp.unobserve_property`。Define 的 `player` 模块只提供：
+`MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，支持 coalesced
+batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unobserve_property` 和
+释放 adapter/timer handles。Define 的 `player` 模块只提供：
 
 - `get_snapshot()`：读取当前只读快照；
 - `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
+
+框架内消费者可以使用 `PlayerStore:subscribe_selector(selector, callback)` 只监听相关
+字段；列表/窗口/metadata 更新不必让所有 selector consumer 重建。缺失 capability 始终以
+`{ status = 'unavailable' }` 表达；外部 adapter 的 loading、available 和 error 状态通过
+同一个 immutable snapshot 发布。`PlayerCapability` 提供 mpv-free builder 边界，允许 UI
+明确渲染这些状态而不读取 host adapter 或 `mp`。
 
 它不提供替换快照、编辑已挂载 Widget、重新执行 Define 源码或改变 Widget class
 identity 的能力。`mp.on_prop`、`mp.on_event` 和 scope `on_message` 都返回幂等
