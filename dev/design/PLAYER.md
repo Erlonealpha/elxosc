@@ -40,8 +40,9 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
 - 固定布局 `ProgressBar`：当前进度、buffer range、handle、时间显示和拖拽；
 - 拖拽结束通过 `HostActions:seek_to(seconds)` 发送绝对 seek，输入 capture 在移出控件后
   仍归原目标；
-- `PlayerSnapshot` 的 `media-title`、`filename`、`pause`、`time-pos`、`duration`、
-  `percent-pos` 和 `demuxer-cache-duration` host 映射；
+- `PlayerSnapshot` 的播放/EOF、缓存、playlist/chapter/track、metadata、window 和 audio
+  字段由 host 映射；外部能力通过 `capabilities[name].status` 表达
+  `available`/`unavailable`/`loading`/`error`；
 - 统一正数 scale、ThemeData 颜色/字号、hover color 和 paint-only hover scale；
 - timeout AutoHide 与 frame-clock fade/top/bottom hover zone；默认 fade 为 150ms、top zone
   为 40px、bottom zone 为 175px；

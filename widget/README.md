@@ -23,7 +23,8 @@ binding, and the public widget library. It must remain independent of mpv.
 - `ambient.lua` — `ThemeData`, `Theme`, `DisplaySnapshot`, `DisplayScope` and
   `DefaultTextStyle` application ambients.
 - `actions.lua` — the host-independent `HostActions` callback contract and scope,
-  including relative and absolute seek actions.
+  including relative/absolute seek, playback, playlist/chapter, track/audio, window and
+  message actions with capability presence checks.
 - `visibility.lua` — `Opacity`, `Offstage`, `Visibility`, `AutoHideController` and `AutoHide`,
   including frame-clock fade and optional top/bottom-hover reveal policies.
 - `overlay.lua` — the single-owner `Overlay`/`Theatre` runtime and `OverlayEntry` lifecycle.

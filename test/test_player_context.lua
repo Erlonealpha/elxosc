@@ -323,6 +323,23 @@ F.test('PlayerSnapshot rejects invalid data at its boundary', function()
     end, 'ValueError', 'cyclic snapshot value')
 end)
 
+F.test('PlayerSnapshot exposes explicit capability states', function()
+    local snapshot = PlayerSnapshot({
+        capabilities = {
+            thumbfast = { status = 'available' },
+            sponsorblock = { status = 'loading', detail = 'waiting for script' },
+            yt_dlp = { status = 'error', error = 'not installed' },
+        },
+    })
+    F.eq(snapshot:capability('thumbfast').status, 'available', 'available capability')
+    F.eq(snapshot:capability('sponsorblock').status, 'loading', 'loading capability')
+    F.eq(snapshot:capability('yt_dlp').error, 'not installed', 'error capability')
+    F.ok(snapshot:capability('missing') == nil, 'missing capability is unavailable to the caller')
+    F.raises(function()
+        PlayerSnapshot({ capabilities = { bad = { status = 'maybe' } } })
+    end, 'status must be available', 'invalid capability status')
+end)
+
 F.section('player context: store')
 
 F.test('PlayerStore notifies active subscribers in registration order', function()

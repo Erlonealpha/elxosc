@@ -16,12 +16,54 @@ local M = {}
 
 local DEFAULT_PLAYER_PROPERTIES = {
     { name = 'pause', field = 'pause' },
+    { name = 'eof-reached', field = 'eof_reached' },
+    { name = 'seeking', field = 'seeking' },
+    { name = 'paused-for-cache', field = 'buffering' },
     { name = 'media-title', field = 'media_title' },
     { name = 'filename', field = 'filename' },
+    { name = 'path', field = 'path' },
     { name = 'time-pos', field = 'time_pos' },
     { name = 'duration', field = 'duration' },
     { name = 'percent-pos', field = 'percent_pos' },
+    { name = 'playtime-remaining', field = 'playtime_remaining' },
     { name = 'demuxer-cache-duration', field = 'buffered_duration' },
+    { name = 'demuxer-cache-state', field = 'cache_state' },
+    { name = 'playlist-pos', field = 'playlist_pos' },
+    { name = 'playlist-count', field = 'playlist_count' },
+    { name = 'chapter', field = 'chapter' },
+    { name = 'chapter-list', field = 'chapter_list' },
+    { name = 'track-list', field = 'track_list' },
+    { name = 'fullscreen', field = 'fullscreen' },
+    { name = 'border', field = 'border' },
+    { name = 'title-bar', field = 'title_bar' },
+    { name = 'window-maximized', field = 'window_maximized' },
+    { name = 'ontop', field = 'ontop' },
+    { name = 'idle-active', field = 'idle_active' },
+    { name = 'mute', field = 'mute' },
+    { name = 'volume', field = 'volume' },
+    { name = 'volume-max', field = 'volume_max' },
+    { name = 'loop-file', field = 'loop_file' },
+}
+
+local BOOLEAN_FIELDS = {
+    pause = true,
+    eof_reached = true,
+    seeking = true,
+    buffering = true,
+    fullscreen = true,
+    border = true,
+    title_bar = true,
+    window_maximized = true,
+    ontop = true,
+    idle_active = true,
+    mute = true,
+    loop_file = true,
+}
+
+local TABLE_FIELDS = {
+    cache_state = true,
+    chapter_list = true,
+    track_list = true,
 }
 
 local function normalize_number(value)
@@ -43,12 +85,31 @@ local function normalize_text(value)
     return value ~= '' and value or nil
 end
 
-local function normalize_property(field, value)
-    if field == 'pause' then
-        return value == true
+local function normalize_boolean(value)
+    if value == nil then
+        return nil
     end
-    if field == 'media_title' or field == 'filename' then
+    if type(value) == 'boolean' then
+        return value
+    end
+    if value == 'yes' or value == 'true' or value == 1 then
+        return true
+    end
+    if value == 'no' or value == 'false' or value == 0 then
+        return false
+    end
+    return nil
+end
+
+local function normalize_property(field, value)
+    if BOOLEAN_FIELDS[field] then
+        return normalize_boolean(value)
+    end
+    if field == 'media_title' or field == 'filename' or field == 'path' then
         return normalize_text(value)
+    end
+    if TABLE_FIELDS[field] then
+        return value
     end
     return normalize_number(value)
 end
@@ -201,6 +262,29 @@ function MpPlayerContext:observe_default_properties()
             end)
     end
     return subscriptions
+end
+
+---@param name string
+---@param status CapabilityStatus
+---@param detail string?
+function MpPlayerContext:set_capability(name, status, detail)
+    if self._disposed then
+        raise(std.RuntimeError('MpPlayerContext is disposed'))
+    end
+    if type(name) ~= 'string' or name == '' then
+        raise(std.ValueError('MpPlayerContext capability name must be non-empty'))
+    end
+    if status ~= 'available' and status ~= 'unavailable'
+        and status ~= 'loading' and status ~= 'error' then
+        raise(std.ValueError('MpPlayerContext capability status is invalid'))
+    end
+    if detail ~= nil and type(detail) ~= 'string' then
+        raise(std.TypeError('MpPlayerContext capability detail must be a string'))
+    end
+    local current = self.store:get()
+    local next_capabilities = current:to_table().capabilities or {}
+    next_capabilities[name] = { status = status, detail = detail }
+    return self.store:replace(current:copy({ capabilities = next_capabilities }))
 end
 
 ---@param name string

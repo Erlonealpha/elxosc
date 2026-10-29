@@ -105,7 +105,7 @@ mp option/property or public API event
 更新不绕过 Define 注入新的 Widget。订阅、timer、script-message 和 property observer
 必须有明确的 dispose/清理生命周期。
 
-当前 6.3 实现提供 host-independent `PlayerStore` 和 host-side
+当前 6.3 实现提供 host-independent `PlayerStore`、`PlayerSnapshot`/capability values 和 host-side
 `MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，并在
 dispose 时调用 `mp.unobserve_property`。Define 的 `player` 模块只提供：
 

@@ -23,6 +23,16 @@ local snapshot_view_values = setmetatable({}, { __mode = 'k' })
 
 ---@alias PlayerSnapshotValue string|number|boolean|table
 ---@alias PlayerSnapshotFields table<string, PlayerSnapshotValue>
+---@alias CapabilityStatus
+--- | 'available'
+--- | 'unavailable'
+--- | 'loading'
+--- | 'error'
+
+---@class CapabilityInfo
+---@field status CapabilityStatus
+---@field detail string?
+---@field error string?
 
 ---@class _PlayerSnapshotOptions
 ---@field [string] PlayerSnapshotValue
@@ -94,6 +104,33 @@ local function copy_fields(fields)
         end
         if key:sub(1, 1) == '_' then
             raise(std.ValueError('PlayerSnapshot field names beginning with _ are reserved'))
+        end
+    end
+    local capabilities = fields.capabilities
+    if capabilities ~= nil then
+        if type(capabilities) ~= 'table' then
+            raise(std.TypeError('PlayerSnapshot.capabilities must be a table'))
+        end
+        local statuses = {
+            available = true,
+            unavailable = true,
+            loading = true,
+            error = true,
+        }
+        for name, info in pairs(capabilities) do
+            if type(name) ~= 'string' or name == '' then
+                raise(std.TypeError('PlayerSnapshot capability names must be non-empty strings'))
+            end
+            if type(info) ~= 'table' or not statuses[info.status] then
+                raise(std.ValueError(
+                    'PlayerSnapshot capability status must be available, unavailable, loading or error'))
+            end
+            if info.detail ~= nil and type(info.detail) ~= 'string' then
+                raise(std.TypeError('PlayerSnapshot capability detail must be a string'))
+            end
+            if info.error ~= nil and type(info.error) ~= 'string' then
+                raise(std.TypeError('PlayerSnapshot capability error must be a string'))
+            end
         end
     end
     return copy_value(fields, {}, {}) --[[@as PlayerSnapshotFields]]
@@ -186,6 +223,19 @@ function PlayerSnapshot:get(name)
         raise(std.TypeError('PlayerSnapshot.get expects a non-empty field name'))
     end
     return readonly_value(self[name])
+end
+
+---@param name string
+---@return CapabilityInfo?
+function PlayerSnapshot:capability(name)
+    if type(name) ~= 'string' or name == '' then
+        raise(std.TypeError('PlayerSnapshot.capability expects a non-empty name'))
+    end
+    local capabilities = self.capabilities
+    if type(capabilities) ~= 'table' then
+        return nil
+    end
+    return readonly_value(capabilities[name]) --[[@as CapabilityInfo?]]
 end
 
 ---@return PlayerSnapshotFields

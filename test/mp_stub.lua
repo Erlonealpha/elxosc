@@ -21,6 +21,7 @@ local fake = {
     enable_history = {},
     disable_history = {},
     unobserved = {},
+    native_props = {},
 }
 
 S.fake = fake
@@ -42,6 +43,7 @@ function S.reset()
     fake.enable_history = {}
     fake.disable_history = {}
     fake.unobserved = {}
+    fake.native_props = {}
 end
 
 --- Run every timeout queued since the last call (one frame of the host loop).
@@ -68,6 +70,9 @@ function S.install()
     function mp.get_property_native(name)
         if name == 'mouse-pos' then
             return fake.mouse
+        end
+        if fake.native_props[name] ~= nil then
+            return fake.native_props[name]
         end
         return 'native:' .. name
     end
