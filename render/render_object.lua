@@ -36,6 +36,13 @@ local M = {}
 ---@field offset Offset
 ---@field flex number? main-axis flex weight (see RenderFlex)
 ---@field fit FlexFit? flex fit (see RenderFlex)
+---@field positioned boolean? root-relative Stack parent data
+---@field left number?
+---@field top number?
+---@field right number?
+---@field bottom number?
+---@field width number?
+---@field height number?
 
 ---@class PointerRegion
 ---@field node RenderObject

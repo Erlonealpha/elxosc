@@ -12,6 +12,9 @@
 - `expand()` 表示 Flutter 语义的紧无穷，只有与父约束合并后才会落地。
 - `enforce()` 取附加约束的交集；`tighten()` 只收紧已存在的边界。
 - 子节点的局部尺寸不因绘制偏移自动变大；父节点决定是否裁剪和是否扩大命中区域。
+- `Stack` 的 `Positioned` parent data 由父节点根据有限 root constraints 计算 child size 和
+  offset；同一 offset 同时进入 paint、hit test 和 RegionSnapshot，不把 ASS absolute
+  coordinates 暴露给 Widget。
 
 `FittedBox` 使用源/目标盒映射；`TransformBox` 保留子节点原布局尺寸；
 `LayoutScaleBox` 把正轴向缩放纳入约束逆映射和最终报告尺寸。三者的区别是公共

@@ -18,7 +18,7 @@ not import Widget modules or mpv.
   applies a backend-neutral paint-only subtree alpha scope.
 - `renderer_binding.lua` — RendererBinding role facade; it resolves to the shared WidgetsBinding
   composition and creates per-tree PipelineOwner copies.
-- Layout boxes — padding, align, flex, stack, sized/constrained/overflow/fitted boxes.
+- Layout boxes — padding, align, flex, stack/positioned, sized/constrained/overflow/fitted boxes.
 - Visual boxes — decorated/custom paint/text, offset, `TransformBox`, and
   `LayoutScaleBox`.
 - `RenderDecoratedBox` accepts backend-neutral border, blur and shadow intent;
@@ -48,6 +48,11 @@ sequence is cancelled.
 `RegionSnapshot` is invalidated by layout/tree changes and explicit paint-only
 input changes. Host code receives copied region values and cannot mutate the
 owner's cache. Snapshot invalidation never synthesizes a hover event.
+
+`RenderStack` accepts `Positioned` parent data (`left`/`top`/`right`/`bottom` plus optional
+`width`/`height`). The parent computes child constraints and offsets; paint, hit testing and
+root-space pointer regions use the same offset. It is a finite root-relative layout contract,
+not an ASS coordinate escape hatch.
 
 The current renderer has no public `RepaintBoundary` or `RelayoutBoundary`. Paint dirty and
 layout dirty propagate to the root, `PaintingContext` has no Layer/cache contract, and the

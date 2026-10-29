@@ -51,6 +51,7 @@ local OutlinedButton = basic_widgets.OutlinedButton
 local TextButton = basic_widgets.TextButton
 local IconButton = basic_widgets.IconButton
 local Opacity = visibility_mod.Opacity
+local Positioned = layout_widgets.Positioned
 
 -- Deterministic measurer: half the font size per character.
 local FixedLayout = std.class.new('test.FixedLayout', { text_layout.TextLayout })
@@ -198,6 +199,19 @@ F.test('finite scale widgets expose paint-only and layout-affecting boxes', func
     }))
     F.eq(layout_owner.root.size, Size(40, 20), 'LayoutScaleBox reports the scaled size')
     F.eq(layout_owner.root.scale, Size(2, 2), 'LayoutScaleBox config reaches render object')
+end)
+
+F.test('Positioned widget preserves parent-controlled stack geometry and input regions', function()
+    local button = Button({ label = 'x', on_click = function() end })
+    local owner = mount(Stack({
+        children = {
+            Positioned({ left = 30, top = 20, width = 50, height = 30, child = button }),
+        },
+    }), Constraints.tight(200, 100))
+    local region = owner:pointer_regions()[1]
+    F.ok(region ~= nil, 'positioned button has an input region')
+    F.eq(region.rect.left, 30, 'positioned region x')
+    F.eq(region.rect.top, 20, 'positioned region y')
 end)
 
 F.test('Text measures through the ambient TextLayout', function()

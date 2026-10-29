@@ -552,6 +552,15 @@ end
 ---@overload fun(widget: Widget):self
 local ParentDataElement = std.class.new('ParentDataElement', { ProxyElement })
 
+function ParentDataElement:unmount()
+    local render_object = self.child and self.child:first_render_object()
+    local clear = self.widget.clear_parent_data
+    if render_object and type(clear) == 'function' then
+        clear(self.widget, render_object)
+    end
+    Element.unmount(self)
+end
+
 function ParentDataElement:rebuild()
     ProxyElement.rebuild(self)
     local render_object = self.child and self.child:first_render_object()

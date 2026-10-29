@@ -9,14 +9,17 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
+local constraints_mod = require 'layout.constraints'
 local render_object = require 'render.render_object'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
+local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 local math = math
 local max = math.max
 local ipairs = ipairs
+local huge = math.huge
 
 local M = {}
 
@@ -41,16 +44,85 @@ end
 function RenderStack:__perform_layout(constraints)
     local children = self._children
     local width, height = 0, 0
+    local non_positioned = 0
     for _, child in ipairs(children) do
-        child:layout(constraints:loosen())
-        width = max(width, child.size.width)
-        height = max(height, child.size.height)
+        local data = child.parent_data or {}
+        if data.positioned ~= true then
+            non_positioned = non_positioned + 1
+            child:layout(constraints:loosen())
+            width = max(width, child.size.width)
+            height = max(height, child.size.height)
+        end
+    end
+    if non_positioned == 0 then
+        local biggest = constraints:biggest()
+        if biggest.width < huge and biggest.height < huge then
+            width, height = biggest.width, biggest.height
+        end
     end
     self.size = constraints:constrain_size(Size(width, height))
     for _, child in ipairs(children) do
-        child.parent_data.offset = Offset(
-            (self.size.width - child.size.width) * self.alignment.x,
-            (self.size.height - child.size.height) * self.alignment.y)
+        local data = child.parent_data or {}
+        if data.positioned == true then
+            local left, right = data.left, data.right
+            local top, bottom = data.top, data.bottom
+            local child_constraints = Constraints(
+                0, self.size.width, 0, self.size.height)
+            local width_value = data.width
+            local height_value = data.height
+            if width_value == nil and left ~= nil and right ~= nil then
+                width_value = max(0, self.size.width - left - right)
+            end
+            if height_value == nil and top ~= nil and bottom ~= nil then
+                height_value = max(0, self.size.height - top - bottom)
+            end
+            if width_value ~= nil then
+                child_constraints = child_constraints:tighten({ width = width_value })
+            elseif left ~= nil or right ~= nil then
+                local max_width = self.size.width
+                if left ~= nil then
+                    max_width = max(0, max_width - left)
+                end
+                if right ~= nil then
+                    max_width = max(0, max_width - right)
+                end
+                child_constraints = Constraints(0, max_width,
+                    child_constraints.min_height, child_constraints.max_height)
+            end
+            if height_value ~= nil then
+                child_constraints = child_constraints:tighten({ height = height_value })
+            elseif top ~= nil or bottom ~= nil then
+                local max_height = self.size.height
+                if top ~= nil then
+                    max_height = max(0, max_height - top)
+                end
+                if bottom ~= nil then
+                    max_height = max(0, max_height - bottom)
+                end
+                child_constraints = Constraints(child_constraints.min_width,
+                    child_constraints.max_width, 0, max_height)
+            end
+            child:layout(child_constraints)
+            local x = left
+            if x == nil and right ~= nil then
+                x = self.size.width - right - child.size.width
+            end
+            if x == nil then
+                x = (self.size.width - child.size.width) * self.alignment.x
+            end
+            local y = top
+            if y == nil and bottom ~= nil then
+                y = self.size.height - bottom - child.size.height
+            end
+            if y == nil then
+                y = (self.size.height - child.size.height) * self.alignment.y
+            end
+            child.parent_data.offset = Offset(x, y)
+        else
+            child.parent_data.offset = Offset(
+                (self.size.width - child.size.width) * self.alignment.x,
+                (self.size.height - child.size.height) * self.alignment.y)
+        end
     end
 end
 

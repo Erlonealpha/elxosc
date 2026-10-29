@@ -12,6 +12,7 @@ local sized_box_mod = require 'widget.widgets.sized_box'
 local decorated_box_mod = require 'widget.widgets.decorated_box'
 local flex_mod = require 'widget.widgets.flex'
 local stack_mod = require 'widget.widgets.stack'
+local positioned_mod = require 'widget.widgets.positioned'
 local constraints_mod = require 'widget.widgets.constraints'
 local overflow_mod = require 'widget.widgets.overflow'
 local container_mod = require 'widget.widgets.container'
@@ -31,6 +32,7 @@ local transform_box_mod = require 'widget.widgets.transform_box'
 ---@field Row fun(options?: _FlexOptions): Flex
 ---@field Column fun(options?: _FlexOptions): Flex
 ---@field Stack Stack
+---@field Positioned Positioned
 ---@field ConstrainedBox ConstrainedBox
 ---@field LimitedBox LimitedBox
 ---@field UnconstrainedBox UnconstrainedBox
@@ -54,6 +56,7 @@ M.Flex = flex_mod.Flex
 M.Row = flex_mod.Row
 M.Column = flex_mod.Column
 M.Stack = stack_mod.Stack
+M.Positioned = positioned_mod.Positioned
 M.ConstrainedBox = constraints_mod.ConstrainedBox
 M.LimitedBox = constraints_mod.LimitedBox
 M.UnconstrainedBox = overflow_mod.UnconstrainedBox

@@ -371,6 +371,35 @@ F.test('overlays children, centered on the biggest one', function()
     F.ok(b.parent_data.offset == Offset(15, 15), 'smaller child centered')
 end)
 
+F.test('Positioned stack children use finite root-relative geometry', function()
+    local background = box(10, 10)
+    local positioned = box(20, 12)
+    positioned.parent_data.positioned = true
+    positioned.parent_data.left = 30
+    positioned.parent_data.top = 40
+    positioned.parent_data.width = 20
+    positioned.parent_data.height = 12
+    local root = RenderStack({ children = { background, positioned } })
+    root:layout(Constraints.tight(200, 100))
+    F.ok(root.size == Size(200, 100), 'positioned stack fills finite root')
+    F.ok(positioned.parent_data.offset == Offset(30, 40), 'positioned offset')
+    F.ok(positioned.size == Size(20, 12), 'positioned size')
+
+    local canvas = RecordCanvas()
+    local painter = RenderCustomPaint(function(c, offset, size)
+        c:draw_rect(Rect.from_offset_size(offset, size), nil --[[@as Paint]])
+    end, { preferred_size = Size(20, 12) })
+    painter.parent_data.positioned = true
+    painter.parent_data.left = 30
+    painter.parent_data.top = 40
+    painter.parent_data.width = 20
+    painter.parent_data.height = 12
+    local paint_root = RenderStack({ children = { painter } })
+    paint_root:layout(Constraints.tight(200, 100))
+    paint_root:paint(canvas, Offset.zero())
+    F.ok(canvas.ops[1][1] == Rect(30, 40, 50, 52), 'paint follows positioned offset')
+end)
+
 --== painting / hit testing ================================================
 
 F.section('render: paint + hit test')

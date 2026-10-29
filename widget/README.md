@@ -35,7 +35,8 @@ binding, and the public widget library. It must remain independent of mpv.
   `ProgressBar`); `widget/app.lua` retains the `WidgetsApp` ambient wrapper and compatibility
   exports for the player classes.
 - `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
-- `widgets/` — independent layout, content, input, button and progress-bar widgets;
+- `widgets/` — independent layout, content, input, button and progress-bar widgets, including
+  `Stack`/`Positioned` root-relative placement;
   `basic.lua` and `layout.lua` are compatibility aggregates.
 
 Widgets are immutable after construction. Runtime changes use State or explicit
