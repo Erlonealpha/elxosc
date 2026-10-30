@@ -38,6 +38,20 @@ CLI 子进程测试 **14 passed**。`emmylua_check . --ignore 'tmp/**'` 无诊�
 host_app **106**、flutter_runtime/lifecycle **70**。工作区 real-host 入口仍由用户关闭，
 因此未将 real-host 结果写成 P2 通过。
 
+2026-10-29 P2.5 controls/seek 核心切片后：**2029 Lua checks**，其中 ModernX 专项 **78**、
+main_layout **67**、player_layout **62**、widget **98**；`emmylua_check . --ignore 'tmp/**'`
+无诊断；real-host **10 passed**。本切片新增 ProgressBar hover/seek state machine、button
+rebuild hover persistence、ModernX edge background、window control 和 extended HostActions
+回归。P2.5 仍为 `in_progress`，未将未完成 seekbar time tooltip/thumbfast/soft-repeat/metadata/capability 产品状态
+写成阶段通过。
+
+2026-10-30 P2.5 收口后：**2060 Lua checks**；ModernX 专项 **88**、main_layout **72**、
+player_layout **69**、widget **100**、host_player_context **33**、host_app **126**；
+`emmylua_check . --ignore 'tmp/**'` 无诊断；real-host 使用现有已暂存入口版本 **10 passed**。
+新增 seekbar time/chapter tooltip、thumbfast capability fallback、frame-clock soft-repeat、selector
+message 和 download capability empty-state 回归；P2.5 标记为 `completed`，metadata/idle/第三方
+异步业务与最终人工 parity 仍由 P2.6/P2.7 负责。
+
 ## Lua suite
 
 `test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`

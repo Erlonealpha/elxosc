@@ -19,6 +19,20 @@ local M = {}
 ---| 'yes'
 ---| 'no'
 
+---@alias PlayerJumpMode
+---| 'relative'
+---| 'absolute'
+
+---@alias PlayerVolumeControlType
+---| 'linear'
+---| 'logarithmic'
+
+---@alias PlayerChapterMarkerStyle
+---| 'triangle'
+---| 'bar'
+---| 'single-bar'
+---| 'gap'
+
 local function finite(name, value)
     if type(value) ~= 'number' or value ~= value
         or value == math.huge or value == -math.huge then
@@ -39,6 +53,14 @@ local function positive(name, value)
     value = finite(name, value)
     if value <= 0 then
         raise(std.ValueError('PlayerThemeData.' .. name .. ' must be positive'))
+    end
+    return value
+end
+
+local function fraction(name, value)
+    value = finite(name, value)
+    if value < 0 or value > 1 then
+        raise(std.ValueError('PlayerThemeData.' .. name .. ' must be between 0 and 1'))
     end
     return value
 end
@@ -97,14 +119,17 @@ end
 ---@field download_button boolean?
 ---@field loop_button boolean?
 ---@field persistent_progress boolean?
+---@field persistent_buffer boolean?
 ---@field window_title boolean?
 ---@field window_controls boolean?
 ---@field window_control_color Color?
 ---@field controller_color Color?
 ---@field controller_border_color Color?
+---@field controller_border_width number?
 ---@field controller_blur_radius number?
 ---@field window_color Color?
 ---@field window_border_color Color?
+---@field window_border_width number?
 ---@field window_blur_radius number?
 ---@field title_color Color?
 ---@field description_color Color?
@@ -121,7 +146,34 @@ end
 ---@field hover_color Color?
 ---@field pressed_color Color?
 ---@field held_color Color?
+---@field hover_glow_color Color?
+---@field button_glow_amount number?
 ---@field hover_scale number?
+---@field hover_handle_size number?
+---@field seekbar_hit_expand number?
+---@field volume_hit_expand number?
+---@field jump_amount number?
+---@field jump_more_amount number?
+---@field jump_icon_number boolean?
+---@field jump_softrepeat boolean?
+---@field chapter_softrepeat boolean?
+---@field jump_mode PlayerJumpMode?
+---@field seekbar_keyframes boolean?
+---@field mouse_seek_pause boolean?
+---@field show_chapter_markers boolean?
+---@field chapter_marker_style PlayerChapterMarkerStyle?
+---@field chapter_marker_color Color?
+---@field chapter_marker_current_color Color?
+---@field seek_range_color Color?
+---@field volume_control_type PlayerVolumeControlType?
+---@field loop_in_pause boolean?
+---@field screenshot_flag string?
+---@field chapter_hover_title boolean?
+---@field chapter_hover_subtitle boolean?
+---@field time_format 'dynamic'|'fixed'?
+---@field time_ms boolean?
+---@field time_total boolean?
+---@field unicode_minus boolean?
 
 ---@class PlayerThemeData : std.object
 ---@field layout_option PlayerLayoutOption
@@ -156,14 +208,17 @@ end
 ---@field download_button boolean
 ---@field loop_button boolean
 ---@field persistent_progress boolean
+---@field persistent_buffer boolean
 ---@field window_title boolean
 ---@field window_controls boolean
 ---@field window_control_color Color
 ---@field controller_color Color
 ---@field controller_border_color Color
+---@field controller_border_width number
 ---@field controller_blur_radius number
 ---@field window_color Color
 ---@field window_border_color Color
+---@field window_border_width number
 ---@field window_blur_radius number
 ---@field title_color Color
 ---@field description_color Color
@@ -180,7 +235,34 @@ end
 ---@field hover_color Color
 ---@field pressed_color Color
 ---@field held_color Color
+---@field hover_glow_color Color
+---@field button_glow_amount number
 ---@field hover_scale number
+---@field hover_handle_size number
+---@field seekbar_hit_expand number
+---@field volume_hit_expand number
+---@field jump_amount number
+---@field jump_more_amount number
+---@field jump_icon_number boolean
+---@field jump_softrepeat boolean
+---@field chapter_softrepeat boolean
+---@field jump_mode PlayerJumpMode
+---@field seekbar_keyframes boolean
+---@field mouse_seek_pause boolean
+---@field show_chapter_markers boolean
+---@field chapter_marker_style PlayerChapterMarkerStyle
+---@field chapter_marker_color Color
+---@field chapter_marker_current_color Color
+---@field seek_range_color Color
+---@field volume_control_type PlayerVolumeControlType
+---@field loop_in_pause boolean
+---@field screenshot_flag string
+---@field chapter_hover_title boolean
+---@field chapter_hover_subtitle boolean
+---@field time_format 'dynamic'|'fixed'
+---@field time_ms boolean
+---@field time_total boolean
+---@field unicode_minus boolean
 ---@overload fun(options?: _PlayerThemeDataOptions): self
 local PlayerThemeData = std.class.new('PlayerThemeData', {})
 
@@ -224,6 +306,27 @@ function PlayerThemeData:__init(options)
     self.persistent_progress_height = positive(
         'persistent_progress_height', pick(options.persistent_progress_height, 17))
     self.volume_width = positive('volume_width', pick(options.volume_width, 80))
+    self.controller_border_width = positive(
+        'controller_border_width', pick(options.controller_border_width, 100))
+    self.window_border_width = positive(
+        'window_border_width', pick(options.window_border_width, 100))
+    self.button_glow_amount = non_negative(
+        'button_glow_amount', pick(options.button_glow_amount, 5))
+    self.hover_handle_size = fraction(
+        'hover_handle_size', pick(options.hover_handle_size, 1))
+    self.seekbar_hit_expand = non_negative(
+        'seekbar_hit_expand', pick(options.seekbar_hit_expand, 6))
+    self.volume_hit_expand = non_negative(
+        'volume_hit_expand', pick(options.volume_hit_expand, 6))
+    self.jump_amount = positive('jump_amount', pick(options.jump_amount, 10))
+    self.jump_more_amount = positive(
+        'jump_more_amount', pick(options.jump_more_amount, 60))
+    self.jump_icon_number = boolean(
+        'jump_icon_number', pick(options.jump_icon_number, true))
+    self.jump_softrepeat = boolean(
+        'jump_softrepeat', pick(options.jump_softrepeat, true))
+    self.chapter_softrepeat = boolean(
+        'chapter_softrepeat', pick(options.chapter_softrepeat, false))
 
     self.show_title = boolean('show_title', pick(options.show_title, true))
     self.show_description = boolean('show_description', pick(options.show_description, true))
@@ -243,21 +346,61 @@ function PlayerThemeData:__init(options)
     self.loop_button = boolean('loop_button', pick(options.loop_button, false))
     self.persistent_progress = boolean(
         'persistent_progress', pick(options.persistent_progress, false))
+    self.persistent_buffer = boolean(
+        'persistent_buffer', pick(options.persistent_buffer, false))
+    self.seekbar_keyframes = boolean(
+        'seekbar_keyframes', pick(options.seekbar_keyframes, true))
+    self.mouse_seek_pause = boolean(
+        'mouse_seek_pause', pick(options.mouse_seek_pause, true))
+    self.show_chapter_markers = boolean(
+        'show_chapter_markers', pick(options.show_chapter_markers, true))
     self.window_title = boolean('window_title', pick(options.window_title, true))
     self.window_controls = boolean('window_controls', pick(options.window_controls, true))
+
+    self.jump_mode = pick(options.jump_mode, 'relative')
+    if self.jump_mode ~= 'relative' and self.jump_mode ~= 'absolute' then
+        raise(std.ValueError('PlayerThemeData.jump_mode must be relative or absolute'))
+    end
+    self.chapter_marker_style = pick(options.chapter_marker_style, 'gap')
+    if self.chapter_marker_style ~= 'triangle' and self.chapter_marker_style ~= 'bar'
+        and self.chapter_marker_style ~= 'single-bar' and self.chapter_marker_style ~= 'gap' then
+        raise(std.ValueError(
+            'PlayerThemeData.chapter_marker_style must be triangle, bar, single-bar or gap'))
+    end
+    self.volume_control_type = pick(options.volume_control_type, 'linear')
+    if self.volume_control_type ~= 'linear' and self.volume_control_type ~= 'logarithmic' then
+        raise(std.ValueError(
+            'PlayerThemeData.volume_control_type must be linear or logarithmic'))
+    end
+    self.time_format = pick(options.time_format, 'dynamic')
+    if self.time_format ~= 'dynamic' and self.time_format ~= 'fixed' then
+        raise(std.ValueError('PlayerThemeData.time_format must be dynamic or fixed'))
+    end
+    self.time_ms = boolean('time_ms', pick(options.time_ms, false))
+    self.time_total = boolean('time_total', pick(options.time_total, true))
+    self.unicode_minus = boolean('unicode_minus', pick(options.unicode_minus, false))
+    self.loop_in_pause = boolean('loop_in_pause', pick(options.loop_in_pause, true))
+    self.screenshot_flag = pick(options.screenshot_flag, 'subtitles')
+    if type(self.screenshot_flag) ~= 'string' or self.screenshot_flag == '' then
+        raise(std.TypeError('PlayerThemeData.screenshot_flag must be a non-empty string'))
+    end
+    self.chapter_hover_title = boolean(
+        'chapter_hover_title', pick(options.chapter_hover_title, false))
+    self.chapter_hover_subtitle = boolean(
+        'chapter_hover_subtitle', pick(options.chapter_hover_subtitle, true))
 
     self.controller_color = colour(
         'controller_color', pick(options.controller_color, Color.rgba255(0, 0, 0, 180)))
     self.controller_border_color = colour(
         'controller_border_color',
-        pick(options.controller_border_color, Color.rgba255(29, 150, 245, 70)))
+        pick(options.controller_border_color, Color.rgba255(0, 0, 0, 255)))
     self.controller_blur_radius = non_negative(
         'controller_blur_radius', pick(options.controller_blur_radius, 75))
     self.window_color = colour(
         'window_color', pick(options.window_color, Color.rgba255(0, 0, 0, 180)))
     self.window_border_color = colour(
         'window_border_color',
-        pick(options.window_border_color, Color.rgba255(29, 150, 245, 70)))
+        pick(options.window_border_color, Color.rgba255(0, 0, 0, 255)))
     self.window_blur_radius = non_negative(
         'window_blur_radius', pick(options.window_blur_radius, 75))
     self.window_control_color = colour(
@@ -289,6 +432,15 @@ function PlayerThemeData:__init(options)
         'pressed_color', pick(options.pressed_color, Color.rgba255(153, 153, 153, 90)))
     self.held_color = colour(
         'held_color', pick(options.held_color, Color.hex('#999999')))
+    self.hover_glow_color = colour(
+        'hover_glow_color', pick(options.hover_glow_color, Color.rgba255(255, 255, 255, 170)))
+    self.chapter_marker_color = colour(
+        'chapter_marker_color', pick(options.chapter_marker_color, Color.hex('#1D96F5')))
+    self.chapter_marker_current_color = colour(
+        'chapter_marker_current_color', pick(
+            options.chapter_marker_current_color, Color.hex('#9D96F5')))
+    self.seek_range_color = colour(
+        'seek_range_color', pick(options.seek_range_color, Color.rgba255(29, 150, 245, 90)))
     self.hover_scale = positive('hover_scale', pick(options.hover_scale, 1.15))
 end
 

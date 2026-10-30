@@ -164,3 +164,22 @@ F.test('capability adapter startup failures become explicit errors', function()
     F.contains(capability.error, 'missing executable', 'startup error is retained')
     context:dispose()
 end)
+
+F.test('thumbfast capability accepts info and unregisters on dispose', function()
+    mp_stub.reset()
+    local store = PlayerStore()
+    local context = MpPlayerContext(store)
+    local subscription = context:observe_thumbfast()
+    F.eq(store:get():capability('thumbfast').status, 'loading',
+        'thumbfast starts in loading state')
+    local info = fake.log['thumbfast-info']
+    F.ok(info ~= nil, 'thumbfast info message is registered')
+    info({ width = 320, height = 180 })
+    F.eq(store:get():capability('thumbfast').status, 'available',
+        'thumbfast dimensions publish availability')
+    F.eq(store:get():capability('thumbfast').detail, '320x180',
+        'thumbfast dimensions are retained as detail')
+    subscription:dispose()
+    F.eq(fake.log['thumbfast-info'], nil, 'thumbfast info message is unregistered')
+    context:dispose()
+end)

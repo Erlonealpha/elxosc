@@ -31,6 +31,7 @@ local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local Text = basic_widgets.Text
+local Button = basic_widgets.Button
 local GestureDetector = basic_widgets.GestureDetector
 local Column = layout_widgets.Column
 local StatelessWidget = widget_mod.StatelessWidget
@@ -291,6 +292,77 @@ F.test('Main maps PlayerSnapshot time values into an interactive seek bar', func
     actions:seek_to(75)
     F.eq(sought, 75, 'Main uses the explicit absolute seek action')
     F.ok(owner.root ~= nil, 'player shell keeps one render root')
+end)
+
+F.test('seek dragging pauses once, deduplicates motion and restores playback', function()
+    local calls = {}
+    local actions = HostActions({
+        seek_to = function(seconds, mode)
+            calls[#calls + 1] = { 'seek', seconds, mode }
+        end,
+        set_pause = function(paused)
+            calls[#calls + 1] = { 'pause', paused }
+        end,
+    })
+    local store = PlayerStore({
+        time_pos = 10,
+        duration = 100,
+        percent_pos = 10,
+        pause = false,
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = actions,
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local progress = find_widget_element(binding.root_element, ProgressBar)
+    F.ok(progress ~= nil, 'seek bar is mounted for the state machine')
+    if progress == nil then
+        return
+    end
+    local offset = progress.render_object.parent_data.offset
+    local y = offset.y + 8
+    owner:dispatch_pointer('down', geometry.Offset(offset.x + 123, y), 'left')
+    owner:dispatch_pointer('move', geometry.Offset(offset.x + 200, y))
+    owner:dispatch_pointer('move', geometry.Offset(offset.x + 200, y))
+    owner:dispatch_pointer('up', geometry.Offset(offset.x + 200, y), 'left')
+    F.eq(calls[1][1], 'pause', 'drag pauses before seeking')
+    F.eq(calls[1][2], true, 'drag pause is explicit')
+    F.eq(calls[2][1], 'seek', 'drag starts with absolute seek')
+    F.eq(calls[3][1], 'seek', 'changed motion seeks')
+    F.eq(calls[4][1], 'seek', 'release sends the final seek')
+    F.eq(calls[5][1], 'pause', 'release restores playback')
+    F.eq(calls[5][2], false, 'playback restoration is explicit')
+end)
+
+F.test('soft-repeat fires on frame ticks and stops on release', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local clicks = 0
+    local owner = mount(Button({
+        label = 'Jump',
+        soft_repeat = true,
+        on_click = function()
+            clicks = clicks + 1
+        end,
+    }), scheduler)
+    owner:dispatch_pointer('down', geometry.Offset(5, 5), 'left')
+    F.eq(clicks, 1, 'soft-repeat action fires on button down')
+    for _ = 1, 14 do
+        clock:tick(1 / 60)
+    end
+    F.eq(clicks, 1, 'soft-repeat waits for the hold threshold')
+    clock:tick(1 / 60)
+    F.eq(clicks, 2, 'soft-repeat fires at the threshold')
+    for _ = 1, 5 do
+        clock:tick(1 / 60)
+    end
+    F.eq(clicks, 3, 'soft-repeat repeats every five frame ticks')
+    owner:dispatch_pointer('up', geometry.Offset(5, 5), 'left')
+    for _ = 1, 10 do
+        clock:tick(1 / 60)
+    end
+    F.eq(clicks, 3, 'release stops soft-repeat')
+    scheduler:dispose()
 end)
 
 F.test('Main top bar follows window state while bottom controls remain mounted', function()

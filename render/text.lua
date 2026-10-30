@@ -13,11 +13,15 @@ local text_paint_mod = require 'painting.text_paint'
 local text_style = require 'text.text_style'
 local render_object = require 'render.render_object'
 local text_layout = require 'text.text_layout'
+local paragraph_mod = require 'text.paragraph'
+local color_mod = require 'foundation.color'
 
 local Offset = geometry.Offset
 local Anchor = anchor_mod.Anchor
 local RenderObject = render_object.RenderObject
 local Align = text_style.Align
+local Paragraph = paragraph_mod.Paragraph
+local Color = color_mod.Color
 local raise = std.raise
 
 local M = {}
@@ -28,6 +32,9 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field paragraph Paragraph?
 ---@field text_paint TextPaint
+---@field color_override Color?
+---@field shadow_color_override Color?
+---@field shadow_radius_override number?
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): self
 local RenderText = std.class.new('RenderText', { RenderObject })
 
@@ -41,7 +48,40 @@ function RenderText:__init(text, style, measurer, text_paint)
     self.style = style
     self.text_layout = measurer
     self.text_paint = text_paint_mod.resolve(text_paint)
+    self.color_override = nil
+    self.shadow_color_override = nil
+    self.shadow_radius_override = nil
     self.paragraph = nil
+end
+
+---@param color Color?
+function RenderText:set_color_override(color)
+    if color ~= nil and not std.isinstance(color, Color) then
+        raise(std.TypeError('RenderText.color_override must be a Color'))
+    end
+    if self.color_override == color then
+        return
+    end
+    self.color_override = color
+    self:mark_needs_paint()
+end
+
+---@param color Color?
+---@param radius number?
+function RenderText:set_shadow_override(color, radius)
+    if color ~= nil and not std.isinstance(color, Color) then
+        raise(std.TypeError('RenderText.shadow_color_override must be a Color'))
+    end
+    if radius ~= nil and (type(radius) ~= 'number' or radius < 0
+        or radius ~= radius or radius == math.huge or radius == -math.huge) then
+        raise(std.ValueError('RenderText.shadow_radius_override must be non-negative and finite'))
+    end
+    if self.shadow_color_override == color and self.shadow_radius_override == radius then
+        return
+    end
+    self.shadow_color_override = color
+    self.shadow_radius_override = radius
+    self:mark_needs_paint()
 end
 
 ---@return TextLayout
@@ -84,10 +124,28 @@ function RenderText:__paint(canvas, offset)
             self.size.width * fraction.x,
             self.size.height * fraction.y)) --[[@as Offset]]
         local text_paint = self.text_paint
+        local paragraph = self.paragraph
+        if self.color_override ~= nil
+            or self.shadow_color_override ~= nil then
+            local style_options = {}
+            if self.color_override ~= nil and paragraph.style.color ~= self.color_override then
+                style_options.color = self.color_override
+            end
+            if self.shadow_color_override ~= nil then
+                style_options.shadow_color = self.shadow_color_override
+                style_options.shadow_radius = self.shadow_radius_override or 0
+            end
+            paragraph = Paragraph(
+                paragraph.text,
+                paragraph.style:copy_with(style_options),
+                paragraph.size,
+                paragraph.lines,
+                paragraph.line_height)
+        end
         if anchor ~= self.text_paint.anchor then
             text_paint = self.text_paint:copy_with({ anchor = anchor })
         end
-        canvas:draw_text(self.paragraph, position, text_paint)
+        canvas:draw_text(paragraph, position, text_paint)
     end
     self:paint_children(canvas, offset)
 end

@@ -142,6 +142,20 @@ local function path_has_pointer_target(path)
     return false
 end
 
+-- A hover-only layer (for example a tooltip) may sit above a clickable child.
+-- Keep it in the move path, but continue looking for the first child that can
+-- receive a down/up/wheel event so hover overlays do not swallow clicks.
+local function path_has_action_target(path)
+    for _, entry in ipairs(path) do
+        local node = entry.node
+        if node:wants_pointer('down') or node:wants_pointer('up')
+            or node:wants_pointer('wheel') then
+            return true
+        end
+    end
+    return false
+end
+
 ---@param point Offset
 ---@param out {node: RenderObject, point: Offset}[]?
 ---@return {node: RenderObject, point: Offset}[]
@@ -164,7 +178,9 @@ function RenderStack:pointer_path(point, out)
                 for _, entry in ipairs(child_path) do
                     out[#out + 1] = entry
                 end
-                break
+                if path_has_action_target(child_path) then
+                    break
+                end
             end
         end
     end

@@ -16,7 +16,13 @@ local M = {}
 --- | 'previous'
 --- | 'next'
 --- | 'rewind'
+--- | 'rewind_5'
+--- | 'rewind_10'
+--- | 'rewind_30'
 --- | 'forward'
+--- | 'forward_5'
+--- | 'forward_10'
+--- | 'forward_30'
 --- | 'audio'
 --- | 'subtitle'
 --- | 'subtitle_off'
@@ -69,7 +75,13 @@ local specs = {
     previous = { glyph = 'skip_previous', size = 24 },
     next = { glyph = 'skip_next', size = 24 },
     rewind = { glyph = 'fast_rewind', size = 24 },
+    rewind_5 = { glyph = 'replay_5', size = 24 },
+    rewind_10 = { glyph = 'replay_10', size = 24 },
+    rewind_30 = { glyph = 'replay_30', size = 24 },
     forward = { glyph = 'fast_forward', size = 24 },
+    forward_5 = { glyph = 'forward_5', size = 24 },
+    forward_10 = { glyph = 'forward_10', size = 24 },
+    forward_30 = { glyph = 'forward_30', size = 24 },
     audio = { glyph = 'audio_file', size = 24 },
     subtitle = { glyph = 'subtitles', size = 24 },
     subtitle_off = { glyph = 'subtitles_off', size = 24 },

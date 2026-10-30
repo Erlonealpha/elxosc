@@ -245,7 +245,9 @@ function DefaultApp:__init(options)
     self.window_layer = options.window_layer
     self.title = options.title or 'elxosc'
     self.scale = options.scale
-    self.auto_hide_timeout = options.auto_hide_timeout == nil and 3 or options.auto_hide_timeout
+    -- ModernX hide_timeout defaults to 1500ms; keeping the player visible for
+    -- three seconds makes hover scale appear to collapse at an unrelated time.
+    self.auto_hide_timeout = options.auto_hide_timeout == nil and 1.5 or options.auto_hide_timeout
     self.auto_hide_enabled = options.auto_hide_enabled ~= false
     self.auto_hide_fade_duration = options.auto_hide_fade_duration == nil and 0.15
         or options.auto_hide_fade_duration

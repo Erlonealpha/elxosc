@@ -114,6 +114,27 @@ local function normalize_property(field, value)
     return normalize_number(value)
 end
 
+---@param payload any
+---@return table?
+local function parse_thumbfast_info(payload, height)
+    if type(payload) == 'table' then
+        return payload
+    end
+    if type(payload) == 'string' and mp.utils
+        and type(mp.utils.parse_json) == 'function' then
+        local ok, parsed = pcall(mp.utils.parse_json, payload)
+        if ok and type(parsed) == 'table' then
+            return parsed
+        end
+    end
+    local width = tonumber(payload)
+    local parsed_height = tonumber(height)
+    if width and parsed_height then
+        return { width = width, height = parsed_height }
+    end
+    return nil
+end
+
 ---@class MpPropertySubscription : std.object
 ---@field _active boolean
 ---@field _callback fun(name: string, value: any)?
@@ -565,6 +586,68 @@ function MpPlayerContext:observe_capability(name, adapter)
         subscription:set_handle(handle)
     end
     return subscription
+end
+
+--- Observe the optional thumbfast script without making it a core dependency.
+--- thumbfast announces its dimensions through the `thumbfast-info` script
+--- message; the timeout turns a missing script into an explicit fallback state.
+---@return MpCapabilitySubscription
+function MpPlayerContext:observe_thumbfast()
+    return self:observe_capability('thumbfast', function(report)
+        local finished = false
+        local timeout
+        local function kill_timeout()
+            if timeout and type(timeout.kill) == 'function' then
+                timeout:kill()
+                timeout = nil
+            end
+        end
+        local callback
+        callback = function(payload, height)
+            if finished then
+                return
+            end
+            local info = parse_thumbfast_info(payload, height)
+            if info == nil then
+                kill_timeout()
+                report('error', 'invalid thumbfast-info', 'invalid thumbnail information')
+                finished = true
+                return
+            end
+            local width = tonumber(info.width)
+            local info_height = tonumber(info.height)
+            kill_timeout()
+            if info.disabled == true or info.available == false then
+                report('unavailable', 'thumbfast unavailable')
+            elseif width and width > 0 and info_height and info_height > 0 then
+                report('available', string.format('%dx%d', width, info_height))
+            else
+                report('unavailable', 'thumbnail information unavailable')
+            end
+            finished = true
+        end
+        if type(mp.register_script_message) ~= 'function' then
+            report('unavailable', 'script messages unavailable')
+            finished = true
+            return
+        end
+        mp.register_script_message('thumbfast-info', callback)
+        if type(mp.add_timeout) == 'function' then
+            timeout = mp.add_timeout(0.5, function()
+                if not finished then
+                    finished = true
+                    report('unavailable', 'thumbfast script not installed')
+                end
+            end)
+        end
+        return function()
+            finished = true
+            kill_timeout()
+            if type(mp.unregister_script_message) == 'function' then
+                mp.unregister_script_message('thumbfast-info')
+            end
+        end
+    end)
 end
 
 ---@param name string

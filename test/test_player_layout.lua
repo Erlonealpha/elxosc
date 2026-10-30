@@ -17,6 +17,7 @@ local player_context = require('widget.player_context')
 local player_layout_mod = require('widget.player.layout')
 local player_theme_mod = require('widget.player.theme')
 local progress_mod = require('widget.player.progress_bar')
+local tooltip_mod = require('widget.player.tooltip')
 local record_mod = require('backends.record')
 local ass_mod = require('backends.ass_canvas')
 
@@ -34,6 +35,7 @@ local PlayerScope = player_context.PlayerScope
 local PlayerLayout = player_layout_mod.PlayerLayout
 local PlayerThemeData = player_theme_mod.PlayerThemeData
 local ProgressBar = progress_mod.ProgressBar
+local PlayerTooltip = tooltip_mod.PlayerTooltip
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_mod.AssCanvas
 
@@ -79,6 +81,8 @@ F.test('PlayerThemeData freezes ModernX original defaults', function()
     F.eq(theme.middle_button_size, 24, 'middle control size')
     F.eq(theme.window_control_size, 18, 'window control size')
     F.eq(theme.window_control_color, theme.title_color, 'window control color')
+    F.eq(theme.controller_border_width, 100, 'ModernX controller edge width')
+    F.eq(theme.window_border_width, 100, 'ModernX window edge width')
     F.eq(theme.controller_blur_radius, 75, 'ModernX controller blur strength')
     F.eq(theme.window_blur_radius, 75, 'ModernX window blur strength')
     F.eq(theme.hover_scale, 1.15, 'hover scale')
@@ -193,7 +197,167 @@ F.test('PlayerLayout mounts Positioned geometry and records layer order', functi
     local ass = AssCanvas()
     ass_owner:paint(ass)
     F.contains(ass:text(), '\\blur75', 'theme blur reaches ASS output')
-    F.contains(ass:text(), '\\bord1', 'theme border reaches ASS output')
+    F.contains(ass:text(), '\\bord100', 'ModernX edge border reaches ASS output')
+
+    local has_full_controller_fill = false
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_rect' and op[1] == Rect(0, 540, 1280, 720) then
+            has_full_controller_fill = true
+        end
+    end
+    F.ok(not has_full_controller_fill, 'controller uses the blurred edge instead of a gray block')
+end)
+
+F.test('default window controls keep all three ModernX actions and glyphs', function()
+    local store = PlayerStore({ fullscreen = true, border = true, title_bar = true })
+    local actions = HostActions({
+        minimize = function() end,
+        toggle_maximized = function() end,
+        close = function() end,
+    })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        actions = actions,
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local ass = AssCanvas()
+    owner:paint(ass)
+    F.contains(ass:text(), 'minimize', 'minimize glyph is present')
+    F.contains(ass:text(), 'maximize', 'maximize glyph is present')
+    F.contains(ass:text(), 'close', 'close glyph is present')
+end)
+
+F.test('chapter title uses chapter metadata instead of the numeric chapter index', function()
+    local store = PlayerStore({
+        time_pos = 10,
+        duration = 100,
+        percent_pos = 10,
+        chapter = 0,
+        chapter_list = {
+            { time = 0, title = 'Intro' },
+            { time = 50, title = 'Main' },
+        },
+    })
+    local owner = mount(WidgetsApp({
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), 'Intro', 'chapter metadata is rendered')
+    F.ok(not canvas:text():find('chapter title=0', 1, true),
+        'numeric chapter index is not used as the title')
+end)
+
+F.test('disabled player controls retain a hover tooltip without claiming clicks', function()
+    local store = PlayerStore({ time_pos = 10, duration = 100, percent_pos = 10 })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local tooltip = find_widget_element(binding.root_element, PlayerTooltip)
+    F.ok(tooltip ~= nil, 'player controls are wrapped with PlayerTooltip')
+    owner:dispatch_pointer('move', geometry.Offset(37, 680))
+    binding:flush_build()
+    owner:layout()
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), 'No audio available', 'disabled audio tooltip is visible')
+    local audio_click_region = false
+    for _, region in ipairs(owner:pointer_regions()) do
+        if region.down and region.rect:contains(geometry.Offset(37, 680)) then
+            audio_click_region = true
+        end
+    end
+    F.ok(not audio_click_region, 'disabled tooltip does not add a click region')
+end)
+
+F.test('seekbar hover shows a formatted time and chapter fallback tooltip', function()
+    local store = PlayerStore({
+        time_pos = 25,
+        duration = 100,
+        percent_pos = 25,
+        chapter = 0,
+        chapter_list = {
+            { time = 0, title = 'Intro' },
+            { time = 50, title = 'Main' },
+        },
+    })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local progress = find_widget_element(binding.root_element, ProgressBar)
+    F.ok(progress ~= nil, 'seekbar mounts for tooltip test')
+    if progress == nil then
+        return
+    end
+    local offset = progress.render_object.parent_data.offset
+    owner:dispatch_pointer('move', geometry.Offset(offset.x + 615, offset.y + 8))
+    binding:flush_build()
+    owner:layout()
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), '00:50', 'seek tooltip formats the hovered time')
+    F.contains(canvas:text(), 'Intro', 'seek tooltip includes chapter fallback text')
+end)
+
+F.test('available thumbfast requests previews and keeps the time fallback path separate', function()
+    local requests = {}
+    local cleared = 0
+    local actions = HostActions({
+        seek_to = function() end,
+        thumbfast_request = function(seconds, x, y)
+            requests[#requests + 1] = { seconds, x, y }
+        end,
+        thumbfast_clear = function()
+            cleared = cleared + 1
+        end,
+    })
+    local store = PlayerStore({
+        duration = 100,
+        percent_pos = 25,
+        chapter_list = {
+            { time = 0, title = 'Intro' },
+            { time = 50, title = 'Main' },
+        },
+        capabilities = { thumbfast = { status = 'available', detail = '320x180' } },
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = actions,
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local progress = find_widget_element(binding.root_element, ProgressBar)
+    F.ok(progress ~= nil, 'seekbar mounts for thumbfast')
+    if progress == nil then
+        return
+    end
+    local offset = progress.render_object.parent_data.offset
+    owner:dispatch_pointer('move', geometry.Offset(offset.x + 615, offset.y + 8))
+    F.eq(#requests, 1, 'thumbfast receives one hover request')
+    F.close(requests[1][1], 50, 'thumbfast receives hovered seconds')
+    owner:dispatch_pointer('move', geometry.Offset(0, 0))
+    F.eq(cleared, 1, 'leaving the seekbar clears thumbfast')
+end)
+
+F.test('time displays use click-local toggles for milliseconds', function()
+    local store = PlayerStore({ time_pos = 12.25, duration = 100, percent_pos = 12.25 })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local ass = AssCanvas()
+    owner:paint(ass)
+    F.ok(not ass:text():find('12%.250', 1, false), 'milliseconds are initially hidden')
+    F.contains(ass:text(), '01:40', 'right time defaults to total duration')
+    F.ok(not ass:text():find('-01:40', 1, true), 'total duration has no remaining prefix')
+    owner:dispatch_pointer('down', geometry.Offset(40, 636), 'left')
+    owner:dispatch_pointer('up', geometry.Offset(40, 636), 'left')
+    binding:flush_build()
+    owner:layout()
+    ass:reset()
+    owner:paint(ass)
+    F.contains(ass:text(), '12.250', 'left time toggles milliseconds')
 end)
 
 F.test('WidgetsApp PlayerTheme selects the reduced layout without changing its contract', function()

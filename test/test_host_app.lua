@@ -673,9 +673,13 @@ F.test('App attaches and disposes the default player property observers', functi
         'App attaches the default time observer')
     F.ok(context:subscription('percent-pos') ~= nil,
         'App attaches the default percent observer')
+    F.ok(context:capability_subscription('thumbfast') ~= nil,
+        'App attaches the optional thumbfast capability observer')
     app:shutdown()
     F.eq(context:subscription('time-pos'), nil,
         'App shutdown disposes player observers')
+    F.eq(context:capability_subscription('thumbfast'), nil,
+        'App shutdown disposes the thumbfast capability observer')
 end)
 
 F.test('shutdown unmounts PlayerScope subscriptions', function()

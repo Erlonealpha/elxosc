@@ -211,7 +211,7 @@ end
 ---@param event string
 ---@param data any?
 ---@param section string?
-function MpInput:_dispatch(event, data, section)
+function MpInput:_dispatch(event, data, section, modifiers)
     if self._shutdown then
         return
     end
@@ -245,6 +245,7 @@ function MpInput:_dispatch(event, data, section)
         click_count = event == 'double' and 2 or nil,
         delta_x = delta_x,
         delta_y = delta_y,
+        modifiers = modifiers,
         source = 'mouse',
         timestamp = mp.get_time(),
     })
@@ -300,6 +301,21 @@ function MpInput:_define_input_section(section)
         end },
         { 'mbtn_mid', function() self:_dispatch('up', 'middle', section) end, function()
             self:_dispatch('down', 'middle', section)
+        end },
+        { 'shift+mbtn_left', function()
+            self:_dispatch('up', 'left', section, { shift = true })
+        end, function()
+            self:_dispatch('down', 'left', section, { shift = true })
+        end },
+        { 'shift+mbtn_right', function()
+            self:_dispatch('up', 'right', section, { shift = true })
+        end, function()
+            self:_dispatch('down', 'right', section, { shift = true })
+        end },
+        { 'shift+mbtn_mid', function()
+            self:_dispatch('up', 'middle', section, { shift = true })
+        end, function()
+            self:_dispatch('down', 'middle', section, { shift = true })
         end },
         { 'mbtn_left_dbl', function() self:_dispatch('double', 'left', section) end },
         { 'mbtn_right_dbl', function() self:_dispatch('double', 'right', section) end },

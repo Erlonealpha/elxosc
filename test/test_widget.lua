@@ -16,6 +16,7 @@ local text_style = require('text.text_style')
 local text_layout = require('text.text_layout')
 local constraints_mod = require('layout.constraints')
 local render_owner = require('render.render_owner')
+local render_text = require('render.text')
 local record = require('backends.record')
 local widget_mod = require('widget.widget')
 local key_mod = require('widget.key')
@@ -32,6 +33,7 @@ local TextPaint = text_paint_mod.TextPaint
 local TextStyle = text_style.TextStyle
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
+local RenderText = render_text.RenderText
 local RecordCanvas = record.RecordCanvas
 local Key = key_mod.Key
 local WidgetBinding = binding_mod.WidgetBinding
@@ -125,6 +127,69 @@ F.test('button visual states use persistent render setters', function()
     F.eq(decorated.decoration.color, pressed, 'pressed color is set without rebuilding')
     owner:dispatch_pointer('up', Offset(2, 2), 'left')
     F.eq(decorated.decoration.color, hover, 'release restores hover color directly')
+end)
+
+F.test('button glow is applied to the icon/text paint without layout changes', function()
+    local owner = mount(Button({
+        label = 'Glow',
+        style = ButtonStyle({
+            hover_shadow_color = Color.rgba255(255, 255, 255, 160),
+            hover_shadow_radius = 5,
+        }),
+        on_click = function() end,
+    }))
+    owner:dispatch_pointer('move', Offset(2, 2))
+    local function find_text(node)
+        if node.__class == RenderText then
+            return node
+        end
+        for _, child in ipairs(node:children()) do
+            local found = find_text(child)
+            if found then
+                return found
+            end
+        end
+        return nil
+    end
+    local text = find_text(owner.root)
+    F.ok(text ~= nil, 'button text render object is present')
+    if text == nil then
+        return
+    end
+    F.eq(text.shadow_color_override, Color.rgba255(255, 255, 255, 160),
+        'hover glow reaches text paint')
+    F.eq(text.shadow_radius_override, 5, 'hover glow radius reaches text paint')
+    owner:dispatch_pointer('leave', Offset(2, 2))
+    F.eq(text.shadow_color_override, nil, 'leave removes text glow')
+end)
+
+F.test('button rebuild preserves an active hover scale', function()
+    local owner, binding = mount(Button({
+        label = 'Hover',
+        style = ButtonStyle({ hover_scale = 1.2 }),
+        on_click = function() end,
+    }))
+    owner:dispatch_pointer('move', Offset(2, 2))
+    local gesture = owner.root
+    F.eq(gesture:children()[1].scale, Size(1.2, 1.2), 'hover starts scaled')
+    binding.root_element:rebuild()
+    owner:layout()
+    F.eq(owner.root:children()[1].scale, Size(1.2, 1.2),
+        'state rebuild does not collapse the hovered button')
+end)
+
+F.test('middle button maps to the ModernX shift-left action without tapping', function()
+    local selected
+    local clicks = 0
+    local owner = mount(Button({
+        label = 'Middle',
+        on_click = function() clicks = clicks + 1 end,
+        on_shift_click = function(button) selected = button end,
+    }))
+    owner:dispatch_pointer('down', Offset(2, 2), 'middle')
+    owner:dispatch_pointer('up', Offset(2, 2), 'middle')
+    F.eq(selected, 'left', 'middle button uses shift-left semantics')
+    F.eq(clicks, 0, 'middle button does not invoke ordinary tap')
 end)
 
 F.test('button variants share the public API and style states', function()

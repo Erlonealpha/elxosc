@@ -9,6 +9,7 @@ local mp_stub = require 'mp_stub'
 mp_stub.install()
 
 local geometry = require 'foundation.geometry'
+local pointer_event = require 'foundation.pointer_event'
 local constraints_mod = require 'layout.constraints'
 local render_owner_mod = require 'render.render_owner'
 local progress_mod = require 'render.progress_bar'
@@ -31,6 +32,7 @@ local HostActions = actions_mod.HostActions
 local PlayerStore = player_context.PlayerStore
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local fake = mp_stub.fake
+local PointerEvent = pointer_event.PointerEvent
 
 local function layout_bar(bar)
     local owner = RenderOwner(bar)
@@ -99,6 +101,91 @@ F.test('progress bar rejects invalid fractions at the render boundary', function
     end, 'between 0 and 1', 'invalid buffered update')
 end)
 
+F.test('progress hover, wheel, right-click and shift seek stay on one input region', function()
+    local phases = {}
+    local modes = {}
+    local chapter_fraction
+    local wheel_delta
+    local bar = RenderProgressBar({
+        progress = 0.25,
+        hover_expand = 6,
+        hover_handle_size = 1,
+        on_seek = function(fraction, phase, mode)
+            phases[#phases + 1] = phase
+            modes[#modes + 1] = mode
+        end,
+        on_context_seek = function(fraction)
+            chapter_fraction = fraction
+        end,
+        on_wheel = function(delta)
+            wheel_delta = delta
+        end,
+    })
+    local owner = layout_bar(bar)
+    owner:dispatch_pointer('move', Offset(50, 10))
+    F.ok(bar.hovered, 'progress bar responds to pointer enter')
+    F.eq(owner:pointer_regions()[1].rect, geometry.Rect(-6, -6, 206, 26),
+        'hover hitbox expands without changing layout')
+    owner:dispatch_pointer('wheel', Offset(50, 10), 1)
+    F.eq(wheel_delta, 1, 'wheel reaches the slider')
+
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'down', point = Offset(100, 10), button = 'right', data = 'right',
+    }))
+    F.close(chapter_fraction or -1, 0.5, 'right click reports chapter fraction')
+
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'down', point = Offset(25, 10), button = 'left', data = 'left',
+        modifiers = { shift = true },
+    }))
+    owner:dispatch_pointer('move', Offset(75, 10))
+    owner:dispatch_pointer_result(PointerEvent({
+        type = 'up', point = Offset(75, 10), button = 'left', data = 'left',
+    }))
+    F.eq(phases[1], 'start', 'shift drag starts')
+    F.eq(modes[1], 'exact', 'shift drag selects exact seek')
+    F.eq(phases[#phases], 'end', 'shift drag ends')
+
+    owner:dispatch_pointer('down', Offset(10, 10), 'left')
+    owner:dispatch_pointer('cancel')
+    F.eq(phases[#phases], 'cancel', 'cancel resets the seek sequence')
+    F.ok(not bar.dragging, 'cancel releases slider state')
+end)
+
+F.test('gap chapter markers cut the track instead of adding marker shapes', function()
+    local bar = RenderProgressBar({
+        progress = 0.75,
+        buffered = 0.9,
+        marker_style = 'gap',
+        markers = {
+            { fraction = 0 },
+            { fraction = 0.5 },
+            { fraction = 1 },
+        },
+    })
+    local owner = layout_bar(bar)
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(canvas:count('draw_path'), 0, 'gap style has no marker path')
+    F.ok(canvas:count('draw_rrect') > 4, 'gap style splits track and progress segments')
+end)
+
+F.test('seekbar configuration selects the default keyframe or exact mode', function()
+    local mode
+    local bar = RenderProgressBar({
+        seek_mode = 'exact',
+        on_seek = function(_, phase, selected_mode)
+            if phase == 'start' then
+                mode = selected_mode
+            end
+        end,
+    })
+    local owner = layout_bar(bar)
+    owner:dispatch_pointer('down', Offset(20, 10), 'left')
+    F.eq(mode, 'exact', 'configured exact mode is used without shift')
+    owner:dispatch_pointer('cancel')
+end)
+
 F.section('modernx player: snapshot and actions')
 
 F.test('default mpv properties map to immutable player fields', function()
@@ -147,6 +234,17 @@ F.test('HostActions keeps relative and absolute seek distinct', function()
     F.eq(calls[2][2], 42.5, 'absolute seek position')
 end)
 
+F.test('jump seek mode reaches the explicit host action', function()
+    local mode
+    local actions = HostActions({
+        seek = function(_, selected_mode)
+            mode = selected_mode
+        end,
+    })
+    actions:seek(10, 'absolute')
+    F.eq(mode, 'absolute', 'jump mode is preserved by HostActions')
+end)
+
 F.test('mpv action bridge emits distinct relative and absolute commands', function()
     mp_stub.reset()
     local actions = mpv_actions.default()
@@ -187,6 +285,18 @@ F.test('HostActions validates parameters and exposes capability presence', funct
         'non-negative', 'message duration rejects negative values')
 end)
 
+F.test('HostActions bounds transient message payloads', function()
+    local message = ''
+    local actions = HostActions({
+        show_message = function(value)
+            message = value
+        end,
+    })
+    actions:show_message(string.rep('x', 4001))
+    F.eq(#message, 4000, 'message payload is capped at 4000 characters')
+    F.eq(message:sub(-3), '...', 'capped message has an omission marker')
+end)
+
 F.test('mpv action bridge maps common ModernX controls', function()
     mp_stub.reset()
     local actions = mpv_actions.default()
@@ -212,4 +322,43 @@ F.test('mpv action bridge maps common ModernX controls', function()
     F.eq(fake.commands[9][2], 'ontop', 'ontop cycle target')
     F.eq(fake.commands[10][2], 'subtitles', 'screenshot flag')
     F.eq(fake.commands[11][3], '1500', 'message duration in milliseconds')
+end)
+
+F.test('extended ModernX actions keep seek modes and control commands explicit', function()
+    mp_stub.reset()
+    local actions = mpv_actions.default()
+    actions:seek_to(12.5, 'keyframe')
+    actions:set_pause(true)
+    actions:set_chapter(2)
+    actions:set_track('audio', 3)
+    actions:clear_secondary_subtitle()
+    actions:select_subtitle()
+    actions:select_audio_device()
+    actions:frame_step()
+    actions:playlist_shuffle()
+    actions:select_playlist()
+    F.eq(fake.commands[1][3], 'absolute', 'keyframe seek keeps the absolute mode')
+    F.eq(fake.props.pause, true, 'pause setter reaches mpv')
+    F.eq(fake.commands[2][2], 'chapter', 'chapter setter targets chapter')
+    F.eq(fake.commands[3][2], 'audio', 'track setter targets audio')
+    F.eq(fake.props['secondary-sid'], 0, 'subtitle cycle clears secondary subtitles')
+    F.eq(fake.commands[4][2], 'select/select-sid', 'subtitle selector action')
+    F.eq(fake.commands[5][2], 'select/select-audio-device', 'audio device selector action')
+    F.eq(fake.commands[6][1], 'frame-step', 'frame step action')
+    F.eq(fake.commands[7][1], 'playlist-shuffle', 'playlist shuffle action')
+    F.eq(fake.commands[8][2], 'select/select-playlist', 'playlist selector action')
+end)
+
+F.test('thumbfast action bridge sends hover and clear messages', function()
+    mp_stub.reset()
+    local actions = mpv_actions.default()
+    actions:thumbfast_request(42.5, 640, 612)
+    actions:thumbfast_clear()
+    F.eq(fake.commands[1][1], 'script-message-to', 'thumbfast request uses a script message')
+    F.eq(fake.commands[1][2], 'thumbfast', 'thumbfast request target')
+    F.eq(fake.commands[1][3], 'thumb', 'thumbfast request operation')
+    F.eq(fake.commands[1][4], '42.5', 'thumbfast request seconds')
+    F.eq(fake.commands[1][5], '640', 'thumbfast request x')
+    F.eq(fake.commands[1][6], '612', 'thumbfast request y')
+    F.eq(fake.commands[2][3], 'clear', 'thumbfast clear operation')
 end)
