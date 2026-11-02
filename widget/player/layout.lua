@@ -49,6 +49,15 @@ local Paint = require 'painting.paint'.Paint
 local PaintStyle = require 'painting.paint'.Style
 local ColorTransparent = Color.rgba255(0, 0, 0, 0)
 local ColorBlack = Color.rgba255(0, 0, 0, 255)
+local SPONSOR_COLORS = {
+    sponsor = Color.hex('#6BCB77'),
+    intro = Color.hex('#FFD166'),
+    outro = Color.hex('#4D96FF'),
+    interaction = Color.hex('#C77DFF'),
+    selfpromo = Color.hex('#FF9F1C'),
+    preview = Color.hex('#00B4D8'),
+    filler = Color.hex('#8D99AE'),
+}
 
 local M = {}
 
@@ -305,6 +314,9 @@ end
 ---@field bounds Rect
 ---@field viewport_width number
 ---@field viewport_height number
+---@field actions HostActions
+---@field links string[]
+---@field stats string
 ---@field key any?
 
 ---@class PlayerDescriptionLayer : StatefulWidget
@@ -314,6 +326,9 @@ end
 ---@field bounds Rect
 ---@field viewport_width number
 ---@field viewport_height number
+---@field actions HostActions
+---@field links string[]
+---@field stats string
 ---@overload fun(options: _PlayerDescriptionLayerOptions): self
 local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer', { StatefulWidget })
 
@@ -326,17 +341,22 @@ function PlayerDescriptionLayer:__init(options)
     self.bounds = options.bounds
     self.viewport_width = options.viewport_width
     self.viewport_height = options.viewport_height
+    self.actions = options.actions or HostActions()
+    self.links = options.links or {}
+    self.stats = options.stats or ''
 end
 
 ---@class PlayerDescriptionLayerState : State
 ---@field open boolean
 ---@field scroll number
+---@field selected_link integer
 ---@overload fun(): self
 local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState', { State })
 
 function PlayerDescriptionLayerState:init_state()
     self.open = false
     self.scroll = 0
+    self.selected_link = 1
 end
 
 function PlayerDescriptionLayerState:did_update_widget(old_widget)
@@ -344,7 +364,66 @@ function PlayerDescriptionLayerState:did_update_widget(old_widget)
     if old_widget.text ~= widget.text then
         self.open = false
         self.scroll = 0
+        self.selected_link = 1
     end
+end
+
+---@param event KeyEvent|string
+---@return boolean
+function PlayerDescriptionLayerState:handle_key(event)
+    if not self.open then
+        return false
+    end
+    local key = type(event) == 'string' and event or event and event.key
+    local event_type = type(event) == 'table' and event.type or 'press'
+    if event_type ~= 'down' and event_type ~= 'press' then
+        return false
+    end
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
+    if key == 'ESC' or key == 'ESCAPE' or key == 'escape' then
+        self:set_state(function()
+            self.open = false
+            self.scroll = 0
+            self.selected_link = 1
+        end)
+        return true
+    end
+    if key == 'TAB' or key == 'tab' then
+        if #widget.links == 0 then
+            return true
+        end
+        local backwards = type(event) == 'table' and event.modifiers
+            and event.modifiers.shift == true
+        self:set_state(function()
+            if backwards then
+                self.selected_link = self.selected_link - 1
+                if self.selected_link < 1 then
+                    self.selected_link = #widget.links
+                end
+            else
+                self.selected_link = self.selected_link + 1
+                if self.selected_link > #widget.links then
+                    self.selected_link = 1
+                end
+            end
+        end)
+        return true
+    end
+    if key == 'ENTER' or key == 'enter' then
+        local url = widget.links[self.selected_link]
+        if url and widget.actions:has('open_url') then
+            widget.actions:open_url(url)
+        elseif widget.actions:has('show_message') then
+            widget.actions:show_message('No link is selected')
+        end
+        return true
+    end
+    return false
+end
+
+---@return boolean
+function PlayerDescriptionLayerState:can_handle_key()
+    return self.open
 end
 
 function PlayerDescriptionLayerState:build()
@@ -388,6 +467,10 @@ function PlayerDescriptionLayerState:build()
         wrap = true,
         align = 'left',
     })
+    local selected = widget.links[self.selected_link]
+    local link_label = #widget.links > 0
+        and string.format('Link %d/%d: %s', self.selected_link, #widget.links, selected)
+        or 'No links found'
     local close = GestureDetector(Icon('close', { color = widget.theme.title_color }), {
         on_tap = function()
             self:set_state(function()
@@ -398,7 +481,21 @@ function PlayerDescriptionLayerState:build()
     })
     local content = OffsetBox({
         offset = Offset(0, -self.scroll),
-        child = Text(widget.text, { style = panel_style }),
+        child = Column({
+            children = {
+                widget.stats ~= '' and Text(widget.stats, { style = TextStyle({
+                    font_size = max(12, widget.theme.description_font_size - 2),
+                    color = widget.theme.chapter_color,
+                    wrap = false,
+                }) }) or SizedBox.shrink(),
+                Text(link_label, { style = TextStyle({
+                    font_size = max(12, widget.theme.description_font_size - 2),
+                    color = widget.theme.chapter_color,
+                    wrap = false,
+                }) }),
+                Text(widget.text, { style = panel_style }),
+            },
+        }),
     })
     return GestureDetector(Stack({
         children = {
@@ -749,6 +846,34 @@ local function seek_ranges(snapshot, duration)
                 ranges[#ranges + 1] = {
                     start = clamp_fraction(start / duration),
                     ['end'] = clamp_fraction(finish / duration),
+                }
+            end
+        end
+    end
+    return ranges
+end
+
+---@param snapshot PlayerSnapshot?
+---@param duration number?
+---@return table[]
+local function sponsor_ranges(snapshot, duration)
+    if snapshot == nil or duration == nil or duration <= 0 then
+        return {}
+    end
+    local source = snapshot:get('sponsor_segments')
+    if type(source) ~= 'table' then
+        return {}
+    end
+    local ranges = {}
+    for _, segment in ipairs(array_items(source)) do
+        if type(segment) == 'table' then
+            local start = tonumber(segment.start or segment[1])
+            local finish = tonumber(segment['end'] or segment.finish or segment[2])
+            if start and finish then
+                ranges[#ranges + 1] = {
+                    start = clamp_fraction(start / duration),
+                    ['end'] = clamp_fraction(finish / duration),
+                    color = SPONSOR_COLORS[segment.category],
                 }
             end
         end
@@ -1147,6 +1272,9 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     local buffered = buffered_progress(snapshot)
     local markers = theme.show_chapter_markers and chapter_markers(snapshot, duration) or {}
     local ranges = seek_ranges(snapshot, duration)
+    for _, range in ipairs(sponsor_ranges(snapshot, duration)) do
+        ranges[#ranges + 1] = range
+    end
     local thumbfast_enabled = capability_available(snapshot, 'thumbfast')
         and actions:has('thumbfast_request')
 
@@ -1673,13 +1801,28 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     local stats_capability = capability_info(snapshot, 'stats')
     local stats_available = stats_capability == nil
         or stats_capability.status == 'available'
-    local download_capability = capability_info(snapshot, 'yt_dlp')
-    local download_available = download_capability ~= nil
-        and download_capability.status == 'available'
+    local yt_dlp_capability = capability_info(snapshot, 'yt_dlp')
+    local yt_dlp_available = yt_dlp_capability ~= nil
+        and yt_dlp_capability.status == 'available'
+    local download_capability = capability_info(snapshot, 'download')
+    local download_available = yt_dlp_available and (download_capability == nil
+        or download_capability.status == 'available'
+        or download_capability.status == 'error')
     local download_tooltip = 'Download'
-    if download_capability then
+    if yt_dlp_capability == nil then
+        download_tooltip = 'Download unavailable'
+    elseif yt_dlp_capability.status == 'loading' then
+        download_tooltip = 'Download capability is loading'
+    elseif yt_dlp_capability.status == 'error' then
+        download_tooltip = 'Download unavailable: '
+            .. (yt_dlp_capability.error or yt_dlp_capability.detail or 'probe failed')
+    elseif not yt_dlp_available then
+        download_tooltip = 'Download unavailable'
+    elseif download_capability then
         if download_capability.status == 'loading' then
-            download_tooltip = 'Download capability is loading'
+            download_tooltip = 'Downloading...'
+        elseif download_capability.status == 'available' and download_capability.detail == 'downloaded' then
+            download_tooltip = 'Already downloaded'
         elseif download_capability.status == 'error' then
             download_tooltip = 'Download failed: '
                 .. (download_capability.error or download_capability.detail or 'unavailable')
@@ -1711,11 +1854,17 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
         end, enabled = actions:has('screenshot'), tooltip = 'Screenshot',
             disabled_tooltip = 'Screenshot unavailable' },
-        { name = 'download', action = nil, icon = 'download', callback = function()
-            if actions:has('download') then
-                actions:download()
-            end
-        end, enabled = actions:has('download') and is_url and download_available,
+        { name = 'download', action = nil,
+            icon = download_capability and download_capability.status == 'available'
+                and download_capability.detail == 'downloaded' and 'download_done' or 'download',
+            callback = function()
+                local source = player_metadata.source(snapshot)
+                if actions:has('download') and source then
+                    actions:download(source)
+                elseif actions:has('show_message') then
+                    actions:show_message('Download URL unavailable')
+                end
+            end, enabled = actions:has('download') and is_url and download_available,
             tooltip = download_tooltip, disabled_tooltip = download_tooltip },
     }
     for _, item in ipairs(right_icons) do
@@ -1819,6 +1968,9 @@ function PlayerLayout:build(context)
                 bounds = layout_geometry.description,
                 viewport_width = viewport_width,
                 viewport_height = viewport_height,
+                actions = self.actions,
+                links = player_metadata.links(description),
+                stats = player_metadata.stats(snapshot),
             }),
         })
     end
@@ -1827,5 +1979,6 @@ function PlayerLayout:build(context)
 end
 
 M.PlayerLayout = PlayerLayout
+M.PlayerDescriptionLayer = PlayerDescriptionLayer
 
 return M

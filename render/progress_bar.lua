@@ -127,6 +127,10 @@ local function copy_ranges(list)
             start = validate_fraction(start, 'RenderProgressBar.ranges[' .. index .. '].start'),
             ['end'] = validate_fraction(finish, 'RenderProgressBar.ranges[' .. index .. '].end'),
         }
+        if range.color ~= nil then
+            copy[index].color = validate_color(
+                range.color, 'RenderProgressBar.ranges[' .. index .. '].color')
+        end
         if copy[index]['end'] < copy[index].start then
             copy[index].start, copy[index]['end'] = copy[index]['end'], copy[index].start
         end
@@ -576,7 +580,8 @@ function RenderProgressBar:__paint(canvas, offset)
         if range_right > range_left then
             canvas:draw_rrect(
                 Rect(range_left, offset.y + top, range_right,
-                    offset.y + top + track_height), radius, Paint(self.range_color))
+                    offset.y + top + track_height), radius,
+                Paint(range.color or self.range_color))
         end
     end
 

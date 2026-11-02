@@ -101,9 +101,13 @@ function App:__init(root_widget, options)
         and type(self.player_context.observe_yt_dlp) == 'function' then
         self.player_context:observe_yt_dlp()
     end
+    if self.player_context
+        and type(self.player_context.observe_sponsorblock) == 'function' then
+        self.player_context:observe_sponsorblock()
+    end
     self.theme = options.theme or ThemeData()
     self.player_theme = options.player_theme or PlayerThemeData()
-    self.actions = options.actions or mpv_actions.default()
+    self.actions = options.actions or mpv_actions.default({ player_context = self.player_context })
     self.default_text_style = options.default_text_style
     self._shutdown = false
     self._property_callbacks = {}
@@ -149,12 +153,10 @@ function App:__init(root_widget, options)
             self:request_frame()
         end,
         get_can_pop = function()
-            local state = self:_navigation_state()
-            return state ~= nil and state:can_pop() or false
+            return self:_can_handle_key()
         end,
         handle_key = function(event)
-            local state = self:_navigation_state()
-            return state and state:handle_key(event) or false
+            return self:_handle_key(event)
         end,
     })
 end
@@ -175,6 +177,56 @@ function App:_navigation_state()
         return nil
     end
     return root and visit(root) or nil
+end
+
+---@param event KeyEvent
+---@return boolean
+function App:_handle_key(event)
+    local root = self.binding and self.binding.root_element
+    local function visit(element)
+        local children = element:element_children()
+        for index = #children, 1, -1 do
+            local handled = visit(children[index])
+            if handled then
+                return true
+            end
+        end
+        local state = element.state
+        if state and type(state.can_handle_key) == 'function'
+            and state:can_handle_key(event)
+            and type(state.handle_key) == 'function' then
+            return state:handle_key(event) == true
+        end
+        return false
+    end
+    if root and visit(root) then
+        return true
+    end
+    local navigation = self:_navigation_state()
+    return navigation ~= nil and navigation:handle_key(event) or false
+end
+
+---@return boolean
+function App:_can_handle_key()
+    local root = self.binding and self.binding.root_element
+    local function visit(element)
+        local children = element:element_children()
+        for index = #children, 1, -1 do
+            if visit(children[index]) then
+                return true
+            end
+        end
+        local state = element.state
+        if state and type(state.can_handle_key) == 'function' then
+            return state:can_handle_key()
+        end
+        return false
+    end
+    if root and visit(root) then
+        return true
+    end
+    local navigation = self:_navigation_state()
+    return navigation ~= nil and navigation:can_pop() or false
 end
 
 ---@return Rect

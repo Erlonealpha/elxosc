@@ -15,6 +15,7 @@ local fake = mp_stub.fake
 
 local color = require('foundation.color')
 local geometry = require('foundation.geometry')
+local key_event = require('foundation.key_event')
 local text_style = require('text.text_style')
 local mpv_app = require('host.mpv_app')
 local mpv_input = require('host.mpv_input')
@@ -31,9 +32,12 @@ local slot_mod = require('widget.slot')
 local state_mod = require('widget.state')
 local widget_mod = require('widget.widget')
 local player_context = require('widget.player_context')
+local actions_mod = require('widget.actions')
+local player_layout_mod = require('widget.player.layout')
 
 local Color = color.Color
 local Offset = geometry.Offset
+local KeyEvent = key_event.KeyEvent
 local Rect = geometry.Rect
 local TextStyle = text_style.TextStyle
 local MpDefine = mpv_define.MpDefine
@@ -53,6 +57,8 @@ local MpInput = mpv_input.MpInput
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local Page = navigation_mod.Page
 local Navigator = navigation_mod.Navigator
+local HostActions = actions_mod.HostActions
+local PlayerDescriptionLayer = player_layout_mod.PlayerDescriptionLayer
 
 local function find_widget_element(element, widget_class)
     if element == nil then
@@ -478,6 +484,42 @@ F.test('host mouse activity restores a hidden Main without intercepting clicks',
     F.ok(default_element.state.main_controller.visible, 'mouse activity restores Main')
 end)
 
+F.test('host keyboard routing reaches the open description panel', function()
+    mp_stub.reset()
+    local opened
+    local store = PlayerStore({
+        description = 'Open https://example.test/one or https://example.test/two.',
+    })
+    local actions = HostActions({
+        open_url = function(url)
+            opened = url
+        end,
+    })
+    local app = mpv_app.App(main_layout.build_app(), {
+        player_store = store,
+        actions = actions,
+    })
+    app:render()
+    local layer = find_widget_element(app.binding.root_element, PlayerDescriptionLayer)
+    F.ok(layer ~= nil, 'description layer is mounted in the host app')
+    if layer == nil then
+        return
+    end
+    app.owner:dispatch_pointer('down', Offset(40, 590), 'left')
+    app.owner:dispatch_pointer('up', Offset(40, 590), 'left')
+    app.binding:flush_build()
+    app.owner:layout()
+    F.ok(layer.state.open, 'description panel opens from host pointer input')
+    F.ok(app:_can_handle_key(), 'navigation section claims panel keyboard input')
+    app:_handle_key(KeyEvent({ key = 'TAB', type = 'press' }))
+    app:_handle_key(KeyEvent({ key = 'ENTER', type = 'press' }))
+    F.eq(opened, 'https://example.test/two', 'host keyboard opens selected link')
+    F.ok(app:_handle_key(KeyEvent({ key = 'ESC', type = 'press' })),
+        'host keyboard closes panel')
+    F.ok(not layer.state.open, 'panel closes through host keyboard routing')
+    app:shutdown()
+end)
+
 F.test('ModernX bottom hover policy reveals Main only in the hover zone', function()
     mp_stub.reset()
     local app = mpv_app.App(main_layout.build_app(Text('extension')))
@@ -677,6 +719,8 @@ F.test('App attaches and disposes the default player property observers', functi
         'App attaches the optional thumbfast capability observer')
     F.ok(context:capability_subscription('yt_dlp') ~= nil,
         'App attaches the optional yt-dlp capability observer')
+    F.ok(context:capability_subscription('sponsorblock') ~= nil,
+        'App attaches the optional SponsorBlock capability observer')
     app:shutdown()
     F.eq(context:subscription('time-pos'), nil,
         'App shutdown disposes player observers')
@@ -684,6 +728,8 @@ F.test('App attaches and disposes the default player property observers', functi
         'App shutdown disposes the thumbfast capability observer')
     F.eq(context:capability_subscription('yt_dlp'), nil,
         'App shutdown disposes the yt-dlp capability observer')
+    F.eq(context:capability_subscription('sponsorblock'), nil,
+        'App shutdown disposes the SponsorBlock capability observer')
 end)
 
 F.test('shutdown unmounts PlayerScope subscriptions', function()

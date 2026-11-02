@@ -36,6 +36,7 @@ local PlayerLayout = player_layout_mod.PlayerLayout
 local PlayerThemeData = player_theme_mod.PlayerThemeData
 local ProgressBar = progress_mod.ProgressBar
 local PlayerTooltip = tooltip_mod.PlayerTooltip
+local PlayerDescriptionLayer = player_layout_mod.PlayerDescriptionLayer
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_mod.AssCanvas
 
@@ -288,6 +289,37 @@ F.test('description preview opens an in-tree panel and keeps the full text', fun
     local canvas = AssCanvas()
     owner:paint(canvas)
     F.contains(canvas:text(), description, 'description panel keeps the full text')
+end)
+
+F.test('description panel selects and opens links through HostActions', function()
+    local opened
+    local description = 'Open https://example.test/one or https://example.test/two.'
+    local store = PlayerStore({ description = description })
+    local actions = HostActions({
+        open_url = function(url)
+            opened = url
+        end,
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = actions,
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local layer = find_widget_element(binding.root_element, PlayerDescriptionLayer)
+    F.ok(layer ~= nil, 'description layer mounts')
+    if layer == nil then
+        return
+    end
+    owner:dispatch_pointer('down', geometry.Offset(40, 590), 'left')
+    owner:dispatch_pointer('up', geometry.Offset(40, 590), 'left')
+    binding:flush_build()
+    owner:layout()
+    F.ok(layer.state.open, 'description panel opens')
+    layer.state:handle_key({ key = 'TAB', type = 'press' })
+    layer.state:handle_key({ key = 'ENTER', type = 'press' })
+    F.eq(opened, 'https://example.test/two', 'selected link opens through the action')
+    F.ok(layer.state:handle_key({ key = 'ESC', type = 'press' }), 'ESC closes description panel')
+    F.ok(not layer.state.open, 'description panel is closed')
 end)
 
 F.test('disabled player controls retain a hover tooltip without claiming clicks', function()

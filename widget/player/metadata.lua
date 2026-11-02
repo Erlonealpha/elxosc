@@ -81,6 +81,25 @@ local function format_date(value)
     return value
 end
 
+---@param value any
+---@return string?
+local function format_count(value)
+    local number = tonumber(value)
+    if number == nil or number < 0 or number ~= number or number == math.huge or number == -math.huge then
+        return nil
+    end
+    local rounded = math.floor(number + 0.5)
+    local result = tostring(rounded)
+    while true do
+        local replaced, count = result:gsub('^(%d+)(%d%d%d)', '%1,%2')
+        result = replaced
+        if count == 0 then
+            break
+        end
+    end
+    return result
+end
+
 ---@param bytes number?
 ---@return string?
 function M.format_file_size(bytes)
@@ -149,6 +168,26 @@ function M.description(snapshot)
     return ''
 end
 
+---@param snapshot PlayerSnapshot?
+---@return string
+function M.stats(snapshot)
+    local values = metadata(snapshot)
+    local parts = {}
+    local views = format_count(values.view_count or values.views)
+    local likes = format_count(values.like_count or values.likes)
+    local comments = format_count(values.comment_count or values.comments)
+    if views then
+        parts[#parts + 1] = 'Views: ' .. views
+    end
+    if likes then
+        parts[#parts + 1] = 'Likes: ' .. likes
+    end
+    if comments then
+        parts[#parts + 1] = 'Comments: ' .. comments
+    end
+    return table.concat(parts, ' · ')
+end
+
 ---@param value string
 ---@param limit number?
 ---@return string
@@ -159,6 +198,30 @@ function M.preview(value, limit)
     end
     local end_index = math.floor(math.max(0, limit - 3)) --[[@as integer]]
     return value:sub(1, end_index) .. '...'
+end
+
+---@param value string?
+---@return string[]
+function M.links(value)
+    local result = {}
+    local seen = {}
+    if type(value) ~= 'string' then
+        return result
+    end
+    for url in value:gmatch('https?://[%w%-%._~:/%?#%[%]@!$&()*+,;=]+') do
+        url = url:gsub('[%.,;:!?%)%]]+$', '')
+        if url ~= '' and not seen[url] then
+            seen[url] = true
+            result[#result + 1] = url
+        end
+    end
+    return result
+end
+
+---@param snapshot PlayerSnapshot?
+---@return string?
+function M.source(snapshot)
+    return first_text(snapshot, { 'url', 'path', 'filename' }, { 'url' })
 end
 
 M.metadata = metadata

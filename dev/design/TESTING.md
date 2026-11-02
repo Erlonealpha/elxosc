@@ -55,8 +55,13 @@ message 和 download capability empty-state 回归；P2.5 标记为 `completed`�
 2026-11-03 P2.6 metadata/idle/capability 基础 slice 后：**2079 Lua checks**；
 `test_player_metadata` **9**、ModernX **90**、player_layout **73**、host_player_context **35**、
 host_app **128**；`emmylua_check . --ignore 'tmp/**'` 无诊断。metadata/file-size observer、idle
-无控件状态、URL/live/loading 文案、description panel 和 yt-dlp unavailable/dispose capability boundary 已有回归；
-P2.6 仍为 `in_progress`。
+无控件状态、URL/live/loading 文案、description panel、键盘链接路由、下载生命周期、SponsorBlock
+ranges 和 yt-dlp unavailable/dispose capability boundary 已有回归；P2.6 仍为 `in_progress`，
+comments 未批准能力保持 explicit unavailable，最终 parity 由 P2.7 负责。
+
+2026-11-03 P2.6 收口后：**2110 Lua checks**；real-host 使用用户已暂存入口 **10 passed**；
+`emmylua_check . --ignore 'tmp/**'` 无诊断。open_url/download、TAB/Shift+TAB/Enter/ESC、
+SponsorBlock 独立 ranges、stats formatting 和 async cancellation 均有 focused regression。
 
 ## Lua suite
 

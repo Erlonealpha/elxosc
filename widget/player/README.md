@@ -38,6 +38,8 @@ optional thumbfast capability when the host reports it; unavailable capabilities
 disabled/loading/error tooltip path.
 Metadata fallback, idle state, and the description preview/panel also remain inside
 the same tree; idle mode does not retain player pointer regions.
+The description panel supports link selection/open through `HostActions`, while
+optional download and SponsorBlock data remain capability-driven.
 The default top/bottom backgrounds use ModernX's blurred one-pixel edge treatment rather than a
 full gray controller fill.
 

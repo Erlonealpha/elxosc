@@ -11,8 +11,25 @@ local HostActions = actions_mod.HostActions
 
 local M = {}
 
+local function open_url_command(url)
+    local separator = package.config and package.config:sub(1, 1) or '\\'
+    if separator == '\\' then
+        return { 'cmd.exe', '/c', 'start', '', url }
+    end
+    return { 'xdg-open', url }
+end
+
 ---@return HostActions
-function M.default()
+---@param options? { player_context: MpPlayerContext? }
+function M.default(options)
+    options = options or {}
+    local player_context = options.player_context
+    local function set_capability(status, detail, error_message)
+        if player_context and type(player_context.set_capability) == 'function' then
+            pcall(player_context.set_capability, player_context,
+                'download', status, detail, error_message)
+        end
+    end
     return HostActions({
         play_pause = function()
             if mp.get_property_native('eof-reached') == true then
@@ -42,6 +59,19 @@ function M.default()
         end,
         thumbfast_clear = function()
             mp.commandv('script-message-to', 'thumbfast', 'clear')
+        end,
+        open_url = function(url)
+            local runtime_mp = package.loaded['mp'] or mp
+            if type(runtime_mp.command_native_async) == 'function' then
+                runtime_mp.command_native_async({
+                    name = 'subprocess',
+                    args = open_url_command(url),
+                    playback_only = false,
+                }, function() end)
+            else
+                local command = open_url_command(url)
+                runtime_mp.commandv('run', table.unpack(command))
+            end
         end,
         playlist_prev = function()
             mp.commandv('playlist-prev', 'weak')
@@ -145,6 +175,68 @@ function M.default()
                 mp.commandv('show-text', message)
             else
                 mp.commandv('show-text', message, tostring(duration * 1000))
+            end
+        end,
+        download = function(url)
+            local runtime_mp = package.loaded['mp'] or mp
+            if player_context then
+                local current = player_context.store:get():capability('download')
+                if current.status == 'loading' then
+                    runtime_mp.commandv('show-text', 'Download in progress')
+                    return
+                end
+                if current.status == 'available' and current.detail == 'downloaded' then
+                    runtime_mp.commandv('show-text', 'Already downloaded')
+                    return
+                end
+            end
+            if type(runtime_mp.command_native_async) ~= 'function' then
+                set_capability('unavailable', 'async subprocess API unavailable')
+                runtime_mp.commandv('show-text', 'Download unavailable')
+                return
+            end
+            set_capability('loading', 'downloading')
+            local finished = false
+            local request
+            local release
+            local function finish(status, detail, error_message, message)
+                if finished then
+                    return
+                end
+                finished = true
+                if release then
+                    release()
+                    release = nil
+                end
+                set_capability(status, detail, error_message)
+                if message then
+                    runtime_mp.commandv('show-text', message)
+                end
+            end
+            request = runtime_mp.command_native_async({
+                name = 'subprocess',
+                args = {
+                    'yt-dlp', '--no-playlist', '--remux-video', 'mp4',
+                    '-o', '%(title)s.%(ext)s', url,
+                },
+                playback_only = false,
+                capture_stdout = true,
+                capture_stderr = true,
+            }, function(success, result, error_message)
+                if success and type(result) == 'table' and (result.status == nil or result.status == 0) then
+                    finish('available', 'downloaded', nil, 'Download completed')
+                else
+                    finish('error', 'download failed', tostring(error_message or 'download failed'),
+                        'Download failed')
+                end
+            end)
+            if player_context and type(player_context.register_async) == 'function' then
+                release = player_context:register_async(function()
+                    finished = true
+                    if request and type(runtime_mp.abort_async_command) == 'function' then
+                        runtime_mp.abort_async_command(request)
+                    end
+                end)
             end
         end,
         close = function()

@@ -344,6 +344,15 @@ function MpInput:_define_navigation_section(section)
         { 'ESC', function()
             self:_dispatch_key('ESC')
         end },
+        { 'TAB', function()
+            self:_dispatch_key('TAB')
+        end },
+        { 'shift+TAB', function()
+            self:_dispatch_key('TAB', { shift = true })
+        end },
+        { 'ENTER', function()
+            self:_dispatch_key('ENTER')
+        end },
     }, section, 'force')
 end
 
@@ -357,13 +366,15 @@ function MpInput:_bind_keys()
 end
 
 ---@param key string
-function MpInput:_dispatch_key(key)
+---@param modifiers InputModifiers?
+function MpInput:_dispatch_key(key, modifiers)
     if self._shutdown then
         return
     end
     local event = KeyEvent({
         key = key,
         type = 'press',
+        modifiers = modifiers,
         timestamp = mp.get_time(),
     })
     if self.handle_key(event) then

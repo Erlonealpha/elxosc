@@ -138,6 +138,22 @@ local function parse_thumbfast_info(payload, height)
     return nil
 end
 
+---@param payload any
+---@return table?
+local function parse_json_table(payload)
+    if type(payload) == 'table' then
+        return payload
+    end
+    if type(payload) == 'string' and mp.utils
+        and type(mp.utils.parse_json) == 'function' then
+        local ok, parsed = pcall(mp.utils.parse_json, payload)
+        if ok and type(parsed) == 'table' then
+            return parsed
+        end
+    end
+    return nil
+end
+
 ---@class MpPropertySubscription : std.object
 ---@field _active boolean
 ---@field _callback fun(name: string, value: any)?
@@ -236,6 +252,7 @@ end
 ---@field _properties table<string, MpPropertySubscription>
 ---@field _batches table<table, true>
 ---@field _capabilities table<string, MpCapabilitySubscription>
+---@field _async_handles table<function, true>
 ---@field _disposed boolean
 ---@overload fun(store: PlayerStore, options: MpPlayerContextOptions?): self
 local MpPlayerContext = std.class.new('MpPlayerContext', {})
@@ -280,7 +297,29 @@ function MpPlayerContext:__init(store, options)
     self._properties = {}
     self._batches = {}
     self._capabilities = {}
+    self._async_handles = {}
     self._disposed = false
+end
+
+---@param cancel fun()
+---@return fun()
+function MpPlayerContext:register_async(cancel)
+    if self._disposed then
+        return function() end
+    end
+    if type(cancel) ~= 'function' then
+        raise(std.TypeError('MpPlayerContext.register_async expects a cancel function'))
+    end
+    self._async_handles[cancel] = true
+    local active = true
+    return function()
+        if not active then
+            return false
+        end
+        active = false
+        self._async_handles[cancel] = nil
+        return true
+    end
 end
 
 ---@param snapshot PlayerSnapshot|PlayerSnapshotFields
@@ -690,6 +729,62 @@ function MpPlayerContext:observe_yt_dlp()
     end)
 end
 
+--- Observe the optional SponsorBlock script message. Segments are stored as
+--- capability data and never rewrite the user's chapter list.
+---@return MpCapabilitySubscription
+function MpPlayerContext:observe_sponsorblock()
+    return self:observe_capability('sponsorblock', function(report)
+        local finished = false
+        local timeout
+        local function cleanup()
+            if timeout and type(timeout.kill) == 'function' then
+                timeout:kill()
+                timeout = nil
+            end
+            if type(mp.unregister_script_message) == 'function' then
+                mp.unregister_script_message('sponsorblock-done')
+            end
+        end
+        local callback = function(payload)
+            if finished then
+                return
+            end
+            local data = parse_json_table(payload)
+            local segments = data and (data.segments or data)
+            if type(segments) ~= 'table' then
+                finished = true
+                cleanup()
+                report('error', 'invalid SponsorBlock data', 'invalid segment payload')
+                return
+            end
+            local current = self.store:get()
+            self.store:replace(current:copy({ sponsor_segments = segments }))
+            finished = true
+            cleanup()
+            report('available', tostring(#segments) .. ' segments')
+        end
+        if type(mp.register_script_message) ~= 'function' then
+            report('unavailable', 'script messages unavailable')
+            finished = true
+            return
+        end
+        mp.register_script_message('sponsorblock-done', callback)
+        if type(mp.add_timeout) == 'function' then
+            timeout = mp.add_timeout(0.5, function()
+                if not finished then
+                    finished = true
+                    cleanup()
+                    report('unavailable', 'SponsorBlock script not installed')
+                end
+            end)
+        end
+        return function()
+            finished = true
+            cleanup()
+        end
+    end)
+end
+
 ---@param name string
 ---@return MpPropertySubscription?
 function MpPlayerContext:subscription(name)
@@ -708,6 +803,11 @@ function MpPlayerContext:dispose()
         return false
     end
     self._disposed = true
+    local async_handles = self._async_handles
+    self._async_handles = {}
+    for cancel in pairs(async_handles) do
+        pcall(cancel)
+    end
     local subscriptions = {}
     for name, subscription in pairs(self._properties) do
         subscriptions[#subscriptions + 1] = subscription

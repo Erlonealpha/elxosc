@@ -19,6 +19,7 @@ local M = {}
 ---@field set_pause fun(paused: boolean)?
 ---@field thumbfast_request fun(seconds: number, x: number, y: number)?
 ---@field thumbfast_clear fun()?
+---@field open_url fun(url: string)?
 ---@field playlist_prev fun()?
 ---@field playlist_next fun()?
 ---@field select_playlist fun()?
@@ -48,7 +49,7 @@ local M = {}
 ---@field toggle_loop fun()?
 ---@field screenshot fun(flag: string?)?
 ---@field show_stats fun()?
----@field download fun()?
+---@field download fun(url: string)?
 ---@field show_message fun(message: string, duration: number?)?
 ---@field close fun()?
 ---@field playlist_shuffle fun()?
@@ -62,7 +63,7 @@ local HostActions = std.class.new('HostActions', {})
 
 local ACTIONS = {
     'play_pause', 'replay', 'seek', 'seek_to', 'set_pause',
-    'thumbfast_request', 'thumbfast_clear',
+    'thumbfast_request', 'thumbfast_clear', 'open_url',
     'playlist_prev', 'playlist_next', 'select_playlist', 'chapter_prev', 'chapter_next',
     'set_chapter', 'select_chapter', 'set_track', 'clear_audio_filter',
     'select_audio_track', 'load_audio_track', 'clear_secondary_subtitle', 'select_subtitle',
@@ -165,6 +166,17 @@ end
 
 function HostActions:thumbfast_clear()
     return self:call('thumbfast_clear')
+end
+
+---@param url string
+function HostActions:open_url(url)
+    if type(url) ~= 'string' or url == '' then
+        raise(std.TypeError('HostActions.open_url expects a non-empty URL'))
+    end
+    if not url:match('^https?://') then
+        raise(std.ValueError('HostActions.open_url only accepts http or https URLs'))
+    end
+    return self:call('open_url', url)
 end
 
 function HostActions:playlist_prev()
@@ -304,8 +316,15 @@ function HostActions:show_stats()
     return self:call('show_stats')
 end
 
-function HostActions:download()
-    return self:call('download')
+---@param url string
+function HostActions:download(url)
+    if type(url) ~= 'string' or url == '' then
+        raise(std.TypeError('HostActions.download expects a non-empty URL'))
+    end
+    if not url:match('^https?://') then
+        raise(std.ValueError('HostActions.download only accepts http or https URLs'))
+    end
+    return self:call('download', url)
 end
 
 ---@param message string

@@ -45,3 +45,20 @@ F.test('explicit description and live metadata take precedence', function()
     F.ok(metadata.is_live(snapshot), 'live metadata is normalized')
     F.eq(metadata.preview(string.rep('x', 10), 5), 'xx...', 'preview is bounded')
 end)
+
+F.test('description links are unique and punctuation is trimmed', function()
+    local links = metadata.links('See https://example.test/a, then https://example.test/a and http://x.test/path.')
+    F.eq(#links, 2, 'duplicate links are removed')
+    F.eq(links[1], 'https://example.test/a', 'first link is normalized')
+    F.eq(links[2], 'http://x.test/path', 'trailing punctuation is removed')
+end)
+
+F.test('metadata stats format optional counts without requiring them', function()
+    local snapshot = PlayerSnapshot({ metadata = {
+        view_count = 1234567,
+        like_count = 42,
+    } })
+    F.eq(metadata.stats(snapshot), 'Views: 1,234,567 · Likes: 42',
+        'optional stats are formatted')
+    F.eq(metadata.stats(PlayerSnapshot()), '', 'missing stats are empty')
+end)

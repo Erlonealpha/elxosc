@@ -194,3 +194,33 @@ F.test('yt-dlp capability is explicitly unavailable without async subprocess sup
     subscription:dispose()
     context:dispose()
 end)
+
+F.test('SponsorBlock data is isolated from chapter metadata', function()
+    mp_stub.reset()
+    local store = PlayerStore({ chapter_list = { { time = 0, title = 'Intro' } } })
+    local context = MpPlayerContext(store)
+    local subscription = context:observe_sponsorblock()
+    local callback = fake.log['sponsorblock-done']
+    F.ok(callback ~= nil, 'SponsorBlock message is registered')
+    callback({
+        { start = 10, ['end'] = 20, category = 'sponsor' },
+    })
+    F.eq(store:get():capability('sponsorblock').status, 'available',
+        'SponsorBlock capability becomes available')
+    F.eq(store:get().sponsor_segments[1].category, 'sponsor',
+        'SponsorBlock segments enter their own snapshot field')
+    F.eq(store:get().chapter_list[1].title, 'Intro',
+        'SponsorBlock does not rewrite chapter metadata')
+    subscription:dispose()
+    context:dispose()
+end)
+
+F.test('registered async cancellation runs during context disposal', function()
+    local context = MpPlayerContext(PlayerStore())
+    local cancelled = 0
+    context:register_async(function()
+        cancelled = cancelled + 1
+    end)
+    context:dispose()
+    F.eq(cancelled, 1, 'context disposal cancels owned async work')
+end)

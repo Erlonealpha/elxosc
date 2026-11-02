@@ -9,6 +9,7 @@ local mp_stub = require 'mp_stub'
 mp_stub.install()
 
 local geometry = require 'foundation.geometry'
+local color_mod = require 'foundation.color'
 local pointer_event = require 'foundation.pointer_event'
 local constraints_mod = require 'layout.constraints'
 local render_owner_mod = require 'render.render_owner'
@@ -24,6 +25,7 @@ local progress_widget = require 'widget.player.progress_bar'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
+local Color = color_mod.Color
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner_mod.RenderOwner
 local RenderProgressBar = progress_mod.RenderProgressBar
@@ -170,6 +172,23 @@ F.test('gap chapter markers cut the track instead of adding marker shapes', func
     F.ok(canvas:count('draw_rrect') > 4, 'gap style splits track and progress segments')
 end)
 
+F.test('progress ranges preserve optional SponsorBlock colors', function()
+    local range_color = Color.hex('#6BCB77')
+    local bar = RenderProgressBar({
+        ranges = { { start = 0.1, ['end'] = 0.2, color = range_color } },
+    })
+    local owner = layout_bar(bar)
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    for _, operation in ipairs(canvas.ops) do
+        if operation.name == 'draw_rrect' and operation[3].color == range_color then
+            F.ok(true, 'range paint preserves its category color')
+            return
+        end
+    end
+    F.ok(false, 'range paint preserves its category color')
+end)
+
 F.test('seekbar configuration selects the default keyframe or exact mode', function()
     local mode
     local bar = RenderProgressBar({
@@ -301,6 +320,19 @@ F.test('HostActions bounds transient message payloads', function()
     F.eq(message:sub(-3), '...', 'capped message has an omission marker')
 end)
 
+F.test('HostActions validates and forwards external URL actions', function()
+    local opened
+    local actions = HostActions({
+        open_url = function(url)
+            opened = url
+        end,
+    })
+    actions:open_url('https://example.test/watch')
+    F.eq(opened, 'https://example.test/watch', 'open URL action reaches the host boundary')
+    F.raises(function() actions:open_url('file:///tmp/nope') end,
+        'http or https', 'open URL rejects non-web schemes')
+end)
+
 F.test('mpv action bridge maps common ModernX controls', function()
     mp_stub.reset()
     local actions = mpv_actions.default()
@@ -365,4 +397,43 @@ F.test('thumbfast action bridge sends hover and clear messages', function()
     F.eq(fake.commands[1][5], '640', 'thumbfast request x')
     F.eq(fake.commands[1][6], '612', 'thumbfast request y')
     F.eq(fake.commands[2][3], 'clear', 'thumbfast clear operation')
+end)
+
+F.test('default download action reports unavailable without async subprocess support', function()
+    mp_stub.reset()
+    local context = MpPlayerContext(PlayerStore({
+        capabilities = { yt_dlp = { status = 'available' } },
+    }))
+    local actions = mpv_actions.default({ player_context = context })
+    actions:download('https://example.test/video')
+    F.eq(context.store:get():capability('download').status, 'unavailable',
+        'download capability reports missing async support')
+    F.eq(fake.commands[1][1], 'show-text', 'download unavailable emits a host message')
+    context:dispose()
+end)
+
+F.test('default download action publishes loading and completed states', function()
+    mp_stub.reset()
+    local mp = package.loaded['mp']
+    local callback
+    mp.command_native_async = function(command, done)
+        callback = done
+        return { command = command }
+    end
+    mp.abort_async_command = function() end
+    local context = MpPlayerContext(PlayerStore({
+        capabilities = { yt_dlp = { status = 'available' } },
+    }))
+    local actions = mpv_actions.default({ player_context = context })
+    actions:download('https://example.test/video')
+    F.eq(context.store:get():capability('download').status, 'loading',
+        'download publishes loading state')
+    callback(true, { status = 0, stdout = 'done' })
+    F.eq(context.store:get():capability('download').status, 'available',
+        'download publishes completed state')
+    F.eq(context.store:get():capability('download').detail, 'downloaded',
+        'download retains completed detail')
+    context:dispose()
+    mp.command_native_async = nil
+    mp.abort_async_command = nil
 end)
