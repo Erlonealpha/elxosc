@@ -14,6 +14,8 @@ composition. It remains mpv-free; host commands and snapshots enter through
   fixed-layout player progress RenderObject.
 - `tooltip.lua` — `PlayerTooltip`, an in-tree hover tooltip that preserves the
   wrapped control's pointer routing and disabled-state feedback.
+- `metadata.lua` — host-independent title, URL/live, description, date and file-size
+  normalization used by the player shell.
 - `icon_map.lua` — ModernX semantic control names mapped to the bundled
   Material Symbols Rounded glyph names and typed size/variation defaults.
 - `init.lua` — aggregate entry preserving direct-module class identity.

@@ -183,3 +183,14 @@ F.test('thumbfast capability accepts info and unregisters on dispose', function(
     F.eq(fake.log['thumbfast-info'], nil, 'thumbfast info message is unregistered')
     context:dispose()
 end)
+
+F.test('yt-dlp capability is explicitly unavailable without async subprocess support', function()
+    mp_stub.reset()
+    local context = MpPlayerContext(PlayerStore())
+    local subscription = context:observe_yt_dlp()
+    F.eq(context.store:get():capability('yt_dlp').status, 'unavailable',
+        'missing async subprocess support is visible')
+    F.ok(subscription:is_active(), 'unavailable capability remains disposable')
+    subscription:dispose()
+    context:dispose()
+end)

@@ -248,6 +248,27 @@ F.test('chapter title uses chapter metadata instead of the numeric chapter index
         'numeric chapter index is not used as the title')
 end)
 
+F.test('idle player state removes controls and presents the empty state', function()
+    local store = PlayerStore({ idle_active = true })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), 'No media loaded', 'idle state presents an empty message')
+    F.ok(find_widget_element(binding.root_element, ProgressBar) == nil,
+        'idle state does not mount the seekbar')
+    local has_down = false
+    for _, region in ipairs(owner:pointer_regions()) do
+        if region.down then
+            has_down = true
+            break
+        end
+    end
+    F.ok(not has_down, 'idle state does not retain player controls')
+end)
+
 F.test('disabled player controls retain a hover tooltip without claiming clicks', function()
     local store = PlayerStore({ time_pos = 10, duration = 100, percent_pos = 10 })
     local owner, binding = mount(WidgetsApp({

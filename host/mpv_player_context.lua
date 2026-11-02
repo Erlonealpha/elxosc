@@ -22,6 +22,8 @@ local DEFAULT_PLAYER_PROPERTIES = {
     { name = 'media-title', field = 'media_title' },
     { name = 'filename', field = 'filename' },
     { name = 'path', field = 'path' },
+    { name = 'metadata', field = 'metadata' },
+    { name = 'file-size', field = 'file_size' },
     { name = 'time-pos', field = 'time_pos' },
     { name = 'duration', field = 'duration' },
     { name = 'percent-pos', field = 'percent_pos' },
@@ -62,6 +64,7 @@ local BOOLEAN_FIELDS = {
 
 local TABLE_FIELDS = {
     cache_state = true,
+    metadata = true,
     chapter_list = true,
     track_list = true,
 }
@@ -645,6 +648,43 @@ function MpPlayerContext:observe_thumbfast()
             kill_timeout()
             if type(mp.unregister_script_message) == 'function' then
                 mp.unregister_script_message('thumbfast-info')
+            end
+        end
+    end)
+end
+
+--- Probe the optional yt-dlp executable through mpv's async subprocess API.
+--- The core only receives capability state; it never launches a subprocess.
+---@return MpCapabilitySubscription
+function MpPlayerContext:observe_yt_dlp()
+    return self:observe_capability('yt_dlp', function(report)
+        if type(mp.command_native_async) ~= 'function' then
+            report('unavailable', 'async subprocess API unavailable')
+            return
+        end
+        local finished = false
+        local request = mp.command_native_async({
+            name = 'subprocess',
+            args = { 'yt-dlp', '--version' },
+            playback_only = false,
+            capture_stdout = true,
+            capture_stderr = true,
+        }, function(success, result, error_message)
+            if finished then
+                return
+            end
+            finished = true
+            if success and type(result) == 'table' and (result.status == nil or result.status == 0) then
+                local version = type(result.stdout) == 'string' and result.stdout:gsub('%s+$', '') or nil
+                report('available', version ~= '' and version or 'yt-dlp available')
+            else
+                report('error', 'yt-dlp probe failed', tostring(error_message or 'not installed'))
+            end
+        end)
+        return function()
+            finished = true
+            if request ~= nil and type(mp.abort_async_command) == 'function' then
+                mp.abort_async_command(request)
             end
         end
     end)

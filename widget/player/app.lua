@@ -15,6 +15,7 @@ local layout_widgets = require 'widget.widgets.layout'
 local player_context = require 'widget.player_context'
 local player_theme_mod = require 'widget.player.theme'
 local player_layout_mod = require 'widget.player.layout'
+local metadata_mod = require 'widget.player.metadata'
 
 local EdgeInsets = geometry.EdgeInsets
 local Offset = geometry.Offset
@@ -29,6 +30,7 @@ local PlayerProvider = player_context.PlayerProvider
 local PlayerThemeData = player_theme_mod.PlayerThemeData
 local PlayerTheme = player_theme_mod.PlayerTheme
 local PlayerLayout = player_layout_mod.PlayerLayout
+local player_title = metadata_mod.title
 local OverlayEntry = overlay_mod.OverlayEntry
 local Theatre = overlay_mod.Theatre
 local AutoHide = visibility_mod.AutoHide
@@ -105,18 +107,6 @@ function Main:child_widgets()
     return children
 end
 
-local function snapshot_text(snapshot, names, fallback)
-    if snapshot then
-        for _, name in ipairs(names) do
-            local value = snapshot:get(name)
-            if value ~= nil and tostring(value) ~= '' then
-                return tostring(value)
-            end
-        end
-    end
-    return fallback
-end
-
 local function top_hover_enabled(snapshot)
     if snapshot == nil then
         return true
@@ -161,7 +151,7 @@ function Main:build(context)
         theme = player_theme,
         actions = actions,
         snapshot = snapshot,
-        title = snapshot_text(snapshot, { 'media_title', 'title', 'filename' }, self.title),
+        title = player_title(snapshot, self.title),
         title_bar = self.title_bar,
         window_controls = self.window_controls,
         bottom = self.bottom,

@@ -11,6 +11,7 @@ local M = {}
 
 ---@alias ModernXIconName
 --- | 'play'
+--- | 'idle'
 --- | 'pause'
 --- | 'replay'
 --- | 'previous'
@@ -70,6 +71,7 @@ local ZERO = Offset.zero()
 ---@type table<ModernXIconName, _ModernXIconSeed>
 local specs = {
     play = { glyph = 'play_arrow', size = 30 },
+    idle = { glyph = 'play_circle', size = 64 },
     pause = { glyph = 'pause', size = 30 },
     replay = { glyph = 'replay', size = 30 },
     previous = { glyph = 'skip_previous', size = 24 },

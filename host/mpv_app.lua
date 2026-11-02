@@ -97,6 +97,10 @@ function App:__init(root_widget, options)
         and type(self.player_context.observe_thumbfast) == 'function' then
         self.player_context:observe_thumbfast()
     end
+    if self.player_context
+        and type(self.player_context.observe_yt_dlp) == 'function' then
+        self.player_context:observe_yt_dlp()
+    end
     self.theme = options.theme or ThemeData()
     self.player_theme = options.player_theme or PlayerThemeData()
     self.actions = options.actions or mpv_actions.default()

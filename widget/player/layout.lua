@@ -12,6 +12,7 @@ local theme_mod = require 'widget.player.theme'
 local icon_map = require 'widget.player.icon_map'
 local progress_mod = require 'widget.player.progress_bar'
 local tooltip_mod = require 'widget.player.tooltip'
+local metadata_mod = require 'widget.player.metadata'
 
 local Rect = geometry.Rect
 local Offset = geometry.Offset
@@ -23,6 +24,7 @@ local Container = layout_widgets.Container
 local Positioned = layout_widgets.Positioned
 local Stack = layout_widgets.Stack
 local SizedBox = layout_widgets.SizedBox
+local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 local IconButton = basic_widgets.IconButton
 local CustomPaint = basic_widgets.CustomPaint
@@ -32,6 +34,7 @@ local PlayerThemeData = theme_mod.PlayerThemeData
 local Icon = icon_map.icon
 local ProgressBar = progress_mod.ProgressBar
 local PlayerTooltip = tooltip_mod.PlayerTooltip
+local player_metadata = metadata_mod
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local State = require('widget.state').State
@@ -263,6 +266,35 @@ local function capability_info(snapshot, name)
         return nil
     end
     return snapshot:capability(name)
+end
+
+---@param theme PlayerThemeData
+---@param title string
+---@return Widget
+local function idle_view(theme, title)
+    local label = title ~= '' and title ~= 'elxosc' and title or 'No media loaded'
+    return Container({
+        alignment = Offset(0.5, 0.45),
+        child = Column({
+            main_alignment = 'center',
+            cross_alignment = 'center',
+            children = {
+                Icon('idle', { color = theme.title_color }),
+                Text(label, { style = TextStyle({
+                    font_size = theme.title_font_size,
+                    color = theme.title_color,
+                    align = 'center',
+                    wrap = false,
+                }) }),
+                Text('Drop a file or open a media URL', { style = TextStyle({
+                    font_size = theme.description_font_size,
+                    color = theme.description_color,
+                    align = 'center',
+                    wrap = false,
+                }) }),
+            },
+        }),
+    })
 end
 
 ---@param source table?
@@ -962,8 +994,9 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             actions:seek(seconds, theme.jump_mode)
         end
     end
-    local description = snapshot_text(snapshot, { 'description', 'media_description' }, '')
-    local is_url = snapshot and snapshot:get('is_url') == true
+    local full_description = player_metadata.description(snapshot)
+    local description = player_metadata.preview(full_description)
+    local is_url = player_metadata.is_url(snapshot)
     local duration = snapshot_number(snapshot, 'duration')
     local is_eof = snapshot and snapshot:get('eof_reached') == true
     local is_paused = snapshot and snapshot:get('pause') == true
@@ -1119,9 +1152,17 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             outline_color = ColorBlack,
             wrap = false,
         })
+        local title_child = Text(title, { style = title_style })
+        if actions:has('show_stats') then
+            title_child = GestureDetector(title_child, {
+                on_tap = function()
+                    actions:show_stats()
+                end,
+            })
+        end
         children[#children + 1] = positioned(
             layout_geometry.title,
-            Container({ alignment = Offset(0, 0.5), child = Text(title, { style = title_style }) }))
+            Container({ alignment = Offset(0, 0.5), child = title_child }))
     end
     if layout_geometry.visibility.description then
         local description_style = TextStyle({
@@ -1133,11 +1174,17 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             wrap = false,
             align = layout_geometry.layout_option == 'reduced' and 'right' or 'left',
         })
+        local description_child = Text(description, { style = description_style })
+        if actions:has('show_message') then
+            description_child = GestureDetector(description_child, {
+                on_tap = function()
+                    actions:show_message(full_description)
+                end,
+            })
+        end
         children[#children + 1] = positioned(
             layout_geometry.description,
-            Container({ alignment = Offset(0, 0.5), child = Text(description, {
-                style = description_style,
-            }) }))
+            Container({ alignment = Offset(0, 0.5), child = description_child }))
     end
     children[#children + 1] = positioned(layout_geometry.time_left, Container({
         child = PlayerTimeDisplay({
@@ -1159,7 +1206,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             unicode_minus = theme.unicode_minus,
             fixed = theme.time_format == 'fixed',
             toggle_mode = 'remaining',
-            suffix = snapshot and snapshot:get('is_live') == true and ' • LIVE' or '',
+            suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
             style = label_style,
             alignment = Offset(1, 0.5),
         }),
@@ -1507,8 +1554,8 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     local stats_available = stats_capability == nil
         or stats_capability.status == 'available'
     local download_capability = capability_info(snapshot, 'yt_dlp')
-    local download_available = download_capability == nil
-        or download_capability.status == 'available'
+    local download_available = download_capability ~= nil
+        and download_capability.status == 'available'
     local download_tooltip = 'Download'
     if download_capability then
         if download_capability.status == 'loading' then
@@ -1578,8 +1625,11 @@ function PlayerLayout:build(context)
     end
 
     local snapshot = self.snapshot
-    local description = snapshot_text(snapshot, { 'description', 'media_description' }, '')
-    local is_url = snapshot and snapshot:get('is_url') == true
+    local description = player_metadata.description(snapshot)
+    local is_url = player_metadata.is_url(snapshot)
+    if snapshot and snapshot:get('idle_active') == true then
+        return idle_view(self.theme, self.title)
+    end
     local layout_geometry = geometry_for(self.layout_option, viewport_width, viewport_height, {
         controller_height = self.theme.controller_height,
         window_bar_height = self.theme.window_bar_height,
