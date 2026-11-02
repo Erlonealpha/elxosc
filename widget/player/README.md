@@ -36,6 +36,8 @@ Soft-repeat is frame-clock driven, while selector actions and track-list feedbac
 host actions/messages. Seekbar hover uses an in-tree time/chapter tooltip and switches to the
 optional thumbfast capability when the host reports it; unavailable capabilities retain a clear
 disabled/loading/error tooltip path.
+Metadata fallback, idle state, and the description preview/panel also remain inside
+the same tree; idle mode does not retain player pointer regions.
 The default top/bottom backgrounds use ModernX's blurred one-pixel edge treatment rather than a
 full gray controller fill.
 

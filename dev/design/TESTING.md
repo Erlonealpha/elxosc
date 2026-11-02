@@ -52,10 +52,10 @@ player_layout **69**、widget **100**、host_player_context **33**、host_app **
 message 和 download capability empty-state 回归；P2.5 标记为 `completed`，metadata/idle/第三方
  异步业务与最终人工 parity 仍由 P2.6/P2.7 负责。
 
-2026-11-03 P2.6 metadata/idle/capability 基础 slice 后：**2078 Lua checks**；
-`test_player_metadata` **9**、ModernX **90**、player_layout **72**、host_player_context **35**、
+2026-11-03 P2.6 metadata/idle/capability 基础 slice 后：**2079 Lua checks**；
+`test_player_metadata` **9**、ModernX **90**、player_layout **73**、host_player_context **35**、
 host_app **128**；`emmylua_check . --ignore 'tmp/**'` 无诊断。metadata/file-size observer、idle
-无控件状态、URL/live/loading 文案和 yt-dlp unavailable/dispose capability boundary 已有回归；
+无控件状态、URL/live/loading 文案、description panel 和 yt-dlp unavailable/dispose capability boundary 已有回归；
 P2.6 仍为 `in_progress`。
 
 ## Lua suite

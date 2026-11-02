@@ -25,6 +25,7 @@ local Positioned = layout_widgets.Positioned
 local Stack = layout_widgets.Stack
 local SizedBox = layout_widgets.SizedBox
 local Column = layout_widgets.Column
+local OffsetBox = layout_widgets.OffsetBox
 local Text = basic_widgets.Text
 local IconButton = basic_widgets.IconButton
 local CustomPaint = basic_widgets.CustomPaint
@@ -295,6 +296,149 @@ local function idle_view(theme, title)
             },
         }),
     })
+end
+
+---@class _PlayerDescriptionLayerOptions
+---@field theme PlayerThemeData
+---@field text string
+---@field preview string
+---@field bounds Rect
+---@field viewport_width number
+---@field viewport_height number
+---@field key any?
+
+---@class PlayerDescriptionLayer : StatefulWidget
+---@field theme PlayerThemeData
+---@field text string
+---@field preview string
+---@field bounds Rect
+---@field viewport_width number
+---@field viewport_height number
+---@overload fun(options: _PlayerDescriptionLayerOptions): self
+local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer', { StatefulWidget })
+
+function PlayerDescriptionLayer:__init(options)
+    options = options or {}
+    self.key = options.key or 'player-description-layer'
+    self.theme = options.theme
+    self.text = options.text or ''
+    self.preview = options.preview or ''
+    self.bounds = options.bounds
+    self.viewport_width = options.viewport_width
+    self.viewport_height = options.viewport_height
+end
+
+---@class PlayerDescriptionLayerState : State
+---@field open boolean
+---@field scroll number
+---@overload fun(): self
+local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState', { State })
+
+function PlayerDescriptionLayerState:init_state()
+    self.open = false
+    self.scroll = 0
+end
+
+function PlayerDescriptionLayerState:did_update_widget(old_widget)
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
+    if old_widget.text ~= widget.text then
+        self.open = false
+        self.scroll = 0
+    end
+end
+
+function PlayerDescriptionLayerState:build()
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
+    local bounds = widget.bounds
+    if not self.open then
+        local text_style = TextStyle({
+            font_size = widget.theme.description_font_size,
+            color = widget.theme.description_color,
+            blur_radius = 1,
+            outline_width = 0.5,
+            outline_color = ColorBlack,
+            wrap = false,
+            align = bounds.left < widget.viewport_width / 2 and 'left' or 'right',
+        })
+        return Stack({
+            children = {
+                Positioned({
+                    left = bounds.left,
+                    top = bounds.top,
+                    width = bounds:width(),
+                    height = bounds:height(),
+                    child = GestureDetector(Text(widget.preview, { style = text_style }), {
+                        on_tap = function()
+                            self:set_state(function()
+                                self.open = true
+                                self.scroll = 0
+                            end)
+                        end,
+                    }),
+                }),
+            },
+        })
+    end
+
+    local panel_width = max(0, widget.viewport_width - 80)
+    local panel_height = max(0, widget.viewport_height - 80)
+    local panel_style = TextStyle({
+        font_size = widget.theme.description_font_size,
+        color = widget.theme.description_color,
+        wrap = true,
+        align = 'left',
+    })
+    local close = GestureDetector(Icon('close', { color = widget.theme.title_color }), {
+        on_tap = function()
+            self:set_state(function()
+                self.open = false
+                self.scroll = 0
+            end)
+        end,
+    })
+    local content = OffsetBox({
+        offset = Offset(0, -self.scroll),
+        child = Text(widget.text, { style = panel_style }),
+    })
+    return GestureDetector(Stack({
+        children = {
+            Container({
+                width = widget.viewport_width,
+                height = widget.viewport_height,
+                color = Color.rgba255(0, 0, 0, 205),
+            }),
+            Positioned({
+                left = 40,
+                top = 40,
+                width = panel_width,
+                height = panel_height,
+                child = Container({
+                    padding = EdgeInsets.all(20),
+                    color = Color.rgba255(20, 20, 20, 235),
+                    child = content,
+                }),
+            }),
+            Positioned({
+                left = widget.viewport_width - 64,
+                top = 20,
+                width = 32,
+                height = 32,
+                child = close,
+            }),
+        },
+    }), {
+        on_wheel = function(_, delta)
+            local amount = type(delta) == 'number' and delta or 0
+            self:set_state(function()
+                self.scroll = max(0, min(2000, self.scroll - amount * 32))
+            end)
+            return true
+        end,
+    })
+end
+
+function PlayerDescriptionLayer:create_state()
+    return PlayerDescriptionLayerState()
 end
 
 ---@param source table?
@@ -994,8 +1138,6 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             actions:seek(seconds, theme.jump_mode)
         end
     end
-    local full_description = player_metadata.description(snapshot)
-    local description = player_metadata.preview(full_description)
     local is_url = player_metadata.is_url(snapshot)
     local duration = snapshot_number(snapshot, 'duration')
     local is_eof = snapshot and snapshot:get('eof_reached') == true
@@ -1163,28 +1305,6 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         children[#children + 1] = positioned(
             layout_geometry.title,
             Container({ alignment = Offset(0, 0.5), child = title_child }))
-    end
-    if layout_geometry.visibility.description then
-        local description_style = TextStyle({
-            font_size = theme.description_font_size,
-            color = theme.description_color,
-            blur_radius = 1,
-            outline_width = 0.5,
-            outline_color = ColorBlack,
-            wrap = false,
-            align = layout_geometry.layout_option == 'reduced' and 'right' or 'left',
-        })
-        local description_child = Text(description, { style = description_style })
-        if actions:has('show_message') then
-            description_child = GestureDetector(description_child, {
-                on_tap = function()
-                    actions:show_message(full_description)
-                end,
-            })
-        end
-        children[#children + 1] = positioned(
-            layout_geometry.description,
-            Container({ alignment = Offset(0, 0.5), child = description_child }))
     end
     children[#children + 1] = positioned(layout_geometry.time_left, Container({
         child = PlayerTimeDisplay({
@@ -1686,6 +1806,21 @@ function PlayerLayout:build(context)
         for _, child in ipairs(controller) do
             children[#children + 1] = child
         end
+    end
+
+    if layout_geometry.visibility.description and description ~= '' then
+        children[#children + 1] = SizedBox({
+            width = viewport_width,
+            height = viewport_height,
+            child = PlayerDescriptionLayer({
+                theme = self.theme,
+                text = description,
+                preview = player_metadata.preview(description),
+                bounds = layout_geometry.description,
+                viewport_width = viewport_width,
+                viewport_height = viewport_height,
+            }),
+        })
     end
 
     return Stack({ children = children })

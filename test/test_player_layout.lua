@@ -269,6 +269,27 @@ F.test('idle player state removes controls and presents the empty state', functi
     F.ok(not has_down, 'idle state does not retain player controls')
 end)
 
+F.test('description preview opens an in-tree panel and keeps the full text', function()
+    local description = 'A full description with enough detail to open the player-owned panel.'
+    local store = PlayerStore({
+        description = description,
+        time_pos = 10,
+        duration = 100,
+        percent_pos = 10,
+    })
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    owner:dispatch_pointer('down', geometry.Offset(40, 590), 'left')
+    owner:dispatch_pointer('up', geometry.Offset(40, 590), 'left')
+    binding:flush_build()
+    owner:layout()
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), description, 'description panel keeps the full text')
+end)
+
 F.test('disabled player controls retain a hover tooltip without claiming clicks', function()
     local store = PlayerStore({ time_pos = 10, duration = 100, percent_pos = 10 })
     local owner, binding = mount(WidgetsApp({
