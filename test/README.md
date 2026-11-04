@@ -40,11 +40,11 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-10-27): **1682 Lua checks**, including **252 runtime checks**;
-runner CLI regression: **14 passed**. Production EmmyLua checks are clean with
-`--ignore 'tmp/**'` (local ignored drafts otherwise produce 18 duplicate-type/field
-warnings). Real-host: **10 passed** in an isolated source copy with the entry enabled;
-the user's disabled workspace entry gives **8 passed, 2 failed**. Commands and scope are recorded in
+Current baseline (2026-11-05): **2177 Lua checks**;
+runner CLI regression: **14 passed**; `emmylua_check .`: **No issues found**.
+Real-host: **10 passed** with Demo pages enabled only in the staged source copy;
+the user's workspace with the Demo pages return commented gives **8 passed, 2 failed**.
+Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
 root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
@@ -77,6 +77,11 @@ python -m pytest -q test/real_host
 dependency without network access, add `--offline` before `run`. Set
 `ELXOSC_MPV_BINARY` to a full executable path (or a name on PATH) to select a
 host explicitly; otherwise the search is `mpvnet.com`, `mpv.com`, `mpv.exe`.
+When the workspace entry comments out the Demo pages return, set
+`ELXOSC_TEST_DEMO_ENTRY=1` to enable that recognized return only in the temporary
+staged `main.lua`. The source file and Git index remain untouched; an unknown
+entry pattern fails explicitly. Run without this option to test the workspace
+entry as it stands, and report the two modes separately.
 The isolated host creates a unique temporary IPC socket/named pipe, is stopped
 after the test, and has no user scripts. A missing host executable reports
 **SKIPPED** with a reason. Hosts that exit, IPC startup timeouts, and unexpected

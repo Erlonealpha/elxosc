@@ -63,6 +63,79 @@ comments 未批准能力保持 explicit unavailable，最终 parity 由 P2.7 负
 `emmylua_check . --ignore 'tmp/**'` 无诊断。open_url/download、TAB/Shift+TAB/Enter/ESC、
 SponsorBlock 独立 ranges、stats formatting 和 async cancellation 均有 focused regression。
 
+2026-11-04 P2.7 parity 修复切片后：**2131 Lua checks**；focused `player_layout` **89**、
+`modernx_player` **100**、`main_layout` **76**、`host_player_context` **42**；
+`emmylua_check .` **No issues found**。本次覆盖 ModernX hover/tooltip、语义图标、1.5 默认
+scale、thumbfast 重复 info/cancel、description panel AutoHide、seekable cache ranges 和
+persistent progress。
+
+工作区用户保持的 `main.lua` demo pages 注释状态下，real-host 为 **8 passed, 2 failed**，
+失败仅为 Demo property/route 不存在；临时隔离恢复 demo pages 返回值运行完整
+`test/real_host` 为 **10 passed**，随后已逐字恢复 `main.lua`。最终视觉/手感仍需用户人工
+对照 ModernX 确认，未将临时入口结果写成工作区默认入口通过。
+
+### 播放器复审修正与 hover 调查（2026-11-05）
+
+完整 `luajit test/run.lua`：**2177 checks passed**；`emmylua_check .`：
+**No issues found**。新增回归覆盖随 Main scale 更新的 AutoHide 唤醒区、独立 blur glyph
+hover、disabled alpha/点击透传、背景源边界、顶部几何、四态音量图标、tooltip 固定高度、
+thumbfast 边缘对齐，以及拆分模块和旧入口的 identity。
+
+`uv run --group test python -m pytest -q test/real_host test/test_runner.py --tb=short`
+为 **22 passed, 2 failed**：real-host **8 passed, 2 failed**，runner CLI **14 passed**。
+两项失败是用户 `main.lua` 注释了 Demo pages 返回值，导致 Demo count/route property 不存在。
+fixture 新增显式选项，只在临时 staging 副本中恢复识别到的 Demo pages 返回值：
+
+```powershell
+$env:ELXOSC_TEST_DEMO_ENTRY = '1'
+uv run --group test python -m pytest -q test/real_host --tb=short
+```
+
+该模式 **10 passed**；原始工作文件及 index blob 均保持不变。不能把 staging 模式通过
+写成工作区默认入口通过。Windows/mpv.net 已运行，Linux 未运行；最终视觉和手感待人工验收。
+
+局部调查入口：
+
+```text
+luajit tools/benchmark_player_hover.lua 2000
+```
+
+环境为 Windows/x64、LuaJIT 2.1.1748459687，1280×720、Main scale 1.5、20 chapters、
+available 320×180 thumbfast、200 warmup、2000 samples、QPC 计时。代码基线为
+`75e35d5` 加本轮播放器工作区；前后仅比较 tooltip 从 State rebuild 切换为直接绘制的成本，
+不把原提交未经外观修正的播放器当作前测样本。探针对 Element rebuild 方法计数，并立即
+执行各帧阶段；未开启 debug 日志。
+
+| 指标 | 绘制优化前 | 优化后首次 | 优化后复测 |
+| --- | ---: | ---: | ---: |
+| total P50 (ms) | 12.0611 | 2.4758 | 3.2233 |
+| total P95 (ms) | 43.1936 | 9.3202 | 11.5942 |
+| total max (ms) | 56.5912 | 25.5217 | 30.0323 |
+| Element rebuild calls | 18000 | 0 | 0 |
+| layout frames | 2000 | 0 | 0 |
+| input invalidated frames | 2000 | 0 | 0 |
+| ASS bytes | 13455 | 13455 | 13455 |
+
+| 阶段 mean (ms) | 优化前 | 优化后复测 |
+| --- | ---: | ---: |
+| activity tree walk | 0.4620 | 0.3966 |
+| pointer dispatch | 0.4212 | 0.2967 |
+| build | 0.2216 | 0.0142 |
+| layout | 0.5824 | 0.0016 |
+| input regions | 10.6963 | 0.3870 |
+| paint / ASS | 4.3137 | 3.2028 |
+| presenter preparation | 0.0143 | 0.0172 |
+
+定位到的主因是 tooltip 每次移动都会重建并触发布局和 input region 刷新。现在 tooltip
+始终保留在原树内，hover 更新 State 自有绘制数据并调用 RenderObject paint dirty；
+Paragraph 按 label/style 缓存，不改变控件 identity、布局或 RegionSnapshot。
+
+这只是使用 mp stub 的 Lua 路径调查，present 阶段仅包含字符串/缓存准备。它不包含实际
+宿主鼠标事件送达、帧定时等待、libass 光栅化、外部 thumbfast 或真实 overlay 提交成本，
+也没有直接运行 ModernX 做同路径对照。GC、运行负载和计数 instrumentation 会影响耗时；
+剩余开销主要在整树 paint/ASS 和 activity 遍历。完整 benchmark 场景矩阵、宿主延迟和
+绘制边界评估仍需后续工作，不能据此宣称真实交互延迟已全部解决。
+
 ## Lua suite
 
 `test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`

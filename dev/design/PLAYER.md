@@ -55,18 +55,30 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首�
   seekbar/title/time/chapter/window-control 尺寸、颜色、blur/border intent 和宽度阈值；
   `PlayerLayout` 通过 `Positioned` 共享同一 root-space offset，使绘制、命中和 pointer
   regions 保持一致。
+- 生产 `main_layout.lua` 使用 ModernX 默认 `1.5` uniform scale；`LayoutScaleBox` 负责将
+  display-space 输入逆映射到 PlayerLayout 的逻辑坐标。
 
 进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
 结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
 setter 在 paint invalidation 外同时 invalidates input snapshot。
 
-P2 明确 deferred：完整 ModernX fade 视觉对照和配置兼容、章节 marker/tooltip、轨道菜单的
- 完整交互、音量滑块的完整状态行为、描述/评论面板、persistent progress 产品开关、下载、SponsorBlock、外部脚本兼容、
-多 host overlay、focus/IME 和完整 ModernX 配置兼容。当前静态 ASS 输出不使用 `\move` 或
-`\t`。
+当前已实现 seekbar/volume tooltip、ModernX hover/pressed/glow、seekable cache ranges、
+persistent progress ranges、thumbfast capability fallback、description panel AutoHide 保持、
+download/SponsorBlock capability consumers 和 metadata/idle states。YouTube comments 仍保持
+explicit `unavailable`，不作为默认集成。
+
+P2.7 仍进行中，用户最终人工 optical/interaction 对照待确认；完整 ModernX 配置兼容、多 host
+overlay、focus/IME 和非批准第三方脚本 UI。当前静态 ASS 输出不使用 `\move` 或 `\t`。
 
 旧 `main_layout.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
 Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。
+
+2026-11-05 外观复核修复：Main 的唤醒区按 uniform scale 换算；顶部控件移回 0～30px
+逻辑行；hover glow 使用额外模糊字形，不可用控件使用 alpha 215；音量 0 对应
+`volume_mute`，静音对应 `volume_off`。上下渐变源位于 viewport 外并覆盖水平边界。
+Tooltip 使用控件上沿的 bottom-center anchor，文本/位置变化只更新绘制，保持布局、
+输入快照和 seek capture target 不变。播放器组件已按几何、控件、文本、描述和数据
+职责拆分；`PlayerLayout` 和已有聚合/direct-module identity 保持兼容。
 
 ## Define 是扩展唯一入口
 

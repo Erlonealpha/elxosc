@@ -136,6 +136,11 @@ capture。
 
 ## 当前限制
 
+播放器按钮的 hover glow 是同一位置的额外模糊字形绘制，使用 `RenderText` 的 paint-only
+glow override；它不改变文字度量，也不映射为 ASS shadow 的 `\\be`。不可用按钮保留
+正常视觉树以同步前景样式，但不声明 pointer handlers。播放器唤醒区在应用组合层按
+Main 的实际 uniform scale 换算到 display space，通用 AutoHide 不读取播放器 scale。
+
 当前没有逐字精确的 libass ink bounds、baseline/ascent 模型、Layer/cache boundary、
 RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸、绘制溢出和输入区域
 的区别，再添加后端和真实宿主回归。
