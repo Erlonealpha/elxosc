@@ -153,6 +153,7 @@ end
 ---@field handle_size number? 0..1 ratio of the bar height
 ---@field hover_handle_size number? 0..1 ratio of the bar height
 ---@field hover_expand number? extra input area in every direction
+---@field range_expand number? horizontal cache-range expansion in px
 ---@field markers table? chapter marker fractions
 ---@field ranges table? seekable fractions
 ---@field marker_color Color?
@@ -179,6 +180,7 @@ end
 ---@field handle_size number
 ---@field hover_handle_size number
 ---@field hover_expand number
+---@field range_expand number
 ---@field seek_mode 'keyframe'|'exact'
 ---@field markers table[]
 ---@field ranges table[]
@@ -235,6 +237,8 @@ function RenderProgressBar:__init(options)
     validate_fraction(self.hover_handle_size, 'RenderProgressBar.hover_handle_size')
     self.hover_expand = options.hover_expand == nil and 0 or options.hover_expand
     self.hover_expand = validate_non_negative(self.hover_expand, 'RenderProgressBar.hover_expand')
+    self.range_expand = options.range_expand == nil and 0 or options.range_expand
+    self.range_expand = validate_non_negative(self.range_expand, 'RenderProgressBar.range_expand')
     self.seek_mode = validate_seek_mode(options.seek_mode or 'keyframe')
     self.markers = copy_markers(options.markers, 'RenderProgressBar.markers')
     self.ranges = copy_ranges(options.ranges)
@@ -425,6 +429,16 @@ function RenderProgressBar:set_hover_expand(expand)
     self:mark_needs_paint()
 end
 
+---@param expand number
+function RenderProgressBar:set_range_expand(expand)
+    expand = validate_non_negative(expand, 'RenderProgressBar.range_expand')
+    if self.range_expand == expand then
+        return
+    end
+    self.range_expand = expand
+    self:mark_needs_paint()
+end
+
 ---@param markers table?
 function RenderProgressBar:set_markers(markers)
     self.markers = copy_markers(markers, 'RenderProgressBar.markers')
@@ -574,17 +588,6 @@ function RenderProgressBar:__paint(canvas, offset)
     track_color = track_color or self.track_color
     draw_segmented(width, track_color)
 
-    for _, range in ipairs(self.ranges) do
-        local range_left = offset.x + width * range.start
-        local range_right = offset.x + width * range['end']
-        if range_right > range_left then
-            canvas:draw_rrect(
-                Rect(range_left, offset.y + top, range_right,
-                    offset.y + top + track_height), radius,
-                Paint(range.color or self.range_color))
-        end
-    end
-
     local buffered_width = width * self.buffered
     if buffered_width > 0 then
         local buffered_color = self.hovered and self.hover_buffered_color or nil
@@ -597,6 +600,17 @@ function RenderProgressBar:__paint(canvas, offset)
         local progress_color = self.hovered and self.hover_progress_color or nil
         progress_color = progress_color or self.progress_color
         draw_segmented(progress_width, progress_color)
+    end
+
+    -- ModernX paints seekable cache ranges over the played fill so the
+    -- discontinuous cache state remains visible instead of being swallowed by
+    -- the continuous buffered/progress primitives.
+    for _, range in ipairs(self.ranges) do
+        local range_left = max(0, width * range.start - self.range_expand)
+        local range_right = min(width, width * range['end'] + self.range_expand)
+        if range_right > range_left then
+            draw_bar(range_left, range_right, range.color or self.range_color)
+        end
     end
 
     if self.marker_style ~= 'gap' then

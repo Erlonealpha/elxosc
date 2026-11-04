@@ -427,7 +427,7 @@ function PlayerThemeData:__init(options)
     self.volume_progress_color = colour(
         'volume_progress_color', pick(options.volume_progress_color, Color.hex('#FFFFFF')))
     self.hover_color = colour(
-        'hover_color', pick(options.hover_color, Color.rgba255(255, 255, 255, 40)))
+        'hover_color', pick(options.hover_color, Color.hex('#FFFFFF')))
     self.pressed_color = colour(
         'pressed_color', pick(options.pressed_color, Color.rgba255(153, 153, 153, 90)))
     self.held_color = colour(
@@ -440,7 +440,7 @@ function PlayerThemeData:__init(options)
         'chapter_marker_current_color', pick(
             options.chapter_marker_current_color, Color.hex('#9D96F5')))
     self.seek_range_color = colour(
-        'seek_range_color', pick(options.seek_range_color, Color.rgba255(29, 150, 245, 90)))
+        'seek_range_color', pick(options.seek_range_color, Color.rgba255(29, 150, 245, 175)))
     self.hover_scale = positive('hover_scale', pick(options.hover_scale, 1.15))
 end
 

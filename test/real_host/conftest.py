@@ -44,6 +44,14 @@ def _stage_elxosc(source, destination, include_main=True):
     if include_main:
         shutil.copy2(source / "main.lua", destination / "main.lua")
         shutil.copy2(source / "elxlib_load.lua", destination / "elxlib_load.lua")
+        if os.environ.get("ELXOSC_TEST_DEMO_ENTRY") == "1":
+            entry = destination / "main.lua"
+            content = entry.read_text(encoding="utf-8")
+            disabled = "    -- return demo_mod.initial_pages()"
+            enabled = "    return demo_mod.initial_pages()"
+            if disabled not in content and enabled not in content:
+                raise RuntimeError("staged entry has no recognized demo-pages return")
+            entry.write_text(content.replace(disabled, enabled), encoding="utf-8")
 
 
 def find_host():

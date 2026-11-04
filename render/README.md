@@ -29,6 +29,8 @@ not import Widget modules or mpv.
   hit testing and pointer regions while hidden.
 - `opacity.lua` — paint-only subtree alpha; layout, hit testing and pointer regions remain
   unchanged until a visibility owner explicitly sets `hidden`.
+- `RenderText:set_glow_override()` paints a second blurred glyph at the same position;
+  it is paint-only and does not change text measurement or input geometry.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.
 
 RenderObject layout must return finite sizes within Constraints. Paint-only setters

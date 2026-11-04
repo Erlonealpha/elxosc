@@ -156,11 +156,24 @@ F.test('button glow is applied to the icon/text paint without layout changes', f
     if text == nil then
         return
     end
-    F.eq(text.shadow_color_override, Color.rgba255(255, 255, 255, 160),
+    F.eq(text.glow_color_override, Color.rgba255(255, 255, 255, 160),
         'hover glow reaches text paint')
-    F.eq(text.shadow_radius_override, 5, 'hover glow radius reaches text paint')
+    F.eq(text.glow_radius_override, 5, 'hover glow radius reaches text paint')
+    F.ok(not owner:needs_layout(), 'glow is paint-only')
+    local glow_canvas = RecordCanvas()
+    owner:paint(glow_canvas)
+    local text_ops = {}
+    for _, op in ipairs(glow_canvas.ops) do
+        if op.name == 'draw_text' then
+            text_ops[#text_ops + 1] = op
+        end
+    end
+    F.eq(#text_ops, 2, 'hover paints the normal glyph plus a separate glow glyph')
+    F.eq(text_ops[1][2], text_ops[2][2], 'glow shares the foreground position')
+    F.eq(text_ops[2][1].style.blur_radius, 5, 'glow uses blur rather than shadow edge blur')
+    F.eq(text_ops[2][1].style.shadow_color, nil, 'glow does not add an ASS shadow')
     owner:dispatch_pointer('leave', Offset(2, 2))
-    F.eq(text.shadow_color_override, nil, 'leave removes text glow')
+    F.eq(text.glow_color_override, nil, 'leave removes text glow')
 end)
 
 F.test('button rebuild preserves an active hover scale', function()

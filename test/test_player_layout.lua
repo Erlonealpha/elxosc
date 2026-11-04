@@ -70,7 +70,165 @@ local function find_widget_element(element, widget_class)
     return nil
 end
 
+local function find_widget_elements(element, widget_class, result)
+    result = result or {}
+    if element == nil then
+        return result
+    end
+    if element.widget and element.widget.__class == widget_class then
+        result[#result + 1] = element
+    end
+    for _, child in ipairs(element:element_children()) do
+        find_widget_elements(child, widget_class, result)
+    end
+    return result
+end
+
 F.section('player layout: theme and geometry')
+
+F.test('player component extraction preserves public module identity', function()
+    F.eq(require('widget.player.geometry').geometry_for, player_layout_mod.geometry_for,
+        'geometry remains the same function through the compatibility entry')
+    F.eq(require('widget.player.description').PlayerDescriptionLayer, PlayerDescriptionLayer,
+        'description class remains the same object through layout')
+    F.eq(require('widget.player').PlayerDescriptionLayer, PlayerDescriptionLayer,
+        'player aggregate exports the direct description class')
+end)
+
+F.test('window controls and title use the top-edge ModernX placement', function()
+    local result = player_layout_mod.geometry_for('original', 1280, 720, {})
+    F.eq(result.window_controls.top, 0, 'window controls have no extra top margin')
+    F.eq(result.window_controls.bottom, 30, 'window controls retain the original height')
+    F.eq(result.window_title.top, 0, 'window title shares the top row')
+end)
+
+F.test('blurred backgrounds cross viewport edges without an internal edge line', function()
+    local visuals = require('widget.player.visuals')
+    local theme = PlayerThemeData()
+    for _, top in ipairs({ true, false }) do
+        local canvas = RecordCanvas()
+        local background = visuals.panel(theme, theme.controller_color,
+            theme.controller_border_color, 75, top)
+        background.draw(canvas, geometry.Offset(0, 0), Size(1280, 720))
+        local edge = canvas.ops[1][1]
+        F.ok(edge.left < 0 and edge.right > 1280, 'blurred corners extend beyond horizontal edges')
+        F.ok(top and edge.bottom < 0 or not top and edge.top >= 720,
+            'gradient source remains outside the visible viewport')
+    end
+end)
+
+F.test('volume icons distinguish zero volume from mute', function()
+    local icon_class = require('widget.widgets.icon').Icon
+    for _, fixture in ipairs({
+        { volume = 100, mute = false, icon = 'volume_up' },
+        { volume = 50, mute = false, icon = 'volume_down' },
+        { volume = 0, mute = false, icon = 'volume_mute' },
+        { volume = 100, mute = true, icon = 'volume_off' },
+    }) do
+        local owner, binding = mount(WidgetsApp({
+            actions = HostActions({ toggle_mute = function() end }),
+            display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+            child = PlayerScope({ store = PlayerStore(fixture), child = Main() }),
+        }))
+        local found = false
+        for _, element in ipairs(find_widget_elements(binding.root_element, icon_class)) do
+            if element.widget.name == fixture.icon then
+                found = true
+            end
+        end
+        F.ok(found, 'volume state paints ' .. fixture.icon)
+        binding:dispose()
+        owner:dispose()
+    end
+end)
+
+F.test('disabled player controls are translucent and do not claim click input', function()
+    local icon_buttons = require('widget.widgets.icon_button').IconButton
+    local render_text_class = require('render.text').RenderText
+    local owner, binding = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = Main(),
+    }))
+    local previous
+    for _, element in ipairs(find_widget_elements(binding.root_element, icon_buttons)) do
+        if element.widget.key == 'player-playlist_prev' then
+            previous = element
+        end
+    end
+    F.ok(previous ~= nil, 'unavailable playlist control remains visible')
+    if previous == nil then
+        return
+    end
+    local function find_text(node)
+        if node.__class == render_text_class then
+            return node
+        end
+        for _, child in ipairs(node:children()) do
+            local found = find_text(child)
+            if found then
+                return found
+            end
+        end
+    end
+    local text = find_text(previous:first_render_object())
+    F.close(text.color_override.a, 40 / 255, 'disabled glyph uses ModernX alpha 215')
+    local geometry_result = player_layout_mod.geometry_for('original', 1280, 720, {
+        chapter_skip_buttons = true, track_nextprev_buttons = true,
+    })
+    local point = geometry.Offset(geometry_result.center.playlist_prev.left + 5, 680)
+    F.ok(not owner:dispatch_pointer('down', point, 'left'), 'disabled control leaves clicks unclaimed')
+end)
+
+F.test('tooltip moves paint directly with stable layout, input and child identity', function()
+    local store = PlayerStore({ duration = 100, percent_pos = 25 })
+    local owner, binding = mount(WidgetsApp({
+        actions = HostActions({ seek_to = function() end }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local identity = progress.render_object
+    local snapshot = owner:region_snapshot()
+    owner:paint(AssCanvas())
+    owner:dispatch_pointer('move', geometry.Offset(400, 615))
+    local function tooltip_draw(canvas)
+        for _, op in ipairs(canvas.ops) do
+            if op.name == 'draw_text' and op[1].text == '00:30' then
+                return op
+            end
+        end
+    end
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    local first = tooltip_draw(canvas)
+    F.ok(first ~= nil, 'time tooltip paints without a build flush')
+    F.eq(first[3].anchor, 'bottom_center', 'tooltip bottom is anchored at the timeline top')
+    F.eq(first[2].y, 612, 'tooltip is adjacent to the timeline')
+    owner:dispatch_pointer('move', geometry.Offset(410, 619))
+    F.ok(not binding.build_owner:has_dirty(), 'hover does not schedule Widget rebuilds')
+    F.ok(not owner:needs_layout(), 'hover does not relayout the player')
+    F.eq(owner:region_snapshot(), snapshot, 'tooltip motion reuses the input snapshot')
+    F.eq(progress.render_object, identity, 'seekbar capture target identity stays stable')
+    local next_canvas = RecordCanvas()
+    owner:paint(next_canvas)
+    local second
+    for _, op in ipairs(next_canvas.ops) do
+        if op.name == 'draw_text' and op[3].anchor == 'bottom_center' then
+            second = op
+        end
+    end
+    F.eq(second[2].y, first[2].y, 'vertical mouse movement does not move the tooltip')
+    owner:dispatch_pointer('move', geometry.Offset(0, 300))
+    local hidden_canvas = RecordCanvas()
+    owner:paint(hidden_canvas)
+    local found = false
+    for _, op in ipairs(hidden_canvas.ops) do
+        if op.name == 'draw_text' and op[3].anchor == 'bottom_center' then
+            found = true
+        end
+    end
+    F.ok(not found, 'leave clears the tooltip without rebuilding')
+end)
 
 F.test('PlayerThemeData freezes ModernX original defaults', function()
     local theme = PlayerThemeData()
@@ -82,6 +240,7 @@ F.test('PlayerThemeData freezes ModernX original defaults', function()
     F.eq(theme.middle_button_size, 24, 'middle control size')
     F.eq(theme.window_control_size, 18, 'window control size')
     F.eq(theme.window_control_color, theme.title_color, 'window control color')
+    F.close(theme.seek_range_color.a, 175 / 255, 'ModernX cache-range alpha')
     F.eq(theme.controller_border_width, 100, 'ModernX controller edge width')
     F.eq(theme.window_border_width, 100, 'ModernX window edge width')
     F.eq(theme.controller_blur_radius, 75, 'ModernX controller blur strength')
@@ -161,6 +320,28 @@ F.test('width thresholds hide controls without changing root geometry', function
     F.eq(wide.controller.top, narrow.controller.top, 'thresholds do not move the controller')
 end)
 
+F.test('right controls keep ModernX spacing when optional buttons are hidden', function()
+    local without_loop = player_layout_mod.geometry_for('original', 1280, 720, {
+        loop_button = false,
+        ontop_button = true,
+        info_button = false,
+        screenshot_button = false,
+        download_button = false,
+    })
+    F.eq(without_loop.right.fullscreen, Rect(1231, 668, 1255, 692),
+        'fullscreen remains at the right edge')
+    F.eq(without_loop.right.ontop, Rect(1186, 668, 1210, 692),
+        'ontop sits one control slot beside fullscreen')
+    local with_loop = player_layout_mod.geometry_for('original', 1280, 720, {
+        loop_button = true,
+        ontop_button = true,
+    })
+    F.eq(with_loop.right.loop, Rect(1186, 668, 1210, 692),
+        'loop occupies the slot beside fullscreen')
+    F.eq(with_loop.right.ontop, Rect(1141, 668, 1165, 692),
+        'ontop follows loop with stable spacing')
+end)
+
 F.test('PlayerLayout mounts Positioned geometry and records layer order', function()
     local store = PlayerStore({
         media_title = 'Episode',
@@ -213,7 +394,7 @@ F.test('default window controls keep all three ModernX actions and glyphs', func
     local store = PlayerStore({ fullscreen = true, border = true, title_bar = true })
     local actions = HostActions({
         minimize = function() end,
-        toggle_maximized = function() end,
+        toggle_fullscreen = function() end,
         close = function() end,
     })
     local owner, binding = mount(WidgetsApp({
@@ -224,8 +405,21 @@ F.test('default window controls keep all three ModernX actions and glyphs', func
     local ass = AssCanvas()
     owner:paint(ass)
     F.contains(ass:text(), 'minimize', 'minimize glyph is present')
-    F.contains(ass:text(), 'maximize', 'maximize glyph is present')
+    F.contains(ass:text(), 'fullscreen_exit', 'window fullscreen glyph is present')
     F.contains(ass:text(), 'close', 'close glyph is present')
+end)
+
+F.test('optional loop control uses the bundled semantic icon mapping', function()
+    local store = PlayerStore({ loop_file = true })
+    local owner = mount(WidgetsApp({
+        player_theme = PlayerThemeData({ loop_button = true }),
+        actions = HostActions({ toggle_loop = function() end }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), 'repeat_on', 'loop control uses the mapped repeat-on glyph')
 end)
 
 F.test('chapter title uses chapter metadata instead of the numeric chapter index', function()
@@ -375,6 +569,100 @@ F.test('seekbar hover shows a formatted time and chapter fallback tooltip', func
     F.contains(canvas:text(), 'Intro', 'seek tooltip includes chapter fallback text')
 end)
 
+F.test('volume hover shows the current value without slider hover expansion', function()
+    local store = PlayerStore({
+        duration = 100,
+        percent_pos = 25,
+        volume = 72,
+        volume_max = 100,
+        track_list = { { type = 'audio', id = 1, selected = true } },
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = HostActions({
+            set_volume = function() end,
+            toggle_mute = function() end,
+            seek_to = function() end,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    owner:dispatch_pointer('move', geometry.Offset(195, 680))
+    binding:flush_build()
+    owner:layout()
+    local canvas = AssCanvas()
+    owner:paint(canvas)
+    F.contains(canvas:text(), '50%', 'volume tooltip reports the hovered value')
+end)
+
+F.test('scaled seek tooltip stays below thumbfast and shares its clamped center', function()
+    local request
+    local owner = mount(WidgetsApp({
+        actions = HostActions({
+            seek_to = function() end,
+            thumbfast_request = function(seconds, x, y)
+                request = { seconds = seconds, x = x, y = y }
+            end,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({
+            store = PlayerStore({
+                duration = 100,
+                capabilities = { thumbfast = { status = 'available', detail = '320x180' } },
+            }),
+            child = Main({ scale = 1.5 }),
+        }),
+    }))
+    owner:dispatch_pointer('move', geometry.Offset(50, 570))
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    local draw
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_text' and op[3].anchor == 'bottom_center' then
+            draw = op
+        end
+    end
+    F.ok(draw ~= nil and request ~= nil, 'scaled hover paints a time label and requests a preview')
+    F.close(draw[2].x * 1.5, request.x + 160, 'scaled edge-clamped tooltip and thumbnail share the center')
+    F.eq(draw[2].y * 1.5, 558, 'scaled tooltip remains at the seekbar upper edge')
+    F.ok(draw[2].y * 1.5 - 27 > request.y + 180, 'scaled nominal text box clears the thumbnail')
+end)
+
+F.test('persistent progress uses seekable cache ranges instead of a continuous buffer', function()
+    local store = PlayerStore({
+        duration = 100,
+        percent_pos = 25,
+        cache_state = {
+            ['seekable-ranges'] = {
+                { start = 10, ['end'] = 40 },
+            },
+        },
+    })
+    local owner, binding = mount(WidgetsApp({
+        player_theme = PlayerThemeData({
+            persistent_progress = true,
+            persistent_buffer = true,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local bars = find_widget_elements(binding.root_element, ProgressBar)
+    local persistent
+    for _, element in ipairs(bars) do
+        if element.widget.height == 17 then
+            persistent = element.widget
+            break
+        end
+    end
+    F.ok(persistent ~= nil, 'persistent progress bar mounts')
+    if persistent == nil then
+        return
+    end
+    F.eq(persistent.buffered, 0, 'persistent cache does not use a continuous fill')
+    F.close(persistent.ranges[1].start, 0.1, 'persistent cache range start')
+    F.close(persistent.ranges[1]['end'], 0.4, 'persistent cache range end')
+    owner:paint(AssCanvas())
+end)
+
 F.test('available thumbfast requests previews and keeps the time fallback path separate', function()
     local requests = {}
     local cleared = 0
@@ -410,6 +698,29 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
     owner:dispatch_pointer('move', geometry.Offset(offset.x + 615, offset.y + 8))
     F.eq(#requests, 1, 'thumbfast receives one hover request')
     F.close(requests[1][1], 50, 'thumbfast receives hovered seconds')
+    local hover_canvas = RecordCanvas()
+    owner:paint(hover_canvas)
+    local time_draw
+    for _, op in ipairs(hover_canvas.ops) do
+        if op.name == 'draw_text' and op[1].text == '00:50' then
+            time_draw = op
+        end
+    end
+    F.ok(time_draw ~= nil, 'thumbnail keeps a time label')
+    F.eq(time_draw[3].anchor, 'bottom_center', 'time label uses the ModernX bottom anchor')
+    F.eq(time_draw[2].x, requests[1][2] + 160, 'time label is centered on thumbfast')
+    F.ok(time_draw[2].y - 18 > requests[1][3] + 180,
+        'nominal time glyph remains below the thumbnail')
+    owner:dispatch_pointer('move', geometry.Offset(35, 615))
+    local edge_canvas = RecordCanvas()
+    owner:paint(edge_canvas)
+    local edge_time
+    for _, op in ipairs(edge_canvas.ops) do
+        if op.name == 'draw_text' and op[3].anchor == 'bottom_center' then
+            edge_time = op
+        end
+    end
+    F.eq(edge_time[2].x, requests[2][2] + 160, 'edge-clamped time and thumbnail share their center')
     owner:dispatch_pointer('move', geometry.Offset(0, 0))
     F.eq(cleared, 1, 'leaving the seekbar clears thumbfast')
 end)

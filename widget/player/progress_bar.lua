@@ -27,6 +27,7 @@ local Color = color_mod.Color
 ---@field handle_size number?
 ---@field hover_handle_size number?
 ---@field hover_expand number?
+---@field range_expand number?
 ---@field seek_mode 'keyframe'|'exact'?
 ---@field markers table?
 ---@field ranges table?
@@ -55,6 +56,7 @@ local Color = color_mod.Color
 ---@field handle_size number
 ---@field hover_handle_size number
 ---@field hover_expand number
+---@field range_expand number
 ---@field seek_mode 'keyframe'|'exact'
 ---@field markers table[]
 ---@field ranges table[]
@@ -87,6 +89,7 @@ function ProgressBar:__init(options)
     self.hover_handle_size = options.hover_handle_size == nil
         and self.handle_size or options.hover_handle_size
     self.hover_expand = options.hover_expand == nil and 0 or options.hover_expand
+    self.range_expand = options.range_expand == nil and 0 or options.range_expand
     self.seek_mode = options.seek_mode or 'keyframe'
     self.markers = options.markers
     self.ranges = options.ranges
@@ -116,6 +119,7 @@ function ProgressBar:create_render_object()
         handle_size = self.handle_size,
         hover_handle_size = self.hover_handle_size,
         hover_expand = self.hover_expand,
+        range_expand = self.range_expand,
         seek_mode = self.seek_mode,
         markers = self.markers,
         ranges = self.ranges,
@@ -146,6 +150,7 @@ function ProgressBar:update_render_object(render_object)
     render_object:set_handle_size(self.handle_size)
     render_object:set_hover_handle_size(self.hover_handle_size)
     render_object:set_hover_expand(self.hover_expand)
+    render_object:set_range_expand(self.range_expand)
     render_object:set_seek_mode(self.seek_mode)
     render_object:set_markers(self.markers)
     render_object:set_ranges(self.ranges)

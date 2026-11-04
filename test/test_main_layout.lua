@@ -264,6 +264,16 @@ F.test('Main has a configurable uniform scale and explicit player actions', func
     F.eq(called, 1, 'actions are explicit callbacks')
 end)
 
+F.test('production player entry uses the ModernX default 1.5 scale', function()
+    local root = main_layout.build_app()
+    local _, binding = mount(root)
+    local main = find_widget_element(binding.root_element, Main)
+    F.ok(main ~= nil, 'production entry mounts Main')
+    if main then
+        F.eq(main.widget.scale, 1.5, 'production Main uses the ModernX scale')
+    end
+end)
+
 F.test('Main maps PlayerSnapshot time values into an interactive seek bar', function()
     local sought
     local actions = HostActions({
@@ -474,6 +484,35 @@ F.test('AutoHide keeps top hover opt-in', function()
     controller:hide()
     controller:activity(10, 10, geometry.Rect(0, 0, 1280, 720))
     F.ok(not controller.visible, 'top activity does not reveal when top hover is disabled')
+    scheduler:dispose()
+end)
+
+local ModalProbeState = std.class.new('test.mainlayout.ModalProbeState', { State })
+function ModalProbeState:keep_auto_hide_visible()
+    return true
+end
+function ModalProbeState:build()
+    return Text('modal')
+end
+
+local ModalProbe = std.class.new('test.mainlayout.ModalProbe', { StatefulWidget })
+function ModalProbe:create_state()
+    return ModalProbeState()
+end
+
+F.test('AutoHide keeps a modal child visible past the timeout', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner = mount(AutoHide({
+        controller = controller,
+        timeout = 0.1,
+        fade_duration = 0,
+        child = ModalProbe(),
+    }), scheduler)
+    clock:tick(0.2)
+    F.ok(controller.visible, 'modal child prevents timeout hide')
+    F.ok(not owner.root.hidden, 'modal child remains visible')
     scheduler:dispose()
 end)
 

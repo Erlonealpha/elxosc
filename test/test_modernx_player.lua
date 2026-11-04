@@ -189,6 +189,25 @@ F.test('progress ranges preserve optional SponsorBlock colors', function()
     F.ok(false, 'range paint preserves its category color')
 end)
 
+F.test('progress range expansion matches the ModernX cache gap', function()
+    local bar = RenderProgressBar({
+        range_expand = 7,
+        ranges = { { start = 0.5, ['end'] = 0.5 } },
+    })
+    F.eq(bar.range_expand, 7, 'range expansion is retained')
+    local owner = layout_bar(bar)
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    local found_expanded_range = false
+    for _, operation in ipairs(canvas.ops) do
+        if operation.name == 'draw_rrect'
+            and operation[1].left == 93 and operation[1].right == 107 then
+            found_expanded_range = true
+        end
+    end
+    F.ok(found_expanded_range, 'cache ranges expand around their endpoints')
+end)
+
 F.test('seekbar configuration selects the default keyframe or exact mode', function()
     local mode
     local bar = RenderProgressBar({

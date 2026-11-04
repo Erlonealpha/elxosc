@@ -505,8 +505,11 @@ F.test('host keyboard routing reaches the open description panel', function()
     if layer == nil then
         return
     end
-    app.owner:dispatch_pointer('down', Offset(40, 590), 'left')
-    app.owner:dispatch_pointer('up', Offset(40, 590), 'left')
+    local preview = layer.widget.bounds
+    local preview_point = Offset((preview.left + 10) * 1.5,
+        (preview.top + preview:height() / 2) * 1.5)
+    app.owner:dispatch_pointer('down', preview_point, 'left')
+    app.owner:dispatch_pointer('up', preview_point, 'left')
     app.binding:flush_build()
     app.owner:layout()
     F.ok(layer.state.open, 'description panel opens from host pointer input')
@@ -530,15 +533,49 @@ F.test('ModernX bottom hover policy reveals Main only in the hover zone', functi
     end
     local viewport = Rect(0, 0, 1280, 720)
     default_element.state:hide_main()
-    app:notify_activity(10, 544, viewport)
+    app:notify_activity(10, 457, viewport)
     F.ok(not default_element.state.main_controller.visible,
         'activity one pixel above the bottom zone does not reveal Main')
-    app:notify_activity(10, 545, viewport)
+    app:notify_activity(10, 457.5, viewport)
     F.ok(default_element.state.main_controller.visible,
         'activity at the bottom-zone boundary reveals Main')
     app:notify_activity(10, 300, viewport)
     F.ok(not default_element.state.main_controller.visible,
         'activity outside both hover zones hides visible Main')
+end)
+
+F.test('Main wake zones follow live scale changes and viewport resize', function()
+    mp_stub.reset()
+    local function root(scale)
+        return app_widgets.DefaultApp({
+            main = app_widgets.Main({ scale = scale, window_top_bar = 'yes' }),
+            auto_hide_bottom_hover = true,
+            auto_hide_top_hover = true,
+        })
+    end
+    local app = mpv_app.App(root(2))
+    app:render()
+    local default_element = find_widget_element(app.binding.root_element, DefaultApp)
+    local state = default_element.state
+    state:hide_main()
+    app:notify_activity(10, 369, Rect(0, 0, 1280, 720))
+    F.ok(not state.main_controller.visible, 'scale 2 excludes points above the 350px bottom zone')
+    app:notify_activity(10, 370, Rect(0, 0, 1280, 720))
+    F.ok(state.main_controller.visible, 'scale 2 includes the bottom-zone boundary')
+    state:hide_main()
+    app:notify_activity(10, 79, Rect(0, 0, 1280, 720))
+    F.ok(state.main_controller.visible, 'scale 2 expands the top zone to 80px')
+    app:set_root_widget(root(1))
+    app:render()
+    state:hide_main()
+    app:notify_activity(10, 79, Rect(0, 0, 1280, 720))
+    F.ok(not state.main_controller.visible, 'updated scale removes the old top wake area')
+    app:notify_activity(10, 39, Rect(0, 0, 640, 360))
+    F.ok(state.main_controller.visible, 'resized viewport retains the 40px top zone')
+    state:hide_main()
+    app:notify_activity(10, 185, Rect(0, 0, 640, 360))
+    F.ok(state.main_controller.visible, 'resized viewport locates the scaled bottom boundary')
+    app:shutdown()
 end)
 
 F.test('ModernX top hover policy reveals Main only in the top zone', function()
@@ -557,16 +594,16 @@ F.test('ModernX top hover policy reveals Main only in the top zone', function()
         'activity at the top edge reveals Main')
 
     default_element.state:hide_main()
-    app:notify_activity(10, 39, viewport)
+    app:notify_activity(10, 59, viewport)
     F.ok(default_element.state.main_controller.visible,
-        'top-zone activity below the 40px boundary reveals Main')
+        'top-zone activity below the scaled 60px boundary reveals Main')
 
     default_element.state:hide_main()
-    app:notify_activity(10, 40, viewport)
+    app:notify_activity(10, 60, viewport)
     F.ok(not default_element.state.main_controller.visible,
         'activity at the top-zone boundary does not reveal Main')
 
-    app:notify_activity(10, 41, viewport)
+    app:notify_activity(10, 61, viewport)
     F.ok(not default_element.state.main_controller.visible,
         'activity below the top zone does not reveal Main')
 

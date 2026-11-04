@@ -297,6 +297,25 @@ function AutoHideState:_apply_render_state()
     render_object:set_hidden(self.hidden)
 end
 
+---@return boolean
+function AutoHideState:_child_requests_visibility()
+    local context = self.context
+    local function visit(element)
+        local state = element.state
+        if state and type(state.keep_auto_hide_visible) == 'function'
+            and state:keep_auto_hide_visible() then
+            return true
+        end
+        for _, child in ipairs(element:element_children()) do
+            if visit(child) then
+                return true
+            end
+        end
+        return false
+    end
+    return context ~= nil and visit(context)
+end
+
 ---@param controller AnimationController
 function AutoHideState:_fade_changed(controller)
     self.opacity = controller.value
@@ -428,6 +447,13 @@ end
 function AutoHideState:_controller_event(event, visible, x, y, viewport)
     if event == 'activity' then
         local widget = self.widget --[[@as AutoHide]]
+        if self:_child_requests_visibility() then
+            self:_restart_timer()
+            if not widget.controller.visible then
+                widget.controller:show()
+            end
+            return
+        end
         local in_hover_zone = true
         if (widget.bottom_hover or (widget.top_hover and widget.top_hover_enabled))
             and x ~= nil and y ~= nil and viewport ~= nil then
@@ -483,6 +509,10 @@ function AutoHideState:init_state()
             end
             if not current_widget.controller.visible then
                 ticker:stop()
+                return
+            end
+            if self:_child_requests_visibility() then
+                self.elapsed = 0
                 return
             end
             self.elapsed = self.elapsed + dt

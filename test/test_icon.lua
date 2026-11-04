@@ -56,6 +56,8 @@ F.test('ModernX semantic icons map to bundled Material Symbols glyphs', function
     F.eq(icon_map.glyph_name('play'), 'play_arrow', 'play glyph')
     F.eq(icon_map.glyph_name('subtitle_off'), 'subtitles_off', 'subtitle off glyph')
     F.eq(icon_map.glyph_name('fullscreen_exit'), 'fullscreen_exit', 'fullscreen glyph')
+    F.eq(icon_map.glyph_name('open_in_full'), 'open_in_full', 'bottom fullscreen glyph')
+    F.eq(icon_map.glyph_name('close_fullscreen'), 'close_fullscreen', 'bottom fullscreen exit glyph')
     F.eq(icon_map.glyph_name('loop_on'), 'repeat_on', 'loop glyph')
     F.raises(function()
         ---@diagnostic disable-next-line: param-type-mismatch

@@ -165,7 +165,7 @@ F.test('capability adapter startup failures become explicit errors', function()
     context:dispose()
 end)
 
-F.test('thumbfast capability accepts info and unregisters on dispose', function()
+F.test('thumbfast capability keeps receiving info until dispose', function()
     mp_stub.reset()
     local store = PlayerStore()
     local context = MpPlayerContext(store)
@@ -179,6 +179,12 @@ F.test('thumbfast capability accepts info and unregisters on dispose', function(
         'thumbfast dimensions publish availability')
     F.eq(store:get():capability('thumbfast').detail, '320x180',
         'thumbfast dimensions are retained as detail')
+    info({ disabled = true, available = false, width = 0, height = 0 })
+    F.eq(store:get():capability('thumbfast').status, 'unavailable',
+        'thumbfast can disable itself after a media change')
+    info({ width = 640, height = 360 })
+    F.eq(store:get():capability('thumbfast').detail, '640x360',
+        'thumbfast can publish new dimensions without re-registering')
     subscription:dispose()
     F.eq(fake.log['thumbfast-info'], nil, 'thumbfast info message is unregistered')
     context:dispose()

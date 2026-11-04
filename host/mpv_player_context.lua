@@ -636,7 +636,6 @@ end
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_thumbfast()
     return self:observe_capability('thumbfast', function(report)
-        local finished = false
         local timeout
         local function kill_timeout()
             if timeout and type(timeout.kill) == 'function' then
@@ -646,14 +645,10 @@ function MpPlayerContext:observe_thumbfast()
         end
         local callback
         callback = function(payload, height)
-            if finished then
-                return
-            end
             local info = parse_thumbfast_info(payload, height)
             if info == nil then
                 kill_timeout()
                 report('error', 'invalid thumbfast-info', 'invalid thumbnail information')
-                finished = true
                 return
             end
             local width = tonumber(info.width)
@@ -666,24 +661,19 @@ function MpPlayerContext:observe_thumbfast()
             else
                 report('unavailable', 'thumbnail information unavailable')
             end
-            finished = true
         end
         if type(mp.register_script_message) ~= 'function' then
             report('unavailable', 'script messages unavailable')
-            finished = true
             return
         end
         mp.register_script_message('thumbfast-info', callback)
         if type(mp.add_timeout) == 'function' then
-            timeout = mp.add_timeout(0.5, function()
-                if not finished then
-                    finished = true
-                    report('unavailable', 'thumbfast script not installed')
-                end
+            timeout = mp.add_timeout(2, function()
+                timeout = nil
+                report('unavailable', 'thumbfast script not installed')
             end)
         end
         return function()
-            finished = true
             kill_timeout()
             if type(mp.unregister_script_message) == 'function' then
                 mp.unregister_script_message('thumbfast-info')

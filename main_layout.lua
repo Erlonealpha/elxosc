@@ -45,7 +45,10 @@ local function build_description(extension, pages)
         auto_hide_top_hover = true,
         auto_hide_top_hover_zone = 40,
         auto_hide_fade_duration = 0.15,
-        main = Main({ title = 'elxosc' }),
+        -- ModernX's default OSC scale is 1.5 in both windowed and fullscreen
+        -- modes.  Keep this player entrypoint explicit without changing the
+        -- generic framework ThemeData default.
+        main = Main({ title = 'elxosc', scale = 1.5 }),
         extension = SlotWrap(extension_slot_spec, extension_slot),
         window_layer = window_layer,
     })

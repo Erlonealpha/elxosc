@@ -33,6 +33,8 @@ local M = {}
 --- | 'volume_off'
 --- | 'fullscreen'
 --- | 'fullscreen_exit'
+--- | 'open_in_full'
+--- | 'close_fullscreen'
 --- | 'pinned'
 --- | 'unpinned'
 --- | 'loop'
@@ -93,6 +95,8 @@ local specs = {
     volume_off = { glyph = 'volume_off', size = 24 },
     fullscreen = { glyph = 'fullscreen', size = 24 },
     fullscreen_exit = { glyph = 'fullscreen_exit', size = 24 },
+    open_in_full = { glyph = 'open_in_full', size = 24 },
+    close_fullscreen = { glyph = 'close_fullscreen', size = 24 },
     pinned = { glyph = 'push_pin', size = 24 },
     unpinned = { glyph = 'push_pin', size = 24 },
     loop = { glyph = 'repeat', size = 24 },

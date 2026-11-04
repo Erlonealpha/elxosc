@@ -306,6 +306,9 @@ function DefaultAppState:init_state()
                 or Main({ title = current_app.title, scale = current_app.scale })
             local player = PlayerProvider.maybe_of(context)
             local snapshot = player and player.snapshot or nil
+            local theme_scope = Theme.maybe_of(context)
+            local theme = theme_scope and theme_scope.data or ThemeData()
+            local main_scale = std.isinstance(main, Main) and (main.scale or theme.scale) or 1
             local top_enabled = current_app.auto_hide_top_hover_enabled
             if top_enabled == nil then
                 local player_theme_scope = PlayerTheme.maybe_of(context)
@@ -321,10 +324,10 @@ function DefaultAppState:init_state()
                 enabled = current_app.auto_hide_enabled,
                 fade_duration = current_app.auto_hide_fade_duration,
                 bottom_hover = current_app.auto_hide_bottom_hover,
-                hover_zone = current_app.auto_hide_hover_zone,
+                hover_zone = current_app.auto_hide_hover_zone * main_scale,
                 top_hover = current_app.auto_hide_top_hover,
                 top_hover_enabled = top_enabled,
-                top_hover_zone = current_app.auto_hide_top_hover_zone,
+                top_hover_zone = current_app.auto_hide_top_hover_zone * main_scale,
                 child = main,
             })
         end,

@@ -35,6 +35,8 @@ local M = {}
 ---@field color_override Color?
 ---@field shadow_color_override Color?
 ---@field shadow_radius_override number?
+---@field glow_color_override Color?
+---@field glow_radius_override number?
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): self
 local RenderText = std.class.new('RenderText', { RenderObject })
 
@@ -51,6 +53,8 @@ function RenderText:__init(text, style, measurer, text_paint)
     self.color_override = nil
     self.shadow_color_override = nil
     self.shadow_radius_override = nil
+    self.glow_color_override = nil
+    self.glow_radius_override = nil
     self.paragraph = nil
 end
 
@@ -81,6 +85,24 @@ function RenderText:set_shadow_override(color, radius)
     end
     self.shadow_color_override = color
     self.shadow_radius_override = radius
+    self:mark_needs_paint()
+end
+
+---@param color Color?
+---@param radius number?
+function RenderText:set_glow_override(color, radius)
+    if color ~= nil and not std.isinstance(color, Color) then
+        raise(std.TypeError('RenderText.glow_color_override must be a Color'))
+    end
+    if radius ~= nil and (type(radius) ~= 'number' or radius < 0
+        or radius ~= radius or radius == math.huge or radius == -math.huge) then
+        raise(std.ValueError('RenderText.glow_radius_override must be non-negative and finite'))
+    end
+    if self.glow_color_override == color and self.glow_radius_override == radius then
+        return
+    end
+    self.glow_color_override = color
+    self.glow_radius_override = radius
     self:mark_needs_paint()
 end
 
@@ -146,6 +168,14 @@ function RenderText:__paint(canvas, offset)
             text_paint = self.text_paint:copy_with({ anchor = anchor })
         end
         canvas:draw_text(paragraph, position, text_paint)
+        if self.glow_color_override ~= nil then
+            local glow_style = paragraph.style:copy_with({
+                color = self.glow_color_override,
+                blur_radius = self.glow_radius_override or 0,
+            })
+            canvas:draw_text(Paragraph(paragraph.text, glow_style, paragraph.size,
+                paragraph.lines, paragraph.line_height), position, text_paint)
+        end
     end
     self:paint_children(canvas, offset)
 end

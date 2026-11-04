@@ -152,7 +152,7 @@ function ButtonState:_update_visual(gesture)
     local function update_text(node)
         if std.isinstance(node, RenderText) then
             node:set_color_override(foreground)
-            node:set_shadow_override(shadow_color, shadow_radius)
+            node:set_glow_override(shadow_color, shadow_radius)
         end
         for _, child in ipairs(node:children()) do
             update_text(child)
@@ -184,7 +184,11 @@ function ButtonState:build()
     if not button.enabled
         or (not button.on_click and not button.on_right_click
             and not button.on_shift_click and not button.on_wheel) then
-        return body
+        return GestureDetector(TransformBox(body), {
+            on_state_change = function(gesture)
+                self:_update_visual(gesture)
+            end,
+        })
     end
     local factor = state == 'hover' and style.hover_scale or 1
     local visual = TransformBox(body, { scale = Size(factor, factor) })
