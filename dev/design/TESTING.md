@@ -138,6 +138,16 @@ Paragraph 按 label/style 缓存，不改变控件 identity、布局或 RegionSn
 
 ## Lua suite
 
+2026-11-05 开发 Demo 注入与控件修正后：**2202 Lua checks**，`emmylua_check .`
+**No issues found**；`uv run --group test python -m pytest -q test/real_host test/test_runner.py --tb=short`
+**25 passed**（real-host **11**、runner CLI **14**）。Demo 默认注入且关闭；加载生成媒体后
+真实点击置顶左侧按钮打开，关闭释放 State，再打开重置计数。Windows 输入定位只针对
+自有窗口并恢复鼠标位置；测试等待输入 section ready，避免初次挂载/AutoHide 导致点击空区。
+此前工作区关闭 Demo pages 的 8/2 结果属于历史入口，不能当作当前入口结果。
+
+新增回归覆盖全强度文本 glow、固定音量圆点、受控右侧按钮插入且不改变 pin/fullscreen
+位置、三个 Define slot、Demo close/dispose/reopen 和原有 Page/Popup/ESC 行为。
+
 `test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`
 开头的测试组目录；其他目录（包括 `real_host` 和 fixtures）不进入 Lua suite。
 文件按相对路径排序。筛选器各段按字面子串匹配，并允许省略 `test_` 和 `.lua`：

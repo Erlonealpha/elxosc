@@ -2,6 +2,8 @@
 
 from pathlib import Path
 import time
+import wave
+from window_input import WindowInput
 
 import pytest
 
@@ -25,10 +27,13 @@ def wait_for_property(client, process, log, name, expected, timeout=5):
 @pytest.mark.real_host
 def test_elxosc_script_loads_and_accepts_demo_message(real_host_factory):
     script = Path(__file__).parents[2] / "main.lua"
-    with real_host_factory(f"--script={script}") as (client, _, process, log):
+    with real_host_factory(f"--script={script}", "--force-window=yes",
+                           "--geometry=1280x720") as (client, _, process, log):
         # The command must be accepted while the script is loaded. The Lua
         # handler increments DemoState; the host remaining alive is the
         # portable observable result available through mpv IPC.
+        wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+        client.command("script-message", "elxosc-demo-open")
         wait_for_property(client, process, log, "user-data/elxosc-demo-count", "0")
         assert client.command("script-message", "elxosc-demo") is None
         assert process.poll() is None
@@ -55,6 +60,46 @@ def wait_for_navigation_key(client, process, log, enabled, timeout=5):
 
 
 @pytest.mark.real_host
+def test_define_demo_button_opens_closes_and_reopens(real_host_factory, tmp_path):
+    script = Path(__file__).parents[2] / "main.lua"
+    media = tmp_path / "demo-controls.wav"
+    with wave.open(str(media), "wb") as stream:
+        stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
+        stream.writeframes(bytes(48000 * 2 * 12))
+    with real_host_factory(f"--script={script}", "--force-window=yes",
+                           "--geometry=1280x720") as (client, _, process, log):
+        wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+        client.command("set_property", "pause", True)
+        client.command("loadfile", str(media))
+        wait_for_property(client, process, log, "idle-active", False)
+        dimensions = client.command("get_property", "osd-dimensions")
+        width, height = dimensions["w"], dimensions["h"]
+        with WindowInput(process, client) as pointer:
+            x, y = int(width - 127 * 1.5), int(height - 40 * 1.5)
+            pointer.move(x, y)
+            deadline = time.monotonic() + 5
+            while True:
+                bindings = client.command("get_property", "input-bindings")
+                if any(binding.get("section", "").startswith("elxosc-input")
+                       and binding.get("key") == "MBTN_LEFT"
+                       and binding.get("priority", -1) >= 0 for binding in bindings):
+                    break
+                assert time.monotonic() < deadline, "Main input sections were not enabled"
+                time.sleep(0.05)
+            pointer.click(x, y)
+            wait_for_property(client, process, log, "user-data/elxosc-demo-open", "true")
+            wait_for_property(client, process, log, "user-data/elxosc-demo-count", "0")
+            client.command("script-message", "elxosc-demo")
+            wait_for_property(client, process, log, "user-data/elxosc-demo-count", "1")
+            pointer.click(width - 72, 80)
+            wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+            wait_for_navigation_key(client, process, log, False)
+            pointer.click(x, y)
+            wait_for_property(client, process, log, "user-data/elxosc-demo-open", "true")
+            wait_for_property(client, process, log, "user-data/elxosc-demo-count", "0")
+
+
+@pytest.mark.real_host
 def test_demo_navigation_returns_results_and_releases_escape(real_host_factory, tmp_path):
     script = Path(__file__).parents[2] / "main.lua"
     # mpv.net supplies its own default ESC=quit binding, overriding --input-conf.
@@ -70,6 +115,8 @@ def test_demo_navigation_returns_results_and_releases_escape(real_host_factory, 
     )
     with real_host_factory(f"--script={script}", "--force-window=yes",
                            "--geometry=1280x720") as (client, _, process, log):
+        wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+        client.command("script-message", "elxosc-demo-open")
         wait_for_property(client, process, log, "user-data/elxosc-demo-route", "home")
         client.command("load-script", str(fallback))
         wait_for_property(client, process, log, "user-data/elxosc-test-escape", "ready")

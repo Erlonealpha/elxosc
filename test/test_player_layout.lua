@@ -569,7 +569,42 @@ F.test('seekbar hover shows a formatted time and chapter fallback tooltip', func
     F.contains(canvas:text(), 'Intro', 'seek tooltip includes chapter fallback text')
 end)
 
-F.test('volume hover shows the current value without slider hover expansion', function()
+F.test('an injected right control preserves pin/fullscreen spacing and moves later controls', function()
+    local base = player_layout_mod.geometry_for('original', 1280, 720, { info_button = true })
+    local extra = player_layout_mod.geometry_for('original', 1280, 720, {
+        info_button = true, extra_right_control = true,
+    })
+    F.eq(extra.right.fullscreen, base.right.fullscreen, 'fullscreen position is preserved')
+    F.eq(extra.right.ontop, base.right.ontop, 'pin position is preserved')
+    F.eq(extra.right.extra_right_control.right, extra.right.ontop.right - 45,
+        'extra control occupies the next left button grid')
+    F.eq(extra.right.info.right, base.right.info.right - 45, 'later controls shift by one grid')
+end)
+
+F.test('text hover paints a full-strength glow without relayout', function()
+    local owner = mount(WidgetsApp({
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({
+            store = PlayerStore({ time_pos = 12, duration = 100 }),
+            child = Main(),
+        }),
+    }))
+    owner:dispatch_pointer('move', geometry.Offset(35, 636))
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    local text_ops = {}
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_text' and op[1].text == '00:12' then
+            text_ops[#text_ops + 1] = op
+        end
+    end
+    F.eq(#text_ops, 2, 'time hover paints a separate glow glyph')
+    F.eq(text_ops[2][1].style.color.a, 1, 'text glow uses full opacity')
+    F.eq(text_ops[1][2], text_ops[2][2], 'glow shares the normal text position')
+    F.ok(not owner:needs_layout(), 'hover remains paint-only')
+end)
+
+F.test('volume hover shows the current value with a fixed round handle', function()
     local store = PlayerStore({
         duration = 100,
         percent_pos = 25,
@@ -592,6 +627,29 @@ F.test('volume hover shows the current value without slider hover expansion', fu
     local canvas = AssCanvas()
     owner:paint(canvas)
     F.contains(canvas:text(), '50%', 'volume tooltip reports the hovered value')
+    local render_progress_class = require('render.progress_bar').RenderProgressBar
+    ---@type RenderProgressBar?
+    local fixed_handle
+    for _, progress in ipairs(owner:pointer_regions()) do
+        if std.isinstance(progress.node, render_progress_class)
+            and progress.rect:contains(geometry.Offset(195, 680)) then
+            fixed_handle = progress.node
+        end
+    end
+    F.ok(fixed_handle ~= nil, 'volume slider has an interactive render node')
+    F.eq(fixed_handle.handle_size, 0.8, 'normal volume handle is visible')
+    F.eq(fixed_handle.hover_handle_size, fixed_handle.handle_size, 'hover keeps the same handle size')
+    local record = RecordCanvas()
+    fixed_handle:mark_needs_paint()
+    owner:paint(record)
+    local circles = 0
+    for _, op in ipairs(record.ops) do
+        if op.name == 'draw_rrect' and math.abs(op[1]:width() - op[1]:height()) < 0.00001
+            and op[1]:width() > 0 and op[1]:width() < 16 then
+            circles = circles + 1
+        end
+    end
+    F.ok(circles > 0, 'paint emits the small round slider handle')
 end)
 
 F.test('scaled seek tooltip stays below thumbfast and shares its clamped center', function()

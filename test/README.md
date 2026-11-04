@@ -40,10 +40,9 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-05): **2177 Lua checks**;
+Current baseline (2026-11-05): **2202 Lua checks**;
 runner CLI regression: **14 passed**; `emmylua_check .`: **No issues found**.
-Real-host: **10 passed** with Demo pages enabled only in the staged source copy;
-the user's workspace with the Demo pages return commented gives **8 passed, 2 failed**.
+Real-host: **11 passed** with the production Demo injection switch enabled.
 Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
@@ -77,8 +76,8 @@ python -m pytest -q test/real_host
 dependency without network access, add `--offline` before `run`. Set
 `ELXOSC_MPV_BINARY` to a full executable path (or a name on PATH) to select a
 host explicitly; otherwise the search is `mpvnet.com`, `mpv.com`, `mpv.exe`.
-When the workspace entry comments out the Demo pages return, set
-`ELXOSC_TEST_DEMO_ENTRY=1` to enable that recognized return only in the temporary
+When the workspace entry disables `demo_enabled`, set
+`ELXOSC_TEST_DEMO_ENTRY=1` to enable that recognized switch only in the temporary
 staged `main.lua`. The source file and Git index remain untouched; an unknown
 entry pattern fails explicitly. Run without this option to test the workspace
 entry as it stands, and report the two modes separately.
@@ -88,12 +87,16 @@ after the test, and has no user scripts. A missing host executable reports
 command or assertion failures fail the test.
 
 The suite also includes elxosc integration tests. It loads
-`main.lua`, sends `elxosc-demo`, checks that the host remains alive, and reads
+`main.lua`, opens the injected Demo with `elxosc-demo-open`, sends `elxosc-demo`, checks that the host remains alive, and reads
 back `osd-dimensions`. The N3 demo test opens Page/Popup routes, sends real ESC
 keypresses, checks results and retained State, then verifies that home releases ESC
 to a separate host-script binding. The button fixture also sends real mpv `mouse` commands
 through an isolated user `input.conf` to verify interactive double-click capture
 and background fullscreen passthrough. These tests are not pixel-level OSD checks.
+The Demo launcher test loads generated paused media and clicks the injected right
+control and Close Demo button. On Windows, cursor input is restricted to a visible
+window in the isolated process tree; it restores the cursor after the test and waits
+for Main's input sections to become active. Other hosts use mpv mouse/key commands.
 
 ## Layout
 

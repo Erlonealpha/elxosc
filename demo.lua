@@ -15,6 +15,8 @@ local icon_mod = require 'widget.widgets.icon'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
 local player_context = require 'widget.player_context'
+local player_theme_mod = require 'widget.player.theme'
+local player_visuals_mod = require 'widget.player.visuals'
 local tween_mod = require 'animation.tween'
 local navigation_mod = require 'widget.navigation'
 
@@ -38,6 +40,8 @@ local FittedBox = layout_widgets.FittedBox
 local TransformBox = layout_widgets.TransformBox
 local LayoutScaleBox = layout_widgets.LayoutScaleBox
 local SizedBox = layout_widgets.SizedBox
+local Stack = layout_widgets.Stack
+local Positioned = layout_widgets.Positioned
 local ElevatedButton = basic_widgets.ElevatedButton
 local OutlinedButton = basic_widgets.OutlinedButton
 local TextButton = basic_widgets.TextButton
@@ -472,7 +476,7 @@ function DemoState:build(context)
       }
     })
   })
-  return Container {
+  local body = Container {
     alignment = Offset(0.5, 0.5),
     color = Color.rgba(0x63636372),
     child = Column({
@@ -543,14 +547,30 @@ function DemoState:build(context)
       }
     })
   }
+  if not self.widget.on_close then
+    return body
+  end
+  return Stack({ children = {
+    body,
+    Positioned({
+      right = 16, top = 64, width = 112, height = 32,
+      child = OutlinedButton({
+        key = 'demo-close',
+        label = 'Close Demo',
+        on_click = self.widget.on_close
+      })
+    })
+  } })
 end
 
 ---@class _DemoOptions
 ---@field navigator NavigatorState?
+---@field on_close fun()?
 ---@field key       any?
 
 ---@class Demo: StatefulWidget
 ---@field navigator NavigatorState?
+---@field on_close fun()?
 ---@overload fun(options?: _DemoOptions): self
 local Demo = std.class.new('Demo', { StatefulWidget })
 
@@ -558,26 +578,154 @@ function Demo:__init(options)
   options = options or {}
   self.key = options.key
   self.navigator = options.navigator
+  self.on_close = options.on_close
 end
 
 function Demo:create_state()
   return DemoState()
 end
 
---- Use the application's WindowLayer Navigator, so ESC targets this stack.
+--- Use the extension's Navigator, so ESC targets this stack.
 --- The builder supplies a mounted lookup context; events reuse the handle.
+---@param on_close fun()?
 ---@return Page[]
-function M.initial_pages()
+function M.initial_pages(on_close)
   return {
     Page({
       key = 'demo-home',
       name = 'home',
       builder = function (context)
-        return Demo({ navigator = Navigator.of(context) })
+        return Demo({ navigator = Navigator.of(context), on_close = on_close })
       end
     })
   }
 end
+
+---@class _DemoLauncherOptions
+---@field key any?
+---@field controller _DemoControlLink?
+
+---@class _DemoControlLink : std.object
+---@field open fun()?
+---@overload fun(): self
+local DemoControlLink = std.class.new('_DemoControlLink', {})
+
+function DemoControlLink:__init()
+    self.open = nil
+end
+
+---@class DemoLauncher : StatefulWidget
+---@field controller _DemoControlLink
+---@overload fun(options?: _DemoLauncherOptions): self
+local DemoLauncher = std.class.new('DemoLauncher', { StatefulWidget })
+
+function DemoLauncher:__init(options)
+    self.key = options and options.key or 'demo-launcher'
+    self.controller = options and options.controller or DemoControlLink()
+end
+
+---@class DemoLauncherState : State
+---@field opened boolean
+---@field pages Page[]
+---@overload fun(): self
+local DemoLauncherState = std.class.new('DemoLauncherState', { State })
+
+function DemoLauncherState:init_state()
+    self.opened = false
+    local widget = self.widget --[[@as DemoLauncher]]
+    widget.controller.open = function()
+        self:open()
+    end
+    self.pages = M.initial_pages(function()
+        self:set_state(function()
+            self.opened = false
+        end)
+        mp.set_property('user-data/elxosc-demo-open', 'false')
+    end)
+    mp.register_script_message('elxosc-demo-open', function()
+        self:open()
+    end)
+    mp.set_property('user-data/elxosc-demo-open', 'false')
+end
+
+function DemoLauncherState:open()
+    if self.opened then
+        return
+    end
+    self:set_state(function()
+        self.opened = true
+    end)
+    mp.set_property('user-data/elxosc-demo-open', 'true')
+end
+
+function DemoLauncherState:dispose()
+    mp.unregister_script_message('elxosc-demo-open')
+    local widget = self.widget --[[@as DemoLauncher]]
+    widget.controller.open = nil
+end
+
+function DemoLauncherState:build()
+    local navigator = Navigator({ key = 'demo-navigator', pages = self.opened and self.pages or {} })
+    if not self.opened then
+        return navigator
+    end
+    return GestureDetector(navigator, {
+        on_down = function()
+        end,
+        on_up = function()
+        end,
+    })
+end
+
+function DemoLauncher:create_state()
+    return DemoLauncherState()
+end
+
+---@class _DemoButtonOptions
+---@field controller _DemoControlLink
+
+---@class DemoButton : StatelessWidget
+---@field controller _DemoControlLink
+---@overload fun(options: _DemoButtonOptions): self
+local DemoButton = std.class.new('DemoButton', { widget_mod.StatelessWidget })
+
+function DemoButton:__init(options)
+    self.controller = options and options.controller or DemoControlLink()
+end
+
+function DemoButton:build(context)
+    local scope = player_theme_mod.PlayerTheme.maybe_of(context)
+    local theme = scope and scope.data or player_theme_mod.PlayerThemeData()
+    return IconButton({
+        key = 'demo-launch-button',
+        icon = Container({
+            alignment = Offset(0.5, 0.5),
+            child = Icon('science', { size = theme.side_button_size, color = theme.side_button_color }),
+        }),
+        style = player_visuals_mod.control_style(theme),
+        on_click = function()
+            if self.controller.open then
+                self.controller.open()
+            end
+        end,
+    })
+end
+
+---@return DemoLauncher
+---@return DemoButton
+function M.create_content()
+    local controller = DemoControlLink()
+    return DemoLauncher({ controller = controller }), DemoButton({ controller = controller })
+end
+
+-- Construction goes through the normal initialization-only Define payload.
+M.define_source = [[
+import('development-demo')
+local content, button = create_demo()
+bind('app.window_layer', content)
+bind('player.controls.extra_right_control', button)
+]]
+M.DemoLauncher = DemoLauncher
 
 M.DemoState = DemoState
 M.Demo = Demo

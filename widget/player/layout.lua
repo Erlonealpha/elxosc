@@ -41,6 +41,7 @@ local M = {}
 ---@field title_bar Widget?
 ---@field window_controls Widget?
 ---@field bottom Widget?
+---@field extra_right_control Widget?
 ---@field layout_option PlayerLayoutOption
 ---@field top_bar_visible boolean
 ---@field scale number
@@ -54,6 +55,7 @@ local M = {}
 ---@field title_bar Widget?
 ---@field window_controls Widget?
 ---@field bottom Widget?
+---@field extra_right_control Widget?
 ---@field layout_option PlayerLayoutOption
 ---@field top_bar_visible boolean
 ---@field scale number
@@ -72,6 +74,7 @@ function PlayerLayout:__init(options)
     self.title_bar = options.title_bar
     self.window_controls = options.window_controls
     self.bottom = options.bottom
+    self.extra_right_control = options.extra_right_control
     self.layout_option = options.layout_option or self.theme.layout_option
     self.top_bar_visible = options.top_bar_visible ~= false
     self.scale = options.scale or 1
@@ -113,6 +116,7 @@ function PlayerLayout:build(context)
         progress_bar_height = self.theme.progress_bar_height,
         persistent_progress_height = self.theme.persistent_progress_height,
         volume_width = self.theme.volume_width,
+        extra_right_control = self.extra_right_control ~= nil,
         jump_buttons = self.theme.jump_buttons and not self.theme.compact_mode,
         chapter_skip_buttons = self.theme.chapter_skip_buttons,
         track_nextprev_buttons = self.theme.track_nextprev_buttons,
@@ -157,7 +161,7 @@ function PlayerLayout:build(context)
         children[#children + 1] = positioned(layout_geometry.controller, self.bottom)
     else
         local controller = default_controller(
-            self.theme, self.actions, snapshot, self.title, layout_geometry)
+            self.theme, self.actions, snapshot, self.title, layout_geometry, self.extra_right_control)
         for _, child in ipairs(controller) do
             children[#children + 1] = child
         end

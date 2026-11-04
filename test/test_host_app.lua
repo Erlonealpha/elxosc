@@ -60,6 +60,21 @@ local Navigator = navigation_mod.Navigator
 local HostActions = actions_mod.HostActions
 local PlayerDescriptionLayer = player_layout_mod.PlayerDescriptionLayer
 
+-- Test composition still uses the production Define content slot.
+---@param extension Widget?
+---@param pages Page[]?
+---@return Widget
+local function build_test_app(extension, pages)
+    local content = extension or layout_widgets.SizedBox.shrink()
+    if pages then
+        content = layout_widgets.Stack({ children = { content, Navigator({ pages = pages }) } })
+    end
+    local registry = slot_mod.ContributionRegistry()
+    registry:add('app.extension', content, { op = 'set' }, 'test-app')
+    local root = CompositionAssembler(registry:seal()):assemble(main_layout.build_app_description())
+    return root
+end
+
 local function find_widget_element(element, widget_class)
     if element == nil then
         return nil
@@ -439,7 +454,7 @@ end)
 
 F.test('host ESC section is enabled only when Navigator can pop', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Text('extension'), {
+    local app = mpv_app.App(build_test_app(Text('extension'), {
         Page({ key = 'home', builder = function() return Text('home') end }),
         Page({ key = 'child', builder = function() return Text('child') end }),
     }))
@@ -460,7 +475,7 @@ end)
 F.test('DefaultApp extension controls remain clickable above Main activity surface', function()
     mp_stub.reset()
     local clicks = 0
-    local app = mpv_app.App(main_layout.build_app(Button({
+    local app = mpv_app.App(build_test_app(Button({
         label = 'Demo',
         on_click = function() clicks = clicks + 1 end,
     })))
@@ -472,7 +487,7 @@ end)
 
 F.test('host mouse activity restores a hidden Main without intercepting clicks', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local app = mpv_app.App(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -495,7 +510,7 @@ F.test('host keyboard routing reaches the open description panel', function()
             opened = url
         end,
     })
-    local app = mpv_app.App(main_layout.build_app(), {
+    local app = mpv_app.App(build_test_app(), {
         player_store = store,
         actions = actions,
     })
@@ -525,7 +540,7 @@ end)
 
 F.test('ModernX bottom hover policy reveals Main only in the hover zone', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local app = mpv_app.App(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -580,7 +595,7 @@ end)
 
 F.test('ModernX top hover policy reveals Main only in the top zone', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local app = mpv_app.App(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -619,7 +634,7 @@ end)
 F.test('window snapshot gates top hover and updates the live Main policy', function()
     mp_stub.reset()
     local store = PlayerStore({ fullscreen = false, border = true, title_bar = true })
-    local app = mpv_app.App(main_layout.build_app(Text('extension')), {
+    local app = mpv_app.App(build_test_app(Text('extension')), {
         player_store = store,
     })
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
@@ -651,7 +666,7 @@ end)
 
 F.test('activity and resize do not cancel an active pointer capture', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Button({
+    local app = mpv_app.App(build_test_app(Button({
         label = 'extension',
         on_click = function() end,
     })))
@@ -675,14 +690,14 @@ end)
 
 F.test('root replacement removes stale Main activity listeners', function()
     mp_stub.reset()
-    local app = mpv_app.App(main_layout.build_app(Text('extension')))
+    local app = mpv_app.App(build_test_app(Text('extension')))
     local old_default = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(old_default ~= nil, 'old DefaultApp is mounted')
     if old_default == nil then
         return
     end
     local old_controller = old_default.state.main_controller
-    app:set_root_widget(main_layout.build_app(Text('replacement')))
+    app:set_root_widget(build_test_app(Text('replacement')))
     app.binding:flush_build()
     F.ok(next(old_controller._listeners) == nil,
         'old Main listener is removed after root replacement')

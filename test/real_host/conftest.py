@@ -47,10 +47,10 @@ def _stage_elxosc(source, destination, include_main=True):
         if os.environ.get("ELXOSC_TEST_DEMO_ENTRY") == "1":
             entry = destination / "main.lua"
             content = entry.read_text(encoding="utf-8")
-            disabled = "    -- return demo_mod.initial_pages()"
-            enabled = "    return demo_mod.initial_pages()"
+            disabled = "local demo_enabled = false"
+            enabled = "local demo_enabled = true"
             if disabled not in content and enabled not in content:
-                raise RuntimeError("staged entry has no recognized demo-pages return")
+                raise RuntimeError("staged entry has no recognized demo-enabled switch")
             entry.write_text(content.replace(disabled, enabled), encoding="utf-8")
 
 

@@ -58,6 +58,11 @@ use ModernX alpha 215 and do not claim clicks. Background source rectangles sit 
 the viewport to avoid an internal seam. Tooltip position/text updates paint directly,
 reuse the input snapshot, and do not rebuild or relayout the player. Slider labels use
 an explicit bottom-center anchor at the slider top, below any thumbfast preview.
+Text hover uses fully opaque glow; the volume handle remains visible at the same size
+before and during hover. `Main.extra_right_control` adds one scaled 24×24 control grid
+to the left of pin, with 45-unit spacing; an empty `SizedBox.shrink()` reserves no space.
+The production Define targets are `app.extension`, `app.window_layer`, and
+`player.controls.extra_right_control`; see [PLAYER.md](../../dev/design/PLAYER.md).
 
 `PlayerThemeData.layout_option` selects `original` or `reduced`. Both use the finite
 `Positioned` parent-data contract for controller, seekbar, metadata, side controls and window

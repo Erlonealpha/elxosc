@@ -158,6 +158,7 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     right_control('fullscreen', true, 250)
     right_control('loop', options.loop_button == true, 600)
     right_control('ontop', options.ontop_button ~= false, 700)
+    right_control('extra_right_control', options.extra_right_control == true, 250)
     right_control('info', options.info_button == true, 500)
     right_control('screenshot', options.screenshot_button == true, 300)
     right_control('download', options.download_button == true and options.is_url == true, 400)

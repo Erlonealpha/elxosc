@@ -21,11 +21,15 @@ WidgetsApp
 `Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线、进度条
 和播放控制由播放器定义，统一正数 scale 只负责布局外层缩放，控制器内部使用
 `PlayerThemeData` 的 root-relative `Stack`/`Positioned` 几何。`ExtensionEntry` 是当前唯一的
-扩展内容边界；`WindowLayer` 由一个 Navigator 管理逻辑页面，没有初始 Page 时只有空根
-语义，不创建额外 presenter/root。
+扩展内容边界；生产 `WindowLayer` 是空内容，应用可以显式提供逻辑页面 owner，不创建
+额外 presenter/root。开发 Demo 的 Navigator 由 Define 注入的 WindowLayer 内容拥有。
 
-当前默认入口公开的 Define/Slot 清单只有 `app.extension`（`set`/`replace`）。Main
-标题栏、窗口控制、底部播放器骨架和 `window_layer` 不是扩展的隐式 target；它们只能
+当前默认入口公开 `app.extension`、`app.window_layer` 和 `player.controls.extra_right_control` 三个 Define/Slot
+入口（`set`/`replace`）。后者只接受一个 Widget，在 Main 底部置顶按钮左侧占一个 24×24
+逻辑按钮格、45 逻辑像素步长；后续右侧控件向左顺移。未贡献时不占空间。按钮继承 Main
+scale、AutoHide 和默认控制器可见性；贡献内容自己拥有运行时行为，Define 仍仅执行一次。
+Main
+标题栏、窗口控制和底部播放器骨架不是扩展的隐式 target；它们只能
 由播放器入口或未来另行批准的应用组合提供。
 
 `AutoHide` 只包裹 MainEntry。Main 的 fade-out 在完成前保持绘制、命中和 pointer regions；
@@ -206,7 +210,16 @@ nested Navigator 状态恢复或复杂 transition 协商。
 
 ### N3 Demo
 
-`main.lua` 通过 `demo.initial_pages()` 把演示首页放进 WindowLayer 的 Navigator。
+`main.lua` 的临时 `demo_enabled = true` 开关控制开发内容注入，未来由配置系统替代。
+入口发布受保护的 `development-demo` 模块，再执行单次 Define payload：
+`app.window_layer` 贡献 `DemoLauncher`，`player.controls.extra_right_control` 贡献按钮。
+两个 Widget 共享一个 runtime controller，内容和按钮都由 Define 构造；
+`main_layout.build_app()` / `build_app_description()` 不接受 extension/pages 形参。
+开发 scope 保留一个 starter，直到初始化窗口关闭再 seal，允许其他脚本先登记贡献。
+
+点击置顶按钮左侧的 Demo 图标打开演示；**Close Demo** 移除页面、释放 Demo State 和消息，
+再打开会创建新的 Demo。关闭时 WindowLayer 没有页面；打开时拦截背景点击，防止点击下方
+播放器。按钮继承 Main 的字号、颜色、glow、scale、AutoHide 和右侧按钮间距。
 `demo.lua` 的 Page builder 在 mounted context 中取得 Navigator handle；按钮事件复用
 该 handle，返回结果通过 `RouteResult` 更新首页 State。
 
@@ -218,7 +231,7 @@ nested Navigator 状态恢复或复杂 transition 协商。
 - 首页的 **Result / Returns** 显示最近结果和完成次数；打开页面前修改原有计数，返回后
   可检查其 State 保留。首页不占用 ESC，继续执行宿主自己的绑定。
 
-也可在 mpv 控制台执行 `script-message elxosc-demo page` 或
+也可先在 mpv 控制台执行 `script-message elxosc-demo-open`，再执行 `script-message elxosc-demo page` 或
 `script-message elxosc-demo popup`；不带参数仍为原有计数演示。页面打开期间重复打开命令
 会被忽略。`user-data/elxosc-demo-route`、`elxosc-demo-result` 和 `elxosc-demo-returns`
 提供对应观测值，Demo dispose 会释放消息注册及待完成的 result 订阅。

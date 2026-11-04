@@ -8,6 +8,7 @@ mp_stub.install()
 local app_mod = require 'host.mpv_app'
 local main_layout = require 'main_layout'
 local demo_mod = require 'demo'
+local define_mod = require 'host.mpv_define'
 local geometry = require 'foundation.geometry'
 
 local App = app_mod.App
@@ -29,7 +30,18 @@ end
 
 local function mount_demo()
     mp_stub.reset()
-    local app = App(main_layout.build_app(nil, demo_mod.initial_pages()))
+    local define = define_mod.MpDefine()
+    define.session.modules:add('development-demo', { create_demo = demo_mod.create_content })
+    define.session:define_start()
+    define.session:define('elxosc-demo', demo_mod.define_source)
+    define:close()
+    local root = define:assemble(main_layout.build_app_description())
+    local app = App(root, {
+        player_store = require('widget.player_context').PlayerStore({ duration = 100, idle_active = false }),
+    })
+    app:render()
+    assert(fake.log['elxosc-demo'] == nil, 'Demo is constructed only after opening')
+    fake.log['elxosc-demo-open']()
     app:render()
     local element = find_element(app.binding.root_element, function(candidate)
         return candidate.widget.__class == Demo
@@ -74,6 +86,36 @@ local function escape(app)
 end
 
 F.section('demo: N3 navigation')
+
+F.test('Define launcher closes, disposes and reopens Demo within one runtime', function()
+    local app, home = mount_demo()
+    local owner, presenter = app.owner, app.presenter
+    fake.log['elxosc-demo']()
+    app:render()
+    click(app, 'demo-close')
+    F.ok(not home:is_mounted(), 'close disposes the Demo State')
+    F.eq(fake.log['elxosc-demo'], nil, 'closed Demo removes its message handler')
+    F.eq(fake.props['user-data/elxosc-demo-open'], 'false', 'close publishes launcher state')
+    F.eq(fake.bindings_enabled_sections['elxosc-navigation'], nil, 'closed Demo leaves ESC unclaimed')
+    local button = interactive_rect(app, 'demo-launch-button')
+    F.close((button.left + button.right) / 2, 1280 - 127 * 1.5,
+        'launcher is immediately left of the pin button')
+    F.close((button.top + button.bottom) / 2, 720 - 40 * 1.5,
+        'launcher shares the bottom control row')
+    click(app, 'demo-launch-button')
+    local reopened = find_element(app.binding.root_element, function(candidate)
+        return candidate.widget.__class == Demo
+    end)
+    F.ok(reopened ~= nil and reopened.state ~= home, 'reopen constructs a fresh Demo State')
+    F.eq(reopened.state.count, 0, 'reopen starts a fresh counter')
+    fake.log['elxosc-demo-open']()
+    app:render()
+    F.eq(reopened.state.count, 0, 'opening an already open Demo preserves State')
+    F.eq(app.owner, owner, 'same render owner after close and reopen')
+    F.eq(app.presenter, presenter, 'same presenter after close and reopen')
+    app:shutdown()
+    F.eq(fake.log['elxosc-demo-open'], nil, 'launcher handler is removed on shutdown')
+end)
 
 F.test('Page button returns a result and preserves the home State and renderer', function()
     local app, home = mount_demo()

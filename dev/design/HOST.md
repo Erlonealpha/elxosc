@@ -63,6 +63,10 @@ pop route 时才 enable。没有可 pop 内容时不抢占用户默认 ESC 绑�
 
 Define 是用户扩展内容进入播放器的唯一入口，也是初始化期 Widget 构造协议：
 
+开发入口使用同一协议注入 Demo WindowLayer 内容和右侧按钮。`demo_enabled` 默认开启；
+该本地 scope 保留 starter 至 0.5 秒初始化窗口关闭，避免其 define_end 抢先 seal 其他脚本。
+默认 app 构建器无 extension/pages 参数，受控 slot 清单见 [PLAYER.md](PLAYER.md)。
+
 ```text
 define_start
   define(scope_id, lua_source)   -- 一个 scope 只接受首次 payload

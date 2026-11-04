@@ -433,7 +433,7 @@ function PlayerThemeData:__init(options)
     self.held_color = colour(
         'held_color', pick(options.held_color, Color.hex('#999999')))
     self.hover_glow_color = colour(
-        'hover_glow_color', pick(options.hover_glow_color, Color.rgba255(255, 255, 255, 170)))
+        'hover_glow_color', pick(options.hover_glow_color, Color.hex('#FFFFFF')))
     self.chapter_marker_color = colour(
         'chapter_marker_color', pick(options.chapter_marker_color, Color.hex('#1D96F5')))
     self.chapter_marker_current_color = colour(

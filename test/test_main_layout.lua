@@ -146,7 +146,7 @@ end
 F.section('main layout: DefaultApp composition')
 
 F.test('the entry point builds one DefaultApp without the old grid contract', function()
-    local root = main_layout.build_app(Text('extension'))
+    local root = main_layout.build_app()
     F.eq(root.__class, DefaultApp, 'DefaultApp is the content root')
     F.ok(main_layout.SLOT == nil, 'old nine-region SLOT table is removed')
     F.eq(#root:child_widgets(), 3, 'main, extension and window layer are explicit children')
@@ -154,9 +154,15 @@ end)
 
 F.test('the production description exposes one Extension content boundary', function()
     local ids = {}
-    collect_slot_ids(main_layout.build_app_description(Text('extension')), ids)
+    collect_slot_ids(main_layout.build_app_description(), ids)
     F.eq(ids['app.extension'], 1, 'one extension slot is declared')
-    F.eq(next(ids, 'app.extension'), nil, 'no shell or root replacement slots are declared')
+    F.eq(ids['player.controls.extra_right_control'], 1, 'one controlled right button slot is declared')
+    F.eq(ids['app.window_layer'], 1, 'one controlled window content slot is declared')
+    local count = 0
+    for _ in pairs(ids) do
+        count = count + 1
+    end
+    F.eq(count, 3, 'no shell or root replacement slots are declared')
 
     local Extension = std.class.new('test.mainlayout.ExtensionBoundary', { StatelessWidget })
     function Extension:build()
@@ -174,21 +180,18 @@ F.test('the production description exposes one Extension content boundary', func
     registry:add('app.extension', Extension(), { op = 'set' }, 'extension')
 
     local assembler = CompositionAssembler(registry:seal())
-    local root = assembler:assemble(main_layout.build_app_description(Text('default')))
+    local root = assembler:assemble(main_layout.build_app_description())
     F.eq(#assembler.diagnostics, 9, 'all old grid ids are rejected')
     local _, binding = mount(root)
     F.eq(count_widget_elements(binding.root_element, Extension), 1,
         'extension content has one mounted owner')
 end)
 
-F.test('WindowLayer owns one empty Navigator when no initial Page is provided', function()
-    local root = main_layout.build_app(Text('extension'))
+F.test('WindowLayer is empty and has no built-in Navigator', function()
+    local root = main_layout.build_app()
     local _, binding = mount(root)
     local navigator = find_widget_element(binding.root_element, Navigator)
-    F.ok(navigator ~= nil, 'WindowLayer contains the Navigator runtime')
-    if navigator then
-        F.eq(#navigator.state.routes, 0, 'empty WindowLayer has no current Page')
-    end
+    F.eq(navigator, nil, 'navigation belongs to injected extension content')
 end)
 
 F.test('WidgetsApp exposes stable theme, display, text and action ambients', function()
@@ -230,7 +233,10 @@ function Probe:create_state()
 end
 
 F.test('hiding Main keeps the Extension entry mounted and rendered', function()
-    local owner, binding = mount(main_layout.build_app(Probe()))
+    local registry = ContributionRegistry()
+    registry:add('app.extension', Probe(), { op = 'set' }, 'probe')
+    local root = CompositionAssembler(registry:seal()):assemble(main_layout.build_app_description())
+    local owner, binding = mount(root)
     local default_element = find_widget_element(binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp element is mounted')
     if default_element == nil then

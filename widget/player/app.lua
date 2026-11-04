@@ -59,6 +59,7 @@ end
 ---@field window_top_bar WindowTopBarMode?
 ---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
+---@field extra_right_control Widget?
 ---@field scale number?
 ---@field key any?
 
@@ -69,6 +70,7 @@ end
 ---@field window_top_bar WindowTopBarMode?
 ---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
+---@field extra_right_control Widget?
 ---@field scale number?
 ---@overload fun(options?: _MainOptions): self
 local Main = std.class.new('Main', { StatelessWidget })
@@ -90,6 +92,7 @@ function Main:__init(options)
         raise(std.ValueError('Main.layout_option must be original or reduced'))
     end
     self.bottom = options.bottom
+    self.extra_right_control = options.extra_right_control
     self.scale = options.scale
 end
 
@@ -103,6 +106,9 @@ function Main:child_widgets()
     end
     if self.bottom then
         children[#children + 1] = self.bottom
+    end
+    if self.extra_right_control then
+        children[#children + 1] = self.extra_right_control
     end
     return children
 end
@@ -147,6 +153,11 @@ function Main:build(context)
     local snapshot = player and player.snapshot or nil
     local mode = self.window_top_bar or player_theme.window_top_bar
     local scale = self.scale or theme.scale
+    local extra_right_control = self.extra_right_control
+    if std.isinstance(extra_right_control, SizedBox)
+        and extra_right_control.width == 0 and extra_right_control.height == 0 then
+        extra_right_control = nil
+    end
     return LayoutScaleBox(PlayerLayout({
         theme = player_theme,
         actions = actions,
@@ -155,6 +166,7 @@ function Main:build(context)
         title_bar = self.title_bar,
         window_controls = self.window_controls,
         bottom = self.bottom,
+        extra_right_control = extra_right_control,
         layout_option = self.layout_option or player_theme.layout_option,
         top_bar_visible = top_bar_visible(snapshot, mode),
         scale = scale,

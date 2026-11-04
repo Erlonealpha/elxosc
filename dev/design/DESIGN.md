@@ -113,11 +113,11 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-11-05 播放器外观修正与 tooltip 绘制优化后为 **2177 Lua checks**、runner CLI
-**14 passed**；`emmylua_check .` **No issues found**。用户工作区 Demo pages 返回值保持
-注释时 real-host 为 **8 passed, 2 failed**；通过 fixture 显式启用临时 staging 副本的
-Demo pages 后为 **10 passed**。视觉与交互手感仍待人工确认；实际命令、入口差异和
-局部 hover 性能调查见 [TESTING.md](TESTING.md)。
+2026-11-05 开发 Demo Define 注入与控件修正后为 **2202 Lua checks**、runner CLI
+**14 passed**；`emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host
+**11 passed**。默认构建器不再接受 extension/pages；受控 WindowLayer 和右侧按钮贡献
+见 [PLAYER.md](PLAYER.md)。用户确认外观基本正常，时间线 tooltip 在 240 Hz 场景仍有轻微
+滞后；实际命令和 hover 性能调查见 [TESTING.md](TESTING.md)。
 
 历史基线：
 

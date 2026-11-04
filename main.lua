@@ -11,6 +11,8 @@
 -- Binding only owns mount/update/dispose and never applies contributions.
 
 local enable = true
+-- Temporary development switch; replace with the future configuration system.
+local demo_enabled = true
 if not enable then
     return
 end
@@ -25,7 +27,6 @@ local mpv_define = require 'host.mpv_define'
 local mpv_player_context = require 'host.mpv_player_context'
 local player_context = require 'widget.player_context'
 local main_layout = require 'main_layout'
-local demo_mod = require 'demo'
 
 local MpDefine = mpv_define.MpDefine
 local MpPlayerContext = mpv_player_context.MpPlayerContext
@@ -71,8 +72,18 @@ end)
 local define = MpDefine({ player_store = player_store })
 define:listen()
 
+if demo_enabled then
+    local demo_mod = require 'demo'
+    define.session.modules:add('development-demo', { create_demo = demo_mod.create_content })
+    define.session.modules:protect('development-demo')
+    -- Reserve a starter until the initialization window closes, allowing other
+    -- scripts to contribute before this local development payload is sealed.
+    define.session:define_start()
+    define.session:define('elxosc-demo', demo_mod.define_source)
+end
+
 local function build_app()
-    return main_layout.build_app(nil, demo_mod.initial_pages())
+    return main_layout.build_app()
 end
 
 local app = mpv_app.start(build_app, {
@@ -87,7 +98,7 @@ local function remount()
     if shutting_down then
         return
     end
-    app:set_root_widget(define:assemble(main_layout.build_app_description(nil, demo_mod.initial_pages())))
+    app:set_root_widget(define:assemble(main_layout.build_app_description()))
 end
 
 -- Fast path: every starter sent its `define_end`.
