@@ -136,6 +136,90 @@ Paragraph 按 label/style 缓存，不改变控件 identity、布局或 RegionSn
 剩余开销主要在整树 paint/ASS 和 activity 遍历。完整 benchmark 场景矩阵、宿主延迟和
 绘制边界评估仍需后续工作，不能据此宣称真实交互延迟已全部解决。
 
+### 真实播放器 timeline hover benchmark（2026-11-05）
+
+生产代码基线为 `feaaff3`。入口为 `tools/benchmark_real_player_hover.py`，复用 real-host
+fixture 的隔离配置和进程清理，Windows 通过自有窗口的原生鼠标输入测量。仅在临时 staging
+入口载入 `tools/player_hover_probe.lua`；工作区入口、生产输入方式和用户配置不被修改。
+`mouse_move` 是 staging 候选实验：移动走 forced native binding，仍保留 hover-leave/capture
+清理。默认 `observe` 继续使用生产 `mouse-pos` observer。
+
+```text
+uv run --group test python tools/benchmark_real_player_hover.py --seconds 4 --output dev/benchmark/player-hover-real-2026-11-05.json
+uv run --group test python tools/benchmark_real_player_hover.py --rates 240 --modes observe --debug true --seconds 4 --output dev/benchmark/player-hover-real-debug-2026-11-05.json
+```
+
+可通过 `ELXOSC_MPV_BINARY` 或 `--host` 选择真实宿主，需安装 ffmpeg。正式结果见
+[关闭调试的八场景报告](../benchmark/player-hover-real-2026-11-05.json) 和
+[默认调试配置的补测](../benchmark/player-hover-real-debug-2026-11-05.json)。环境为
+Windows/x64、mpv.net/mpv `v0.41.0-1011-g182fa6ca4`、嵌入式 LuaJIT `2.1.1787944725`；
+生成 1280×720、60 fps H.264 testsrc2 媒体，无音频，软件解码、GPU VO。实际 viewport
+为 2276×1280，Main scale 1.5，display-fps 240.003，frame clock delay 4.167 ms。
+Demo 注入开启、面板关闭，外部 thumbfast 在隔离环境中为 `unavailable`。
+
+每场景预热 1 秒，采样 4 秒，随后留 100 ms 排空事件。驱动实际达到 59.98～60.00 Hz
+和 239.94～240.00 Hz；驱动记录 `SetCursorPos` 前的 QPC 时间，移动调用 P50 约
+0.03～0.05 ms。早期逐次枚举 Windows 进程的驱动只能达到约 100 Hz，已修正为启动时
+校验 ownership、逐次校验 HWND PID 和持有的进程 handle；早期试跑不作为 240 Hz 证据。
+
+延迟和阶段统计只计每个 input sequence 的首次 tooltip 提交，播放引起的相同指针重复
+重绘不重复计入延迟；失效次数则计全部 tooltip 绘制帧。P50/P95 使用 nearest-rank，
+输入次数可能包含采样边界的一次事件，Hz 按驱动实际首末时间计算。
+
+| Hz | 输入 | 状态 | debug | 输入次数 | tooltip 提交 Hz | Lua 帧 P50 / P95 ms | 输入→提交 P50 / P95 ms |
+| ---: | --- | --- | --- | ---: | ---: | ---: | ---: |
+| 60 | observe | paused | false | 241 | 60.5 | 2.045 / 5.958 | 4.778 / 8.382 |
+| 60 | observe | playing | false | 188 | 45.7 | 9.700 / 30.920 | 10.708 / 32.678 |
+| 60 | mouse_move | paused | false | 241 | 60.5 | 1.991 / 6.143 | 4.302 / 8.261 |
+| 60 | mouse_move | playing | false | 241 | 46.7 | 4.275 / 27.609 | 6.066 / 30.767 |
+| 240 | observe | paused | false | 866 | 200.4 | 2.043 / 7.935 | 3.589 / 10.080 |
+| 240 | observe | playing | false | 330 | 73.1 | 9.507 / 49.945 | 10.120 / 50.958 |
+| 240 | mouse_move | paused | false | 770 | 167.9 | 2.014 / 7.718 | 3.755 / 9.823 |
+| 240 | mouse_move | playing | false | 959 | 77.8 | 9.847 / 31.098 | 10.666 / 34.215 |
+| 240 | observe | paused | true | 768 | 181.9 | 1.876 / 7.686 | 3.062 / 9.370 |
+| 240 | observe | playing | true | 320 | 72.3 | 9.994 / 42.367 | 10.817 / 43.361 |
+
+当前 `main.lua` 默认 `debug_enabled = true`。该补测的 OS 移动→提交 P50/P95 为
+暂停 **4.608/11.857 ms**、播放 **12.041/45.408 ms**；输入→提交从暂停约 3 ms 升到
+播放约 11 ms。debug 两组是独立运行，不能将其差异解释为开启日志带来性能收益。
+
+| 240 Hz 阶段 mean ms | observe paused | observe playing | mouse_move playing |
+| --- | ---: | ---: | ---: |
+| build | 0.014 | 2.146 | 2.180 |
+| layout | 0.003 | 1.030 | 0.802 |
+| input regions | 0.333 | 4.483 | 3.862 |
+| paint / ASS | 2.198 | 2.465 | 2.490 |
+| present | 0.107 | 0.113 | 0.131 |
+
+上表均为 debug=false。所有暂停场景的 build dirty/layout/input invalidation 次数均为
+**0**，确认 tooltip 移动的 paint-only 修正有效；播放的四组分别出现 **183/178/177/167**
+次 build、layout 和 region generation 更新，默认调试补测播放为 **178** 次。
+源码链路也一致：`PlayerScopeState` 订阅整个 Store，`PlayerProvider` 按 snapshot identity
+通知，`Main` 监听 Provider 并重新构建 `PlayerLayout`。播放时持续更新的数据重新触发
+组合、布局和输入区域刷新，输入区域阶段是本次播放样本中最大的平均成本。
+
+`mouse_move` 在 240 Hz 播放场景收到 959/960 次移动，而 observer 收到 330 次，表明事件
+合并值得继续调查；但它仍只产生约 78 Hz 的 tooltip 更新，Lua 帧 P50 接近 10 ms，
+超过 240 Hz 的 4.167 ms 帧间隔，暂停场景也没有一致收益。因此下一步先评估收窄
+PlayerProvider 依赖、复用稳定控件/callback/style、让进度数据更新只失效必要节点，再
+用相同真实场景验证；本次不更换生产输入方式或新增框架 boundary API。
+
+这些是单机、单次短采样，probe 包装、GC、视频播放和 OS 调度都会影响尾部耗时。
+结束点为 ASS overlay 提交，包含 Lua 帧和 presenter 调用；不包含 libass 像素呈现、显示
+scan-out、外部 thumbfast，也未直接运行 ModernX。Linux 未运行，完整小树/深树/多子节点
+benchmark 矩阵及优化前后等价输出对照仍未完成。
+
+工具加入后的 `emmylua_check .` 为 **No issues found**。完整宿主复验曾为 **24 passed,
+1 failed**，失败是 Demo 首次打开/关闭的全局原生按钮注入。隔离日志确认坐标、区域和
+焦点正确，延长原生按下/释放间隔也未完全消除不稳定。最终 `WindowInput.click` 使用
+真实鼠标定位和 mpv IPC `keydown/keyup`，仍经过 mpv 区域选择和生产 `MpInput` 路由；
+预留 300 ms 移动处理时间、200 ms 按下时间，并在 finally 中释放按键。该自动检查不代表
+桌面原生按钮点击的最终人工验收。高频 benchmark 只调用原生 `move`，不受按钮传输影响。
+
+最终完整 `test/real_host test/test_runner.py --tb=short`：**25 passed in 16.46s**
+（real-host **11**、runner CLI **14**）。Lua 生产代码自 `feaaff3` 后未改动，完整 **2202**
+checks 的提交前结果继续有效；本轮新增探针的完整 EmmyLua 检查为零诊断。
+
 ## Lua suite
 
 2026-11-05 开发 Demo 注入与控件修正后：**2202 Lua checks**，`emmylua_check .`

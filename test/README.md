@@ -96,7 +96,18 @@ and background fullscreen passthrough. These tests are not pixel-level OSD check
 The Demo launcher test loads generated paused media and clicks the injected right
 control and Close Demo button. On Windows, cursor input is restricted to a visible
 window in the isolated process tree; it restores the cursor after the test and waits
-for Main's input sections to become active. Other hosts use mpv mouse/key commands.
+for Main's input sections to become active. Button edges use mpv IPC keydown/keyup
+at that native cursor position, exercising section-area selection and production
+dispatch without relying on global desktop click injection. Other hosts use mpv
+mouse/key commands. Native desktop button acceptance remains a manual check.
+
+The separate `tools/benchmark_real_player_hover.py` generates H.264 video with
+ffmpeg and measures native Windows pointer moves through the production player,
+frame loop and ASS presenter. It supports 60/240 Hz, pause/play, debug toggles and
+a staging-only mouse_move experiment. Use `--output` to save statistics; no probe
+is loaded into the workspace entry. Commands, environment, results and the ASS
+submission endpoint are documented in
+[`dev/design/TESTING.md`](../dev/design/TESTING.md#真实播放器-timeline-hover-benchmark2026-11-05).
 
 ## Layout
 

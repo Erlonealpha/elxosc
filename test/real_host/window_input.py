@@ -79,6 +79,20 @@ class WindowInput:
             if not candidates:
                 raise RuntimeError("isolated host has no visible owned window")
             self.hwnd = max(candidates)[1]
+            pid = wintypes.DWORD()
+            self.user.GetWindowThreadProcessId(self.hwnd, ctypes.byref(pid))
+            if pid.value not in owned:
+                raise RuntimeError("selected window no longer belongs to the isolated host")
+            self.window_pid = pid.value
+            self.kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+            self.kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+            self.kernel.OpenProcess.restype = wintypes.HANDLE
+            self.kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            self.kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+            # Retain the process identity; avoid enumeration in each move.
+            self.window_process = self.kernel.OpenProcess(0x00100000, False, self.window_pid)
+            if not self.window_process:
+                raise ctypes.WinError(ctypes.get_last_error())
             self.user.SetForegroundWindow(self.hwnd)
 
     def move(self, x, y):
@@ -87,7 +101,7 @@ class WindowInput:
         if self.user:
             pid = wintypes.DWORD()
             self.user.GetWindowThreadProcessId(self.hwnd, ctypes.byref(pid))
-            if pid.value not in _descendants(self.process.pid):
+            if pid.value != self.window_pid or self.kernel.WaitForSingleObject(self.window_process, 0) != 258:
                 raise RuntimeError("window no longer belongs to the isolated host")
             rect = wintypes.RECT()
             self.user.GetClientRect(self.hwnd, ctypes.byref(rect))
@@ -95,20 +109,24 @@ class WindowInput:
                 raise ValueError("pointer position lies outside the owned client area")
             point = wintypes.POINT(int(x), int(y))
             self.user.ClientToScreen(self.hwnd, ctypes.byref(point))
+            stamp = time.perf_counter()
             if not self.user.SetCursorPos(point.x, point.y):
                 raise ctypes.WinError(ctypes.get_last_error())
+            return stamp
         else:
+            stamp = time.perf_counter()
             self.client.command("mouse", int(x), int(y))
+            return stamp
 
     def click(self, x, y):
         self.move(x, y)
-        time.sleep(0.1)
-        if self.user:
-            self.user.mouse_event(2, 0, 0, 0, 0)
-            time.sleep(0.02)
-            self.user.mouse_event(4, 0, 0, 0, 0)
-        else:
-            self.client.command("keydown", "MBTN_LEFT")
+        time.sleep(0.3)
+        # Use mpv's button transport at the real native cursor position. This
+        # still exercises section-area selection and the production input path.
+        self.client.command("keydown", "MBTN_LEFT")
+        try:
+            time.sleep(0.2)
+        finally:
             self.client.command("keyup", "MBTN_LEFT")
 
     def __enter__(self):
@@ -117,3 +135,4 @@ class WindowInput:
     def __exit__(self, *_):
         if self.user:
             self.user.SetCursorPos(self.original_cursor.x, self.original_cursor.y)
+            self.kernel.CloseHandle(self.window_process)

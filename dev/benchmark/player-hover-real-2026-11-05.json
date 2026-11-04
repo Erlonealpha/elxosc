@@ -1,0 +1,1041 @@
+{
+  "revision": "feaaff3164e5b6e725aae7e013283149d53a6803",
+  "seconds": 4.0,
+  "warmup_seconds": 1,
+  "media": "generated 1280x720 testsrc2 H.264 at 60 fps; no audio",
+  "cases": [
+    {
+      "environment": {
+        "display_fps": 240.003,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "thumbfast": "unavailable",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "width": 2276,
+        "height": 1280,
+        "runtime": "LuaJIT 2.1.1787944725"
+      },
+      "driver_moves": 240,
+      "input_events": 241,
+      "tooltip_frames": 241,
+      "all_tooltip_frames": 241,
+      "matched_events": 240,
+      "build_dirty_frames": 0,
+      "layout_frames": 0,
+      "input_invalidated_frames": 0,
+      "driver_elapsed_seconds": 3.983450500003528,
+      "driver_actual_hz": 59.998235198300655,
+      "delivered_hz": 60.5003124802948,
+      "tooltip_submit_hz": 60.5003124802948,
+      "driver_lateness": {
+        "count": 240,
+        "mean_ms": 0.40242375810824643,
+        "p50_ms": 0.32449999707750976,
+        "p95_ms": 1.005200028885156,
+        "max_ms": 1.1018666846212
+      },
+      "driver_cost": {
+        "count": 240,
+        "mean_ms": 0.05112458238727413,
+        "p50_ms": 0.048699992476031184,
+        "p95_ms": 0.0720999960321933,
+        "max_ms": 0.12349997996352613
+      },
+      "dispatch": {
+        "count": 241,
+        "mean_ms": 0.5282240665442391,
+        "p50_ms": 0.4079999926034361,
+        "p95_ms": 1.400000008288771,
+        "max_ms": 2.8950000123586506
+      },
+      "input_gap": {
+        "count": 240,
+        "mean_ms": 16.700308333383873,
+        "p50_ms": 16.669000004185364,
+        "p95_ms": 17.254000005777925,
+        "max_ms": 24.781000014627352
+      },
+      "frame_wait": {
+        "count": 241,
+        "mean_ms": 1.67622821670242,
+        "p50_ms": 1.676999992923811,
+        "p95_ms": 3.6069999914616346,
+        "max_ms": 4.122999991523102
+      },
+      "lua_frame": {
+        "count": 241,
+        "mean_ms": 2.494373443199291,
+        "p50_ms": 2.044999971985817,
+        "p95_ms": 5.957999994279817,
+        "max_ms": 9.393999993335456
+      },
+      "input_to_submit": {
+        "count": 241,
+        "mean_ms": 4.69882572644595,
+        "p50_ms": 4.778000002261251,
+        "p95_ms": 8.381999999983236,
+        "max_ms": 12.088999996194616
+      },
+      "stages": {
+        "build": {
+          "count": 241,
+          "mean_ms": 0.013394190871369295,
+          "p50_ms": 0.012,
+          "p95_ms": 0.025,
+          "max_ms": 0.068
+        },
+        "layout": {
+          "count": 241,
+          "mean_ms": 0.0025103734439834023,
+          "p50_ms": 0.002,
+          "p95_ms": 0.003,
+          "max_ms": 0.011
+        },
+        "regions": {
+          "count": 241,
+          "mean_ms": 0.3176016597510374,
+          "p50_ms": 0.248,
+          "p95_ms": 0.87,
+          "max_ms": 1.7830000000000001
+        },
+        "paint_ass": {
+          "count": 241,
+          "mean_ms": 2.072435684647303,
+          "p50_ms": 1.682,
+          "p95_ms": 5.064,
+          "max_ms": 8.314
+        },
+        "present": {
+          "count": 241,
+          "mean_ms": 0.07099170124481327,
+          "p50_ms": 0.06499999999999999,
+          "p95_ms": 0.115,
+          "max_ms": 0.17
+        }
+      },
+      "os_move_to_input": {
+        "count": 240,
+        "mean_ms": 4.7426470822150195,
+        "p50_ms": 4.7710000071674585,
+        "p95_ms": 5.171900003915653,
+        "max_ms": 5.702199996449053
+      },
+      "os_move_to_submit": {
+        "count": 240,
+        "mean_ms": 9.436822082473856,
+        "p50_ms": 9.334699978353456,
+        "p95_ms": 13.037299999268726,
+        "max_ms": 16.438699996797368
+      },
+      "requested_hz": 60,
+      "input_mode": "observe",
+      "playback": "paused",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "thumbfast": "unavailable",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "width": 2276,
+        "height": 1280,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "display_fps": 240.003
+      },
+      "driver_moves": 240,
+      "input_events": 188,
+      "tooltip_frames": 182,
+      "all_tooltip_frames": 282,
+      "matched_events": 187,
+      "build_dirty_frames": 183,
+      "layout_frames": 183,
+      "input_invalidated_frames": 183,
+      "driver_elapsed_seconds": 3.9838302000134718,
+      "driver_actual_hz": 59.99251674913047,
+      "delivered_hz": 47.190766313123554,
+      "tooltip_submit_hz": 45.6846780265345,
+      "driver_lateness": {
+        "count": 240,
+        "mean_ms": 0.5971312565331269,
+        "p50_ms": 0.5500666738953441,
+        "p95_ms": 1.0799666633829474,
+        "max_ms": 1.5499333385378122
+      },
+      "driver_cost": {
+        "count": 240,
+        "mean_ms": 0.051046665612375364,
+        "p50_ms": 0.04830001853406429,
+        "p95_ms": 0.06649998249486089,
+        "max_ms": 0.18010000349022448
+      },
+      "dispatch": {
+        "count": 188,
+        "mean_ms": 0.8010106400259711,
+        "p50_ms": 0.4450000124052167,
+        "p95_ms": 2.736000024015084,
+        "max_ms": 6.462999997893348
+      },
+      "input_gap": {
+        "count": 187,
+        "mean_ms": 21.46325133682383,
+        "p50_ms": 17.097000003559515,
+        "p95_ms": 55.616000026930124,
+        "max_ms": 85.17000000574626
+      },
+      "frame_wait": {
+        "count": 182,
+        "mean_ms": 0.6077582401013677,
+        "p50_ms": 0.13499998021870852,
+        "p95_ms": 3.0960000003688037,
+        "max_ms": 8.725000021513551
+      },
+      "lua_frame": {
+        "count": 182,
+        "mean_ms": 9.7377032980548,
+        "p50_ms": 9.69999999506399,
+        "p95_ms": 30.920000019250438,
+        "max_ms": 62.37800000235438
+      },
+      "input_to_submit": {
+        "count": 182,
+        "mean_ms": 11.094835166439445,
+        "p50_ms": 10.707999987062067,
+        "p95_ms": 32.67800001776777,
+        "max_ms": 64.75600000703707
+      },
+      "stages": {
+        "build": {
+          "count": 182,
+          "mean_ms": 2.331956043956044,
+          "p50_ms": 0.031,
+          "p95_ms": 10.917,
+          "max_ms": 24.150000000000002
+        },
+        "layout": {
+          "count": 182,
+          "mean_ms": 0.8260054945054944,
+          "p50_ms": 0.003,
+          "p95_ms": 1.9780000000000002,
+          "max_ms": 11.301
+        },
+        "regions": {
+          "count": 182,
+          "mean_ms": 3.739906593406593,
+          "p50_ms": 1.3719999999999999,
+          "p95_ms": 14.062,
+          "max_ms": 38.059000000000005
+        },
+        "paint_ass": {
+          "count": 182,
+          "mean_ms": 2.6887637362637364,
+          "p50_ms": 1.6980000000000002,
+          "p95_ms": 9.216000000000001,
+          "max_ms": 15.136999999999999
+        },
+        "present": {
+          "count": 182,
+          "mean_ms": 0.12735164835164836,
+          "p50_ms": 0.06999999999999999,
+          "p95_ms": 0.18100000000000002,
+          "max_ms": 6.887
+        }
+      },
+      "os_move_to_input": {
+        "count": 187,
+        "mean_ms": 8.463525131903838,
+        "p50_ms": 6.606899987673387,
+        "p95_ms": 18.355999985942617,
+        "max_ms": 20.787599991308525
+      },
+      "os_move_to_submit": {
+        "count": 181,
+        "mean_ms": 19.222598894819544,
+        "p50_ms": 17.148599989013746,
+        "p95_ms": 39.107799995690584,
+        "max_ms": 71.02350000059232
+      },
+      "requested_hz": 60,
+      "input_mode": "observe",
+      "playback": "playing",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "width": 2276,
+        "height": 1280,
+        "display_fps": 240.003,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "thumbfast": "unavailable"
+      },
+      "driver_moves": 240,
+      "input_events": 241,
+      "tooltip_frames": 241,
+      "all_tooltip_frames": 241,
+      "matched_events": 240,
+      "build_dirty_frames": 0,
+      "layout_frames": 0,
+      "input_invalidated_frames": 0,
+      "driver_elapsed_seconds": 3.9844899000017904,
+      "driver_actual_hz": 59.98258396887707,
+      "delivered_hz": 60.48453027824006,
+      "tooltip_submit_hz": 60.48453027824006,
+      "driver_lateness": {
+        "count": 240,
+        "mean_ms": 0.5450845937351307,
+        "p50_ms": 0.5225666973274201,
+        "p95_ms": 1.0445333318784833,
+        "max_ms": 1.491066679591313
+      },
+      "driver_cost": {
+        "count": 240,
+        "mean_ms": 0.04752041616787513,
+        "p50_ms": 0.046299974201247096,
+        "p95_ms": 0.05729999975301325,
+        "max_ms": 0.1728000061120838
+      },
+      "dispatch": {
+        "count": 241,
+        "mean_ms": 0.5258257278382268,
+        "p50_ms": 0.4189999890513718,
+        "p95_ms": 1.3000000035390258,
+        "max_ms": 2.7390000177547336
+      },
+      "input_gap": {
+        "count": 240,
+        "mean_ms": 16.68449583327553,
+        "p50_ms": 16.66799999657087,
+        "p95_ms": 17.13500000187196,
+        "max_ms": 20.967999997083098
+      },
+      "frame_wait": {
+        "count": 241,
+        "mean_ms": 1.4737634848333756,
+        "p50_ms": 1.0480000055395067,
+        "p95_ms": 3.5130000032950193,
+        "max_ms": 4.205000004731119
+      },
+      "lua_frame": {
+        "count": 241,
+        "mean_ms": 2.4748008296809534,
+        "p50_ms": 1.9909999973606318,
+        "p95_ms": 6.142999976873398,
+        "max_ms": 9.527999995043501
+      },
+      "input_to_submit": {
+        "count": 241,
+        "mean_ms": 4.474390042352556,
+        "p50_ms": 4.301999986637384,
+        "p95_ms": 8.261000009952113,
+        "max_ms": 12.923000002047047
+      },
+      "stages": {
+        "build": {
+          "count": 241,
+          "mean_ms": 0.011597510373443982,
+          "p50_ms": 0.01,
+          "p95_ms": 0.018000000000000002,
+          "max_ms": 0.081
+        },
+        "layout": {
+          "count": 241,
+          "mean_ms": 0.0031659751037344396,
+          "p50_ms": 0.003,
+          "p95_ms": 0.005,
+          "max_ms": 0.024
+        },
+        "regions": {
+          "count": 241,
+          "mean_ms": 0.3127053941908714,
+          "p50_ms": 0.251,
+          "p95_ms": 0.844,
+          "max_ms": 1.707
+        },
+        "paint_ass": {
+          "count": 241,
+          "mean_ms": 2.0618713692946056,
+          "p50_ms": 1.627,
+          "p95_ms": 5.144,
+          "max_ms": 8.407
+        },
+        "present": {
+          "count": 241,
+          "mean_ms": 0.06985062240663902,
+          "p50_ms": 0.063,
+          "p95_ms": 0.11699999999999999,
+          "max_ms": 0.229
+        }
+      },
+      "os_move_to_input": {
+        "count": 240,
+        "mean_ms": 3.2113195828666603,
+        "p50_ms": 3.2260000007227063,
+        "p95_ms": 3.7204000109340996,
+        "max_ms": 4.672000010032207
+      },
+      "os_move_to_submit": {
+        "count": 240,
+        "mean_ms": 7.693573750414847,
+        "p50_ms": 7.56810000166297,
+        "p95_ms": 11.472700018202886,
+        "max_ms": 15.877300000283867
+      },
+      "requested_hz": 60,
+      "input_mode": "mouse_move",
+      "playback": "paused",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "width": 2276,
+        "height": 1280,
+        "display_fps": 240.003,
+        "thumbfast": "unavailable",
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167
+      },
+      "driver_moves": 240,
+      "input_events": 241,
+      "tooltip_frames": 186,
+      "all_tooltip_frames": 283,
+      "matched_events": 240,
+      "build_dirty_frames": 178,
+      "layout_frames": 178,
+      "input_invalidated_frames": 178,
+      "driver_elapsed_seconds": 3.983747999998741,
+      "driver_actual_hz": 59.993754625060504,
+      "delivered_hz": 60.49579441271791,
+      "tooltip_submit_hz": 46.68970025213914,
+      "driver_lateness": {
+        "count": 240,
+        "mean_ms": 0.5634583240559248,
+        "p50_ms": 0.5169333016965538,
+        "p95_ms": 1.0671333293430507,
+        "max_ms": 1.4869333244860172
+      },
+      "driver_cost": {
+        "count": 240,
+        "mean_ms": 0.05329374956393925,
+        "p50_ms": 0.05080000846646726,
+        "p95_ms": 0.07380000897683203,
+        "max_ms": 0.1401000190526247
+      },
+      "dispatch": {
+        "count": 241,
+        "mean_ms": 0.9140829879093019,
+        "p50_ms": 0.48400001833215356,
+        "p95_ms": 3.5499999939929694,
+        "max_ms": 5.141999979969114
+      },
+      "input_gap": {
+        "count": 240,
+        "mean_ms": 16.638387500036817,
+        "p50_ms": 15.756999986479059,
+        "p95_ms": 52.072999998927116,
+        "max_ms": 74.01099998969585
+      },
+      "frame_wait": {
+        "count": 186,
+        "mean_ms": 0.5244408603957904,
+        "p50_ms": 0.15699997311457992,
+        "p95_ms": 2.8230000170879066,
+        "max_ms": 5.877000017790124
+      },
+      "lua_frame": {
+        "count": 186,
+        "mean_ms": 9.473075269050497,
+        "p50_ms": 4.274999984772876,
+        "p95_ms": 27.608999982476234,
+        "max_ms": 59.51799999456853
+      },
+      "input_to_submit": {
+        "count": 186,
+        "mean_ms": 10.708844086865053,
+        "p50_ms": 6.066000001737848,
+        "p95_ms": 30.76699998928234,
+        "max_ms": 61.54399999650195
+      },
+      "stages": {
+        "build": {
+          "count": 186,
+          "mean_ms": 2.5030860215053763,
+          "p50_ms": 0.033,
+          "p95_ms": 10.213,
+          "max_ms": 25.494
+        },
+        "layout": {
+          "count": 186,
+          "mean_ms": 1.0050000000000001,
+          "p50_ms": 0.005,
+          "p95_ms": 2.313,
+          "max_ms": 19.037
+        },
+        "regions": {
+          "count": 186,
+          "mean_ms": 3.2575967741935483,
+          "p50_ms": 0.625,
+          "p95_ms": 9.562,
+          "max_ms": 35.041999999999994
+        },
+        "paint_ass": {
+          "count": 186,
+          "mean_ms": 2.555940860215054,
+          "p50_ms": 1.79,
+          "p95_ms": 8.282,
+          "max_ms": 13.887
+        },
+        "present": {
+          "count": 186,
+          "mean_ms": 0.13025806451612904,
+          "p50_ms": 0.07100000000000001,
+          "p95_ms": 0.186,
+          "max_ms": 6.561
+        }
+      },
+      "os_move_to_input": {
+        "count": 240,
+        "mean_ms": 8.291666666506597,
+        "p50_ms": 7.964100019307807,
+        "p95_ms": 16.718900005798787,
+        "max_ms": 18.729300005361438
+      },
+      "os_move_to_submit": {
+        "count": 185,
+        "mean_ms": 18.373756216700517,
+        "p50_ms": 15.778200002387166,
+        "p95_ms": 40.27989998576231,
+        "max_ms": 67.5516999908723
+      },
+      "requested_hz": 60,
+      "input_mode": "mouse_move",
+      "playback": "playing",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "width": 2276,
+        "height": 1280,
+        "display_fps": 240.003,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "thumbfast": "unavailable",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows"
+      },
+      "driver_moves": 960,
+      "input_events": 866,
+      "tooltip_frames": 801,
+      "all_tooltip_frames": 801,
+      "matched_events": 866,
+      "build_dirty_frames": 0,
+      "layout_frames": 0,
+      "input_invalidated_frames": 0,
+      "driver_elapsed_seconds": 3.9966783999989275,
+      "driver_actual_hz": 239.94925386047007,
+      "delivered_hz": 216.67993101477276,
+      "tooltip_submit_hz": 200.4164258000381,
+      "driver_lateness": {
+        "count": 960,
+        "mean_ms": 0.579582720365579,
+        "p50_ms": 0.5602999881375581,
+        "p95_ms": 1.0479000047780573,
+        "max_ms": 1.6022333584260195
+      },
+      "driver_cost": {
+        "count": 960,
+        "mean_ms": 0.037748438080598135,
+        "p50_ms": 0.032499985536560416,
+        "p95_ms": 0.06749999010935426,
+        "max_ms": 0.4217000096105039
+      },
+      "dispatch": {
+        "count": 866,
+        "mean_ms": 0.5555739028080351,
+        "p50_ms": 0.36100001307204366,
+        "p95_ms": 2.0549999899230897,
+        "max_ms": 3.6309999995864928
+      },
+      "input_gap": {
+        "count": 865,
+        "mean_ms": 4.6191942196398585,
+        "p50_ms": 4.191999993054196,
+        "p95_ms": 10.02000001608394,
+        "max_ms": 15.126999991480261
+      },
+      "frame_wait": {
+        "count": 801,
+        "mean_ms": 0.9556416990470894,
+        "p50_ms": 0.6559999892488122,
+        "p95_ms": 2.2809999936725944,
+        "max_ms": 3.974999999627471
+      },
+      "lua_frame": {
+        "count": 801,
+        "mean_ms": 2.671464418581967,
+        "p50_ms": 2.0429999858606607,
+        "p95_ms": 7.935000001452863,
+        "max_ms": 12.538000009953976
+      },
+      "input_to_submit": {
+        "count": 801,
+        "mean_ms": 4.113423220999888,
+        "p50_ms": 3.5889999999199063,
+        "p95_ms": 10.080000007292256,
+        "max_ms": 15.106000006198883
+      },
+      "stages": {
+        "build": {
+          "count": 801,
+          "mean_ms": 0.013625468164794008,
+          "p50_ms": 0.012,
+          "p95_ms": 0.02,
+          "max_ms": 0.106
+        },
+        "layout": {
+          "count": 801,
+          "mean_ms": 0.003340823970037453,
+          "p50_ms": 0.003,
+          "p95_ms": 0.005,
+          "max_ms": 0.057
+        },
+        "regions": {
+          "count": 801,
+          "mean_ms": 0.3327665418227216,
+          "p50_ms": 0.257,
+          "p95_ms": 0.9259999999999999,
+          "max_ms": 3.0460000000000003
+        },
+        "paint_ass": {
+          "count": 801,
+          "mean_ms": 2.1977103620474403,
+          "p50_ms": 1.6340000000000001,
+          "p95_ms": 6.893,
+          "max_ms": 11.200999999999999
+        },
+        "present": {
+          "count": 801,
+          "mean_ms": 0.10693258426966293,
+          "p50_ms": 0.060000000000000005,
+          "p95_ms": 0.431,
+          "max_ms": 0.9179999999999999
+        }
+      },
+      "os_move_to_input": {
+        "count": 866,
+        "mean_ms": 3.9589999998905143,
+        "p50_ms": 3.7010999803896993,
+        "p95_ms": 5.8089000231120735,
+        "max_ms": 8.023699978366494
+      },
+      "os_move_to_submit": {
+        "count": 801,
+        "mean_ms": 7.930078152219792,
+        "p50_ms": 7.405599986668676,
+        "p95_ms": 13.871000002836809,
+        "max_ms": 20.505799999227747
+      },
+      "requested_hz": 240,
+      "input_mode": "observe",
+      "playback": "paused",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "display_fps": 240.003,
+        "thumbfast": "unavailable",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "width": 2276,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "height": 1280
+      },
+      "driver_moves": 960,
+      "input_events": 330,
+      "tooltip_frames": 292,
+      "all_tooltip_frames": 328,
+      "matched_events": 329,
+      "build_dirty_frames": 177,
+      "layout_frames": 177,
+      "input_invalidated_frames": 177,
+      "driver_elapsed_seconds": 3.9961047999968287,
+      "driver_actual_hz": 239.9836961234753,
+      "delivered_hz": 82.58041680995501,
+      "tooltip_submit_hz": 73.07115669244503,
+      "driver_lateness": {
+        "count": 960,
+        "mean_ms": 0.4825656148265504,
+        "p50_ms": 0.4773666732944548,
+        "p95_ms": 1.0040999914053828,
+        "max_ms": 1.2718666694127023
+      },
+      "driver_cost": {
+        "count": 960,
+        "mean_ms": 0.05387343677890991,
+        "p50_ms": 0.04460001946426928,
+        "p95_ms": 0.10889998520724475,
+        "max_ms": 0.23869998403824866
+      },
+      "dispatch": {
+        "count": 330,
+        "mean_ms": 0.683078787529446,
+        "p50_ms": 0.4130000015720725,
+        "p95_ms": 2.8389999934006482,
+        "max_ms": 4.435000009834766
+      },
+      "input_gap": {
+        "count": 329,
+        "mean_ms": 12.22647720361185,
+        "p50_ms": 10.701999999582767,
+        "p95_ms": 50.99499999778345,
+        "max_ms": 68.23499998426996
+      },
+      "frame_wait": {
+        "count": 292,
+        "mean_ms": 0.542510273664622,
+        "p50_ms": 0.13299999409355223,
+        "p95_ms": 2.004999987548217,
+        "max_ms": 3.0740000074729323
+      },
+      "lua_frame": {
+        "count": 292,
+        "mean_ms": 10.257910958699378,
+        "p50_ms": 9.507000009762123,
+        "p95_ms": 49.94499997701496,
+        "max_ms": 66.87700000475161
+      },
+      "input_to_submit": {
+        "count": 292,
+        "mean_ms": 11.325958903024949,
+        "p50_ms": 10.119999991729856,
+        "p95_ms": 50.95799997798167,
+        "max_ms": 68.20999999763444
+      },
+      "stages": {
+        "build": {
+          "count": 292,
+          "mean_ms": 2.146260273972603,
+          "p50_ms": 0.037,
+          "p95_ms": 5.579,
+          "max_ms": 18.963
+        },
+        "layout": {
+          "count": 292,
+          "mean_ms": 1.0303013698630137,
+          "p50_ms": 0.004,
+          "p95_ms": 2.7590000000000003,
+          "max_ms": 14.687000000000001
+        },
+        "regions": {
+          "count": 292,
+          "mean_ms": 4.482619863013699,
+          "p50_ms": 1.1789999999999998,
+          "p95_ms": 26.467000000000002,
+          "max_ms": 44.746
+        },
+        "paint_ass": {
+          "count": 292,
+          "mean_ms": 2.4646369863013695,
+          "p50_ms": 1.721,
+          "p95_ms": 7.53,
+          "max_ms": 16.415
+        },
+        "present": {
+          "count": 292,
+          "mean_ms": 0.11333904109589041,
+          "p50_ms": 0.067,
+          "p95_ms": 0.21800000000000003,
+          "max_ms": 5.464
+        }
+      },
+      "os_move_to_input": {
+        "count": 329,
+        "mean_ms": 2.839438299121941,
+        "p50_ms": 2.189199993154034,
+        "p95_ms": 7.47309997677803,
+        "max_ms": 13.2203999964986
+      },
+      "os_move_to_submit": {
+        "count": 291,
+        "mean_ms": 13.968580412735227,
+        "p50_ms": 11.239799991017208,
+        "p95_ms": 53.76589999650605,
+        "max_ms": 70.83530002273619
+      },
+      "requested_hz": 240,
+      "input_mode": "observe",
+      "playback": "playing",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "width": 2276,
+        "height": 1280,
+        "display_fps": 240.003,
+        "thumbfast": "unavailable",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4"
+      },
+      "driver_moves": 960,
+      "input_events": 770,
+      "tooltip_frames": 671,
+      "all_tooltip_frames": 671,
+      "matched_events": 769,
+      "build_dirty_frames": 0,
+      "layout_frames": 0,
+      "input_invalidated_frames": 0,
+      "driver_elapsed_seconds": 3.9968167999759316,
+      "driver_actual_hz": 239.9409450054791,
+      "delivered_hz": 192.6533135080489,
+      "tooltip_submit_hz": 167.88360177129977,
+      "driver_lateness": {
+        "count": 960,
+        "mean_ms": 0.4443396961808806,
+        "p50_ms": 0.32523335539735854,
+        "p95_ms": 1.025600009597838,
+        "max_ms": 1.2849333579652011
+      },
+      "driver_cost": {
+        "count": 960,
+        "mean_ms": 0.046297291373775806,
+        "p50_ms": 0.03689998993650079,
+        "p95_ms": 0.10809997911565006,
+        "max_ms": 0.45780002255924046
+      },
+      "dispatch": {
+        "count": 770,
+        "mean_ms": 0.6031090912617767,
+        "p50_ms": 0.4110000154469162,
+        "p95_ms": 1.9549999851733446,
+        "max_ms": 3.9099999994505197
+      },
+      "input_gap": {
+        "count": 769,
+        "mean_ms": 5.223829648873777,
+        "p50_ms": 4.3160000059287995,
+        "p95_ms": 9.715999971376732,
+        "max_ms": 16.749000002164394
+      },
+      "frame_wait": {
+        "count": 671,
+        "mean_ms": 1.0835156487054627,
+        "p50_ms": 0.7130000158213079,
+        "p95_ms": 2.85199997597374,
+        "max_ms": 3.7360000133048743
+      },
+      "lua_frame": {
+        "count": 671,
+        "mean_ms": 2.64880923911181,
+        "p50_ms": 2.0139999978709966,
+        "p95_ms": 7.718000008026138,
+        "max_ms": 13.802000001305714
+      },
+      "input_to_submit": {
+        "count": 671,
+        "mean_ms": 4.245660208781901,
+        "p50_ms": 3.755000012461096,
+        "p95_ms": 9.8230000003241,
+        "max_ms": 15.765000018291175
+      },
+      "stages": {
+        "build": {
+          "count": 671,
+          "mean_ms": 0.015078986587183308,
+          "p50_ms": 0.012,
+          "p95_ms": 0.020999999999999998,
+          "max_ms": 0.902
+        },
+        "layout": {
+          "count": 671,
+          "mean_ms": 0.0037123695976154993,
+          "p50_ms": 0.003,
+          "p95_ms": 0.005,
+          "max_ms": 0.041999999999999996
+        },
+        "regions": {
+          "count": 671,
+          "mean_ms": 0.3594754098360656,
+          "p50_ms": 0.283,
+          "p95_ms": 1.037,
+          "max_ms": 3.141
+        },
+        "paint_ass": {
+          "count": 671,
+          "mean_ms": 2.156736214605067,
+          "p50_ms": 1.615,
+          "p95_ms": 6.698,
+          "max_ms": 12.112
+        },
+        "present": {
+          "count": 671,
+          "mean_ms": 0.097575260804769,
+          "p50_ms": 0.061,
+          "p95_ms": 0.307,
+          "max_ms": 1.003
+        }
+      },
+      "os_move_to_input": {
+        "count": 769,
+        "mean_ms": 1.532024056634046,
+        "p50_ms": 1.0920999920926988,
+        "p95_ms": 4.020599997602403,
+        "max_ms": 7.621700002346188
+      },
+      "os_move_to_submit": {
+        "count": 670,
+        "mean_ms": 5.612952536825132,
+        "p50_ms": 4.973300005076453,
+        "p95_ms": 11.687099991831928,
+        "max_ms": 19.948700006352738
+      },
+      "requested_hz": 240,
+      "input_mode": "mouse_move",
+      "playback": "paused",
+      "debug": "false"
+    },
+    {
+      "environment": {
+        "width": 2276,
+        "height": 1280,
+        "display_fps": 240.003,
+        "host_version": "mpv v0.41.0-1011-g182fa6ca4",
+        "thumbfast": "unavailable",
+        "runtime": "LuaJIT 2.1.1787944725",
+        "platform": "Windows",
+        "qpc": true,
+        "clock_delay": 0.004167
+      },
+      "driver_moves": 960,
+      "input_events": 959,
+      "tooltip_frames": 311,
+      "all_tooltip_frames": 315,
+      "matched_events": 958,
+      "build_dirty_frames": 167,
+      "layout_frames": 167,
+      "input_invalidated_frames": 167,
+      "driver_elapsed_seconds": 3.995915800012881,
+      "driver_actual_hz": 239.9950469419072,
+      "delivered_hz": 239.9950469419072,
+      "tooltip_submit_hz": 77.82946777782392,
+      "driver_lateness": {
+        "count": 960,
+        "mean_ms": 0.4528908273944883,
+        "p50_ms": 0.381833320716396,
+        "p95_ms": 1.033966662362218,
+        "max_ms": 1.561500015668571
+      },
+      "driver_cost": {
+        "count": 960,
+        "mean_ms": 0.03982374989088082,
+        "p50_ms": 0.03580001066438854,
+        "p95_ms": 0.062700011767447,
+        "max_ms": 0.37009999505244195
+      },
+      "dispatch": {
+        "count": 959,
+        "mean_ms": 0.772459854473087,
+        "p50_ms": 0.3569999826140702,
+        "p95_ms": 2.878999977838248,
+        "max_ms": 5.399999994551763
+      },
+      "input_gap": {
+        "count": 958,
+        "mean_ms": 4.1926576200477,
+        "p50_ms": 1.5750000020489097,
+        "p95_ms": 16.128000017488375,
+        "max_ms": 60.381999996025115
+      },
+      "frame_wait": {
+        "count": 311,
+        "mean_ms": 0.6198810282091451,
+        "p50_ms": 0.1399999891873449,
+        "p95_ms": 2.1819999965373427,
+        "max_ms": 2.7870000049006194
+      },
+      "lua_frame": {
+        "count": 311,
+        "mean_ms": 9.48448231615204,
+        "p50_ms": 9.846999979345128,
+        "p95_ms": 31.097999977646396,
+        "max_ms": 59.17399999452755
+      },
+      "input_to_submit": {
+        "count": 311,
+        "mean_ms": 10.503263667078354,
+        "p50_ms": 10.66599998739548,
+        "p95_ms": 34.21499999240041,
+        "max_ms": 60.35999997402541
+      },
+      "stages": {
+        "build": {
+          "count": 311,
+          "mean_ms": 2.1796559485530547,
+          "p50_ms": 3.038,
+          "p95_ms": 4.766,
+          "max_ms": 23.407
+        },
+        "layout": {
+          "count": 311,
+          "mean_ms": 0.8024565916398714,
+          "p50_ms": 0.95,
+          "p95_ms": 1.938,
+          "max_ms": 13.6
+        },
+        "regions": {
+          "count": 311,
+          "mean_ms": 3.862340836012862,
+          "p50_ms": 3.836,
+          "p95_ms": 15.633000000000001,
+          "max_ms": 39.599000000000004
+        },
+        "paint_ass": {
+          "count": 311,
+          "mean_ms": 2.4896205787781347,
+          "p50_ms": 1.603,
+          "p95_ms": 9.591000000000001,
+          "max_ms": 20.85
+        },
+        "present": {
+          "count": 311,
+          "mean_ms": 0.13055948553054664,
+          "p50_ms": 0.068,
+          "p95_ms": 0.29100000000000004,
+          "max_ms": 8.695
+        }
+      },
+      "os_move_to_input": {
+        "count": 958,
+        "mean_ms": 3.9789977027207817,
+        "p50_ms": 3.8704000180587173,
+        "p95_ms": 6.190199987031519,
+        "max_ms": 14.434100012294948
+      },
+      "os_move_to_submit": {
+        "count": 310,
+        "mean_ms": 13.79463193617055,
+        "p50_ms": 13.20099999429658,
+        "p95_ms": 37.24919998785481,
+        "max_ms": 64.6827999735251
+      },
+      "requested_hz": 240,
+      "input_mode": "mouse_move",
+      "playback": "playing",
+      "debug": "false"
+    }
+  ],
+  "limits": "ASS submission latency, excludes pixel scan-out and external thumbfast; staged instrumentation"
+}
