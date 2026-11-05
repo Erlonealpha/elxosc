@@ -100,6 +100,63 @@ def test_define_demo_button_opens_closes_and_reopens(real_host_factory, tmp_path
 
 
 @pytest.mark.real_host
+def test_autohide_clears_thumbfast_without_a_pointer_leave(real_host_factory, tmp_path):
+    script = Path(__file__).parents[2] / "main.lua"
+    # Protocol peer proves the production script-message-to boundary. It does
+    # not replace the external decoder or claim pixel-level thumbnail evidence.
+    peer = tmp_path / "thumbfast.lua"
+    peer.write_text(
+        "local mp = require 'mp'\n"
+        "local requests, clears = 0, 0\n"
+        "mp.register_script_message('announce', function()\n"
+        "    mp.commandv('script-message', 'thumbfast-info', "
+        "'{\"width\":320,\"height\":180,\"available\":true,\"disabled\":false}')\n"
+        "end)\n"
+        "mp.register_script_message('thumb', function()\n"
+        "    requests = requests + 1\n"
+        "    mp.set_property('user-data/elxosc-test-thumb-state', 'visible')\n"
+        "    mp.set_property('user-data/elxosc-test-thumb-requests', tostring(requests))\n"
+        "end)\n"
+        "mp.register_script_message('clear', function()\n"
+        "    clears = clears + 1\n"
+        "    mp.set_property('user-data/elxosc-test-thumb-state', 'cleared')\n"
+        "    mp.set_property('user-data/elxosc-test-thumb-clears', tostring(clears))\n"
+        "end)\n"
+        "mp.set_property('user-data/elxosc-test-thumb-state', 'ready')\n",
+        encoding="utf-8",
+    )
+    media = tmp_path / "thumb-controls.wav"
+    with wave.open(str(media), "wb") as stream:
+        stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
+        stream.writeframes(bytes(48000 * 2 * 12))
+    with real_host_factory(f"--script={script}", "--force-window=yes",
+                           "--geometry=1280x720") as (client, _, process, log):
+        wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+        client.command("load-script", str(peer))
+        wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "ready")
+        client.command("set_property", "pause", True)
+        client.command("loadfile", str(media))
+        wait_for_property(client, process, log, "idle-active", False)
+        client.command("script-message-to", "thumbfast", "announce")
+        time.sleep(0.3)
+        dimensions = client.command("get_property", "osd-dimensions")
+        width, height = dimensions["w"], dimensions["h"]
+        with WindowInput(process, client) as pointer:
+            x, y = int(width * 0.3), int(height - 100 * 1.5)
+            pointer.move(x, y)
+            wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "visible")
+            requests = client.command("get_property", "user-data/elxosc-test-thumb-requests")
+            wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "cleared")
+            assert client.command("get_property", "user-data/elxosc-test-thumb-clears") == "1"
+            assert client.command("get_property", "user-data/elxosc-test-thumb-requests") == requests
+            pointer.move(x + 30, y)
+            wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "visible")
+            pointer.move(int(width / 2), int(height / 2))
+            wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "cleared")
+            assert client.command("get_property", "user-data/elxosc-test-thumb-clears") == "2"
+
+
+@pytest.mark.real_host
 def test_demo_navigation_returns_results_and_releases_escape(real_host_factory, tmp_path):
     script = Path(__file__).parents[2] / "main.lua"
     # mpv.net supplies its own default ESC=quit binding, overriding --input-conf.

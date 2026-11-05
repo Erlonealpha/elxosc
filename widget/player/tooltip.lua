@@ -16,6 +16,7 @@ local layout_widgets = require 'widget.widgets.layout'
 local text_layout_mod = require 'text.text_layout'
 local text_paint_mod = require 'painting.text_paint'
 local anchor_mod = require 'foundation.anchor'
+local visibility_mod = require 'widget.visibility'
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
@@ -26,6 +27,7 @@ local CustomPaint = basic_widgets.CustomPaint
 local Stack = layout_widgets.Stack
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
+local AutoHide = visibility_mod.AutoHide
 local max = math.max
 
 local M = {}
@@ -52,6 +54,7 @@ local M = {}
 ---@field expand number?
 ---@field on_hover_point fun(point: Offset, label: string?)?
 ---@field on_hover_leave fun()?
+---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
 ---@field key any?
 
 ---@class PlayerTooltip : StatefulWidget
@@ -76,6 +79,7 @@ local M = {}
 ---@field expand number
 ---@field on_hover_point fun(point: Offset, label: string?)?
 ---@field on_hover_leave fun()?
+---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
 ---@overload fun(options?: _PlayerTooltipOptions): self
 local PlayerTooltip = std.class.new('PlayerTooltip', { StatefulWidget })
 
@@ -110,6 +114,7 @@ function PlayerTooltip:__init(options)
     self.expand = options.expand or 0
     self.on_hover_point = options.on_hover_point
     self.on_hover_leave = options.on_hover_leave
+    self.paint_for_point = options.paint_for_point
 end
 
 ---@class PlayerTooltipState : State
@@ -119,6 +124,7 @@ end
 ---@field _paragraph Paragraph?
 ---@field _paragraph_label string?
 ---@field _paragraph_style TextStyle?
+---@field _auto_hide_visible boolean
 ---@overload fun(): self
 local PlayerTooltipState = std.class.new('PlayerTooltipState', { State })
 
@@ -126,6 +132,37 @@ function PlayerTooltipState:init_state()
     self.hovered = false
     self.hover_label = ''
     self.hover_point = nil
+    self._auto_hide_visible = true
+    self:did_auto_hide_visibility_change()
+end
+
+function PlayerTooltipState:did_auto_hide_visibility_change()
+    local ancestor = self.context and self.context.parent
+    local visible = true
+    while ancestor do
+        if std.isinstance(ancestor.widget, AutoHide) and not ancestor.widget.controller.visible then
+            visible = false
+            break
+        end
+        ancestor = ancestor.parent
+    end
+    self._auto_hide_visible = visible
+    if not visible then
+        self:_clear_hover()
+    end
+end
+
+function PlayerTooltipState:_hover_allowed()
+    return self._auto_hide_visible
+end
+
+function PlayerTooltipState:did_update_widget(old_widget)
+    local old = old_widget --[[@as PlayerTooltip]]
+    local widget = self.widget --[[@as PlayerTooltip]]
+    if self.hovered and old.on_hover_point and not widget.on_hover_point then
+        self:_clear_hover(old)
+    end
+    self:did_auto_hide_visibility_change()
 end
 
 ---@return string
@@ -141,10 +178,19 @@ function PlayerTooltipState:_label()
 end
 
 function PlayerTooltipState:dispose()
-    local widget = self.widget --[[@as PlayerTooltip]]
+    self:_clear_hover()
+end
+
+---@param previous PlayerTooltip?
+function PlayerTooltipState:_clear_hover(previous)
+    local widget = previous or self.widget --[[@as PlayerTooltip]]
     if self.hovered and widget.on_hover_leave then
         widget.on_hover_leave()
     end
+    self.hovered = false
+    self.hover_label = ''
+    self.hover_point = nil
+    self:_invalidate_paint()
 end
 
 function PlayerTooltipState:_invalidate_paint()
@@ -159,7 +205,10 @@ end
 function PlayerTooltipState:_paint_tooltip(canvas, offset)
     local widget = self.widget --[[@as PlayerTooltip]]
     local label = self:_label()
-    if self.hovered and label ~= '' then
+    if self.hovered and self:_hover_allowed() and label ~= '' then
+        if widget.paint_for_point and self.hover_point then
+            widget.paint_for_point(canvas, offset, self.hover_point, label)
+        end
         if self._paragraph == nil or self._paragraph_label ~= label
             or self._paragraph_style ~= widget.style then
             local measurer = text_layout_mod.get_default()
@@ -236,24 +285,18 @@ function PlayerTooltipState:build()
     } }), {
         expand = widget.expand,
         on_enter = function()
-            if not self.hovered then
+            if self:_hover_allowed() and not self.hovered then
                 self.hovered = true
                 self:_invalidate_paint()
             end
         end,
         on_leave = function()
             if self.hovered then
-                if widget.on_hover_leave then
-                    widget.on_hover_leave()
-                end
-                self.hovered = false
-                self.hover_label = ''
-                self.hover_point = nil
-                self:_invalidate_paint()
+                self:_clear_hover()
             end
         end,
         on_move = function(_, point)
-            if point and (widget.follow_pointer or widget.text_for_point) then
+            if self:_hover_allowed() and point and (widget.follow_pointer or widget.text_for_point) then
                 local label_at_point = widget.text_for_point
                     and (widget.text_for_point(point) or '') or nil
                 local changed = self.hover_point == nil

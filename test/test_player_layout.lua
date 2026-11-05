@@ -246,6 +246,12 @@ F.test('PlayerThemeData freezes ModernX original defaults', function()
     F.eq(theme.controller_blur_radius, 75, 'ModernX controller blur strength')
     F.eq(theme.window_blur_radius, 75, 'ModernX window blur strength')
     F.eq(theme.hover_scale, 1.15, 'hover scale')
+    F.eq(theme.thumbnail_border, 1, 'thumbnail border is one physical pixel')
+    F.eq(theme.thumbnail_border_radius, 5, 'thumbnail radius matches ModernX')
+    F.eq(theme.thumbnail_border_color, require('foundation.color').Color.rgba255(255, 255, 255),
+        'thumbnail border is white')
+    F.eq(theme.thumbnail_border_outline, require('foundation.color').Color.rgba255(0, 0, 0),
+        'thumbnail border outline is black')
     F.ok(theme.compact_mode, 'compact mode follows the ModernX default')
     F.ok(not theme.info_button and not theme.loop_button, 'optional controls start disabled')
     F.raises(function()
@@ -255,6 +261,12 @@ F.test('PlayerThemeData freezes ModernX original defaults', function()
     F.raises(function()
         PlayerThemeData({ controller_height = 0 })
     end, 'controller_height', 'invalid controller height')
+    F.raises(function()
+        PlayerThemeData({ thumbnail_border = -1 })
+    end, 'thumbnail_border', 'negative thumbnail border is rejected')
+    F.raises(function()
+        PlayerThemeData({ thumbnail_border_radius = math.huge })
+    end, 'thumbnail_border_radius', 'nonfinite thumbnail radius is rejected')
 end)
 
 F.test('original geometry uses the ModernX bottom-origin measurements', function()
@@ -683,6 +695,89 @@ F.test('scaled seek tooltip stays below thumbfast and shares its clamped center'
     F.close(draw[2].x * 1.5, request.x + 160, 'scaled edge-clamped tooltip and thumbnail share the center')
     F.eq(draw[2].y * 1.5, 558, 'scaled tooltip remains at the seekbar upper edge')
     F.ok(draw[2].y * 1.5 - 27 > request.y + 180, 'scaled nominal text box clears the thumbnail')
+    local frame = {}
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_rrect' and op[1]:height() > 100 then
+            frame[#frame + 1] = op
+        end
+    end
+    F.eq(#frame, 2, 'thumbnail has an outline and border')
+    local image = Rect.from_ltwh(request.x / 1.5, request.y / 1.5, 320 / 1.5, 180 / 1.5)
+    F.eq(frame[1][1], image:inflate(2 / 1.5), 'outline surrounds the exact scaled external image')
+    F.eq(frame[2][1], image:inflate(1 / 1.5), 'border surrounds the exact scaled external image')
+    F.close(frame[2][2], 1 / 1.5, 'radius is capped to the physical border padding')
+    F.eq(frame[1][3].color, require('foundation.color').Color.rgba255(0, 0, 0), 'black outline')
+    F.eq(frame[2][3].color, require('foundation.color').Color.rgba255(255, 255, 255), 'white border')
+end)
+
+F.test('thumbnail frame can be disabled without changing the preview request', function()
+    local requests = 0
+    local owner = mount(WidgetsApp({
+        player_theme = PlayerThemeData({ thumbnail_border = 0 }),
+        actions = HostActions({ thumbfast_request = function() requests = requests + 1 end }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({
+            store = PlayerStore({
+                duration = 100,
+                capabilities = { thumbfast = { status = 'available', detail = '320x180' } },
+            }),
+            child = Main(),
+        }),
+    }))
+    owner:dispatch_pointer('move', geometry.Offset(100, 620))
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    F.eq(requests, 1, 'preview is still requested')
+    local frames = 0
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_rrect' and op[1]:height() > 100 then
+            frames = frames + 1
+        end
+    end
+    F.eq(frames, 0, 'zero border emits no thumbnail frame')
+end)
+
+F.test('AutoHide clears a retained thumbnail at fade start and suppresses fading requests', function()
+    local visibility = require('widget.visibility')
+    local controller = visibility.AutoHideController()
+    local cleared, requested = 0, 0
+    local store = PlayerStore({
+        duration = 100,
+        capabilities = { thumbfast = { status = 'available', detail = '320x180' } },
+    })
+    local owner, binding = mount(WidgetsApp({
+        actions = HostActions({
+            thumbfast_request = function() requested = requested + 1 end,
+            thumbfast_clear = function() cleared = cleared + 1 end,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = visibility.AutoHide({
+            controller = controller, timeout = 0, fade_duration = 0, child = Main(),
+        }) }),
+    }))
+    owner:dispatch_pointer('move', geometry.Offset(100, 620))
+    local tooltip = find_widget_element(binding.root_element, PlayerTooltip)
+    F.eq(requested, 1, 'hover opens the external preview')
+    controller:hide()
+    F.eq(cleared, 1, 'hiding clears the preview without a mouse leave')
+    F.ok(not tooltip.state.hovered, 'retained tooltip drops its hover data')
+    F.ok(tooltip.state:is_mounted(), 'Main state remains mounted')
+    controller:hide()
+    F.eq(cleared, 1, 'duplicate hide does not repeat clear')
+    owner:dispatch_pointer('move', geometry.Offset(101, 620))
+    F.eq(requested, 1, 'hidden Main does not request another preview')
+    controller:show()
+    binding:flush_build()
+    owner:layout()
+    owner:dispatch_pointer('move', geometry.Offset(102, 620))
+    F.eq(requested, 2, 'the next real move after showing opens a new preview')
+    store:replace(store:get():copy({ capabilities = { thumbfast = { status = 'unavailable' } } }))
+    binding:flush_build()
+    owner:layout()
+    F.eq(cleared, 2, 'capability loss clears the old preview during rebuild')
+    binding:dispose()
+    F.eq(cleared, 2, 'disposing an already cleared tooltip is idempotent')
+    F.eq(next(controller._listeners), nil, 'tooltip and AutoHide listeners are released')
 end)
 
 F.test('persistent progress uses seekable cache ranges instead of a continuous buffer', function()
@@ -779,8 +874,31 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
         end
     end
     F.eq(edge_time[2].x, requests[2][2] + 160, 'edge-clamped time and thumbnail share their center')
+    local ass = AssCanvas()
+    for _, op in ipairs(edge_canvas.ops) do
+        if op.name == 'draw_rrect' and op[1]:height() > 100 then
+            ass:draw_rrect(op[1], op[2], op[3])
+        end
+    end
+    local frame_events = 0
+    for line in ass:text():gmatch('[^\n]+') do
+        if line:find('\\p', 1, true) and line:find(' b ', 1, true)
+            and (line:find('\\1c&HFFFFFF&', 1, true) or line:find('\\1c&H000000&', 1, true)) then
+            frame_events = frame_events + 1
+        end
+    end
+    F.eq(frame_events, 2, 'ASS contains both rounded thumbnail frame layers')
     owner:dispatch_pointer('move', geometry.Offset(0, 0))
     F.eq(cleared, 1, 'leaving the seekbar clears thumbfast')
+    local after_leave = RecordCanvas()
+    owner:paint(after_leave)
+    local remaining_frames = 0
+    for _, op in ipairs(after_leave.ops) do
+        if op.name == 'draw_rrect' and op[1]:height() > 100 then
+            remaining_frames = remaining_frames + 1
+        end
+    end
+    F.eq(remaining_frames, 0, 'leaving removes the in-tree thumbnail frame')
 end)
 
 F.test('time displays use click-local toggles for milliseconds', function()

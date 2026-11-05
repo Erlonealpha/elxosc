@@ -127,6 +127,9 @@ the Extension entry remains mounted and keeps its State when Main is hidden.
 `AutoHide` uses a persistent `Opacity` render object for fade transitions. Fade-out retains
 painting and pointer capture until completion; completed hidden content has no hit test or pointer
 regions, while `maintain_state=false` unmounts it on the following build pass.
+At policy changes it calls the internal `did_auto_hide_visibility_change()` hook
+on retained descendant State. Player tooltips use this to release external hover
+resources at fade start without changing ordinary input/capture eligibility.
 
 Button hover/pressed visual changes use the persistent `RenderGesture`/`RenderTransformBox`/
 `RenderDecoratedBox` setters; they do not default to rebuilding the button subtree. Hover scale
@@ -139,10 +142,11 @@ next build flush. `OverlayState` publishes a generation-stamped eligibility plan
 single Widget/Element/RenderObject owner remains authoritative.
 
 The old nine-region scaffold, fixed grid ids and `more` are not part of the current application
-entry. The default application exposes one Define/Slot content boundary, `app.extension`, with
-`set` and `replace`; Main shell fields and the empty WindowLayer are not implicit extension
-targets. Config/API hot updates only feed State/Provider or explicit setters. They do not mutate
- mounted Widgets or reload extension code.
+entry. The default application exposes the controlled Define targets `app.extension`,
+`app.window_layer`, and `player.controls.extra_right_control`, with `set` and `replace`.
+Main shell fields are not implicit targets. Config/API hot updates only feed
+State/Provider or explicit setters. They do not mutate mounted Widgets or reload
+extension code.
 
 `Navigator` is the lightweight runtime page owner layered on the same `Theatre`. `Page` builders
 are lazy and run only from mounted route entries. Matching page class/key pairs reuse their

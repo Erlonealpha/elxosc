@@ -58,6 +58,12 @@ use ModernX alpha 215 and do not claim clicks. Background source rectangles sit 
 the viewport to avoid an internal seam. Tooltip position/text updates paint directly,
 reuse the input snapshot, and do not rebuild or relayout the player. Slider labels use
 an explicit bottom-center anchor at the slider top, below any thumbfast preview.
+AutoHide policy changes notify retained tooltip State at fade start, clearing
+the external preview and suppressing requests until the next visible hover.
+Nested visibility, controller replacement and capability loss use the same cleanup.
+Thumbnail request, label and frame share rounded host-pixel coordinates; the theme's
+`thumbnail_border`/`thumbnail_border_radius`/color/outline default to ModernX's
+1px white frame with a black outline. The frame uses the existing Canvas.
 Text hover uses fully opaque glow; the volume handle remains visible at the same size
 before and during hover. `Main.extra_right_control` adds one scaled 24×24 control grid
 to the left of pin, with 45-unit spacing; an empty `SizedBox.shrink()` reserves no space.

@@ -316,6 +316,25 @@ function AutoHideState:_child_requests_visibility()
     return context ~= nil and visit(context)
 end
 
+-- Retained children may own external hover resources. Notify only when the
+-- visibility policy changes, before fading; keep ordinary input unchanged.
+function AutoHideState:_notify_child_visibility()
+    local function visit(element)
+        local state = element.state
+        if state and type(state.did_auto_hide_visibility_change) == 'function' then
+            state:did_auto_hide_visibility_change()
+        end
+        for _, child in ipairs(element:element_children()) do
+            visit(child)
+        end
+    end
+    if self.context then
+        for _, child in ipairs(self.context:element_children()) do
+            visit(child)
+        end
+    end
+end
+
 ---@param controller AnimationController
 function AutoHideState:_fade_changed(controller)
     self.opacity = controller.value
@@ -400,6 +419,7 @@ end
 
 function AutoHideState:_set_visibility(visible)
     local widget = self.widget --[[@as AutoHide]]
+    self:_notify_child_visibility()
     if visible then
         self.hidden = false
         if self.opacity <= 0 then
@@ -537,6 +557,7 @@ function AutoHideState:did_update_widget(old_widget)
         end)
         self.hidden = not widget.controller.visible
         self.opacity = self.hidden and 0 or 1
+        self:_notify_child_visibility()
         self:_apply_render_state()
         if self:is_mounted() then
             self:set_state()

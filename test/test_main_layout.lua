@@ -477,6 +477,74 @@ F.test('AutoHide validates the top hover zone', function()
     end, 'AutoHide.top_hover_enabled', 'top hover policy must be boolean')
 end)
 
+F.test('tooltip cleanup starts before the AutoHide fade removes input', function()
+    local tooltip_mod = require('widget.player.tooltip')
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local cleared, requested = 0, 0
+    local owner, binding = mount(AutoHide({
+        controller = controller, timeout = 0, fade_duration = 0.2,
+        child = tooltip_mod.PlayerTooltip({
+            child = GestureDetector(Text('seek'), { on_tap = function() end }),
+            follow_pointer = true, text = '00:10',
+            on_hover_point = function() requested = requested + 1 end,
+            on_hover_leave = function() cleared = cleared + 1 end,
+        }),
+    }), scheduler)
+    owner:dispatch_pointer('move', geometry.Offset(10, 5))
+    F.eq(requested, 1, 'hover opens the preview')
+    controller:hide()
+    F.eq(cleared, 1, 'fade start clears the preview immediately')
+    F.ok(not owner.root.hidden, 'the Main fade still retains input initially')
+    owner:dispatch_pointer('move', geometry.Offset(11, 5))
+    F.eq(requested, 1, 'fade-out does not recreate the external image')
+    clock:tick(0)
+    clock:tick(0.2)
+    F.ok(owner.root.hidden, 'fade completes normally')
+    F.eq(cleared, 1, 'fade completion does not duplicate preview cleanup')
+    binding:dispose()
+    scheduler:dispose()
+end)
+
+F.test('retained tooltip follows AutoHide controller replacement and nested hiding', function()
+    local tooltip_mod = require('widget.player.tooltip')
+    local outer = AutoHideController()
+    local inner = AutoHideController()
+    local replacement = AutoHideController(false)
+    local cleared, requested = 0, 0
+    local tooltip = tooltip_mod.PlayerTooltip({
+        child = Text('seek'), text = '00:10', follow_pointer = true,
+        on_hover_point = function() requested = requested + 1 end,
+        on_hover_leave = function() cleared = cleared + 1 end,
+    })
+    local function description(controller)
+        return AutoHide({ controller = controller, timeout = 0, fade_duration = 0,
+            child = AutoHide({ controller = inner, timeout = 0, fade_duration = 0, child = tooltip }) })
+    end
+    local owner, binding = mount(description(outer))
+    owner:dispatch_pointer('move', geometry.Offset(10, 5))
+    F.eq(requested, 1, 'nested visible tooltip requests the preview')
+    binding:set_root_widget(description(replacement))
+    binding:flush_build()
+    owner:layout()
+    F.eq(cleared, 1, 'hidden replacement controller clears the retained preview')
+    local state = find_widget_element(binding.root_element, tooltip_mod.PlayerTooltip).state
+    F.ok(not state:_hover_allowed(), 'outer hidden policy suppresses the nested tooltip')
+    inner:hide()
+    inner:show()
+    F.ok(not state:_hover_allowed(), 'showing the inner controller cannot bypass the hidden outer')
+    replacement:show()
+    binding:flush_build()
+    owner:layout()
+    owner:dispatch_pointer('move', geometry.Offset(11, 5))
+    F.eq(requested, 2, 'showing both boundaries allows the next real hover')
+    outer:hide()
+    F.eq(cleared, 1, 'the replaced controller no longer affects the tooltip')
+    binding:dispose()
+    F.eq(cleared, 2, 'active preview clears on disposal')
+end)
+
 F.test('AutoHide keeps top hover opt-in', function()
     local clock = ManualClock()
     local scheduler = Scheduler(clock)

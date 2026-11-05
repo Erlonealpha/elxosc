@@ -202,7 +202,9 @@ def _running_host(tmp_path, extra_args=()):
     log = tmp_path / "host.log"
     with log.open("wb") as output:
         process = subprocess.Popen(
-            [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no", "--load-scripts=no",
+            # Built-in OSC is independent of --load-scripts and can claim mouse
+            # areas above elxosc after media loads. Isolate the controller under test.
+            [executable, f"--config-dir={config}", "--idle=yes", "--force-window=no", "--load-scripts=no", "--osc=no",
              f"--input-ipc-server={address}", *staged_args],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
             start_new_session=(os.name != "nt"),

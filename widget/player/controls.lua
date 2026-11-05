@@ -7,8 +7,11 @@ local layout_widgets = require 'widget.widgets.layout'
 local progress_mod = require 'widget.player.progress_bar'
 local tooltip_mod = require 'widget.player.tooltip'
 local metadata_mod = require 'widget.player.metadata'
+local paint_mod = require 'painting.paint'
 
 local Offset = geometry.Offset
+local Rect = geometry.Rect
+local Paint = paint_mod.Paint
 local TextStyle = text_style_mod.TextStyle
 local Container = layout_widgets.Container
 local SizedBox = layout_widgets.SizedBox
@@ -124,10 +127,10 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         return tonumber(width), tonumber(height)
     end
 
-    local function thumbfast_center(point)
-        local width = thumbfast_size()
-        if width == nil then
-            return point.x
+    local function thumbfast_rect(point)
+        local width, height = thumbfast_size()
+        if width == nil or height == nil or width <= 0 or height <= 0 then
+            return nil
         end
         local player_scale = layout_geometry.scale or 1
         local width_logical = width / player_scale
@@ -136,7 +139,19 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         local left = max(margin,
             min(layout_geometry.viewport:width() - margin - width_logical,
                 cursor_x - width_logical / 2))
-        return left + width_logical / 2 - layout_geometry.seekbar.left
+        local top = max(0, layout_geometry.seekbar.top - theme.time_font_size
+            - (theme.thumbnail_border + 2 + height) / player_scale)
+        -- The external image uses integer host coordinates. Share that exact
+        -- rectangle with the in-tree frame and centered time label.
+        return Rect.from_ltwh(
+            math.floor(left * player_scale + 0.5) / player_scale,
+            math.floor(top * player_scale + 0.5) / player_scale,
+            width_logical, height / player_scale)
+    end
+
+    local function thumbfast_center(point)
+        local rect = thumbfast_rect(point)
+        return rect and (rect.left + rect:width() / 2 - layout_geometry.seekbar.left) or point.x
     end
 
     children[#children + 1] = positioned(
@@ -272,25 +287,30 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         end,
         on_hover_point = thumbfast_enabled and function(point)
             local fraction = clamp_fraction(point.x / layout_geometry.seekbar:width())
-            local thumbnail_width, thumbnail_height = thumbfast_size()
-            local cursor_x = layout_geometry.seekbar.left + point.x
-            local cursor_y = layout_geometry.seekbar.top
-            local player_scale = layout_geometry.scale or 1
-            local margin = 18 / player_scale
-            local thumbnail_width_logical = thumbnail_width and thumbnail_width / player_scale or nil
-            local thumbnail_height_logical = thumbnail_height and thumbnail_height / player_scale or nil
-            local thumb_x = cursor_x - (thumbnail_width_logical or 0) / 2
-            local thumb_y = cursor_y - (theme.time_font_size + 3)
-                - (thumbnail_height_logical or 0)
-            if thumbnail_width_logical then
-                thumb_x = max(margin,
-                    min(layout_geometry.viewport:width() - margin - thumbnail_width_logical, thumb_x))
+            local rect = thumbfast_rect(point)
+            if rect == nil then
+                return
             end
-            thumb_y = max(0, thumb_y)
+            local player_scale = layout_geometry.scale or 1
             actions:thumbfast_request(
                 duration * fraction,
-                math.floor(thumb_x * player_scale + 0.5),
-                math.floor(thumb_y * player_scale + 0.5))
+                math.floor(rect.left * player_scale + 0.5),
+                math.floor(rect.top * player_scale + 0.5))
+        end or nil,
+        paint_for_point = thumbfast_enabled and function(canvas, offset, point)
+            local rect = thumbfast_rect(point)
+            if rect == nil or theme.thumbnail_border <= 0 then
+                return
+            end
+            local player_scale = layout_geometry.scale or 1
+            local border = theme.thumbnail_border / player_scale
+            local outline = 1 / player_scale
+            local radius = min(theme.thumbnail_border_radius, theme.thumbnail_border) / player_scale
+            local origin = (offset - layout_geometry.seekbar:top_left()) --[[@as Offset]]
+            local image = rect:shift(origin)
+            canvas:draw_rrect(image:inflate(border + outline), radius + outline,
+                Paint(theme.thumbnail_border_outline))
+            canvas:draw_rrect(image:inflate(border), radius, Paint(theme.thumbnail_border_color))
         end or nil,
         on_hover_leave = thumbfast_enabled and function()
             if actions:has('thumbfast_clear') then

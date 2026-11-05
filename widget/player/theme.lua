@@ -105,6 +105,10 @@ end
 ---@field progress_bar_height number?
 ---@field persistent_progress_height number?
 ---@field volume_width number?
+---@field thumbnail_border number? physical pixels around the external preview
+---@field thumbnail_border_radius number? capped to the border padding
+---@field thumbnail_border_color Color?
+---@field thumbnail_border_outline Color?
 ---@field show_title boolean?
 ---@field show_description boolean?
 ---@field show_chapter_title boolean?
@@ -194,6 +198,10 @@ end
 ---@field progress_bar_height number
 ---@field persistent_progress_height number
 ---@field volume_width number
+---@field thumbnail_border number
+---@field thumbnail_border_radius number
+---@field thumbnail_border_color Color
+---@field thumbnail_border_outline Color
 ---@field show_title boolean
 ---@field show_description boolean
 ---@field show_chapter_title boolean
@@ -288,6 +296,13 @@ function PlayerThemeData:__init(options)
         'window_control_box_width', pick(options.window_control_box_width, 138))
     self.window_control_width = positive(
         'window_control_width', pick(options.window_control_width, 40))
+    self.thumbnail_border = non_negative('thumbnail_border', pick(options.thumbnail_border, 1))
+    self.thumbnail_border_radius = non_negative(
+        'thumbnail_border_radius', pick(options.thumbnail_border_radius, 5))
+    self.thumbnail_border_color = colour(
+        'thumbnail_border_color', pick(options.thumbnail_border_color, Color.rgba255(255, 255, 255)))
+    self.thumbnail_border_outline = colour(
+        'thumbnail_border_outline', pick(options.thumbnail_border_outline, Color.rgba255(0, 0, 0)))
     self.window_control_height = positive(
         'window_control_height', pick(options.window_control_height, 30))
     self.title_font_size = positive('title_font_size', pick(options.title_font_size, 28))
