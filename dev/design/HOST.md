@@ -89,6 +89,22 @@ priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容�
 
 ## 宿主变更规则
 
+### 离线 ASS 测量
+
+`host.ass_measure.AssMeasure` 是显式调用的工具服务，不由 App、Widget 或帧循环加载。
+输入是名称、静态 `ass-events` payload 和正整数 `res_x/res_y`；每次测量分配一个 mpv
+隐藏 overlay，开启 `compute_bounds`，读取结构化 bounds 后立即移除。它不使用生产
+presenter 的 overlay ID，也不把结果写回 TextLayout/RenderObject。
+
+输出区分 `ok`、`empty`、`unavailable` 和 `error`，保留宿主返回的矩形与请求分辨率；
+非法输入在调用前拒绝。同步 Lua 调用没有可抢占的超时，离线 CLI 通过 IPC deadline 和
+自有进程清理处理超时/宿主退出。清理失败必须报告，不能将其写成成功测量。
+
+工具记录 payload SHA-256、场景版本、OS、mpv/Lua/libass 可得版本和实际 OSD 尺寸；
+libass 版本从初始化日志提取，未暴露时明确为空。RecordCanvas 逻辑布局及绘制记录与宿主 bounds 并列，
+不将二者强行等同；bounds 不能证明 glyph ink、baseline 或光学中心。字体回退必须在
+报告中保留宿主 fontselect 日志。工具 schema、命令和实际限制见 [TESTING.md](TESTING.md)。
+
 宿主服务必须以受控 facade 或明确模块注入，不能把原始 `mp` 暴露给框架层。新增
 script-message 或 property API 时，先记录生命周期、错误处理和卸载行为，再添加
 mp stub 与真实进程测试。

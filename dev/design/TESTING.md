@@ -2,7 +2,46 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前基线：默认播放器收口（2026-11-05）
+## 当前基线：离线 ASS 测量（2026-11-06）
+
+完整 Lua suite **2290 checks passed**、EmmyLua **No issues found**。新增
+`test_ass_measure.lua` 覆盖 host 错误/空结果、非法边界、分配与清理失败；分层 guard
+确认 App/framework 不加载离线工具。CLI schema/failure **11 tests**、新增真实宿主
+**2 tests**。最终完整 Python **39 passed in 24.74s**（real-host **14**、runner **14**、
+测量 CLI **11**），无 skipped；之前完整运行 **39 passed in 25.27s** 后，只加强坐标断言
+和报告元数据，最终复验均通过。
+
+```text
+luajit test/run.lua
+emmylua_check .
+uv run --group test python -m pytest -q test/real_host test/test_runner.py test/test_ass_measure_cli.py --tb=short
+uv run --group test python tools/ass_measure.py --repeats 5 --output dev/measure/ass-measure-2026-11-06.json --markdown dev/measure/ass-measure-2026-11-06.md
+```
+
+测量工具 schema/exit codes 见 [tools/README.md](../../tools/README.md)。正式结果为
+[完整 JSON](../measure/ass-measure-2026-11-06.json) 和
+[对照表](../measure/ass-measure-2026-11-06.md)：六个 Widget→RecordCanvas→ASS 样例，
+每个重复五次，全部 `ok` 且稳定；logical box 与宿主 bounds 并列，保留 payload/请求
+哈希及测量文件哈希。数据基线 `c585d36` 加本轮工具，report 的 worktree_modified=true
+明确未把未提交工具冒写为该旧提交已有。字体文件 hash 也在报告中。
+
+环境为 Windows/AMD64、mpv `v0.41.0-1011-g182fa6ca4`、LuaJIT `2.1.1787944725`、libass
+compiled/runtime `0x1705000`（日志来源）、FriBidi 1.0.16、HarfBuzz 14.4.0。request 为
+640×360，实际 OSD 为 2275×1280；bounds 属于请求坐标空间。字体实际为 ArialMT、CJK
+fallback MicrosoftYaHeiUI、仓库 MaterialSymbolsRounded-Regular；工具显式指定字体目录。
+
+先前试跑暴露并修正了：移除命令缺必填 data 导致 cleanup_error；OSD 初始化前第一条
+bounds 不稳定；空 payload 返回空表。最终按协议传 data=''、等待非零 OSD 稳定 250ms、
+测量期间检查 OSD 未变化，空表为 `empty` 且没有捏造零矩形。不同分辨率矩形及 clip
+有 real-host 回归；bounds 会包含渲染图像 padding（1280×720 请求曾得到右边界
+147.9375，对应 path right=140），不能当作精确 ink/路径或光学中心模型。
+
+无宿主/无 API 返回 unavailable；命令、IPC timeout、宿主退出、清理失败写明 error。
+Lua 同步请求不可抢占；CLI 各 wait/IPC deadline 和 fixture 自有进程 cleanup 分开，超时
+不重发测量。不改变 production App、Presenter、TextLayout、Widget 输入或 Define。
+Linux 未运行、屏幕像素/scan-out 未测；不据此升级文本估算或承诺跨平台相同 bounds。
+
+## 历史基线：默认播放器收口（2026-11-05）
 
 完整 Lua suite 为 **2241 checks passed**；`emmylua_check .` 为 **No issues found**。
 focused `player_layout` **162**、`main_layout` **90**，新增回归覆盖 AutoHide fade-start 清理、

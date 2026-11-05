@@ -113,14 +113,20 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
+2026-11-06 离线 ASS 测量工具完成后为 **2290 Lua checks**、EmmyLua **No issues found**、
+real-host **14 passed**、runner **14 passed**、测量 CLI **11 passed**；
+新增显式调用的 `host.ass_measure.AssMeasure` 与 JSON/Markdown CLI，六类 framework 样例
+各五次宿主测量稳定。它不进入播放器帧循环，不将宿主 bounds 写回框架布局。输入、错误/
+清理边界和测量限制见 [HOST.md](HOST.md) 与 [TESTING.md](TESTING.md)。
+
+历史基线：
+
 2026-11-05 默认播放器收口后为 **2241 Lua checks**、runner CLI **14 passed**；
 `emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host **12 passed**。
 AutoHide 开始隐藏时清理 thumbfast，预览使用共享像素坐标的白色边框和黑色外描边。
 用户整体外观审阅认可支持当前默认播放器范围收口；完整 ModernX 兼容和 240 Hz 性能
 仍为后续方向。应用边界见 [PLAYER.md](PLAYER.md)，实际验证和性能限制见
 [TESTING.md](TESTING.md)。
-
-历史基线：
 
 2026-10-28 P2 ModernX 默认播放器后为 **1753 Lua checks**（ModernX **31**，Builder **26**，
 runtime **252**）、CLI **14 passed**；

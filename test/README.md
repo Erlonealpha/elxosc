@@ -40,9 +40,11 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-05): **2241 Lua checks**;
+Current baseline (2026-11-06): **2290 Lua checks**;
 runner CLI regression: **14 passed**; `emmylua_check .`: **No issues found**.
-Real-host: **12 passed** with the production Demo injection switch enabled.
+The ASS measurement slice adds host-boundary Lua tests, two real-host cases and
+11 CLI schema/failure tests. The production Demo injection switch remains enabled.
+Real-host **14 passed**, runner **14 passed** and measurement CLI **11 passed**.
 Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
@@ -105,6 +107,13 @@ The thumbfast test loads a temporary protocol peer, keeps the native pointer
 stationary over the timeline until AutoHide, checks one clear, and checks recovery
 on a new move. It verifies the production transport and lifecycle; frame geometry
 and ASS output are covered by Lua tests, without claiming external decoder pixels.
+
+`test_ass_measure.py` loads the standalone measurement driver and exercises the
+host service with bundled fonts, repeat stability, custom JSON, clipping, empty
+payloads and resolution coordinates. `test_ass_measure_cli.py` covers invalid
+input, missing host and timeout reporting. CLI use and schema are in
+[tools/README.md](../tools/README.md); reports are in
+[dev/measure](../dev/measure/ass-measure-2026-11-06.md).
 
 The separate `tools/benchmark_real_player_hover.py` generates H.264 video with
 ffmpeg and measures native Windows pointer moves through the production player,
