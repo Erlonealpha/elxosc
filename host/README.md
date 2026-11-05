@@ -12,6 +12,8 @@ outside the reusable layers.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
 - `mpv_define.lua` — script-message Define transport and host module facade.
 - `mpv_player_context.lua` — mpv property observers bridged to `PlayerStore`.
+- `ass_measure.lua` — explicitly invoked offline `compute_bounds` measurement,
+  with an owned hidden overlay and immediate cleanup. It is not loaded by App.
 
 The app flushes Widget rebuilds, lays out and paints through a backend, then presents
 only changed ASS output. Input is routed through `RenderOwner`; host code must not
@@ -46,6 +48,11 @@ event and scope-message subscriptions return idempotent disposable handles and
 
 App teardown preserves the shared Binding and other owner trees. A user State.dispose
 error is rethrown after the App releases its render root, clock and presenter.
+
+`AssMeasure:measure({name, data, res_x, res_y})` returns `ok`, `empty`,
+`unavailable` or `error`. Bounds are in request coordinates; an empty host table
+has no invented rectangle. Command and cleanup failures are retained. Its
+offline CLI and schema are documented in [tools](../tools/README.md).
 
 See [host design](../dev/design/HOST.md), [input](../dev/design/INPUT.md),
 [player application](../dev/design/PLAYER.md), and [testing](../dev/design/TESTING.md).

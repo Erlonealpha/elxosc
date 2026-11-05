@@ -107,6 +107,26 @@ F.test('no framework module requires mp', function()
     F.eq(#offenders, 0, 'framework modules reaching for mpv: ' .. table.concat(offenders, ' ; '))
 end)
 
+F.test('offline ASS measurement is not loaded by production runtime modules', function()
+    local offenders = {}
+    for _, path in ipairs(files) do
+        if is_framework(path) or path:match('/host/') or path:match('/main%.lua$') then
+            local content = read_file(path) or ''
+            for line in (content .. '\n'):gmatch('([^\n]*)\n') do
+                local code = line:gsub('%-%-.*$', '')
+                if code:find("require%s*%(?%s*[\"']host%.ass_measure[\"']")
+                    or code:find("require%s*%(?%s*[\"']tools%.ass_measure_samples[\"']") then
+                    -- The explicit real-host driver is a test entry, not runtime.
+                    if not path:match('/test/') then
+                        offenders[#offenders + 1] = path
+                    end
+                end
+            end
+        end
+    end
+    F.eq(#offenders, 0, 'runtime modules loading offline measurement: ' .. table.concat(offenders, '; '))
+end)
+
 F.test('the host layer really does use mp (sanity)', function()
     local host_file
     for _, path in ipairs(files) do
