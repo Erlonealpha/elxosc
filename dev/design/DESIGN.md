@@ -113,11 +113,12 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-11-05 开发 Demo Define 注入与控件修正后为 **2202 Lua checks**、runner CLI
-**14 passed**；`emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host
-**11 passed**。默认构建器不再接受 extension/pages；受控 WindowLayer 和右侧按钮贡献
-见 [PLAYER.md](PLAYER.md)。用户确认外观基本正常，时间线 tooltip 在 240 Hz 场景仍有轻微
-滞后；实际命令和 hover 性能调查见 [TESTING.md](TESTING.md)。
+2026-11-05 默认播放器收口后为 **2241 Lua checks**、runner CLI **14 passed**；
+`emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host **12 passed**。
+AutoHide 开始隐藏时清理 thumbfast，预览使用共享像素坐标的白色边框和黑色外描边。
+用户整体外观审阅认可支持当前默认播放器范围收口；完整 ModernX 兼容和 240 Hz 性能
+仍为后续方向。应用边界见 [PLAYER.md](PLAYER.md)，实际验证和性能限制见
+[TESTING.md](TESTING.md)。
 
 历史基线：
 

@@ -13,6 +13,9 @@
 - ASS 文本 `left/center/right` 锚点、正轴向有限缩放、TransformBox、
   LayoutScaleBox、paint/layout dirty 分类；
 - mpv frame loop、ASS presenter、鼠标输入、Define transport 和真实宿主 fixture。
+- 经用户审阅的 ModernX 默认播放器：original/reduced、controls/metadata/capability、
+  AutoHide、thumbfast 预览清理与边框、Define 注入的可关闭 Demo；详细范围见
+  [PLAYER.md](PLAYER.md)。
 
 ## 近期方向
 
@@ -125,12 +128,16 @@
 
 - 顶层控件支持 visible/hidden 和 auto/always/never 策略；
 - P2.4 实现切片已增加 `PlayerThemeData`/`PlayerTheme` 和 original/reduced 的
-  root-relative `PlayerLayout`；完整 ModernX 控件状态与人工 parity 仍按 P2.5～P2.7 推进；
+  root-relative `PlayerLayout`；P2 的当前默认控件/metadata/capability 和整体外观审阅已收口；
 - hidden layer 不绘制、不创建 input area；modal 打开时可以切换 exclusive policy；
 - 将 Main/Extension/WindowLayer 继续扩展为经过审阅的播放器 Shell，而不是恢复九宫格；
 - Shell build 使用监听式 Provider，init/event/resource callback 使用非监听 read，
   依赖资源变化通过 `did_change_dependencies` 处理；
 - 使用已有 Scheduler、State、dirty 和 ASS presenter 管线，先做可观察行为再优化性能。
+
+剩余播放器方向：240 Hz 播放数据更新引起的 build/layout/input regions 成本，完整
+ModernX 配置与全局快捷键兼容、字幕 `sub-pos` 避让、季节性 idle 装饰，以及未批准的
+第三方 UI。性能调查见 [TESTING.md](TESTING.md)，这些项目不写成当前默认功能。
 
 阶段 6 的完整输入和播放器应用规划见 [INPUT.md](INPUT.md) 与 [PLAYER.md](PLAYER.md)。
 

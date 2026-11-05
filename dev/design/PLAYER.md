@@ -20,9 +20,9 @@ WidgetsApp
 
 `Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线、进度条
 和播放控制由播放器定义，统一正数 scale 只负责布局外层缩放，控制器内部使用
-`PlayerThemeData` 的 root-relative `Stack`/`Positioned` 几何。`ExtensionEntry` 是当前唯一的
-扩展内容边界；生产 `WindowLayer` 是空内容，应用可以显式提供逻辑页面 owner，不创建
-额外 presenter/root。开发 Demo 的 Navigator 由 Define 注入的 WindowLayer 内容拥有。
+`PlayerThemeData` 的 root-relative `Stack`/`Positioned` 几何。`ExtensionEntry` 接受受控扩展
+内容；未贡献时 `WindowLayer` 为空，应用可以显式提供逻辑页面 owner，不创建额外
+presenter/root。开发 Demo 的 Navigator 由 Define 注入的 WindowLayer 内容拥有。
 
 当前默认入口公开 `app.extension`、`app.window_layer` 和 `player.controls.extra_right_control` 三个 Define/Slot
 入口（`set`/`replace`）。后者只接受一个 Widget，在 Main 底部置顶按钮左侧占一个 24×24
@@ -36,9 +36,9 @@ Main
 完成后由 opacity render object 禁止绘制、命中和 pointer regions。`maintain_state=false` 只
 在 fade 完成后的 build pass 卸载 Main；ExtensionEntry 的 Element/State 不被卸载或重置。
 
-## P2 ModernX 首批能力
+## P2 ModernX 默认播放器
 
-P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。首批能力为：
+P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默认能力包括：
 
 - 顶部媒体标题、窗口最小化/全屏/关闭按钮；
 - 底部媒体 metadata、播放/暂停、相对 `seek(-/+10)`；
@@ -71,8 +71,12 @@ persistent progress ranges、thumbfast capability fallback、description panel A
 download/SponsorBlock capability consumers 和 metadata/idle states。YouTube comments 仍保持
 explicit `unavailable`，不作为默认集成。
 
-P2.7 仍进行中，用户最终人工 optical/interaction 对照待确认；完整 ModernX 配置兼容、多 host
-overlay、focus/IME 和非批准第三方脚本 UI。当前静态 ASS 输出不使用 `\move` 或 `\t`。
+P2 的当前默认播放器范围已完成，用户确认外观基本无问题，最后两项 thumbfast 差异已
+修正。original/reduced、控件状态、metadata/capability、输入边界和生命周期有自动证据；
+人工结论记录当前播放器整体审阅，不扩大为每个操作系统/配置组合的像素一致性保证。
+完整 ModernX 配置/全局快捷键兼容、季节性 idle 装饰、自动修改 `sub-pos` 的字幕避让、多
+host overlay、focus/IME 和非批准第三方脚本 UI 仍未实现。240 Hz 下的播放更新失效成本
+由后续性能工作负责，测量见 [TESTING.md](TESTING.md)。静态 ASS 不使用 `\move` 或 `\t`。
 
 旧 `main_layout.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
 Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。
@@ -83,6 +87,19 @@ Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-lev
 Tooltip 使用控件上沿的 bottom-center anchor，文本/位置变化只更新绘制，保持布局、
 输入快照和 seek capture target 不变。播放器组件已按几何、控件、文本、描述和数据
 职责拆分；`PlayerLayout` 和已有聚合/direct-module identity 保持兼容。
+
+`AutoHide` 在控制器开始隐藏时，向保留的子 State 发送内部
+`did_auto_hide_visibility_change()` 通知；tooltip 读取全部祖先 AutoHide 的当前 policy，
+立即清理 hover 和外部 thumbfast，不等待 fade 完成或鼠标 leave。淡出期间仍保留原控件
+输入/capture，但不产生新 tooltip/thumbnail 请求；下一次重显后的真实 move 恢复预览。
+controller replacement、nested AutoHide、capability loss 和 dispose 均清理，通知只在可见性
+变化时执行，不给每次移动增加树遍历。
+
+thumbnail 的请求、时间标签和边框共享取整后的 host 像素坐标。`PlayerThemeData` 提供
+`thumbnail_border`（默认 1）、`thumbnail_border_radius`（默认 5）、
+`thumbnail_border_color`（白）和 `thumbnail_border_outline`（黑）。尺寸以实际像素计，
+外描边为 1px，圆角限于 border padding；border 为 0 时不绘制边框。边框用同一 Canvas
+绘制到外部矩形预览后方，没有额外 presenter；thumbfast 图像本身仍由外部脚本负责。
 
 ## Define 是扩展唯一入口
 

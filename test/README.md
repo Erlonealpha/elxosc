@@ -40,9 +40,9 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-05): **2202 Lua checks**;
+Current baseline (2026-11-05): **2241 Lua checks**;
 runner CLI regression: **14 passed**; `emmylua_check .`: **No issues found**.
-Real-host: **11 passed** with the production Demo injection switch enabled.
+Real-host: **12 passed** with the production Demo injection switch enabled.
 Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
@@ -57,7 +57,8 @@ file, while multi-overlay contracts remain planned.
 `test/real_host/` starts a **real** mpv.net/mpv process in a temporary, empty
 `--config-dir` and queries its JSON IPC endpoint. It stages and loads the elxosc
 directory package (rather than a standalone `main.lua`), with `--load-scripts=no`
-to avoid loading the staged scripts twice. The fixture owns the complete
+to avoid loading the staged scripts twice and `--osc=no` to prevent the built-in
+OSC from intercepting controller input. The fixture owns the complete
 process tree: it sends IPC `quit` first, then uses a Windows Job Object (or a
 POSIX process group) as a bounded fallback. It never searches for or kills
 processes by image name. Existing Lua host tests above still use an `mp` stub;
@@ -100,6 +101,10 @@ for Main's input sections to become active. Button edges use mpv IPC keydown/key
 at that native cursor position, exercising section-area selection and production
 dispatch without relying on global desktop click injection. Other hosts use mpv
 mouse/key commands. Native desktop button acceptance remains a manual check.
+The thumbfast test loads a temporary protocol peer, keeps the native pointer
+stationary over the timeline until AutoHide, checks one clear, and checks recovery
+on a new move. It verifies the production transport and lifecycle; frame geometry
+and ASS output are covered by Lua tests, without claiming external decoder pixels.
 
 The separate `tools/benchmark_real_player_hover.py` generates H.264 video with
 ffmpeg and measures native Windows pointer moves through the production player,

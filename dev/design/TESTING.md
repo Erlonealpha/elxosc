@@ -2,6 +2,35 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
+## 当前基线：默认播放器收口（2026-11-05）
+
+完整 Lua suite 为 **2241 checks passed**；`emmylua_check .` 为 **No issues found**。
+focused `player_layout` **162**、`main_layout` **90**，新增回归覆盖 AutoHide fade-start 清理、
+保留 State/controller replacement/nested AutoHide、capability loss/dispose、重显恢复，以及
+共享 host 像素矩形的白色边框/黑色外描边、scale、零宽度和 static ASS 输出。
+
+```text
+luajit test/run.lua
+emmylua_check .
+uv run --group test python -m pytest -q test/real_host test/test_runner.py --tb=short
+```
+
+最终完整宿主/runner 为 **26 passed in 20.43s**（real-host **12**、runner CLI **14**），
+使用当前生产入口、Demo 默认注入且初始关闭。新增 thumbfast 协议对端测试保持真实鼠标
+静止，验证 AutoHide 超时只发一次 clear、新 move 恢复、离开再次清理；它不运行外部
+thumbnail 解码器。Lua Record/ASS 检查边框几何和样式，不代替实际图像的像素对照。
+
+本轮复验曾为 **25 passed, 1 failed**：Demo 首次点击未进入 elxosc down/up 路由。临时
+staging 日志及 `input-bindings` 显示内置 OSC 的 `MBTN_LEFT` 优先级 67 高于 elxosc 的
+最高 66；`--load-scripts=no` 不关闭内置 OSC。fixture 增加 `--osc=no` 后，打开/关闭/重开
+诊断和完整套件均通过。点击驱动保持原生定位 + IPC keydown/keyup，不靠重试掩盖失败；
+诊断脚本已删除。既有 hover benchmark 已显式传入 `--osc=no`，历史数据无需替换。
+
+用户最新整体外观审阅认可，加最后两项 thumbfast 修正和自动证据，支持当前默认播放器
+范围收口；未把所有配置、分辨率或动作写成人工通过。Windows/mpv.net 已运行，Linux
+未运行；原生桌面按钮逐项操作及外部 thumbfast 像素呈现未在本轮另外测量。240 Hz 播放
+更新失效成本和完整兼容仍为后续方向，以下历史基线及测量结果保留原始语境。
+
 ## 必跑检查
 
 本地工具名来自忽略的 `project.conf`；首次运行前复制 `project.conf.tpl` 并按机器调整。
