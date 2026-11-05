@@ -1,147 +1,136 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- Explicit offline measurement; never loaded by the application frame loop.
+-- Explicit host utility; the application frame loop does not load this module.
 local mp = require 'mp'
 local std = require 'elxlibs.std'
 
 local M = {}
-local raise = std.raise
+local floor = math.floor
 
----@alias AssMeasureStatus
----| 'ok'
----| 'empty'
+---@alias AssMeasureErrorKind
 ---| 'unavailable'
 ---| 'error'
 
----@class AssMeasureRequest
----@field name string
----@field data string static ass-events payload; empty is allowed
----@field res_x integer
----@field res_y integer
+---@class _AssMeasureOptions
+---@field res_x number fixed ASS coordinate resolution, floored once
+---@field res_y number
 
 ---@class AssMeasureBounds
----@field left number
----@field top number
----@field right number
----@field bottom number
----@field width number
----@field height number
+---@field x0 number
+---@field y0 number
+---@field x1 number
+---@field y1 number
 
----@class AssMeasureResult
----@field name string
----@field status AssMeasureStatus
----@field res_x integer
----@field res_y integer
----@field bounds AssMeasureBounds?
----@field error string?
----@field cleanup_error string?
+---@alias AssMeasureRawBounds AssMeasureBounds | table<never, never>
 
----@class AssMeasureOverlay
+---@class AssMeasureCommand
+---@field _name string
 ---@field id integer
+---@field format string
 ---@field data string
 ---@field res_x integer
 ---@field res_y integer
 ---@field hidden boolean
 ---@field compute_bounds boolean
----@field update fun(self: AssMeasureOverlay): table?, string?
 
----@param value any
----@return boolean
-local function finite(value)
-    return type(value) == 'number' and value == value
-        and value ~= math.huge and value ~= -math.huge
-end
-
----@param request AssMeasureRequest
-local function validate(request)
-    if type(request) ~= 'table' then
-        raise(std.TypeError('AssMeasure request must be a table'))
+---@param value number
+---@param name string
+---@return integer
+local function resolution(value, name)
+    if type(value) ~= 'number' or value ~= value or value == math.huge or value < 1 then
+        std.raise(std.ValueError('AssMeasure.' .. name .. ' must be finite and at least 1'))
     end
-    if type(request.name) ~= 'string' or request.name == '' then
-        raise(std.ValueError('AssMeasure.name must be a non-empty string'))
-    end
-    if type(request.data) ~= 'string' or request.data:find('\0', 1, true) then
-        raise(std.ValueError('AssMeasure.data must be a NUL-free string'))
-    end
-    for _, name in ipairs({ 'res_x', 'res_y' }) do
-        local value = request[name]
-        if not finite(value) or value <= 0 or value ~= math.floor(value) then
-            raise(std.ValueError('AssMeasure.' .. name .. ' must be a positive integer'))
-        end
-    end
+    return floor(value)
 end
 
 ---@class AssMeasure : std.object
----@overload fun(): self
+---@field res_x integer
+---@field res_y integer
+---@field private _command AssMeasureCommand?
+---@field private _command_native fun(command: table): table?, string?
+---@field private _closed boolean
+---@field private _error string?
+---@field private _error_kind AssMeasureErrorKind?
+---@overload fun(options: _AssMeasureOptions): self
 local AssMeasure = std.class.new('AssMeasure', {})
 
----@param request AssMeasureRequest
----@return AssMeasureResult
-function AssMeasure:measure(request)
-    validate(request)
-    ---@type AssMeasureResult
-    local result = { name = request.name, res_x = request.res_x, res_y = request.res_y,
-        status = 'unavailable' }
-    if type(mp.create_osd_overlay) ~= 'function' or type(mp.command_native) ~= 'function' then
-        result.error = 'host lacks osd-overlay measurement API'
-        return result
+function AssMeasure:__init(options)
+    self.res_x = resolution(options.res_x, 'res_x')
+    self.res_y = resolution(options.res_y, 'res_y')
+    self._closed = false
+    self._command = nil
+    self._error = nil
+    self._error_kind = nil
+    self._command_native = mp.command_native
+    if type(mp.create_osd_overlay) ~= 'function' or type(self._command_native) ~= 'function' then
+        self._error = 'host lacks osd-overlay measurement API'
+        self._error_kind = 'unavailable'
+        return
     end
-    local created, overlay = pcall(mp.create_osd_overlay, 'ass-events')
-    if not created or type(overlay) ~= 'table' then
-        result.status = 'error'
-        result.error = tostring(overlay)
-        return result
+    local ok, overlay = pcall(mp.create_osd_overlay, 'ass-events')
+    if not ok or type(overlay) ~= 'table' then
+        self._error = tostring(overlay)
+        self._error_kind = 'error'
+        return
     end
-    local target = overlay --[[@as AssMeasureOverlay]]
-    target.data, target.res_x, target.res_y = request.data, request.res_x, request.res_y
-    target.hidden, target.compute_bounds = true, true
-    local ok, raw, err = pcall(target.update, target)
-    -- The allocator chooses our ID. Use command_native directly because mpv's
-    -- overlay:remove wrapper discards the command's error return on some hosts.
-    local cleaned, cleanup_result, cleanup_error = pcall(mp.command_native, {
-        _name = 'osd-overlay', id = target.id, format = 'none', data = '',
-    })
-    if not cleaned or cleanup_error ~= nil then
-        result.status = 'error'
-        result.cleanup_error = tostring(cleaned and cleanup_error or cleanup_result)
+    -- Use mpv's allocator, then reuse a command table instead of update's
+    -- per-call field copy and resolution rounding. No fixed or borrowed ID.
+    self._command = {
+        _name = 'osd-overlay', id = overlay.id, format = 'ass-events', data = '',
+        res_x = self.res_x, res_y = self.res_y, hidden = true, compute_bounds = true,
+    }
+end
+
+--- Returns the host table unchanged, including {} for an empty image.
+--- Trusted ASS comes from a generator; external input validation belongs upstream.
+---@param data string
+---@return AssMeasureRawBounds? bounds
+---@return string? error
+---@return AssMeasureErrorKind? kind
+function AssMeasure:measure(data)
+    if self._closed then
+        return nil, 'AssMeasure is disposed', 'error'
     end
+    local command = self._command
+    if not command then
+        return nil, self._error, self._error_kind
+    end
+    if type(data) ~= 'string' then
+        std.raise(std.TypeError('AssMeasure.data must be a string'))
+    end
+    command.data = data
+    local ok, raw, err = pcall(self._command_native, command)
     if not ok or err ~= nil then
-        result.status = 'error'
-        result.error = tostring(ok and err or raw)
-        return result
+        return nil, tostring(ok and err or raw), 'error'
     end
     if raw == nil then
-        result.error = 'host did not return compute_bounds'
-        return result
+        return nil, 'host did not return compute_bounds', 'unavailable'
     end
-    if type(raw) == 'table' and next(raw) == nil then
-        if result.cleanup_error == nil then
-            result.status = 'empty'
-        end
-        return result
+    if type(raw) ~= 'table' then
+        return nil, 'host returned invalid compute_bounds', 'error'
     end
-    if type(raw) ~= 'table' or not finite(raw.x0) or not finite(raw.y0)
-        or not finite(raw.x1) or not finite(raw.y1) then
-        result.status = 'error'
-        result.error = 'host returned invalid compute_bounds'
-        return result
+    return raw
+end
+
+--- Closes immediately. A failed removal retains the ID for a later dispose retry.
+---@return boolean removed
+---@return string? error
+function AssMeasure:dispose()
+    self._closed = true
+    local command = self._command
+    if not command then
+        return false
     end
-    if raw.x1 < raw.x0 or raw.y1 < raw.y0 then
-        result.status = 'error'
-        result.error = 'host returned inverted compute_bounds'
-        return result
+    command.data = ''
+    local ok, raw, err = pcall(self._command_native, {
+        _name = 'osd-overlay', id = command.id, format = 'none', data = '',
+    })
+    if not ok or err ~= nil then
+        return false, tostring(ok and err or raw)
     end
-    result.bounds = { left = raw.x0, top = raw.y0, right = raw.x1, bottom = raw.y1,
-        width = raw.x1 - raw.x0, height = raw.y1 - raw.y0 }
-    if result.cleanup_error == nil then
-        if result.bounds.width == 0 or result.bounds.height == 0 then
-            result.status = 'empty'
-        else
-            result.status = 'ok'
-        end
-    end
-    return result
+    self._command = nil
+    return true
 end
 
 M.AssMeasure = AssMeasure

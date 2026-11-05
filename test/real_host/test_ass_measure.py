@@ -19,6 +19,7 @@ def test_framework_measurement_samples_are_stable(real_host_factory):
         report = measure_tool.measure(client, process, log)
         assert report['status'] == 'ok', report
         assert len(report['samples']) == 6
+        assert report['lifecycle'] == {'instances': 1, 'removed': 1}
         for sample in report['samples']:
             assert sample['stable']
             assert len(sample['payload_sha256']) == 64
@@ -46,6 +47,7 @@ def test_json_input_empty_clip_and_resolution_coordinates(real_host_factory, tmp
         {'name': 'higher-res', 'data': data, 'res_x': 1280, 'res_y': 720},
         {'name': 'clip', 'data': data.replace('\\p1', '\\clip(60,70,100,90)\\p1'), 'res_x': 640, 'res_y': 360},
         {'name': 'empty', 'data': '', 'res_x': 640, 'res_y': 360},
+        {'name': 'after-empty', 'data': data, 'res_x': 640, 'res_y': 360},
     ]
     source = tmp_path / 'requests.json'
     source.write_text(json.dumps({'schema_version': 1, 'scene': 'rects', 'scene_version': 1,
@@ -53,6 +55,7 @@ def test_json_input_empty_clip_and_resolution_coordinates(real_host_factory, tmp
     with real_host_factory(f'--script={script}', '--force-window=yes', '--geometry=640x360') as (client, _, process, log):
         report = measure_tool.measure(client, process, log, source)
         assert report['status'] == 'ok', [(s['request']['name'], s['results']) for s in report['samples']]
+        assert report['lifecycle'] == {'instances': 2, 'removed': 2}
         for sample in report['samples']:
             assert sample['stable']
         for sample in report['samples'][:2]:
@@ -65,6 +68,31 @@ def test_json_input_empty_clip_and_resolution_coordinates(real_host_factory, tmp
             assert 99 <= bounds['bottom'] <= 116
         clip = report['samples'][2]['results'][0]['bounds']
         assert [clip[name] for name in ('left', 'top', 'right', 'bottom')] == pytest.approx((60,70,100,90), abs=1)
-        assert all(result['status'] == 'empty' for result in report['samples'][-1]['results'])
+        assert all(result['status'] == 'empty' for result in report['samples'][3]['results'])
+        assert report['samples'][4]['results'][0]['bounds'] == report['samples'][0]['results'][0]['bounds']
         second = measure_tool.measure(client, process, log, source, repeats=1)
         assert second['status'] == 'ok'
+
+
+@pytest.mark.real_host
+def test_measure_benchmark_compares_real_bounds_for_all_strategies(real_host_factory, tmp_path):
+    import subprocess
+    legacy = subprocess.run(['git', 'show', '46bc4a2:host/ass_measure.lua'], cwd=ROOT,
+                            capture_output=True, check=True).stdout
+    source = tmp_path / 'legacy.lua'
+    source.write_bytes(legacy)
+    script = Path(__file__).with_name('ass_measure_benchmark.lua')
+    with real_host_factory(f'--script={script}', '--force-window=yes', '--geometry=640x360',
+            f'--osd-fonts-dir={ROOT / "fonts"}') as (client, _, process, log):
+        measure_tool.wait_property(client, process, log, 'user-data/elxosc-ass-benchmark-ready', 10)
+        measure_tool.wait_viewport(client, process, 10)
+        client.command('script-message', 'elxosc-ass-benchmark', str(source), '2', '1', '1')
+        raw = measure_tool.wait_property(client, process, log, 'user-data/elxosc-ass-benchmark-report', 30)
+        report = json.loads(raw)
+        assert report['status'] == 'ok', report
+        assert len(report['scenarios']) == 14
+        for scene in report['scenarios']:
+            assert scene['output_equivalent']
+            assert set(scene['variants']) == {'legacy', 'overlay_update', 'native_reuse'}
+            assert scene['variants']['legacy']['rounds'][0]['timed_native_calls'] == 4
+            assert scene['variants']['native_reuse']['rounds'][0]['timed_native_calls'] == 2

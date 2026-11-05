@@ -128,7 +128,8 @@ def measure(client, process, log, input_path='', repeats=3, timeout=5):
                               cwd=ROOT, capture_output=True, text=True)
     environment['source_worktree_modified'] = bool(modified.stdout) if modified.returncode == 0 else None
     environment['source_files_sha256'] = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-        for name in ('host/ass_measure.lua', 'tools/ass_measure_samples.lua', 'test/real_host/ass_measure.lua')}
+        for name in ('host/ass_measure.lua', 'tools/ass_measure_samples.lua',
+                     'tools/ass_measure_report.lua', 'test/real_host/ass_measure.lua')}
     report['repeats'] = repeats
     report['generated_at_utc'] = datetime.now(timezone.utc).isoformat()
     report['limits'] = ['bounds may include renderer image padding; not exact glyph ink, baseline or optical-center metrics',

@@ -107,7 +107,7 @@ F.test('no framework module requires mp', function()
     F.eq(#offenders, 0, 'framework modules reaching for mpv: ' .. table.concat(offenders, ' ; '))
 end)
 
-F.test('offline ASS measurement is not loaded by production runtime modules', function()
+F.test('explicit ASS measurement is not loaded by production runtime modules', function()
     local offenders = {}
     for _, path in ipairs(files) do
         if is_framework(path) or path:match('/host/') or path:match('/main%.lua$') then

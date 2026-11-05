@@ -185,16 +185,20 @@ def _running_host(tmp_path, extra_args=()):
                                                  Path(__file__).parent / "text_anchor.lua",
                                                  Path(__file__).parent / "scale.lua",
                                                  Path(__file__).parent / "transform.lua",
-                                                 Path(__file__).parent / "ass_measure.lua"}):
+                                                 Path(__file__).parent / "ass_measure.lua",
+                                                 Path(__file__).parent / "ass_measure_benchmark.lua"}):
                 staged_elxosc = config / "scripts" / "elxosc"
                 _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
-                if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua", "ass_measure.lua"}:
+                if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua",
+                                   "ass_measure.lua", "ass_measure_benchmark.lua"}:
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
-                if script.name == "ass_measure.lua":
+                if script.name in {"ass_measure.lua", "ass_measure_benchmark.lua"}:
                     samples = staged_elxosc / "tools" / "ass_measure_samples.lua"
                     samples.parent.mkdir()
                     shutil.copy2(source_elxosc / "tools" / "ass_measure_samples.lua", samples)
+                    shutil.copy2(source_elxosc / "tools" / "ass_measure_report.lua", samples.with_name("ass_measure_report.lua"))
+                    shutil.copy2(source_elxosc / "tools" / "benchmark_support.lua", samples.with_name("benchmark_support.lua"))
                 # Load the directory package, matching portable_config/scripts/elxosc.
                 # Loading main.lua as a standalone file omits the package search
                 # path and makes mp.get_script_directory() return nil.
