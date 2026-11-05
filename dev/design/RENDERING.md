@@ -153,3 +153,8 @@ paint-only 或 layout + paint；`RenderLayoutScaleBox` 的 alignment 若改变 p
 必须同步 invalidates input snapshot。ModernX fade 使用 `RenderOpacity.hidden`：fade-out 完成
 前保持 paint/input，完成时才移除 pointer regions；fade-in 先恢复 hidden=false，再由
 AnimationController 逐帧更新 alpha。不得使用 `\move` 或 `\t` 替代 frame-clock 静态输出。
+
+2026-11-06 benchmark以静态子树的Record重放比较paint-only偏移动画，逐帧ASS一致且
+无layout失效；结果见[TESTING.md](TESTING.md)。这只是工具侧的缓存实验，不提供生产
+boundary/cache API；真实输入坐标偏移仍会使region snapshot失效。一般子树缓存需要
+独立定义样式/布局/文本/变换失效和输入合同，不能从该实验推断已实现。

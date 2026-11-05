@@ -113,13 +113,20 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
+2026-11-06 通用 ASS 测量与 benchmark 完成后为 **2318 Lua checks**、EmmyLua
+**No issues found**、real-host **15 passed**、runner **14 passed**、测量 CLI **11 passed**、
+benchmark CLI **3 passed**。AssMeasure 固定初始化分辨率、复用隐藏 overlay/native command、
+返回原生 bounds；诊断报告单独适配。benchmark 覆盖四类框架场景、paint-only动画/
+Record重放和旧/持久update/native三种测量对照，同环境报告与限制见
+[TESTING.md](TESTING.md)。它不改变生产帧循环或 TextLayout，不提供新的渲染缓存API。
+
+历史基线：
+
 2026-11-06 离线 ASS 测量工具完成后为 **2290 Lua checks**、EmmyLua **No issues found**、
 real-host **14 passed**、runner **14 passed**、测量 CLI **11 passed**；
 新增显式调用的 `host.ass_measure.AssMeasure` 与 JSON/Markdown CLI，六类 framework 样例
 各五次宿主测量稳定。它不进入播放器帧循环，不将宿主 bounds 写回框架布局。输入、错误/
 清理边界和测量限制见 [HOST.md](HOST.md) 与 [TESTING.md](TESTING.md)。
-
-历史基线：
 
 2026-11-05 默认播放器收口后为 **2241 Lua checks**、runner CLI **14 passed**；
 `emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host **12 passed**。

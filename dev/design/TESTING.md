@@ -2,7 +2,71 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前基线：离线 ASS 测量（2026-11-06）
+## 当前基线：通用 ASS 测量与 benchmark（2026-11-06）
+
+完整 Lua **2318 checks passed**、EmmyLua **No issues found**。完整 Python **43 passed**：
+real-host **15**、runner **14**、测量 CLI **11**、benchmark CLI **3**。AssMeasure 使用固定
+初始化分辨率、一个隐藏 overlay 和复用 native command 表；返回原始 bounds，报告
+审计/转换移到工具层。单实例原生表、空内容、异常、关闭和清理重试有 Lua 回归；真实
+批次复用、不同分辨率、非空→空→非空与旧/update/native 三种测量输出有宿主回归。
+
+```text
+luajit test/run.lua
+emmylua_check .
+uv run --group test python -m pytest -q test/real_host test/test_runner.py test/test_ass_measure_cli.py test/test_benchmark_cli.py --tb=short
+uv run --group test python tools/ass_measure.py --repeats 5 --output dev/measure/ass-measure-reuse-2026-11-06.json --markdown dev/measure/ass-measure-reuse-2026-11-06.md
+uv run --group test python tools/benchmark.py --iterations 100 --warmup 30 --rounds 3 --host-measure --host-iterations 50 --host-warmup 10 --output dev/benchmark/framework-ass-baseline-2026-11-06.json --markdown dev/benchmark/framework-ass-baseline-2026-11-06.md
+uv run --group test python tools/benchmark.py --iterations 100 --warmup 30 --rounds 3 --baseline dev/benchmark/framework-ass-baseline-2026-11-06.json --output dev/benchmark/framework-regression-2026-11-06.json --markdown dev/benchmark/framework-regression-2026-11-06.md
+```
+
+新校准 [JSON](../measure/ass-measure-reuse-2026-11-06.json) /
+[Markdown](../measure/ass-measure-reuse-2026-11-06.md) 六类各五次全部 stable；lifecycle
+为 instances=1/removed=1。请求640×360、实际 OSD2275×1280，字体和 libass 版本与历史
+基线一致。所有输出文件记录 `46bc4a2` 加 worktree_modified=true 和源文件哈希，明确
+它们采集于提交前，不能说旧提交已经包含新实现。
+
+### Framework 与 AssMeasure 性能基线
+
+[基线 JSON](../benchmark/framework-ass-baseline-2026-11-06.json) /
+[表格](../benchmark/framework-ass-baseline-2026-11-06.md)；
+[回归 JSON](../benchmark/framework-regression-2026-11-06.json) /
+[表格](../benchmark/framework-regression-2026-11-06.md)。核心不加载 mp/stub，Windows/x64、
+LuaJIT2.1.1748459687、QPC wall clock、JIT开启、viewport1280×720；host 为
+LuaJIT2.1.1787944725、mpv v0.41.0-1011、实际 OSD2275×1280。主机字体/版本证据来自
+独立新校准报告；计时批次 libass 日志设 warn，避免旧实现反复初始化时的 debug 日志
+放大成本。宿主按样例/模式分批取数，内部无逐次 IPC。
+
+15个核心阶段分别计时：description、mount/dispose、reconcile、dirty rebuild/finalize、
+Element/Render traversal、dirty/clean layout、dirty/cached regions、Record/ASS paint、
+payload。布局前在计时外标记所有节点，clean阶段独立；每次直接 ASS 与 Record 重放
+逐字节一致，三轮最终输出 hash相同。小树12/7、深树67/65、128子节点258/129、Main
+313/175（Element/Render）覆盖四类。Main 的基线 p50：reconcile6.4452ms、dirty rebuild
+6.3107ms、dirty layout1.9282ms、regions_dirty5.5797ms、ASS paint2.8073ms；这些是独立
+样本，不把 reconcile+rebuild 或强制脏布局的数值加成真实播放器帧延迟。
+
+模拟240Hz的 FrameClock/Controller OffsetBox 动画每类100帧：layout0、paint100、input
+invalidations100，符合偏移改变输入坐标的契约。实验缓存静态子树 Record 操作，在根
+偏移处重放，输出与每帧整树绘制一致；Main full paint2.2732ms、Record replay0.9181ms，
+深树0.1978/0.0152ms。收益仅对该静态子树/偏移动画成立，仍每帧编码 ASS，未实现生产
+RepaintBoundary、cache invalidation 或 relayout pruning API。
+
+宿主七类×same/changed（变化位置与字号），每轮50次/预热10次，共三轮轮转顺序：
+旧`46bc4a2`服务热路径p50为11.1761～17.9328ms；native reuse为0.0033～0.0177ms。
+各模式三种实现bounds一致；没有结果缓存。主要可见差别来自overlay资源持久复用，
+不能将数量级差异归因于少一次Lua表复制。native与持久update相比通常只差约微秒，
+不承诺所有字体/宿主/负载更快；cold/init/dispose与heap delta分别保留。未插桩宿主
+内部，无法把native时间精确分成Lua转换、libass初始化/缓存/光栅化成本。
+
+回归使用相同源文件hash与采样参数，72个阶段/动画条目输出一致。Main reconcile与
+ASS paint比值为0.930/0.895，deep reconcile为1.222，说明同代码也存在噪声；不能将
+复测涨跌写成生产优化/回归。保留每轮mean/p50/p95/max和p50跨度，不设置自动耗时门槛。
+
+首次整宿主矩阵在debug日志下超过60秒取数deadline，fixture清理自有进程、未生成正式
+报告；改为逐样例/模式批次并降低计时日志等级后完成。一次中间数据与完整测试重叠，
+最终正式基线在无并发测试的运行中替换，再单独复测core比较。Linux、scan-out、外部
+thumbfast性能仍未测；先前真实hover报告继续解释生产输入/播放链路，此处不替换它。
+
+## 历史基线：离线 ASS 测量（2026-11-06）
 
 完整 Lua suite **2290 checks passed**、EmmyLua **No issues found**。新增
 `test_ass_measure.lua` 覆盖 host 错误/空结果、非法边界、分配与清理失败；分层 guard

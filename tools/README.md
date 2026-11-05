@@ -1,10 +1,28 @@
-# Offline tools
+# Development tools
 
 These tools are explicitly invoked for development. They are not loaded by the
 production entry, do not change Widget/layout contracts, and do not add a Define
 content entry point.
 
 ## ASS measurement
+
+The general host utility accepts already encoded ASS without report metadata:
+
+```lua
+local measure_mod = require 'host.ass_measure'
+local service = measure_mod.AssMeasure({ res_x = 640, res_y = 360 })
+local raw, err, kind = service:measure(ass_data)
+local removed, cleanup_error = service:dispose()
+```
+
+It fixes and floors resolution at initialization, allocates one private hidden overlay
+and reuses the native command table. `raw` is the host table unchanged, including `{}`
+for an empty image; failures return nil/error/kind. Callers own disposal in both success
+and exception paths. `dispose()` is idempotent after success; failed removal retains
+the ID for an explicit cleanup retry but closes measurement. It does not cache bounds,
+scan trusted ASS for NUL or produce report objects. Generators and external input
+adapters validate their content. Existing AssCanvas/Paragraph output can be passed
+directly; no Widget mounting or Record replay is required for ordinary measurement.
 
 Run from the repository root with the test dependencies and a working mpv/mpv.net:
 
@@ -50,8 +68,9 @@ scene version is a positive integer. Optional `metadata` and `logical` evidence
 are retained without interpreting them as host metrics. Built-in requests use
 640×360; actual OSD dimensions are recorded separately.
 
-Each request allocates a hidden overlay via `host.ass_measure.AssMeasure`, requests
-`compute_bounds`, then removes that ID immediately. Results distinguish `ok`,
+The CLI driver reuses one hidden measurement instance per resolution for the entire
+batch, then disposes all instances. `tools/ass_measure_report.lua` audits raw bounds
+and converts them to schema v1; `lifecycle` records instance/removal counts. Results distinguish `ok`,
 `empty`, `unavailable`, and `error`; cleanup errors prevent success. Empty host
 tables omit bounds. Nonempty bounds have `left/top/right/bottom/width/height` in ASS
 request coordinates. The report keeps all repeats, stability, payload/request
@@ -76,5 +95,47 @@ does not supply runtime text measurement or update the framework estimator.
 `benchmark_real_player_hover.py` and `player_hover_probe.lua` measure real-player
 input through ASS submission. Their scenarios, reports and endpoint limits are in
 [TESTING.md](../dev/design/TESTING.md).
+
+## Framework and measurement benchmark
+
+```text
+uv run --group test python tools/benchmark.py --output tmp/core.json --markdown tmp/core.md
+uv run --group test python tools/benchmark.py --baseline tmp/core.json --output tmp/core-comparison.json
+uv run --group test python tools/benchmark.py --host-measure --host /path/to/mpv --output tmp/core-host.json
+```
+
+`benchmark_core.lua` runs on bare LuaJIT without `mp` or a stub. Fixed small, 64-level
+deep, 128-child and default Main scenes measure description, mount/dispose, reconcile,
+State dirty rebuild/finalize, Element/Render traversal, dirty/clean layout, dirty/cached
+regions, Record/ASS paint and payload concatenation. Every iteration compares direct
+ASS with replayed Record operations byte for byte outside timing. Dirty layout marks
+all nodes before timing. These are phase samples, not a single production-frame sum.
+
+Defaults are 100 measured iterations, 30 warmup iterations and three fresh LuaJIT
+processes. JSON retains each round's mean/p50/p95/max; displayed p50/p95 are medians
+of per-round percentiles. Comparisons require matching runtime/platform/JIT/clock,
+viewport, scenario version, sampling and output hash. Ratios are descriptive with no
+automatic threshold; shared machine load and GC/JIT noise must be considered.
+
+`--host-measure` supplements the core result using the isolated fixture. It reads
+the original service from Git (`--legacy-ref`, default `46bc4a2`) without checking out
+or editing it, compares legacy/update/native-reuse for identical and changed ASS,
+and checks bounds equivalence before timing. Cold requests, initialization and disposal
+are separate; timed hot iterations include native/libass but no IPC or result cache.
+Host order rotates across rounds. Live heap delta is not cumulative allocation.
+Host default is 50 iterations/10 warmup per round. The host must be available;
+the runner reports failure instead of silently replacing it with a stub.
+
+`benchmark_animation.lua` adds a simulated 240 Hz clock/controller, paint-only offset
+animation and an experimental cached Record replay for each scene. It verifies zero
+layout frames and exact ASS equivalence. The cached run avoids render-tree traversal
+but still encodes ASS every frame; it neither implements RepaintBoundary nor changes
+the production renderer. Ticker/full-paint/replay costs and dirty counts are reported
+separately. Host changed payloads vary both placement and text size; empty changed
+payloads stay empty. Timed batches use libass warn logging, with font/version evidence
+collected separately by the calibration CLI.
+
+Executable defaults come from `project.conf`. Reports and statistical limitations
+are documented in [TESTING.md](../dev/design/TESTING.md).
 
 `gen_font_glyphs.py` generates glyph metadata from the bundled font.

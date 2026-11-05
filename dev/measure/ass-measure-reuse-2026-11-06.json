@@ -1,0 +1,702 @@
+{
+  "schema_version": 1,
+  "scene": "framework-ass-calibration",
+  "scene_version": 1,
+  "samples": [
+    {
+      "request": {
+        "data": "{\\pos(50,64)\\rDefault\\an4\\blur0\\fs24\\fnArial\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}ASS bounds",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Arial"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 1,
+          "box": {
+            "right": 170,
+            "bottom": 78.8,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "draw_text"
+          ],
+          "size": {
+            "width": 120,
+            "height": 28.8
+          }
+        },
+        "name": "text-latin"
+      },
+      "results": [
+        {
+          "name": "text-latin",
+          "bounds": {
+            "left": 49.78125,
+            "top": 55.6875,
+            "right": 172.6875,
+            "bottom": 73.96875,
+            "height": 18.28125,
+            "width": 122.90625
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-latin",
+          "bounds": {
+            "left": 49.78125,
+            "top": 55.6875,
+            "right": 172.6875,
+            "bottom": 73.96875,
+            "height": 18.28125,
+            "width": 122.90625
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-latin",
+          "bounds": {
+            "left": 49.78125,
+            "top": 55.6875,
+            "right": 172.6875,
+            "bottom": 73.96875,
+            "height": 18.28125,
+            "width": 122.90625
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-latin",
+          "bounds": {
+            "left": 49.78125,
+            "top": 55.6875,
+            "right": 172.6875,
+            "bottom": 73.96875,
+            "height": 18.28125,
+            "width": 122.90625
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-latin",
+          "bounds": {
+            "left": 49.78125,
+            "top": 55.6875,
+            "right": 172.6875,
+            "bottom": 73.96875,
+            "height": 18.28125,
+            "width": 122.90625
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "5beaa65b78035760edc29e3d41252f0c5b05ba6a2167ddb058141dd94e7bbdd8",
+      "request_sha256": "999362818f93faa851e4efd23160ef6f582255ebfb6a43a0627dbcb6489f57ac",
+      "stable": true
+    },
+    {
+      "request": {
+        "data": "{\\pos(50,64)\\rDefault\\an4\\blur0\\fs24\\fnArial\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}播放器文字",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Arial"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 1,
+          "box": {
+            "right": 170,
+            "bottom": 78.8,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "draw_text"
+          ],
+          "size": {
+            "width": 120,
+            "height": 28.8
+          }
+        },
+        "name": "text-cjk"
+      },
+      "results": [
+        {
+          "name": "text-cjk",
+          "bounds": {
+            "left": 50.0625,
+            "top": 55.125,
+            "right": 148.5,
+            "bottom": 78.1875,
+            "height": 23.0625,
+            "width": 98.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-cjk",
+          "bounds": {
+            "left": 50.0625,
+            "top": 55.125,
+            "right": 148.5,
+            "bottom": 78.1875,
+            "height": 23.0625,
+            "width": 98.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-cjk",
+          "bounds": {
+            "left": 50.0625,
+            "top": 55.125,
+            "right": 148.5,
+            "bottom": 78.1875,
+            "height": 23.0625,
+            "width": 98.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-cjk",
+          "bounds": {
+            "left": 50.0625,
+            "top": 55.125,
+            "right": 148.5,
+            "bottom": 78.1875,
+            "height": 23.0625,
+            "width": 98.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "text-cjk",
+          "bounds": {
+            "left": 50.0625,
+            "top": 55.125,
+            "right": 148.5,
+            "bottom": 78.1875,
+            "height": 23.0625,
+            "width": 98.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "7ea63fe275c5ee4a624c5181dd2cb8b854f79f60442d6a872d6cc03eac214153",
+      "request_sha256": "b8a8a7928fa8763bb81c2747d1dd9769eac1dfed26d88f600123703462386090",
+      "stable": true
+    },
+    {
+      "request": {
+        "data": "{\\pos(62,62)\\rDefault\\an5\\blur0\\fs24\\fnMaterial Symbols Rounded\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}play_arrow",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Material Symbols Rounded"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 1,
+          "box": {
+            "right": 74,
+            "bottom": 74,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "draw_text"
+          ],
+          "size": {
+            "width": 24,
+            "height": 24
+          }
+        },
+        "name": "icon-play"
+      },
+      "results": [
+        {
+          "name": "icon-play",
+          "bounds": {
+            "left": 58.5,
+            "top": 56.8125,
+            "right": 67.5,
+            "bottom": 70.3125,
+            "height": 13.5,
+            "width": 9
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "icon-play",
+          "bounds": {
+            "left": 58.5,
+            "top": 56.8125,
+            "right": 67.5,
+            "bottom": 70.3125,
+            "height": 13.5,
+            "width": 9
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "icon-play",
+          "bounds": {
+            "left": 58.5,
+            "top": 56.8125,
+            "right": 67.5,
+            "bottom": 70.3125,
+            "height": 13.5,
+            "width": 9
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "icon-play",
+          "bounds": {
+            "left": 58.5,
+            "top": 56.8125,
+            "right": 67.5,
+            "bottom": 70.3125,
+            "height": 13.5,
+            "width": 9
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "icon-play",
+          "bounds": {
+            "left": 58.5,
+            "top": 56.8125,
+            "right": 67.5,
+            "bottom": 70.3125,
+            "height": 13.5,
+            "width": 9
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "ae222b0f15ea64488c36b74967b1bd3a9bb117b92ff11779b7a0e0c0ca207e84",
+      "request_sha256": "076e1ff4dbb40edaa0444542e689b33c10796a31b55b9876b3b49ae14cf3177a",
+      "stable": true
+    },
+    {
+      "request": {
+        "data": "{\\pos(35,64)\\rDefault\\an4\\blur0\\fs24\\fnArial\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\fscx150\\fscy125}Scale",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Arial"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 1,
+          "box": {
+            "right": 110,
+            "bottom": 78.8,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "save",
+            "translate",
+            "scale",
+            "translate",
+            "draw_text",
+            "restore"
+          ],
+          "size": {
+            "width": 60,
+            "height": 28.8
+          }
+        },
+        "name": "scaled-text"
+      },
+      "results": [
+        {
+          "name": "scaled-text",
+          "bounds": {
+            "left": 36.28125,
+            "top": 53.71875,
+            "right": 116.71875,
+            "bottom": 77.0625,
+            "height": 23.34375,
+            "width": 80.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "scaled-text",
+          "bounds": {
+            "left": 36.28125,
+            "top": 53.71875,
+            "right": 116.71875,
+            "bottom": 77.0625,
+            "height": 23.34375,
+            "width": 80.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "scaled-text",
+          "bounds": {
+            "left": 36.28125,
+            "top": 53.71875,
+            "right": 116.71875,
+            "bottom": 77.0625,
+            "height": 23.34375,
+            "width": 80.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "scaled-text",
+          "bounds": {
+            "left": 36.28125,
+            "top": 53.71875,
+            "right": 116.71875,
+            "bottom": 77.0625,
+            "height": 23.34375,
+            "width": 80.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "scaled-text",
+          "bounds": {
+            "left": 36.28125,
+            "top": 53.71875,
+            "right": 116.71875,
+            "bottom": 77.0625,
+            "height": 23.34375,
+            "width": 80.4375
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "584c65910a5f0a887926e8a0c1390810787ab25ed742843993c0efa1182aba41",
+      "request_sha256": "2fc02a914211c476c974053decfd12e5f2ebb3ff79a899d1194f99a597b4661b",
+      "stable": true
+    },
+    {
+      "request": {
+        "data": "{\\pos(50,65)\\rDefault\\an4\\blur0\\fs24\\fnArial\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\clip(50,50,130,80)}Clipped long text",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Arial"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 1,
+          "box": {
+            "right": 130,
+            "bottom": 80,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "save",
+            "clip_rect",
+            "translate",
+            "scale",
+            "translate",
+            "draw_text",
+            "restore"
+          ],
+          "size": {
+            "width": 80,
+            "height": 30
+          }
+        },
+        "name": "clipped-text"
+      },
+      "results": [
+        {
+          "name": "clipped-text",
+          "bounds": {
+            "left": 50.90625,
+            "top": 56.53125,
+            "right": 129.9375,
+            "bottom": 79.03125,
+            "height": 22.5,
+            "width": 79.03125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "clipped-text",
+          "bounds": {
+            "left": 50.90625,
+            "top": 56.53125,
+            "right": 129.9375,
+            "bottom": 79.03125,
+            "height": 22.5,
+            "width": 79.03125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "clipped-text",
+          "bounds": {
+            "left": 50.90625,
+            "top": 56.53125,
+            "right": 129.9375,
+            "bottom": 79.03125,
+            "height": 22.5,
+            "width": 79.03125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "clipped-text",
+          "bounds": {
+            "left": 50.90625,
+            "top": 56.53125,
+            "right": 129.9375,
+            "bottom": 79.03125,
+            "height": 22.5,
+            "width": 79.03125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "clipped-text",
+          "bounds": {
+            "left": 50.90625,
+            "top": 56.53125,
+            "right": 129.9375,
+            "bottom": 79.03125,
+            "height": 22.5,
+            "width": 79.03125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "3087f1b0b8c24de639564bffdff8c2dba62849c8fe2de548541fc6f4a38dfd2c",
+      "request_sha256": "69f7e29e1b352fe2418cff7eb4e36455dc2f19da765d601fa55813e070f3be22",
+      "stable": true
+    },
+    {
+      "request": {
+        "data": "{\\pos(62,64)\\rDefault\\an5\\blur0\\fs24\\fnMaterial Symbols Rounded\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}play_arrow\n{\\pos(86,64)\\rDefault\\an4\\blur0\\fs24\\fnArial\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}Play",
+        "metadata": {
+          "font_size": 24,
+          "scene_version": 1,
+          "font_family": "Material Symbols Rounded / Arial"
+        },
+        "res_x": 640,
+        "res_y": 360,
+        "logical": {
+          "event_count": 2,
+          "box": {
+            "right": 134,
+            "bottom": 78.8,
+            "left": 50,
+            "top": 50
+          },
+          "operations": [
+            "draw_text",
+            "draw_text"
+          ],
+          "size": {
+            "width": 84,
+            "height": 28.8
+          }
+        },
+        "name": "composed-row"
+      },
+      "results": [
+        {
+          "name": "composed-row",
+          "bounds": {
+            "left": 58.5,
+            "top": 55.96875,
+            "right": 130.78125,
+            "bottom": 78.1875,
+            "height": 22.21875,
+            "width": 72.28125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "composed-row",
+          "bounds": {
+            "left": 58.5,
+            "top": 55.96875,
+            "right": 130.78125,
+            "bottom": 78.1875,
+            "height": 22.21875,
+            "width": 72.28125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "composed-row",
+          "bounds": {
+            "left": 58.5,
+            "top": 55.96875,
+            "right": 130.78125,
+            "bottom": 78.1875,
+            "height": 22.21875,
+            "width": 72.28125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "composed-row",
+          "bounds": {
+            "left": 58.5,
+            "top": 55.96875,
+            "right": 130.78125,
+            "bottom": 78.1875,
+            "height": 22.21875,
+            "width": 72.28125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        },
+        {
+          "name": "composed-row",
+          "bounds": {
+            "left": 58.5,
+            "top": 55.96875,
+            "right": 130.78125,
+            "bottom": 78.1875,
+            "height": 22.21875,
+            "width": 72.28125
+          },
+          "res_x": 640,
+          "res_y": 360,
+          "status": "ok"
+        }
+      ],
+      "payload_sha256": "13acdb214c42ce5db68a70a30e9b2fbbae21e1fcd9ec48ef7f01fd6175cf60c2",
+      "request_sha256": "0884963cc0b1219742ef3f0d6856fce71303650088fd10d61aa1c4f856b3a886",
+      "stable": true
+    }
+  ],
+  "environment": {
+    "osd_dimensions": {
+      "h": 1280,
+      "aspect": 1.777344,
+      "par": 1,
+      "ml": 0,
+      "mt": 0,
+      "mr": 0,
+      "mb": 1,
+      "w": 2275
+    },
+    "mpv_version": "mpv v0.41.0-1011-g182fa6ca4",
+    "ffmpeg_version": "N-126312-gdf48dc624",
+    "lua_version": "Lua 5.1",
+    "luajit_version": "LuaJIT 2.1.1787944725",
+    "platform": "Windows",
+    "architecture": "AMD64",
+    "bounds_coordinate_space": "ASS request resolution; not physical OSD pixels",
+    "font_selection": [
+      "[osd/libass] fontselect: (sans-serif, 400, 0) -> ArialMT, 0, ArialMT",
+      "[osd/libass] fontselect: (Arial, 400, 0) -> ArialMT, 0, ArialMT",
+      "[osd/libass] fontselect: (Arial, 400, 0) -> MicrosoftYaHeiUI, 1, MicrosoftYaHeiUI",
+      "[osd/libass] fontselect: (Material Symbols Rounded, 400, 0) -> MaterialSymbolsRounded-Regular, 0, MaterialSymbolsRounded-Regular"
+    ],
+    "libass_initialization": [
+      "[osd/libass] ASS library version: 0x1705000 (runtime 0x1705000)",
+      "[osd/libass] libass API version: 0x1705000",
+      "[osd/libass] Shaper: FriBidi 1.0.16 (SIMPLE) HarfBuzz-ng 14.4.0 (COMPLEX)"
+    ],
+    "libass_version": {
+      "compiled_hex": "0x1705000",
+      "runtime_hex": "0x1705000"
+    },
+    "libass_version_source": "host libass log",
+    "bundled_font": {
+      "file": "fonts/MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf",
+      "sha256": "0c1d2b5de02a7010bbc4f816252035853346c657de9593a4219748c1c01251d1"
+    },
+    "source_commit": "46bc4a2",
+    "source_worktree_modified": true,
+    "source_files_sha256": {
+      "host/ass_measure.lua": "a5da348f4c4174dda04d9744c759fd12556a9388b3cbc39fb3970c473391154d",
+      "tools/ass_measure_samples.lua": "d480346005d78f59cfca8f6a423f27253755299d32a0171001acbee7a6a37c75",
+      "tools/ass_measure_report.lua": "aac3e7a97f6d810a63ff682f82211b89b791fdb652e0e720da6112f7b9f7dd8f",
+      "test/real_host/ass_measure.lua": "7b5deb36447d05e932bbeffe08a8b39e08196f28a57aa972c58e784e495be0c1"
+    }
+  },
+  "lifecycle": {
+    "instances": 1,
+    "removed": 1
+  },
+  "status": "ok",
+  "repeats": 5,
+  "generated_at_utc": "2026-11-05T19:44:53.793498+00:00",
+  "limits": [
+    "bounds may include renderer image padding; not exact glyph ink, baseline or optical-center metrics",
+    "logical boxes and RecordCanvas operations are independent evidence",
+    "hidden measurement does not prove displayed pixels or scan-out"
+  ]
+}

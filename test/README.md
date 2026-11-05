@@ -110,10 +110,15 @@ and ASS output are covered by Lua tests, without claiming external decoder pixel
 
 `test_ass_measure.py` loads the standalone measurement driver and exercises the
 host service with bundled fonts, repeat stability, custom JSON, clipping, empty
-payloads and resolution coordinates. `test_ass_measure_cli.py` covers invalid
+payloads, fixed-instance reuse/cleanup and resolution coordinates. It also verifies
+the three benchmark strategies against real bounds. `test_ass_measure_cli.py` covers invalid
 input, missing host and timeout reporting. CLI use and schema are in
 [tools/README.md](../tools/README.md); reports are in
 [dev/measure](../dev/measure/ass-measure-2026-11-06.md).
+
+`test_benchmark_cli.py` runs the real four-scene core benchmark, checks no `mp` is
+loaded, verifies output hashes and rejects incompatible baselines. Performance data
+is produced separately by `tools/benchmark.py`; behavior tests do not assert speed.
 
 The separate `tools/benchmark_real_player_hover.py` generates H.264 video with
 ffmpeg and measures native Windows pointer moves through the production player,

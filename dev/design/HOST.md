@@ -89,16 +89,27 @@ priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容�
 
 ## 宿主变更规则
 
-### 离线 ASS 测量
+### 通用 ASS 测量
 
-`host.ass_measure.AssMeasure` 是显式调用的工具服务，不由 App、Widget 或帧循环加载。
-输入是名称、静态 `ass-events` payload 和正整数 `res_x/res_y`；每次测量分配一个 mpv
-隐藏 overlay，开启 `compute_bounds`，读取结构化 bounds 后立即移除。它不使用生产
-presenter 的 overlay ID，也不把结果写回 TextLayout/RenderObject。
+`host.ass_measure.AssMeasure({res_x, res_y})` 是显式调用的通用宿主工具，不由 App、Widget
+或帧循环加载。分辨率在初始化验证并向下取整一次，必须为有限正数且取整后至少为 1；
+实例持有一个 mpv allocator-owned 隐藏 compute_bounds overlay，分辨率固定。它不使用
+生产 presenter 的 overlay ID，也不把结果写回 TextLayout/RenderObject。
 
-输出区分 `ok`、`empty`、`unavailable` 和 `error`，保留宿主返回的矩形与请求分辨率；
-非法输入在调用前拒绝。同步 Lua 调用没有可抢占的超时，离线 CLI 通过 IPC deadline 和
-自有进程清理处理超时/宿主退出。清理失败必须报告，不能将其写成成功测量。
+`measure(data)` 接受已编码的静态 ASS 字符串，直接返回原生 `{x0,y0,x1,y1}` 表；空表
+表示空画面。失败返回 `nil, message, kind`，kind 为 `unavailable` 或 `error`。宿主命令
+异常被保留；核心只检查输入/返回类型，不扫描可信 payload 或审计每个坐标。生成器和
+外部输入边界负责 NUL/ASS 合法性，诊断适配负责数值/矩形审计及报告四态转换。
+
+调用方负责在结束/异常路径 `dispose()`：成功清理返回 true，已清理/无资源返回 false；
+清理失败返回 false,error 并保留 ID 供再次 dispose，实例始终关闭，不再接受测量。销毁
+释放 payload 引用，移除命令带 data=''，只清理自有 ID。实例不注册 observer、timer 或
+shutdown callback。核心没有结果缓存；实际 OSD、默认字体/样式仍影响固定 ASS 坐标的
+测量，resize 后需要新结果。同步 Lua 调用没有可抢占的超时。
+
+离线 CLI 复用每种 resolution 的实例，在整个批次结束后统一清理；报告层保留 schema v1、
+严格外部输入校验、ok/empty/unavailable/error 和 bounds 转换。清理失败必须报告，不能
+将其写成成功批次。CLI 通过 IPC deadline 和自有进程清理处理超时/宿主退出。
 
 工具记录 payload SHA-256、场景版本、OS、mpv/Lua/libass 可得版本和实际 OSD 尺寸；
 libass 版本从初始化日志提取，未暴露时明确为空。RecordCanvas 逻辑布局及绘制记录与宿主 bounds 并列，

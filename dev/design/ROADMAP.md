@@ -16,8 +16,9 @@
 - 经用户审阅的 ModernX 默认播放器：original/reduced、controls/metadata/capability、
   AutoHide、thumbfast 预览清理与边框、Define 注入的可关闭 Demo；详细范围见
   [PLAYER.md](PLAYER.md)。
-- 离线 `AssMeasure`：隐藏 overlay 的真实 bounds、RecordCanvas 逻辑证据、字体与
-  版本记录及重复测量报告，入口见 [tools](../../tools/README.md)。
+- 通用 `AssMeasure`：固定分辨率的持久隐藏 overlay、原生 bounds，以及独立的离线
+  校准报告适配；框架 benchmark 覆盖小树/深树/多子节点/Main，各阶段独立记录，
+  入口见 [tools](../../tools/README.md)。
 
 ## 近期方向
 
