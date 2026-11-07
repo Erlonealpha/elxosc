@@ -139,3 +139,41 @@ Executable defaults come from `project.conf`. Reports and statistical limitation
 are documented in [TESTING.md](../dev/design/TESTING.md).
 
 `gen_font_glyphs.py` generates glyph metadata from the bundled font.
+
+## Memory investigation
+
+```text
+luajit tools/investigate_memory.lua tmp/memory-lua.json
+luajit tools/investigate_memory.lua tmp/memory-legacy.json tmp/player-context-legacy.txt
+uv run --group test python tools/investigate_memory.py --host /path/to/mpvnet.com --seconds 60 --output tmp/memory-host.json
+uv run --group test python tools/investigate_memory.py --host /path/to/mpvnet.com --seconds 60 --cases current_visible_no_present,ass_static,ass_dynamic,current_visible --output tmp/memory-controls.json
+```
+
+The optional Lua input is a saved `widget/player_context.lua` revision, loaded
+only in the fresh probe process. Five batches track weak references after two
+full collections for snapshots/views, ordinary instances, dynamic classes, live
+store replacement, Main reconciliation and mount/dispose. Windows also records
+the probe process's private bytes/working set after GC. Batch heap includes
+JIT metadata and weak-table capacity; it is not cumulative allocation. Cases
+share a process, so retained objects from earlier cases affect later baselines.
+
+The Windows host driver generates 720p/60 H.264 video and uses the existing isolated
+fixture and owned window process. Default cases compare no UI, old/current snapshot
+module with hidden Main and continuous display. Demo/debug are off. Only staging
+enables the entry, suppresses activity after explicitly hiding Main, or disables
+AutoHide for continuous display; every sample verifies visibility. It records
+normal Lua heap plus initial/final full-GC samples, a 128-slot weak-reference ring,
+private bytes and working set separately. Additional controls keep Main's Lua
+build/layout/paint while suppressing ASS submission, or submit a simple static/
+changing ASS label at 60 Hz without the framework. Final samples stop presentation,
+then shut down App, each with a five-second wait and full GC; these are separate
+from the measured interval's delta. `memory_host_probe.lua` is never loaded
+by production. The old case replaces only the snapshot module, keeping all other
+code and dependencies equal; it is not a historical full-application benchmark.
+
+Run alone: these cases and real-host input tests share the physical mouse. Reports
+retain versions, source hashes and finite samples; no user media is needed. Short
+runs can identify retained Lua objects but cannot prove absence of long-term
+native leaks. Process memory also includes decoder, GPU and libass allocations.
+`--collect-each-sample` adds an isolated full-GC control for allocation high-water
+growth; it is a diagnostic intervention and does not change production GC policy.

@@ -1,0 +1,651 @@
+{
+  "schema_version": 1,
+  "revision": "242ad73b8dd5de298637c1c6d0ad827cdde68627",
+  "worktree_status": "M dev/design/WIDGETS.md\n M test/real_host/conftest.py\n M tools/README.md\n M widget/README.md\n M widget/player_context.lua\n?? test/test_player_snapshot_gc.lua\n?? tools/investigate_memory.lua\n?? tools/investigate_memory.py\n?? tools/memory_host_probe.lua",
+  "legacy_ref": "242ad73",
+  "dependency_revision": "49c8657f47d78a855fdb52e0f95660afecdf84da",
+  "dependency_modified": true,
+  "dependency_class_sha256": "fafd368e79e2b127ee26e04a33b72148aff732050f29cf8462e0073992298b03",
+  "probe_sha256": {
+    "investigate_memory.py": "82fca0abc046f673aeb5f3675415d5991cc48da1649610af4b1755928e9f9e4e",
+    "memory_host_probe.lua": "1258ff2a4c71ec219ffe06d6dc729bcbc3026aba6fa169185e3a4fb5865be0f8"
+  },
+  "player_context_sha256": "06fb6af145f72572c0afdc195eca85439a541766f53dc29c7a8814c87aa00389",
+  "media": "generated 1280x720 H.264 testsrc2, 60 fps, no audio; software decode, gpu VO",
+  "limits": "short isolated Windows probe, demo/debug off, no external thumbfast; process memory includes player/native; legacy differs only in player_context.lua; hidden controller hide with OS activity suppressed, visible AutoHide disabled in staging",
+  "cases": [
+    {
+      "name": "current_visible_no_present",
+      "seconds": 60.0,
+      "warmup_seconds": 5,
+      "collect_each_sample": true,
+      "cooldown_phases": [
+        "presentation_stopped_5s",
+        "app_shutdown_5s"
+      ],
+      "viewport": {
+        "w": 2276,
+        "h": 1280,
+        "par": 1.0,
+        "aspect": 1.778125,
+        "mt": 0,
+        "mb": 0,
+        "ml": 0,
+        "mr": 0
+      },
+      "samples": [
+        {
+          "forced_gc": true,
+          "time": 6.325288,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 347,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4741.244141,
+          "before_gc_kib": 10811.443359,
+          "private_bytes": 309473280,
+          "working_set_bytes": 293158912,
+          "elapsed_seconds": 0.08398469999883673
+        },
+        {
+          "forced_gc": true,
+          "time": 11.320314,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 643,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4782.892578,
+          "before_gc_kib": 11198.482422,
+          "private_bytes": 313065472,
+          "working_set_bytes": 296689664,
+          "elapsed_seconds": 5.089057599998341
+        },
+        {
+          "forced_gc": true,
+          "time": 16.326967,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 940,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4792.458984,
+          "before_gc_kib": 12502.708984,
+          "private_bytes": 319414272,
+          "working_set_bytes": 302882816,
+          "elapsed_seconds": 10.084014000000025
+        },
+        {
+          "forced_gc": true,
+          "time": 21.315639,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 1247,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4807.810547,
+          "before_gc_kib": 17806.259766,
+          "private_bytes": 327450624,
+          "working_set_bytes": 310931456,
+          "elapsed_seconds": 15.083237899998494
+        },
+        {
+          "forced_gc": true,
+          "time": 26.312821,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 1551,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4815.060547,
+          "before_gc_kib": 11126.822266,
+          "private_bytes": 335552512,
+          "working_set_bytes": 318689280,
+          "elapsed_seconds": 20.083131799998228
+        },
+        {
+          "forced_gc": true,
+          "time": 31.340723,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 1847,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4951.095703,
+          "before_gc_kib": 18116.861328,
+          "private_bytes": 343961600,
+          "working_set_bytes": 326557696,
+          "elapsed_seconds": 25.08306520000042
+        },
+        {
+          "forced_gc": true,
+          "time": 36.321389,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2153,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4823.103516,
+          "before_gc_kib": 12069.736328,
+          "private_bytes": 353894400,
+          "working_set_bytes": 336179200,
+          "elapsed_seconds": 30.08460339999874
+        },
+        {
+          "forced_gc": true,
+          "time": 41.336491,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2454,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4954.365234,
+          "before_gc_kib": 17239.103516,
+          "private_bytes": 364380160,
+          "working_set_bytes": 346562560,
+          "elapsed_seconds": 35.08338449999792
+        },
+        {
+          "forced_gc": true,
+          "time": 46.321116,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2753,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4826.103516,
+          "before_gc_kib": 13036.630859,
+          "private_bytes": 375660544,
+          "working_set_bytes": 357916672,
+          "elapsed_seconds": 40.084615399999166
+        },
+        {
+          "forced_gc": true,
+          "time": 51.323451,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 3057,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4834.353516,
+          "before_gc_kib": 11403.162109,
+          "private_bytes": 388120576,
+          "working_set_bytes": 370348032,
+          "elapsed_seconds": 45.08382089999941
+        },
+        {
+          "forced_gc": true,
+          "time": 56.340978,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3358,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4828.544922,
+          "before_gc_kib": 12009.029297,
+          "private_bytes": 400986112,
+          "working_set_bytes": 383152128,
+          "elapsed_seconds": 50.08500379999896
+        },
+        {
+          "forced_gc": true,
+          "time": 61.33228,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3651,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4835.013672,
+          "before_gc_kib": 15057.095703,
+          "private_bytes": 414474240,
+          "working_set_bytes": 396673024,
+          "elapsed_seconds": 55.08314270000119
+        },
+        {
+          "forced_gc": true,
+          "time": 66.327891,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3942,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4845.494141,
+          "before_gc_kib": 12485.314453,
+          "private_bytes": 435511296,
+          "working_set_bytes": 417509376,
+          "elapsed_seconds": 60.083554699998786
+        },
+        {
+          "forced_gc": true,
+          "time": 66.402903,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3946,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4849.001953,
+          "before_gc_kib": 11815.845703,
+          "private_bytes": 435486720,
+          "working_set_bytes": 417492992,
+          "elapsed_seconds": 60.166338899998664
+        },
+        {
+          "forced_gc": true,
+          "time": 71.51095,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 4246,
+          "visibility": [
+            {
+              "opacity": 1,
+              "hidden": false
+            }
+          ],
+          "lua_kib": 4847.208984,
+          "before_gc_kib": 14787.376953,
+          "private_bytes": 311959552,
+          "working_set_bytes": 286670848,
+          "elapsed_seconds": 65.27176880000115,
+          "phase": "presentation_stopped_5s"
+        },
+        {
+          "forced_gc": true,
+          "time": 76.594639,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 4251,
+          "visibility": [],
+          "lua_kib": 4463.137695,
+          "before_gc_kib": 9518.244141,
+          "private_bytes": 306257920,
+          "working_set_bytes": 280535040,
+          "elapsed_seconds": 70.33496569999988,
+          "phase": "app_shutdown_5s"
+        }
+      ],
+      "mpv_version": "mpv v0.41.0-1011-g182fa6ca4",
+      "ffmpeg_version": "N-126312-gdf48dc624",
+      "post_gc_delta": {
+        "lua_kib": 107.75781199999983,
+        "private_bytes": 126013440,
+        "working_set_bytes": 124334080,
+        "updates": 3599
+      },
+      "log_error_count": 0
+    },
+    {
+      "name": "current_visible",
+      "seconds": 60.0,
+      "warmup_seconds": 5,
+      "collect_each_sample": true,
+      "cooldown_phases": [
+        "presentation_stopped_5s",
+        "app_shutdown_5s"
+      ],
+      "viewport": {
+        "w": 2276,
+        "h": 1280,
+        "par": 1.0,
+        "aspect": 1.778125,
+        "mt": 0,
+        "mb": 0,
+        "ml": 0,
+        "mr": 0
+      },
+      "samples": [
+        {
+          "before_gc_kib": 12883.591797,
+          "forced_gc": true,
+          "time": 6.339017,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 368,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4700.240234,
+          "private_bytes": 312782848,
+          "working_set_bytes": 297185280,
+          "elapsed_seconds": 0.0834900000008929
+        },
+        {
+          "before_gc_kib": 12574.677734,
+          "forced_gc": true,
+          "time": 11.346012,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 676,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4721.205078,
+          "private_bytes": 311660544,
+          "working_set_bytes": 296099840,
+          "elapsed_seconds": 5.083980299998075
+        },
+        {
+          "before_gc_kib": 18295.447266,
+          "forced_gc": true,
+          "time": 16.358036,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 977,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4858.423828,
+          "private_bytes": 317050880,
+          "working_set_bytes": 301260800,
+          "elapsed_seconds": 10.083955099999002
+        },
+        {
+          "before_gc_kib": 17161.498047,
+          "forced_gc": true,
+          "time": 21.359151,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 1284,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4865.423828,
+          "private_bytes": 324935680,
+          "working_set_bytes": 308772864,
+          "elapsed_seconds": 15.084338399999979
+        },
+        {
+          "before_gc_kib": 11507.498047,
+          "forced_gc": true,
+          "time": 26.341769,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 1,
+          "updates": 1582,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4744.841797,
+          "private_bytes": 332636160,
+          "working_set_bytes": 316481536,
+          "elapsed_seconds": 20.082793199999287
+        },
+        {
+          "before_gc_kib": 11290.951172,
+          "forced_gc": true,
+          "time": 31.336935,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 1894,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4744.587891,
+          "private_bytes": 343101440,
+          "working_set_bytes": 326356992,
+          "elapsed_seconds": 25.083103000000847
+        },
+        {
+          "before_gc_kib": 18173.630859,
+          "forced_gc": true,
+          "time": 36.355175,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2199,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4878.490234,
+          "private_bytes": 352444416,
+          "working_set_bytes": 335212544,
+          "elapsed_seconds": 30.083456500000466
+        },
+        {
+          "before_gc_kib": 12359.255859,
+          "forced_gc": true,
+          "time": 41.338597,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2502,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4750.388672,
+          "private_bytes": 363786240,
+          "working_set_bytes": 346460160,
+          "elapsed_seconds": 35.08325569999943
+        },
+        {
+          "before_gc_kib": 13036.361328,
+          "forced_gc": true,
+          "time": 46.341137,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 2804,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4749.865234,
+          "private_bytes": 374226944,
+          "working_set_bytes": 356888576,
+          "elapsed_seconds": 40.0844634999994
+        },
+        {
+          "before_gc_kib": 17877.849609,
+          "forced_gc": true,
+          "time": 51.357632,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3109,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4881.419922,
+          "private_bytes": 386625536,
+          "working_set_bytes": 369221632,
+          "elapsed_seconds": 45.08405169999969
+        },
+        {
+          "before_gc_kib": 11018.126953,
+          "forced_gc": true,
+          "time": 56.364698,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3417,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4754.197266,
+          "private_bytes": 399781888,
+          "working_set_bytes": 382390272,
+          "elapsed_seconds": 50.084012399998755
+        },
+        {
+          "before_gc_kib": 17327.107422,
+          "forced_gc": true,
+          "time": 61.353228,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 3725,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4883.025391,
+          "private_bytes": 413999104,
+          "working_set_bytes": 396623872,
+          "elapsed_seconds": 55.08372260000033
+        },
+        {
+          "before_gc_kib": 20055.294922,
+          "forced_gc": true,
+          "time": 66.360029,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 4033,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4882.798828,
+          "private_bytes": 431419392,
+          "working_set_bytes": 413925376,
+          "elapsed_seconds": 60.083670600000914
+        },
+        {
+          "before_gc_kib": 11316.404297,
+          "forced_gc": true,
+          "time": 66.410093,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 4036,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4371.255859,
+          "private_bytes": 431149056,
+          "working_set_bytes": 413716480,
+          "elapsed_seconds": 60.125613899999735
+        },
+        {
+          "before_gc_kib": 22010.619141,
+          "forced_gc": true,
+          "time": 71.51509,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 4341,
+          "visibility": [
+            {
+              "hidden": false,
+              "opacity": 1
+            }
+          ],
+          "lua_kib": 4885.423828,
+          "private_bytes": 318554112,
+          "working_set_bytes": 286461952,
+          "elapsed_seconds": 65.2307209999999,
+          "phase": "presentation_stopped_5s"
+        },
+        {
+          "before_gc_kib": 9586.001953,
+          "forced_gc": true,
+          "time": 76.57275,
+          "runtime": "LuaJIT 2.1.1787944725",
+          "weak_survivors": 0,
+          "updates": 4343,
+          "visibility": [],
+          "lua_kib": 4368.071289,
+          "private_bytes": 316710912,
+          "working_set_bytes": 283328512,
+          "elapsed_seconds": 70.2949023000001,
+          "phase": "app_shutdown_5s"
+        }
+      ],
+      "mpv_version": "mpv v0.41.0-1011-g182fa6ca4",
+      "ffmpeg_version": "N-126312-gdf48dc624",
+      "post_gc_delta": {
+        "lua_kib": -328.984375,
+        "private_bytes": 118366208,
+        "working_set_bytes": 116531200,
+        "updates": 3668
+      },
+      "log_error_count": 0
+    }
+  ],
+  "evidence_note": "Captured at 242ad73 plus worktree snapshot fix and probes; sibling elxlib modified; finite diagnostic samples, not long-term absence of leaks."
+}

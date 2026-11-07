@@ -2,6 +2,31 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
+## 最新检查：内存调查（2026-11-07）
+
+快照修复提交`ee06341`（调查基线`242ad73`）：新增五项 Lua GC 所有权测试、12 assertions及一个真实宿主
+GC回归。普通完整Lua **158 failures / 2172 passes**；当前外部elxlib工作区的class
+格式化覆盖subclass `__tostring`，使异常消息丢失。旧snapshot模块的完整基线也同样
+158失败/2160通过，失败集合一致；临时进程修正格式化分派的归因控制2330通过，不能
+替代正常suite通过。该外部依赖未修改。EmmyLua **No issues found**；完整Python
+**44 passed in 33.15s**（real-host16、runner14、测量CLI11、benchmarkCLI3），无skip。
+原2318/43成功基线保留在下文，不能用于声称当前外部依赖完整Lua检查通过。
+
+fixture只在隔离副本开启用户可能关闭的入口，生产`main.lua`不改。新增真实GC测试
+使用宿主LuaJIT创建200快照/800弱引用、替换store后完整GC，丢弃引用0存活，保留view
+和store可用。普通Lua回归覆盖snapshot/nested view释放、保留数据、重新生成view。
+
+内存工具和实际结果见 [调查数据](../benchmark/memory-investigation-2026-11-07.md) 与
+[tools/README.md](../../tools/README.md)。30秒五组对照确认旧readonly缓存Lua泄露，
+修正后GC旧view清零；60秒native/ASS/定期GC控制表明剩余进程增长可明显回落但尚未
+精确归因，不称已解决全部内存问题。裸Main reconcile/mount/dispose对象可回收。
+无stub日志历史，有限weak ring与样本，GC干预仅隔离探针。
+
+首次Python与内存探针并发，Demo点击失败（42通过/1失败）；停止鼠标争用后完整44
+通过。真实输入测试与内存/hover探针必须单独运行。早期hidden状态漂移的两批被验证
+拒绝且不作正式数据；最终逐样本验证hidden/opacity。未测长时私有环境、ModernX、
+Linux和native分配栈。脚本/分辨率/依赖版本、采样限制见完整JSON。
+
 ## 当前基线：通用 ASS 测量与 benchmark（2026-11-06）
 
 完整 Lua **2318 checks passed**、EmmyLua **No issues found**。完整 Python **43 passed**：

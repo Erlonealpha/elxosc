@@ -1,0 +1,319 @@
+{
+  "arch": "x64",
+  "schema_version": 1,
+  "runtime": "LuaJIT 2.1.1748459687",
+  "legacy_player_context": false,
+  "cases": [
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 6795264,
+          "heap_kib": 974.43359375,
+          "survivors": 0,
+          "private_bytes": 3297280
+        },
+        {
+          "working_set_bytes": 6803456,
+          "heap_kib": 982.75390625,
+          "survivors": 0,
+          "private_bytes": 3297280
+        },
+        {
+          "working_set_bytes": 6811648,
+          "heap_kib": 990.90234375,
+          "survivors": 0,
+          "private_bytes": 3297280
+        },
+        {
+          "working_set_bytes": 6811648,
+          "heap_kib": 991.07421875,
+          "survivors": 0,
+          "private_bytes": 3297280
+        },
+        {
+          "working_set_bytes": 6811648,
+          "heap_kib": 991.23046875,
+          "survivors": 0,
+          "private_bytes": 3297280
+        }
+      ],
+      "name": "snapshot_raw",
+      "baseline_kib": 929.546875,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 6926336,
+          "heap_kib": 1226.42578125,
+          "survivors": 0,
+          "private_bytes": 3428352
+        },
+        {
+          "working_set_bytes": 7217152,
+          "heap_kib": 1266.60546875,
+          "survivors": 0,
+          "private_bytes": 3694592
+        },
+        {
+          "working_set_bytes": 7266304,
+          "heap_kib": 1275.7421875,
+          "survivors": 0,
+          "private_bytes": 3825664
+        },
+        {
+          "working_set_bytes": 7294976,
+          "heap_kib": 1276.78125,
+          "survivors": 0,
+          "private_bytes": 3825664
+        },
+        {
+          "working_set_bytes": 7294976,
+          "heap_kib": 1276.9375,
+          "survivors": 0,
+          "private_bytes": 3825664
+        }
+      ],
+      "name": "snapshot_readonly",
+      "baseline_kib": 967.53515625,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 7458816,
+          "heap_kib": 1168.12890625,
+          "survivors": 0,
+          "private_bytes": 3956736
+        },
+        {
+          "working_set_bytes": 7741440,
+          "heap_kib": 1176.30859375,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7757824,
+          "heap_kib": 1184.45703125,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7782400,
+          "heap_kib": 1184.62890625,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7782400,
+          "heap_kib": 1184.78515625,
+          "survivors": 0,
+          "private_bytes": 4218880
+        }
+      ],
+      "name": "snapshot_nested",
+      "baseline_kib": 1054,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1172.4609375,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1180.640625,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1188.7890625,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1188.9609375,
+          "survivors": 0,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1189.1171875,
+          "survivors": 0,
+          "private_bytes": 4218880
+        }
+      ],
+      "name": "class_instance",
+      "baseline_kib": 1161.12890625,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 1814.703125,
+          "survivors": 1000,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 7786496,
+          "heap_kib": 2468.984375,
+          "survivors": 2000,
+          "private_bytes": 4218880
+        },
+        {
+          "working_set_bytes": 8056832,
+          "heap_kib": 3082.796875,
+          "survivors": 3000,
+          "private_bytes": 4481024
+        },
+        {
+          "working_set_bytes": 8896512,
+          "heap_kib": 3776.625,
+          "survivors": 4000,
+          "private_bytes": 5398528
+        },
+        {
+          "working_set_bytes": 9564160,
+          "heap_kib": 4406.4375,
+          "survivors": 5000,
+          "private_bytes": 6057984
+        }
+      ],
+      "name": "dynamic_class",
+      "baseline_kib": 1165.4453125,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 1000,
+      "samples": [
+        {
+          "working_set_bytes": 10924032,
+          "heap_kib": 4634.28125,
+          "survivors": 0,
+          "private_bytes": 7499776
+        },
+        {
+          "working_set_bytes": 11194368,
+          "heap_kib": 4648.95703125,
+          "survivors": 0,
+          "private_bytes": 7761920
+        },
+        {
+          "working_set_bytes": 11272192,
+          "heap_kib": 4662.2109375,
+          "survivors": 0,
+          "private_bytes": 7892992
+        },
+        {
+          "working_set_bytes": 11272192,
+          "heap_kib": 4665.109375,
+          "survivors": 0,
+          "private_bytes": 7892992
+        },
+        {
+          "working_set_bytes": 11272192,
+          "heap_kib": 4665.265625,
+          "survivors": 0,
+          "private_bytes": 7892992
+        }
+      ],
+      "name": "live_store_replace",
+      "baseline_kib": 4344.09375,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 100,
+      "samples": [
+        {
+          "working_set_bytes": 40071168,
+          "heap_kib": 6944.1884765625,
+          "survivors": 0,
+          "private_bytes": 36659200
+        },
+        {
+          "working_set_bytes": 40992768,
+          "heap_kib": 7015.1650390625,
+          "survivors": 0,
+          "private_bytes": 37646336
+        },
+        {
+          "working_set_bytes": 41070592,
+          "heap_kib": 6911.9892578125,
+          "survivors": 0,
+          "private_bytes": 37777408
+        },
+        {
+          "working_set_bytes": 40714240,
+          "heap_kib": 6888.0126953125,
+          "survivors": 0,
+          "private_bytes": 37388288
+        },
+        {
+          "working_set_bytes": 40726528,
+          "heap_kib": 6876.5908203125,
+          "survivors": 0,
+          "private_bytes": 37384192
+        }
+      ],
+      "name": "live_player_reconcile",
+      "baseline_kib": 5650.7861328125,
+      "log_error_count": 0
+    },
+    {
+      "batch_size": 100,
+      "samples": [
+        {
+          "working_set_bytes": 39956480,
+          "heap_kib": 5469.7705078125,
+          "survivors": 0,
+          "private_bytes": 36589568
+        },
+        {
+          "working_set_bytes": 39976960,
+          "heap_kib": 5366.2197265625,
+          "survivors": 0,
+          "private_bytes": 36589568
+        },
+        {
+          "working_set_bytes": 40013824,
+          "heap_kib": 5741.5166015625,
+          "survivors": 0,
+          "private_bytes": 36589568
+        },
+        {
+          "working_set_bytes": 40013824,
+          "heap_kib": 5316.8955078125,
+          "survivors": 0,
+          "private_bytes": 36589568
+        },
+        {
+          "working_set_bytes": 40013824,
+          "heap_kib": 5701.6494140625,
+          "survivors": 0,
+          "private_bytes": 36589568
+        }
+      ],
+      "name": "player_mount_dispose",
+      "baseline_kib": 5677.5126953125,
+      "log_error_count": 0
+    }
+  ],
+  "os": "Windows",
+  "evidence_note": "Captured at 242ad73 plus worktree snapshot fix and probes; sibling elxlib modified; finite diagnostic samples, not long-term absence of leaks.",
+  "revision": "242ad73b8dd5de298637c1c6d0ad827cdde68627",
+  "dependency_class_sha256": "fafd368e79e2b127ee26e04a33b72148aff732050f29cf8462e0073992298b03",
+  "player_context_sha256": "06fb6af145f72572c0afdc195eca85439a541766f53dc29c7a8814c87aa00389",
+  "probe_final_source_sha256": "199f4b782cc42020f96b59fd2da49172f42ee9b96da36e014edeb1538e1dca7a",
+  "probe_version_note": "Captured before adding a cdata type annotation; finalized probe source hash is runtime-equivalent, not the exact captured file hash."
+}
