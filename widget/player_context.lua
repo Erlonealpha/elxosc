@@ -18,9 +18,12 @@ local StatefulWidget = widget_mod.StatefulWidget
 
 local M = {}
 
-local readonly_table_views = setmetatable({}, { __mode = 'k' })
+-- LuaJIT weak-key tables are not ephemerons: a strong value that reaches its
+-- key keeps both alive. Forward caches must also weaken values; reverse maps
+-- keep the backing data alive only while a caller holds the view.
+local readonly_table_views = setmetatable({}, { __mode = 'kv' })
 local readonly_table_values = setmetatable({}, { __mode = 'k' })
-local snapshot_views = setmetatable({}, { __mode = 'k' })
+local snapshot_views = setmetatable({}, { __mode = 'kv' })
 local snapshot_view_values = setmetatable({}, { __mode = 'k' })
 
 local function unwrap_readonly(value)

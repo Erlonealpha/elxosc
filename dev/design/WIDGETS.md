@@ -186,6 +186,9 @@ InheritedWidget 查询：监听式 `depend_on_inherited_widget_of_exact_type()` 
 
 6.3 提供 `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和 `PlayerProvider`。Store
 只替换快照，不原地修改快照；订阅按注册顺序通知，并返回可幂等 `dispose()` 的句柄。
+只读视图被调用方持有时拥有 backing snapshot/table；正向缓存同时弱化 key/value，
+反向映射只弱化 key。LuaJIT weak-key 表没有 ephemeron 语义，不能用强 value 回指
+key 的缓存保存旧快照。丢弃的视图可回收，仍存活的原始快照可重新生成只读视图。
 `PlayerScope` 在挂载时订阅 Store，在 State dispose 时清理订阅，再通过
 `PlayerProvider` 通知依赖者。State 首次挂载和 inherited 依赖变化都会调用
 `did_change_dependencies()`，随后进入正常 build/dirty 管线；更新仍然不直接修改已挂载

@@ -44,6 +44,13 @@ def _stage_elxosc(source, destination, include_main=True):
     if include_main:
         shutil.copy2(source / "main.lua", destination / "main.lua")
         shutil.copy2(source / "elxlib_load.lua", destination / "elxlib_load.lua")
+        # The portable entry may be disabled by the user. Integration tests
+        # explicitly exercise the enabled application, only in the staged copy.
+        entry = destination / "main.lua"
+        content = entry.read_text(encoding="utf-8")
+        if "local enable = false" not in content and "local enable = true" not in content:
+            raise RuntimeError("staged entry has no recognized enable switch")
+        entry.write_text(content.replace("local enable = false", "local enable = true"), encoding="utf-8")
         if os.environ.get("ELXOSC_TEST_DEMO_ENTRY") == "1":
             entry = destination / "main.lua"
             content = entry.read_text(encoding="utf-8")

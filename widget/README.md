@@ -49,6 +49,9 @@ that description and never applies contributions itself.
 changes; the default comparison is structural for readonly snapshot tables. Missing
 capabilities return an explicit `unavailable` state, while host adapters publish
 `loading`/`available`/`error` through immutable snapshots.
+Readonly views keep their backing data alive while retained by callers. Forward
+view caches use weak keys and values so discarded snapshots and nested views can
+be collected on LuaJIT; a live store retains only its current snapshot.
 
 ### Builder contract
 
