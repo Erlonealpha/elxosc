@@ -1,8 +1,9 @@
 -- Scheduler: the frame-clock contract, the two-phase pipeline and tickers.
+---@namespace test.scheduler
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -16,7 +17,12 @@ local Scheduler = scheduler_mod.Scheduler
 local Ticker = ticker_mod.Ticker
 
 -- Manual clock: frames are delivered on demand by `tick`.
-local ManualClock = std.class.new('test.ManualClock', { FrameClock })
+---@class ManualClock : FrameClock
+---@field _time number
+---@field pending boolean
+---@field requests integer
+---@overload fun(time: number?): self
+local ManualClock = std.class.new('ManualClock', FrameClock)
 function ManualClock:__init(time)
     self._time = time or 0
     self.pending = false

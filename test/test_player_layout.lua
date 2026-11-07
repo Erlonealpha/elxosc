@@ -1,6 +1,6 @@
 -- ModernX original/reduced root-relative player geometry and theme profiles.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+---@namespace test.playerlayout
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -40,7 +40,9 @@ local PlayerDescriptionLayer = player_layout_mod.PlayerDescriptionLayer
 local RecordCanvas = record_mod.RecordCanvas
 local AssCanvas = ass_mod.AssCanvas
 
-local FixedLayout = std.class.new('test.playerlayout.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end

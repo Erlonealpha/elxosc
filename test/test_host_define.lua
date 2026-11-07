@@ -1,10 +1,11 @@
 -- The mpv define host, with `mp` stubbed out.
+---@namespace test.hostdefine
 
 -- `host/mpv_define.lua` requires `mp`; the suite replaces it with a tiny fake so
 -- the window policy and the routing can be checked without mpv.
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -28,7 +29,9 @@ local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 
 -- Deterministic measurer: half the font size per character (see test_widget.lua).
-local FixedLayout = std.class.new('test.hostdefine.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end

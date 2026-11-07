@@ -1,6 +1,6 @@
 -- N2 logical Overlay runtime: entry lifecycle, occlusion and plan updates.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, generic-constraint-mismatch
+---@namespace test.overlay
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -25,7 +25,9 @@ local State = state_mod.State
 local Text = basic_widgets.Text
 local Overlay = overlay_mod.Overlay
 local OverlayEntry = overlay_mod.OverlayEntry
-local FixedLayout = std.class.new('test.overlay.FixedLayout', { TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', TextLayout)
 local RecordCanvas = record_mod.RecordCanvas
 
 function FixedLayout:line_width(line, style)
@@ -41,7 +43,12 @@ local function mount(widget)
     return owner, binding
 end
 
-local ProbeState = std.class.new('test.overlay.ProbeState', { State })
+---@class ProbeState : State
+---@field widget Probe
+---@field init_count integer
+---@field disposed boolean
+---@overload fun(): self
+local ProbeState = std.class.new('ProbeState', State)
 function ProbeState:init_state()
     self.init_count = (self.init_count or 0) + 1
     self.disposed = false
@@ -53,7 +60,14 @@ function ProbeState:build()
     return Text(self.widget.label)
 end
 
-local Probe = std.class.new('test.overlay.Probe', { StatefulWidget })
+---@class _ProbeOptions
+---@field key? any
+---@field label string
+
+---@class Probe : StatefulWidget
+---@field label string
+---@overload fun(options: _ProbeOptions): self
+local Probe = std.class.new('Probe', StatefulWidget)
 function Probe:__init(options)
     options = options or {}
     self.key = options.key
@@ -131,14 +145,18 @@ end)
 
 F.test('non-maintained occluded entries unmount and dispose State', function()
     local disposed = false
-    local DisposableState = std.class.new('test.overlay.DisposableState', { State })
+    ---@class DisposableState : State
+    ---@overload fun(): self
+    local DisposableState = std.class.new('DisposableState', State)
     function DisposableState:dispose()
         disposed = true
     end
     function DisposableState:build()
         return Text('disposable')
     end
-    local Disposable = std.class.new('test.overlay.Disposable', { StatefulWidget })
+    ---@class Disposable : StatefulWidget
+    ---@overload fun(key: any?): self
+    local Disposable = std.class.new('Disposable', StatefulWidget)
     function Disposable:create_state()
         return DisposableState()
     end
@@ -167,14 +185,18 @@ end)
 
 F.test('removing an entry disposes its subtree on the next build', function()
     local disposed = false
-    local DisposableState = std.class.new('test.overlay.RemoveState', { State })
+    ---@class RemoveState : State
+    ---@overload fun(): self
+    local DisposableState = std.class.new('RemoveState', State)
     function DisposableState:dispose()
         disposed = true
     end
     function DisposableState:build()
         return Text('remove')
     end
-    local Disposable = std.class.new('test.overlay.Remove', { StatefulWidget })
+    ---@class Remove : StatefulWidget
+    ---@overload fun(key: any?): self
+    local Disposable = std.class.new('Remove', StatefulWidget)
     function Disposable:create_state()
         return DisposableState()
     end

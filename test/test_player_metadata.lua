@@ -1,6 +1,6 @@
 -- P2.6 host-independent metadata and empty-state normalization.
 
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require 'framework'
 local metadata = require 'widget.player.metadata'

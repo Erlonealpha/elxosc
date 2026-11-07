@@ -1,9 +1,10 @@
 -- Foundation layer: geometry value types, colour, paint, path and the canvas
 -- contract. Pure Lua -- nothing here touches mpv.
+---@namespace test.foundation
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -234,7 +235,10 @@ F.test('the base contract raises NotImplementedError', function()
 end)
 
 F.test('a backend only needs to override the methods it uses', function()
-    local Recorder = std.class.new('test.Recorder', { Canvas })
+    ---@class Recorder : Canvas
+    ---@field saved integer
+    ---@overload fun(): self
+    local Recorder = std.class.new('Recorder', Canvas)
     function Recorder:__init()
         self.saved = 0
     end

@@ -1,6 +1,6 @@
 -- P1 Builder contracts: semantic callback boundaries, validation and cleanup.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, unused, param-type-mismatch, return-type-mismatch
+---@namespace test.builder
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, param-type-mismatch, return-type-mismatch
 
 local F = require 'framework'
 local std = require 'elxlibs.std'
@@ -30,7 +30,9 @@ local SlotSpec = slot_mod.SlotSpec
 local SlotWrap = slot_mod.SlotWrap
 local CompositionAssembler = slot_mod.CompositionAssembler
 
-local FixedLayout = std.class.new('test.builder.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
@@ -114,7 +116,12 @@ F.test('all builder result boundaries reject non-Widgets with named errors', fun
     end, 'OverlayEntry.builder', 'Overlay builder validates its result')
 end)
 
-local BadStateless = std.class.new('test.builder.BadStateless', { StatelessWidget })
+---@class _BadStatelessOptions
+---@field key? any
+
+---@class BadStateless : StatelessWidget
+---@overload fun(options: _BadStatelessOptions?): self
+local BadStateless = std.class.new('BadStateless', StatelessWidget)
 function BadStateless:__init(options)
     self.key = options and options.key
 end
@@ -122,12 +129,19 @@ function BadStateless:build()
     return 'not a Widget'
 end
 
-local BadState = std.class.new('test.builder.BadState', { State })
+---@class BadState : State
+---@overload fun(): self
+local BadState = std.class.new('BadState', State)
 function BadState:build()
     return false
 end
 
-local BadStateful = std.class.new('test.builder.BadStateful', { StatefulWidget })
+---@class _BadStatefulOptions
+---@field key? any
+
+---@class BadStateful : StatefulWidget
+---@overload fun(options: _BadStatefulOptions?): self
+local BadStateful = std.class.new('BadStateful', StatefulWidget)
 function BadStateful:__init(options)
     self.key = options and options.key
 end
@@ -149,7 +163,12 @@ F.test('StatelessWidget and State build results use the same validation boundary
     F.eq(stateful_key:current_element(), nil, 'failed state mount cleans its key')
 end)
 
-local ThrowingBuilder = std.class.new('test.builder.ThrowingBuilder', { StatelessWidget })
+---@class _ThrowingBuilderOptions
+---@field key? any
+
+---@class ThrowingBuilder : StatelessWidget
+---@overload fun(options: _ThrowingBuilderOptions?): self
+local ThrowingBuilder = std.class.new('ThrowingBuilder', StatelessWidget)
 function ThrowingBuilder:__init(options)
     self.key = options and options.key
 end
@@ -165,7 +184,12 @@ F.test('builder exceptions preserve the original error and clean partial mounts'
     F.eq(key:current_element(), nil, 'failed builder mount leaves no key registry entry')
 end)
 
-local StableChild = std.class.new('test.builder.StableChild', { StatelessWidget })
+---@class _StableChildOptions
+---@field key? any
+
+---@class StableChild : StatelessWidget
+---@overload fun(options: _StableChildOptions?): self
+local StableChild = std.class.new('StableChild', StatelessWidget)
 function StableChild:__init(options)
     self.key = options and options.key
 end
@@ -173,7 +197,16 @@ function StableChild:build()
     return Text('stable child')
 end
 
-local RebuildHost = std.class.new('test.builder.RebuildHost', { StatelessWidget })
+---@class _RebuildHostOptions
+---@field key? any
+---@field fail? boolean
+---@field child_key? any
+
+---@class RebuildHost : StatelessWidget
+---@field fail boolean
+---@field child_key? any
+---@overload fun(options: _RebuildHostOptions?): self
+local RebuildHost = std.class.new('RebuildHost', StatelessWidget)
 function RebuildHost:__init(options)
     self.key = options and options.key
     self.fail = options and options.fail == true

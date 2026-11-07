@@ -1,7 +1,7 @@
 -- N1 application composition: one DefaultApp with stable Main, Extension and
 -- WindowLayer boundaries.  The old nine-region scaffold is intentionally gone.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, generic-constraint-mismatch
+---@namespace test.mainlayout
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -55,13 +55,19 @@ local ProgressBar = player_widgets.ProgressBar
 local FrameClock = frame_clock_mod.FrameClock
 local Scheduler = scheduler_mod.Scheduler
 
-local FixedLayout = std.class.new('test.mainlayout.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
 text_layout.set_default(FixedLayout())
 
-local ManualClock = std.class.new('test.mainlayout.ManualClock', { FrameClock })
+---@class ManualClock : FrameClock
+---@field time number
+---@field pending boolean
+---@overload fun(): self
+local ManualClock = std.class.new('ManualClock', FrameClock)
 function ManualClock:__init()
     self.time = 0
     self.pending = false
@@ -164,7 +170,9 @@ F.test('the production description exposes one Extension content boundary', func
     end
     F.eq(count, 3, 'no shell or root replacement slots are declared')
 
-    local Extension = std.class.new('test.mainlayout.ExtensionBoundary', { StatelessWidget })
+    ---@class ExtensionBoundary : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Extension = std.class.new('ExtensionBoundary', StatelessWidget)
     function Extension:build()
         return Text('extension-boundary')
     end
@@ -195,7 +203,9 @@ F.test('WindowLayer is empty and has no built-in Navigator', function()
 end)
 
 F.test('WidgetsApp exposes stable theme, display, text and action ambients', function()
-    local Reader = std.class.new('test.mainlayout.AmbientReader', { StatelessWidget })
+    ---@class AmbientReader : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Reader = std.class.new('AmbientReader', StatelessWidget)
     function Reader:build(context)
         local theme = ambient_mod.Theme.of(context)
         local display = ambient_mod.DisplayScope.of(context)
@@ -215,7 +225,11 @@ F.test('WidgetsApp exposes stable theme, display, text and action ambients', fun
     F.eq(owner.root.paragraph.text, '1.25/300/14/actions', 'ambient values reach descendants')
 end)
 
-local ProbeState = std.class.new('test.mainlayout.ProbeState', { State })
+---@class ProbeState : State
+---@field mounts integer
+---@field disposed boolean
+---@overload fun(): self
+local ProbeState = std.class.new('ProbeState', State)
 function ProbeState:init_state()
     self.mounts = (self.mounts or 0) + 1
     self.disposed = false
@@ -227,7 +241,9 @@ function ProbeState:build()
     return Text('extension-state')
 end
 
-local Probe = std.class.new('test.mainlayout.Probe', { StatefulWidget })
+---@class Probe : StatefulWidget
+---@overload fun(key: any?): self
+local Probe = std.class.new('Probe', StatefulWidget)
 function Probe:create_state()
     return ProbeState()
 end
@@ -561,7 +577,9 @@ F.test('AutoHide keeps top hover opt-in', function()
     scheduler:dispose()
 end)
 
-local ModalProbeState = std.class.new('test.mainlayout.ModalProbeState', { State })
+---@class ModalProbeState : State
+---@overload fun(): self
+local ModalProbeState = std.class.new('ModalProbeState', State)
 function ModalProbeState:keep_auto_hide_visible()
     return true
 end
@@ -569,7 +587,9 @@ function ModalProbeState:build()
     return Text('modal')
 end
 
-local ModalProbe = std.class.new('test.mainlayout.ModalProbe', { StatefulWidget })
+---@class ModalProbe : StatefulWidget
+---@overload fun(key: any?): self
+local ModalProbe = std.class.new('ModalProbe', StatefulWidget)
 function ModalProbe:create_state()
     return ModalProbeState()
 end

@@ -1,9 +1,10 @@
 -- The mpv app wiring: frame clock, overlay presenter, widget binding, input.
+---@namespace test.hostApp
 
 -- `host/*` requires `mp`; the suite installs the stub from `test/mp_stub.lua`.
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -708,7 +709,10 @@ end)
 F.test('a set_state rebuild lands in the next frame', function()
     mp_stub.reset()
 
-    local CounterState = std.class.new('test.hostApp.CounterState', { State })
+    ---@class CounterState : State
+    ---@field value integer
+    ---@overload fun(): self
+    local CounterState = std.class.new('CounterState', State)
     function CounterState:__init()
         self.value = 0
     end
@@ -716,7 +720,9 @@ F.test('a set_state rebuild lands in the next frame', function()
         return Text('v' .. self.value)
     end
 
-    local Counter = std.class.new('test.hostApp.Counter', { StatefulWidget })
+    ---@class Counter : StatefulWidget
+    ---@overload fun(key: any?): self
+    local Counter = std.class.new('Counter', StatefulWidget)
     function Counter:create_state()
         return CounterState()
     end
@@ -739,7 +745,9 @@ end)
 
 F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
     mp_stub.reset()
-    local Reader = std.class.new('test.hostApp.PlayerReader', { widget_mod.StatelessWidget })
+    ---@class PlayerReader : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Reader = std.class.new('PlayerReader', widget_mod.StatelessWidget)
     function Reader:build(context)
         return Text('v' .. PlayerProvider.snapshot_of(context).value)
     end
@@ -786,7 +794,9 @@ end)
 
 F.test('shutdown unmounts PlayerScope subscriptions', function()
     mp_stub.reset()
-    local Reader = std.class.new('test.hostApp.ShutdownPlayerReader', { widget_mod.StatelessWidget })
+    ---@class ShutdownPlayerReader : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Reader = std.class.new('ShutdownPlayerReader', widget_mod.StatelessWidget)
     function Reader:build(context)
         return Text('v' .. PlayerProvider.snapshot_of(context).value)
     end

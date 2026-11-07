@@ -77,8 +77,11 @@ def test_json_input_empty_clip_and_resolution_coordinates(real_host_factory, tmp
 @pytest.mark.real_host
 def test_measure_benchmark_compares_real_bounds_for_all_strategies(real_host_factory, tmp_path):
     import subprocess
+    class_new_repl = b'local AssMeasure = std.class.new(\'AssMeasure\', {})'
+    class_new_patch = b'local AssMeasure = std.class.new(\'AssMeasure\')'
     legacy = subprocess.run(['git', 'show', '46bc4a2:host/ass_measure.lua'], cwd=ROOT,
                             capture_output=True, check=True).stdout
+    legacy = legacy.replace(class_new_repl, class_new_patch)
     source = tmp_path / 'legacy.lua'
     source.write_bytes(legacy)
     script = Path(__file__).with_name('ass_measure_benchmark.lua')

@@ -1,6 +1,6 @@
 -- N3 Page/Route/Navigator: one Theatre, reconciliation, result and popup barrier.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, generic-constraint-mismatch
+---@namespace test.navigation
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -24,7 +24,9 @@ local Page = navigation_mod.Page
 local PopupPage = navigation_mod.PopupPage
 local Navigator = navigation_mod.Navigator
 local NavigatorScope = navigation_mod.NavigatorScope
-local FixedLayout = std.class.new('test.navigation.FixedLayout', { TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', TextLayout)
 
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
@@ -138,14 +140,24 @@ end)
 
 F.test('same Page class and key reconciles without remounting State', function()
     local mounts = 0
-    local ProbeState = std.class.new('test.navigation.ProbeState', { State })
+    ---@class ProbeState : State
+    ---@field widget Probe
+    ---@overload fun(): self
+    local ProbeState = std.class.new('ProbeState', State)
     function ProbeState:init_state()
         mounts = mounts + 1
     end
     function ProbeState:build()
         return Text(self.widget.label)
     end
-    local Probe = std.class.new('test.navigation.Probe', { StatefulWidget })
+    ---@class _ProbeOptions
+    ---@field key? any
+    ---@field label string
+
+    ---@class Probe : StatefulWidget
+    ---@field label string
+    ---@overload fun(options: _ProbeOptions): self
+    local Probe = std.class.new('Probe', StatefulWidget)
     function Probe:__init(options)
         self.key = options.key
         self.label = options.label

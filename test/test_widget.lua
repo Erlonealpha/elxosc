@@ -1,9 +1,10 @@
 -- Widget layer: build -> element -> render object, element reuse and rebuilds.
+---@namespace test.widget
 
 -- LuaLS cannot model `std.class` field injection, the optional
 -- `RenderOwner.root`, or anonymous test stubs, so the diagnostics that stem
--- from those patterns are disabled for the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable
+-- from those patterns are disabled for the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused, call-non-callable
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -56,7 +57,9 @@ local Opacity = visibility_mod.Opacity
 local Positioned = layout_widgets.Positioned
 
 -- Deterministic measurer: half the font size per character.
-local FixedLayout = std.class.new('test.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
@@ -385,14 +388,18 @@ end)
 
 F.test('the same widget instance skips rebuilding its subtree', function()
     local builds = 0
-    local Probe = std.class.new('test.IdentityProbe', { widget_mod.StatelessWidget })
+    ---@class IdentityProbe : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Probe = std.class.new('IdentityProbe', widget_mod.StatelessWidget)
     function Probe:build()
         builds = builds + 1
         return Text('identity')
     end
 
     local child = Probe()
-    local Host = std.class.new('test.IdentityHost', { widget_mod.StatelessWidget })
+    ---@class IdentityHost : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Host = std.class.new('IdentityHost', widget_mod.StatelessWidget)
     function Host:build()
         return child
     end
@@ -426,7 +433,11 @@ F.test('keeps render children in order across rebuilds', function()
 end)
 
 F.test('keyed children keep their Element state when reordered', function()
-    local ItemState = std.class.new('test.KeyedItemState', { state_mod.State })
+    ---@class KeyedItemState : State
+    ---@field widget KeyedItem
+    ---@field initial_label string
+    ---@overload fun(): self
+    local ItemState = std.class.new('KeyedItemState', state_mod.State)
     function ItemState:init_state()
         self.initial_label = self.widget.label
     end
@@ -434,7 +445,14 @@ F.test('keyed children keep their Element state when reordered', function()
         return Text(self.initial_label)
     end
 
-    local Item = std.class.new('test.KeyedItem', { widget_mod.StatefulWidget })
+    ---@class _KeyedItemOptions
+    ---@field key? any
+    ---@field label string
+
+    ---@class KeyedItem : StatefulWidget
+    ---@field label string
+    ---@overload fun(options: _KeyedItemOptions): self
+    local Item = std.class.new('KeyedItem', widget_mod.StatefulWidget)
     function Item:__init(options)
         self.key = options and options.key
         self.label = options.label
@@ -492,7 +510,10 @@ end)
 
 F.section('widget: state')
 
-local CounterState = std.class.new('test.CounterState', { state_mod.State })
+---@class CounterState : State
+---@field n integer
+---@overload fun(): self
+local CounterState = std.class.new('CounterState', state_mod.State)
 function CounterState:init_state()
     self.n = 0
 end
@@ -500,7 +521,9 @@ function CounterState:build()
     return Text('n=' .. self.n)
 end
 
-local Counter = std.class.new('test.Counter', { widget_mod.StatefulWidget })
+---@class Counter : StatefulWidget
+---@overload fun(key: any?): self
+local Counter = std.class.new('Counter', widget_mod.StatefulWidget)
 function Counter:create_state()
     return CounterState()
 end
@@ -525,13 +548,18 @@ end)
 
 F.test('a dirty child is not rebuilt twice when its parent is also dirty', function()
     local builds = 0
-    local Probe = std.class.new('test.Probe', { widget_mod.StatelessWidget })
+    ---@class Probe : StatelessWidget
+    ---@overload fun(key: any?): self
+    local Probe = std.class.new('Probe', widget_mod.StatelessWidget)
     function Probe:build()
         builds = builds + 1
         return Text('x')
     end
 
-    local HostState = std.class.new('test.HostState', { state_mod.State })
+    ---@class HostState : State
+    ---@field n integer
+    ---@overload fun(): self
+    local HostState = std.class.new('HostState', state_mod.State)
     function HostState:init_state()
         self.n = 0
     end
@@ -539,7 +567,9 @@ F.test('a dirty child is not rebuilt twice when its parent is also dirty', funct
         return Column({ children = { Probe(), Probe() } })
     end
 
-    local Host = std.class.new('test.Host', { widget_mod.StatefulWidget })
+    ---@class Host : StatefulWidget
+    ---@overload fun(key: any?): self
+    local Host = std.class.new('Host', widget_mod.StatefulWidget)
     function Host:create_state()
         return HostState()
     end
@@ -556,7 +586,10 @@ end)
 
 F.test('unmounting disposes state', function()
     local disposed = false
-    local Disposable = std.class.new('test.Disposable', { state_mod.State })
+    ---@class Disposable : State
+    ---@field n integer
+    ---@overload fun(): self
+    local Disposable = std.class.new('Disposable', state_mod.State)
     function Disposable:init_state()
         self.n = 0
     end
@@ -566,7 +599,9 @@ F.test('unmounting disposes state', function()
     function Disposable:build()
         return Text('x')
     end
-    local W = std.class.new('test.DisposableWidget', { widget_mod.StatefulWidget })
+    ---@class DisposableWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local W = std.class.new('DisposableWidget', widget_mod.StatefulWidget)
     function W:create_state()
         return Disposable()
     end
@@ -579,11 +614,15 @@ end)
 F.test('set_state refuses an unmounted State', function()
     ---@type State?
     local state
-    local UnmountedState = std.class.new('test.UnmountedState', { state_mod.State })
+    ---@class UnmountedState : State
+    ---@overload fun(): self
+    local UnmountedState = std.class.new('UnmountedState', state_mod.State)
     function UnmountedState:build()
         return Text('x')
     end
-    local W = std.class.new('test.UnmountedStateWidget', { widget_mod.StatefulWidget })
+    ---@class UnmountedStateWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local W = std.class.new('UnmountedStateWidget', widget_mod.StatefulWidget)
     function W:create_state()
         state = UnmountedState()
         return state

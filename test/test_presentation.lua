@@ -1,5 +1,5 @@
 -- N4 single-canvas ordering, successful-frame cache and clear lifecycle.
----@diagnostic disable: undefined-field, need-check-nil, inject-field, generic-constraint-mismatch
+---@diagnostic disable: undefined-field, need-check-nil, inject-field
 local F = require 'framework'
 local mp_stub = require 'mp_stub'
 mp_stub.install()

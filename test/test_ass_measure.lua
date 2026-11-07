@@ -1,5 +1,5 @@
 -- Resource ownership and raw host results; actual libass values use real-host.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil
 local F = require 'framework'
 local mp_stub = require 'mp_stub'
 local mp = mp_stub.install()

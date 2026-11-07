@@ -1,8 +1,9 @@
 -- Text layer: TextStyle, the TextLayout contract and generic wrapping.
+---@namespace test.text
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -23,9 +24,9 @@ local TextLayout = text_layout.TextLayout
 
 -- A deterministic reference text backend: every glyph is half the font size
 -- wide, so a 10px font is 5px per character.
----@class test.FixedLayout : TextLayout
----@overload fun():self
-local FixedLayout = std.class.new('test.FixedLayout', { TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
@@ -238,9 +239,9 @@ F.test('the base line advance works without a width implementation', function()
 end)
 
 F.test('a backend can override the uniform line advance', function()
-    ---@class test.CustomLineHeight : test.FixedLayout
+    ---@class CustomLineHeight : FixedLayout
     ---@overload fun(): self
-    local Backend = std.class.new('test.CustomLineHeight', { FixedLayout })
+    local Backend = std.class.new('CustomLineHeight', FixedLayout)
     function Backend:line_height(style)
         return style.font_size + 5
     end
@@ -253,10 +254,10 @@ F.test('a backend can override the uniform line advance', function()
 end)
 
 F.test('rejects invalid backend line advances before returning a paragraph', function()
-    ---@class test.InvalidLineHeight : test.FixedLayout
+    ---@class InvalidLineHeight : FixedLayout
     ---@field height number|string|boolean
     ---@overload fun(): self
-    local Backend = std.class.new('test.InvalidLineHeight', { FixedLayout })
+    local Backend = std.class.new('InvalidLineHeight', FixedLayout)
     local backend = Backend()
     function Backend:line_height(style)
         -- Deliberately violate the backend contract to verify runtime rejection.

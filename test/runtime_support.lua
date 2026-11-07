@@ -1,5 +1,6 @@
 -- Mounted probes shared by runtime behavior tests.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch
+---@namespace test.runtime
+---@diagnostic disable: undefined-field, inject-field, need-check-nil
 local std = require 'elxlibs.std'
 local widget_mod = require 'widget.widget'
 local state_mod = require 'widget.state'
@@ -8,7 +9,9 @@ local binding_mod = require 'widget.widgets_binding'
 local constraints_mod = require 'layout.constraints'
 
 local M = {}
-local ProbeState = std.class.new('test.runtime.ProbeState', { state_mod.State })
+---@class ProbeState : State
+---@overload fun():self
+local ProbeState = std.class.new('ProbeState', state_mod.State)
 function ProbeState:init_state()
     self.value = 10
     self.builds = 0
@@ -31,7 +34,9 @@ function ProbeState:dispose()
     end
 end
 
-local Probe = std.class.new('test.runtime.Probe', { widget_mod.StatefulWidget })
+---@class Probe : StatefulWidget
+---@overload fun(options):self
+local Probe = std.class.new('Probe', widget_mod.StatefulWidget)
 function Probe:__init(options)
     options = options or {}
     self.key = options.key

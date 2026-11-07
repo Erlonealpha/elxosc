@@ -1,8 +1,9 @@
 -- The define DSL factories: `new_widget` / `new_state` / `builtins`.
+---@namespace test.dsl
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -44,7 +45,9 @@ local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 
 -- Deterministic measurer: half the font size per character (see test_widget.lua).
-local FixedLayout = std.class.new('test.dsl.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end

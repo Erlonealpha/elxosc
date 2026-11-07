@@ -1,6 +1,6 @@
 -- Provider and host-independent player context values/stores.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable
+---@namespace test.player_context
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused, call-non-callable
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -26,7 +26,9 @@ local PlayerProvider = player_context.PlayerProvider
 local PlayerCapability = player_context.PlayerCapability
 local PlayerScope = player_context.PlayerScope
 
-local FixedLayout = std.class.new('test.PlayerContextLayout', { text_layout.TextLayout })
+---@class PlayerContextLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('PlayerContextLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
@@ -40,13 +42,17 @@ local function mount(widget)
     return owner, binding
 end
 
-local Reader = std.class.new('test.PlayerContextReader', { StatelessWidget })
+---@class PlayerContextReader : StatelessWidget
+---@overload fun(key: any?): self
+local Reader = std.class.new('PlayerContextReader', StatelessWidget)
 function Reader:build(context)
     local provider = PlayerProvider.of(context)
     return Text('value=' .. tostring(provider.snapshot.value))
 end
 
-local MaybeReader = std.class.new('test.PlayerContextMaybeReader', { StatelessWidget })
+---@class PlayerContextMaybeReader : StatelessWidget
+---@overload fun(key: any?): self
+local MaybeReader = std.class.new('PlayerContextMaybeReader', StatelessWidget)
 function MaybeReader:build(context)
     local provider = PlayerProvider.maybe_of(context)
     return Text(provider and 'provided' or 'missing')
@@ -81,7 +87,15 @@ F.test('maybe_of returns nil outside a provider', function()
 end)
 
 F.test('Provider.of can query a concrete inherited Provider class', function()
-    local Marker = std.class.new('test.MarkerProvider', { Provider })
+    ---@class _MarkerProviderOptions
+    ---@field key? any
+    ---@field child? Widget
+    ---@field value? string
+
+    ---@class MarkerProvider : Provider
+    ---@field value? string
+    ---@overload fun(options: _MarkerProviderOptions?): self
+    local Marker = std.class.new('MarkerProvider', Provider)
     function Marker:__init(options)
         options = options or {}
         self.key = options.key
@@ -89,7 +103,9 @@ F.test('Provider.of can query a concrete inherited Provider class', function()
         self.value = options.value
     end
 
-    local ShowMarker = std.class.new('test.ShowMarker', { StatelessWidget })
+    ---@class ShowMarker : StatelessWidget
+    ---@overload fun(key: any?): self
+    local ShowMarker = std.class.new('ShowMarker', StatelessWidget)
     function ShowMarker:build(context)
         local marker = Provider.of(context, Marker --[[@as std.class]])
         return Text(marker.value)
@@ -100,16 +116,28 @@ F.test('Provider.of can query a concrete inherited Provider class', function()
 end)
 
 F.test('Provider lookup uses exact runtime class identity', function()
-    local Base = std.class.new('test.BaseProvider', { Provider })
+    ---@class _BaseProviderOptions
+    ---@field key? any
+    ---@field child? Widget
+    ---@field value? string
+
+    ---@class BaseProvider : Provider
+    ---@field value? string
+    ---@overload fun(options: _BaseProviderOptions?): self
+    local Base = std.class.new('BaseProvider', Provider)
     function Base:__init(options)
         options = options or {}
         self.key = options.key
         self.child = options.child
         self.value = options.value
     end
-    local Child = std.class.new('test.ChildProvider', { Base })
+    ---@class ChildProvider : BaseProvider
+    ---@overload fun(options: _BaseProviderOptions?): self
+    local Child = std.class.new('ChildProvider', Base)
 
-    local ShowBase = std.class.new('test.ShowBaseProvider', { StatelessWidget })
+    ---@class ShowBaseProvider : StatelessWidget
+    ---@overload fun(key: any?): self
+    local ShowBase = std.class.new('ShowBaseProvider', StatelessWidget)
     function ShowBase:build(context)
         local provider = Provider.of(context, Base --[[@as std.class]])
         return Text(provider.value)
@@ -124,7 +152,9 @@ end)
 
 F.test('read does not register a dependency or rebuild on Provider update', function()
     local builds = 0
-    local ReadProbe = std.class.new('test.ReadProbe', { StatelessWidget })
+    ---@class ReadProbe : StatelessWidget
+    ---@overload fun(key: any?): self
+    local ReadProbe = std.class.new('ReadProbe', StatelessWidget)
     function ReadProbe:build(context)
         builds = builds + 1
         local provider = PlayerProvider.read(context)
@@ -149,7 +179,13 @@ F.test('read does not register a dependency or rebuild on Provider update', func
 end)
 
 F.test('update_should_notify false skips dependency callbacks', function()
-    local QuietProvider = std.class.new('test.QuietProvider', { Provider })
+    ---@class _QuietProviderOptions
+    ---@field key? any
+    ---@field child? Widget
+
+    ---@class QuietProvider : Provider
+    ---@overload fun(options: _QuietProviderOptions?): self
+    local QuietProvider = std.class.new('QuietProvider', Provider)
     function QuietProvider:__init(options)
         options = options or {}
         self.key = options.key
@@ -160,14 +196,18 @@ F.test('update_should_notify false skips dependency callbacks', function()
     end
 
     local dependency_calls = 0
-    local QuietState = std.class.new('test.QuietState', { state_mod.State })
+    ---@class QuietState : State
+    ---@overload fun(): self
+    local QuietState = std.class.new('QuietState', state_mod.State)
     function QuietState:did_change_dependencies()
         dependency_calls = dependency_calls + 1
     end
     function QuietState:build()
         return Text('quiet')
     end
-    local QuietWidget = std.class.new('test.QuietWidget', { widget_mod.StatefulWidget })
+    ---@class QuietWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local QuietWidget = std.class.new('QuietWidget', widget_mod.StatefulWidget)
     function QuietWidget:create_state()
         return QuietState()
     end
@@ -196,17 +236,22 @@ end)
 F.test('did_change_dependencies runs before the first build and on updates', function()
     local dependency_calls = 0
     local build_calls = 0
-    local DependencyState = std.class.new('test.DependencyState', { state_mod.State })
+    ---@class DependencyState : State
+    ---@field latest number
+    ---@overload fun(): self
+    local DependencyState = std.class.new('DependencyState', state_mod.State)
     function DependencyState:did_change_dependencies()
         dependency_calls = dependency_calls + 1
-        self.latest = PlayerProvider.snapshot_of(self.context).value
+        self.latest = PlayerProvider.snapshot_of(assert(self.context)).value
     end
     function DependencyState:build()
         build_calls = build_calls + 1
         return Text(string.format('dependency=%d', self.latest))
     end
 
-    local DependencyWidget = std.class.new('test.DependencyWidget', { widget_mod.StatefulWidget })
+    ---@class DependencyWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local DependencyWidget = std.class.new('DependencyWidget', widget_mod.StatefulWidget)
     function DependencyWidget:create_state()
         return DependencyState()
     end
@@ -233,14 +278,18 @@ F.test('did_change_dependencies runs before the first build and on updates', fun
 end)
 
 F.test('listening lookup is rejected in init_state and dispose', function()
-    local InitState = std.class.new('test.LookupInInitState', { state_mod.State })
+    ---@class LookupInInitState : State
+    ---@overload fun(): self
+    local InitState = std.class.new('LookupInInitState', state_mod.State)
     function InitState:init_state()
-        PlayerProvider.maybe_of(self.context)
+        PlayerProvider.maybe_of(assert(self.context))
     end
     function InitState:build()
         return Text('init')
     end
-    local InitWidget = std.class.new('test.LookupInInitWidget', { widget_mod.StatefulWidget })
+    ---@class LookupInInitWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local InitWidget = std.class.new('LookupInInitWidget', widget_mod.StatefulWidget)
     function InitWidget:create_state()
         return InitState()
     end
@@ -249,14 +298,18 @@ F.test('listening lookup is rejected in init_state and dispose', function()
         mount(PlayerProvider({ snapshot = PlayerSnapshot(), child = InitWidget() }))
     end, 'RuntimeError', 'listening lookup in init_state')
 
-    local DisposeState = std.class.new('test.LookupInDisposeState', { state_mod.State })
+    ---@class LookupInDisposeState : State
+    ---@overload fun(): self
+    local DisposeState = std.class.new('LookupInDisposeState', state_mod.State)
     function DisposeState:dispose()
-        PlayerProvider.maybe_of(self.context)
+        PlayerProvider.maybe_of(assert(self.context))
     end
     function DisposeState:build()
         return Text('dispose')
     end
-    local DisposeWidget = std.class.new('test.LookupInDisposeWidget', { widget_mod.StatefulWidget })
+    ---@class LookupInDisposeWidget : StatefulWidget
+    ---@overload fun(key: any?): self
+    local DisposeWidget = std.class.new('LookupInDisposeWidget', widget_mod.StatefulWidget)
     function DisposeWidget:create_state()
         return DisposeState()
     end

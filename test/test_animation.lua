@@ -1,4 +1,5 @@
 -- Phase 1: affine values, paint-only offsets and frame-clock animations.
+---@namespace test.animation
 
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil,
 --- generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable
@@ -58,9 +59,12 @@ local WidgetBinding = binding_mod.WidgetBinding
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
 
----@class test.AnimationClock : FrameClock
+---@class AnimationClock : FrameClock
+---@field time number
+---@field pending boolean
+---@field requests integer
 ---@overload fun(time: number?): self
-local ManualClock = std.class.new('test.AnimationClock', { FrameClock })
+local ManualClock = std.class.new('AnimationClock', FrameClock)
 
 function ManualClock:__init(time)
     self.time = time or 0
@@ -315,6 +319,9 @@ F.test('tween interpolates supported values and accepts a custom lerp', function
     F.ok(Tween(Size(0, 2), Size(10, 6)):value_at(0.5) == Size(5, 4), 'size tween')
     F.ok(Tween(Color(0, 0, 0), Color(1, 1, 1)):value_at(0.5) == Color(0.5, 0.5, 0.5),
         'color tween')
+    -- Custom lerp accepts strings at runtime; Tween's generic declaration only
+    -- models the default interpolator's value types. Keep this extension test.
+    ---@diagnostic disable-next-line: generic-constraint-mismatch
     local custom = Tween('a', 'b', function(begin_value, end_value, t)
         return t < 0.5 and begin_value or end_value
     end)
@@ -393,7 +400,10 @@ F.test('State-owned controllers receive a scheduler and dispose on unmount', fun
     local clock = ManualClock()
     local scheduler = Scheduler(clock)
     local disposed = 0
-    local AnimationState = std.class.new('test.AnimationState', { State })
+    ---@class AnimationState : State
+    ---@field controller AnimationController
+    ---@overload fun(): self
+    local AnimationState = std.class.new('AnimationState', State)
     function AnimationState:init_state()
         self.controller = self:create_animation_controller({ duration = 1 })
     end
@@ -403,7 +413,9 @@ F.test('State-owned controllers receive a scheduler and dispose on unmount', fun
     function AnimationState:build()
         return OffsetBox({ offset = Offset.zero(), child = nil })
     end
-    local AnimationWidget = std.class.new('test.AnimationWidget', { StatefulWidget })
+    ---@class AnimationWidget : StatefulWidget
+    ---@overload fun(): self
+    local AnimationWidget = std.class.new('AnimationWidget', StatefulWidget)
     function AnimationWidget:create_state()
         return AnimationState()
     end

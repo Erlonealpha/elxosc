@@ -1,8 +1,9 @@
 -- Icon widget: a single glyph from the bundled icon font.
+---@namespace test.icon
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
--- diagnostics are disabled across the suite.
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+-- diagnostics are disabled across the suite.generic-constraint-mismatch
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -33,7 +34,9 @@ local IconButton = basic_widgets.IconButton
 -- Matches `FluentIconFontName` in fonts/fluent_icon_names.lua.
 local ICON_FONT = 'Material Symbols Rounded'
 
-local FixedLayout = std.class.new('test.icon.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end

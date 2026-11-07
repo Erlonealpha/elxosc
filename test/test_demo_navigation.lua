@@ -1,5 +1,5 @@
 -- Exercise the demo through its mounted buttons, pointer routing and host ESC.
----@diagnostic disable: undefined-field, need-check-nil, generic-constraint-mismatch
+---@diagnostic disable: undefined-field, need-check-nil
 
 local F = require 'framework'
 local mp_stub = require 'mp_stub'

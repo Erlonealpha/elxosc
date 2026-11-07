@@ -1,6 +1,6 @@
 -- Initialization-only Slot contributions and immutable assembly.
-
----@diagnostic disable: undefined-field, inject-field, need-check-nil, generic-constraint-mismatch, preferred-local-alias, unused
+---@namespace test.bind
+---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
 local std = require('elxlibs.std')
@@ -27,7 +27,9 @@ local SlotWrap = slot_mod.SlotWrap
 local ContributionRegistry = slot_mod.ContributionRegistry
 local CompositionAssembler = slot_mod.CompositionAssembler
 
-local FixedLayout = std.class.new('test.bind.FixedLayout', { text_layout.TextLayout })
+---@class FixedLayout : TextLayout
+---@overload fun(): self
+local FixedLayout = std.class.new('FixedLayout', text_layout.TextLayout)
 function FixedLayout:line_width(line, style)
     return #line * style.font_size * 0.5
 end
@@ -50,7 +52,14 @@ end
 
 F.section('bind: inherited widgets')
 
-local Theme = std.class.new('test.bind.Theme', { InheritedWidget })
+---@class _ThemeOptions
+---@field key? any
+---@field child? Widget
+
+---@class Theme : InheritedWidget
+---@field value string
+---@overload fun(value: string, options: _ThemeOptions?): self
+local Theme = std.class.new('Theme', InheritedWidget)
 function Theme:__init(value, options)
     options = options or {}
     self.key = options.key
@@ -58,7 +67,9 @@ function Theme:__init(value, options)
     self.child = options.child
 end
 
-local Show = std.class.new('test.bind.Show', { StatelessWidget })
+---@class Show : StatelessWidget
+---@overload fun(key: any?): self
+local Show = std.class.new('Show', StatelessWidget)
 function Show:build(context)
     local theme = context:depend_on_inherited(Theme)
     return Text(theme and theme.value or 'none')
