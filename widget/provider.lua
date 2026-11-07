@@ -23,7 +23,7 @@ local M = {}
 ---@field child Widget?
 ---@field key any?
 ---@overload fun(options: _ProviderOptions?): self
-local Provider = std.class.new('Provider', { InheritedWidget })
+local Provider = std.class.new('Provider', InheritedWidget)
 
 function Provider:__init(options)
     options = options or {}
@@ -31,20 +31,20 @@ function Provider:__init(options)
     self.child = options.child
 end
 
----@param context BuildContext|std.Class
----@param provider_class std.Class|BuildContext?
+---@param context BuildContext|std.class
+---@param provider_class std.class|BuildContext?
 ---@return Provider?
 function Provider.maybe_of(context, provider_class)
     ---@type BuildContext
     local target_context
-    ---@type std.Class?
+    ---@type std.class?
     local target_class
     if std.kindof(context, 'class') then
         target_context = provider_class --[[@as BuildContext]]
-        target_class = context --[[@as std.Class]]
+        target_class = context --[[@as std.class]]
     else
         target_context = context --[[@as BuildContext]]
-        target_class = provider_class --[[@as std.Class?]]
+        target_class = provider_class --[[@as std.class?]]
     end
     if target_context == nil
         or type(target_context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
@@ -57,17 +57,17 @@ function Provider.maybe_of(context, provider_class)
     return target_context:depend_on_inherited_widget_of_exact_type(target_class) --[[@as Provider?]]
 end
 
----@param context BuildContext|std.Class
----@param provider_class std.Class|BuildContext?
+---@param context BuildContext|std.class
+---@param provider_class std.class|BuildContext?
 ---@return Provider?
 function Provider.maybe_read(context, provider_class)
     local target_context, target_class
     if std.kindof(context, 'class') then
         target_context = provider_class --[[@as BuildContext]]
-        target_class = context --[[@as std.Class]]
+        target_class = context --[[@as std.class]]
     else
         target_context = context --[[@as BuildContext]]
-        target_class = provider_class --[[@as std.Class?]]
+        target_class = provider_class --[[@as std.class?]]
     end
     if target_context == nil
         or type(target_context.get_inherited_widget_of_exact_type) ~= 'function' then
@@ -80,8 +80,8 @@ function Provider.maybe_read(context, provider_class)
     return target_context:get_inherited_widget_of_exact_type(target_class) --[[@as Provider?]]
 end
 
----@param context BuildContext|std.Class
----@param provider_class std.Class|BuildContext?
+---@param context BuildContext|std.class
+---@param provider_class std.class|BuildContext?
 ---@return Provider
 function Provider.of(context, provider_class)
     local target_class = provider_class
@@ -96,8 +96,8 @@ function Provider.of(context, provider_class)
     return provider
 end
 
----@param context BuildContext|std.Class
----@param provider_class std.Class|BuildContext?
+---@param context BuildContext|std.class
+---@param provider_class std.class|BuildContext?
 ---@return Provider
 function Provider.read(context, provider_class)
     local target_class = provider_class

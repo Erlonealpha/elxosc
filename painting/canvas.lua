@@ -34,7 +34,7 @@ end
 
 ---@class Canvas : std.object
 ---@overload fun(): self
-local Canvas = std.class.new('Canvas', {})
+local Canvas = std.class.new('Canvas')
 
 --== state ================================================================
 

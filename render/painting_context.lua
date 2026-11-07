@@ -15,7 +15,7 @@ local M = {}
 ---@field canvas Canvas
 ---@field estimated_bounds Rect?
 ---@overload fun(canvas: Canvas, estimated_bounds: Rect?): self
-local PaintingContext = std.class.new('PaintingContext', {})
+local PaintingContext = std.class.new('PaintingContext')
 
 function PaintingContext:__init(canvas, estimated_bounds)
     self.canvas = canvas

@@ -11,7 +11,7 @@ local Color = color.Color
 
 ---@class OutlinedButton : ButtonBase
 ---@overload fun(options: _OutlinedButtonOptions?): self
-local OutlinedButton = std.class.new('OutlinedButton', { ButtonBase })
+local OutlinedButton = std.class.new('OutlinedButton', ButtonBase)
 ---@param options _OutlinedButtonOptions?
 function OutlinedButton:__init(options)
     options = options or {}

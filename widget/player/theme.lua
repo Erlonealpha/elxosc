@@ -272,7 +272,7 @@ end
 ---@field time_total boolean
 ---@field unicode_minus boolean
 ---@overload fun(options?: _PlayerThemeDataOptions): self
-local PlayerThemeData = std.class.new('PlayerThemeData', {})
+local PlayerThemeData = std.class.new('PlayerThemeData')
 
 function PlayerThemeData:__init(options)
     options = options or {}
@@ -481,8 +481,8 @@ end
 ---@field data PlayerThemeData
 ---@field child Widget?
 ---@overload fun(options: _PlayerThemeOptions): self
-local PlayerTheme = std.class.new('PlayerTheme', { InheritedWidget })
-local PlayerThemeClass = PlayerTheme --[[@as std.Class]]
+local PlayerTheme = std.class.new('PlayerTheme', InheritedWidget)
+local PlayerThemeClass = PlayerTheme --[[@as std.class]]
 
 function PlayerTheme:__init(options)
     if type(options) ~= 'table' then

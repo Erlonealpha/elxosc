@@ -33,7 +33,7 @@ end
 ---@field opacity number
 ---@field hidden boolean suppress paint, hit testing and pointer regions while retaining layout
 ---@overload fun(opacity: number?, child: RenderObject?, hidden: boolean?): self
-local RenderOpacity = std.class.new('RenderOpacity', { RenderObject })
+local RenderOpacity = std.class.new('RenderOpacity', RenderObject)
 
 ---@param opacity number?
 ---@param child RenderObject?

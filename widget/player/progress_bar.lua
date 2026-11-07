@@ -69,7 +69,7 @@ local Color = color_mod.Color
 ---@field on_wheel fun(delta: number)?
 ---@field enabled boolean
 ---@overload fun(options?: _ProgressBarOptions): self
-local ProgressBar = std.class.new('ProgressBar', { LeafRenderObjectWidget })
+local ProgressBar = std.class.new('ProgressBar', LeafRenderObjectWidget)
 
 function ProgressBar:__init(options)
     options = options or {}

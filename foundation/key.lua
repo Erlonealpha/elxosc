@@ -14,7 +14,7 @@ local kindof = std.kindof
 ---@class Key : std.object
 ---@field value any?
 ---@overload fun(value: any?): self
-local Key = std.class.new('Key', {})
+local Key = std.class.new('Key')
 
 function Key:__init(value)
     self.value = value
@@ -37,11 +37,11 @@ end
 
 ---@class LocalKey : Key
 ---@overload fun(value: any?): self
-local LocalKey = std.class.new('LocalKey', { Key })
+local LocalKey = std.class.new('LocalKey', Key)
 
 ---@class ValueKey : LocalKey
 ---@overload fun(value: any): self
-local ValueKey = std.class.new('ValueKey', { LocalKey })
+local ValueKey = std.class.new('ValueKey', LocalKey)
 
 function ValueKey:__init(value)
     self.value = value
@@ -61,7 +61,7 @@ end
 
 ---@class UniqueKey : LocalKey
 ---@overload fun(): self
-local UniqueKey = std.class.new('UniqueKey', { LocalKey })
+local UniqueKey = std.class.new('UniqueKey', LocalKey)
 
 ---@param other any
 ---@return boolean

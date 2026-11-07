@@ -30,7 +30,7 @@ local M = {}
 ---@class RenderStack : RenderObject
 ---@field alignment Offset
 ---@overload fun(options: StackOpts?): self
-local RenderStack = std.class.new('RenderStack', { RenderObject })
+local RenderStack = std.class.new('RenderStack', RenderObject)
 
 function RenderStack:__init(options)
     RenderObject.__init(self)

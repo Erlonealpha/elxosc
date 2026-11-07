@@ -91,7 +91,7 @@ F.test('Provider.of can query a concrete inherited Provider class', function()
 
     local ShowMarker = std.class.new('test.ShowMarker', { StatelessWidget })
     function ShowMarker:build(context)
-        local marker = Provider.of(context, Marker --[[@as std.Class]])
+        local marker = Provider.of(context, Marker --[[@as std.class]])
         return Text(marker.value)
     end
 
@@ -111,7 +111,7 @@ F.test('Provider lookup uses exact runtime class identity', function()
 
     local ShowBase = std.class.new('test.ShowBaseProvider', { StatelessWidget })
     function ShowBase:build(context)
-        local provider = Provider.of(context, Base --[[@as std.Class]])
+        local provider = Provider.of(context, Base --[[@as std.class]])
         return Text(provider.value)
     end
 

@@ -17,7 +17,7 @@ local M = {}
 ---@class BenchmarkClock : FrameClock
 ---@field time number
 ---@overload fun(): self
-local BenchmarkClock = std.class.new('BenchmarkClock', { clock_mod.FrameClock })
+local BenchmarkClock = std.class.new('BenchmarkClock', clock_mod.FrameClock)
 function BenchmarkClock:__init()
     self.time = 0
 end

@@ -59,7 +59,7 @@ end
 ---@field on_pop fun(route: Route, value: any?)?
 ---@field on_dispose fun(route: Route)?
 ---@overload fun(options: _PageOptions): self
-local Page = std.class.new('Page', {})
+local Page = std.class.new('Page')
 
 function Page:__init(options)
     if type(options) ~= 'table' then
@@ -127,7 +127,7 @@ end
 ---@field barrier_color Color?
 ---@field barrier_dismissible boolean
 ---@overload fun(options: _PopupPageOptions): self
-local PopupPage = std.class.new('PopupPage', { Page })
+local PopupPage = std.class.new('PopupPage', Page)
 
 function PopupPage:__init(options)
     if type(options) ~= 'table' then
@@ -162,7 +162,7 @@ end
 ---@field dismissible boolean
 ---@field on_dismiss fun()?
 ---@overload fun(options?: _ModalBarrierOptions): self
-local ModalBarrier = std.class.new('ModalBarrier', { StatelessWidget })
+local ModalBarrier = std.class.new('ModalBarrier', StatelessWidget)
 
 function ModalBarrier:__init(options)
     options = options or {}
@@ -201,7 +201,7 @@ end
 ---@field value any?
 ---@field _listeners table<fun(value: any?), true>
 ---@overload fun(): self
-local RouteResult = std.class.new('RouteResult', {})
+local RouteResult = std.class.new('RouteResult')
 
 function RouteResult:__init()
     self.complete = false
@@ -264,7 +264,7 @@ end
 ---@field _finalized table<OverlayEntry, true>
 ---@field _entry_count integer
 ---@overload fun(page: Page, navigator: NavigatorState): self
-local Route = std.class.new('Route', {})
+local Route = std.class.new('Route')
 
 function Route:__init(page, navigator)
     validate_page(page)
@@ -368,7 +368,7 @@ end
 ---@field page PopupPage
 ---@field barrier_entry OverlayEntry
 ---@overload fun(page: PopupPage, navigator: NavigatorState): self
-local PopupRoute = std.class.new('PopupRoute', { Route })
+local PopupRoute = std.class.new('PopupRoute', Route)
 
 function PopupRoute:__init(page, navigator)
     if not std.isinstance(page, PopupPage) then
@@ -418,8 +418,8 @@ end
 ---@field state NavigatorState
 ---@field child Widget?
 ---@overload fun(options: _NavigatorScopeOptions): self
-local NavigatorScope = std.class.new('NavigatorScope', { InheritedWidget })
-local NavigatorScopeClass = NavigatorScope --[[@as std.Class]]
+local NavigatorScope = std.class.new('NavigatorScope', InheritedWidget)
+local NavigatorScopeClass = NavigatorScope --[[@as std.class]]
 
 function NavigatorScope:__init(options)
     options = options or {}
@@ -457,7 +457,7 @@ end
 ---@class Navigator : StatefulWidget
 ---@field pages Page[]
 ---@overload fun(options?: _NavigatorOptions): self
-local Navigator = std.class.new('Navigator', { StatefulWidget })
+local Navigator = std.class.new('Navigator', StatefulWidget)
 
 function Navigator:__init(options)
     options = options or {}
@@ -470,7 +470,7 @@ end
 ---@field routes Route[]
 ---@field pages Page[]
 ---@overload fun(): self
-local NavigatorState = std.class.new('NavigatorState', { State })
+local NavigatorState = std.class.new('NavigatorState', State)
 
 function NavigatorState:__init()
     std.super(NavigatorState, self, State).__init(self)

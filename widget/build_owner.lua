@@ -31,7 +31,7 @@ local GlobalKey = key_mod.GlobalKey
 ---@field _state_lock_depth integer
 ---@field _post_finalize fun()[]
 ---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): self
-local BuildOwner = std.class.new('BuildOwner', {})
+local BuildOwner = std.class.new('BuildOwner')
 
 function BuildOwner:__init(render_owner, scheduler)
     self.render_owner = render_owner

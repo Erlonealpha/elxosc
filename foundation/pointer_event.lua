@@ -78,7 +78,7 @@ local M = {}
 ---@field timestamp number?
 ---@overload fun(type: string, point: PointerPoint?, data: any?, extra: table?): self
 ---@overload fun(fields: _PointerEventFields): self
-local PointerEvent = std.class.new('PointerEvent', {})
+local PointerEvent = std.class.new('PointerEvent')
 local instances = setmetatable({}, { __mode = 'k' })
 
 local EVENT_TYPES = {

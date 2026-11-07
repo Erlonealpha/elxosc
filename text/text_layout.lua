@@ -80,7 +80,7 @@ end
 
 ---@class TextLayout : std.object
 ---@overload fun(): self
-local TextLayout = std.class.new('TextLayout', {})
+local TextLayout = std.class.new('TextLayout')
 
 --- Uniform logical line advance for a paragraph, not a glyph ink height.
 ---@param style TextStyle

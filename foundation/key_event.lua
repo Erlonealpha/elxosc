@@ -29,7 +29,7 @@ local M = {}
 ---@field is_repeat boolean
 ---@field timestamp number?
 ---@overload fun(fields: _KeyEventFields): self
-local KeyEvent = std.class.new('KeyEvent', {})
+local KeyEvent = std.class.new('KeyEvent')
 
 local EVENT_TYPES = { down = true, up = true, press = true }
 local MODIFIERS = { shift = true, ctrl = true, alt = true, meta = true }

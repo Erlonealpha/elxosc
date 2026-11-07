@@ -30,7 +30,7 @@ local M = {}
 ---@field hidden boolean
 ---@field child Widget?
 ---@overload fun(options?: _OpacityOptions): self
-local Opacity = std.class.new('Opacity', { SingleChildRenderObjectWidget })
+local Opacity = std.class.new('Opacity', SingleChildRenderObjectWidget)
 
 function Opacity:__init(options)
     options = options or {}
@@ -61,7 +61,7 @@ end
 ---@field offstage boolean
 ---@field child Widget?
 ---@overload fun(options?: _OffstageOptions): self
-local Offstage = std.class.new('Offstage', { SingleChildRenderObjectWidget })
+local Offstage = std.class.new('Offstage', SingleChildRenderObjectWidget)
 
 function Offstage:__init(options)
     options = options or {}
@@ -92,7 +92,7 @@ end
 ---@field maintain_state boolean
 ---@field child Widget?
 ---@overload fun(options?: _VisibilityOptions): self
-local Visibility = std.class.new('Visibility', { StatelessWidget })
+local Visibility = std.class.new('Visibility', StatelessWidget)
 
 function Visibility:__init(options)
     options = options or {}
@@ -121,7 +121,7 @@ end
 ---@class AutoHideController : std.object
 ---@field visible boolean
 ---@overload fun(visible: boolean?): self
-local AutoHideController = std.class.new('AutoHideController', {})
+local AutoHideController = std.class.new('AutoHideController')
 
 function AutoHideController:__init(visible)
     if visible ~= nil and type(visible) ~= 'boolean' then
@@ -216,7 +216,7 @@ end
 ---@field top_hover_enabled boolean
 ---@field top_hover_zone number
 ---@overload fun(options?: _AutoHideOptions): self
-local AutoHide = std.class.new('AutoHide', { StatefulWidget })
+local AutoHide = std.class.new('AutoHide', StatefulWidget)
 
 function AutoHide:__init(options)
     options = options or {}
@@ -266,7 +266,7 @@ end
 ---@field _fade_controller AnimationController?
 ---@field _fade_listener fun(controller: AnimationController)?
 ---@overload fun(): self
-local AutoHideState = std.class.new('AutoHideState', { State })
+local AutoHideState = std.class.new('AutoHideState', State)
 
 function AutoHideState:__init()
     std.super(AutoHideState, self, State).__init(self)

@@ -73,7 +73,7 @@ end
 ---@field extra_right_control Widget?
 ---@field scale number?
 ---@overload fun(options?: _MainOptions): self
-local Main = std.class.new('Main', { StatelessWidget })
+local Main = std.class.new('Main', StatelessWidget)
 
 function Main:__init(options)
     options = options or {}
@@ -186,7 +186,7 @@ end
 ---@class WindowLayer : StatelessWidget
 ---@field child Widget?
 ---@overload fun(options?: _WindowLayerOptions): self
-local WindowLayer = std.class.new('WindowLayer', { StatelessWidget })
+local WindowLayer = std.class.new('WindowLayer', StatelessWidget)
 
 function WindowLayer:__init(options)
     options = options or {}
@@ -237,7 +237,7 @@ end
 ---@field auto_hide_top_hover_zone number
 ---@field auto_hide_controller AutoHideController
 ---@overload fun(options?: _DefaultAppOptions): self
-local DefaultApp = std.class.new('DefaultApp', { StatefulWidget })
+local DefaultApp = std.class.new('DefaultApp', StatefulWidget)
 
 function DefaultApp:__init(options)
     options = options or {}
@@ -290,7 +290,7 @@ end
 ---@field extension_entry OverlayEntry
 ---@field window_entry OverlayEntry
 ---@overload fun(): self
-local DefaultAppState = std.class.new('DefaultAppState', { State })
+local DefaultAppState = std.class.new('DefaultAppState', State)
 
 function DefaultAppState:__init()
     std.super(DefaultAppState, self, State).__init(self)

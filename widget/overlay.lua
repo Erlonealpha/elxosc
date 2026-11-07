@@ -58,7 +58,7 @@ end
 ---@field private _finalized boolean
 ---@field private _on_dispose fun(entry: OverlayEntry)?
 ---@overload fun(options: _OverlayEntryOptions): self
-local OverlayEntry = std.class.new('OverlayEntry', {})
+local OverlayEntry = std.class.new('OverlayEntry')
 
 function OverlayEntry:__init(options)
     if type(options) ~= 'table' then
@@ -233,7 +233,7 @@ end
 ---@field entry OverlayEntry
 ---@field paint_visible boolean
 ---@overload fun(options: _OverlayEntryWidgetOptions): self
-local OverlayEntryWidget = std.class.new('OverlayEntryWidget', { StatefulWidget })
+local OverlayEntryWidget = std.class.new('OverlayEntryWidget', StatefulWidget)
 
 function OverlayEntryWidget:__init(options)
     if type(options) ~= 'table' then
@@ -250,7 +250,7 @@ end
 ---@class OverlayEntryMountState : State
 ---@field entry OverlayEntry?
 ---@overload fun(): self
-local OverlayEntryMountState = std.class.new('OverlayEntryMountState', { State })
+local OverlayEntryMountState = std.class.new('OverlayEntryMountState', State)
 
 function OverlayEntryMountState:__init()
     std.super(OverlayEntryMountState, self, State).__init(self)
@@ -315,8 +315,8 @@ end
 ---@field state OverlayState
 ---@field child Widget?
 ---@overload fun(options: _OverlayScopeOptions): self
-local OverlayScope = std.class.new('OverlayScope', { InheritedWidget })
-local OverlayScopeClass = OverlayScope --[[@as std.Class]]
+local OverlayScope = std.class.new('OverlayScope', InheritedWidget)
+local OverlayScopeClass = OverlayScope --[[@as std.class]]
 
 function OverlayScope:__init(options)
     if type(options) ~= 'table' then
@@ -358,7 +358,7 @@ end
 ---@field initial_entries OverlayEntry[]
 ---@field on_plan fun(plan: OverlayPlan)?
 ---@overload fun(options?: _OverlayOptions): self
-local Overlay = std.class.new('Overlay', { StatefulWidget })
+local Overlay = std.class.new('Overlay', StatefulWidget)
 
 function Overlay:__init(options)
     options = options or {}
@@ -388,7 +388,7 @@ end
 ---@field generation integer
 ---@field last_plan OverlayPlan?
 ---@overload fun(): self
-local OverlayState = std.class.new('OverlayState', { State })
+local OverlayState = std.class.new('OverlayState', State)
 
 function OverlayState:__init()
     std.super(OverlayState, self, State).__init(self)

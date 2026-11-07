@@ -24,7 +24,7 @@ local M = {}
 ---@field offset Offset
 ---@field _offset_animation table?
 ---@overload fun(offset: Offset?, child: RenderObject?): self
-local RenderOffsetBox = std.class.new('RenderOffsetBox', { RenderObject })
+local RenderOffsetBox = std.class.new('RenderOffsetBox', RenderObject)
 
 function RenderOffsetBox:__init(offset, child)
     RenderObject.__init(self)

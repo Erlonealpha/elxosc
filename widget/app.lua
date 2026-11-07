@@ -55,7 +55,7 @@ end
 ---@field default_text_style TextStyle
 ---@field actions HostActions
 ---@overload fun(options?: _WidgetsAppOptions): self
-local WidgetsApp = std.class.new('WidgetsApp', { StatelessWidget })
+local WidgetsApp = std.class.new('WidgetsApp', StatelessWidget)
 
 function WidgetsApp:__init(options)
     options = options or {}

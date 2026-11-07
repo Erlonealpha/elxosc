@@ -21,7 +21,7 @@ local M = {}
 ---@class CustomPaint : SingleChildRenderObjectWidget
 ---@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
 ---@overload fun(options: _CustomPaintOptions?): self
-local CustomPaint = std.class.new('CustomPaint', { SingleChildRenderObjectWidget })
+local CustomPaint = std.class.new('CustomPaint', SingleChildRenderObjectWidget)
 
 function CustomPaint:__init(options)
     options = options or {}

@@ -10,7 +10,7 @@
 -- Define contributions are assembled before the Widget tree is mounted. Runtime
 -- Binding only owns mount/update/dispose and never applies contributions.
 
-local enable = true
+local enable = false
 -- Temporary development switch; replace with the future configuration system.
 local demo_enabled = true
 if not enable then

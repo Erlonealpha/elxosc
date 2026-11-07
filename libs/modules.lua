@@ -24,7 +24,7 @@ local M = {}
 ---@field loaders table<string, fun(env: table, scope_id: string)>
 ---@field protected_names table<string, true>
 ---@overload fun(): self
-local ModuleRegistry = std.class.new('ModuleRegistry', {})
+local ModuleRegistry = std.class.new('ModuleRegistry')
 
 function ModuleRegistry:__init()
     self.mods = {}

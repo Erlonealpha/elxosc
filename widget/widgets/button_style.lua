@@ -43,7 +43,7 @@ local raise = std.raise
 ---@field hover_shadow_color Color?
 ---@field hover_shadow_radius number
 ---@overload fun(options: _ButtonStyleOptions?): self
-local ButtonStyle = std.class.new('ButtonStyle', {})
+local ButtonStyle = std.class.new('ButtonStyle')
 
 ---@param options _ButtonStyleOptions?
 function ButtonStyle:__init(options)

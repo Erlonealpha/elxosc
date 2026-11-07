@@ -53,7 +53,7 @@ local RenderText = require('render.text').RenderText
 ---@field _repeat_ticks integer
 ---@field _down_action_fired boolean
 ---@overload fun(): self
-local ButtonState = std.class.new('ButtonState', { State })
+local ButtonState = std.class.new('ButtonState', State)
 function ButtonState:init_state()
     self.hovered = false
     self.pressed = false
@@ -251,7 +251,7 @@ end
 ---@field style ButtonStyle
 ---@field font_size number?
 ---@overload fun(options: _ButtonBaseOptions?): self
-local ButtonBase = std.class.new('ButtonBase', { StatefulWidget })
+local ButtonBase = std.class.new('ButtonBase', StatefulWidget)
 ---@param options _ButtonBaseOptions?
 function ButtonBase:__init(options)
     options = options or {}

@@ -27,7 +27,7 @@ local M = {}
 ---@field width number?
 ---@field height number?
 ---@overload fun(options?: _PositionedOptions): self
-local Positioned = std.class.new('Positioned', { ParentDataWidget })
+local Positioned = std.class.new('Positioned', ParentDataWidget)
 
 local function optional_number(name, value, non_negative)
     if value == nil then

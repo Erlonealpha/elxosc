@@ -60,7 +60,7 @@ local M = {}
 ---@field top_bar_visible boolean
 ---@field scale number
 ---@overload fun(options: _PlayerLayoutOptions): self
-local PlayerLayout = std.class.new('PlayerLayout', { StatelessWidget })
+local PlayerLayout = std.class.new('PlayerLayout', StatelessWidget)
 
 function PlayerLayout:__init(options)
     if type(options) ~= 'table' then

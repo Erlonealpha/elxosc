@@ -14,7 +14,7 @@ local M = {}
 
 ---@class GestureDetector : SingleChildRenderObjectWidget
 ---@overload fun(child: Widget?, options: GestureHandlers?): self
-local GestureDetector = std.class.new('GestureDetector', { SingleChildRenderObjectWidget })
+local GestureDetector = std.class.new('GestureDetector', SingleChildRenderObjectWidget)
 
 function GestureDetector:__init(child, options)
     options = options or {}

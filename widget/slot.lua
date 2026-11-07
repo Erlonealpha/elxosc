@@ -59,7 +59,7 @@ end
 ---@field identity fun(opts: table<string, any>, contribution: Contribution): string?
 ---@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
 ---@overload fun(options: SlotSpecOptions): self
-local SlotSpec = std.class.new('SlotSpec', {})
+local SlotSpec = std.class.new('SlotSpec')
 
 local function copy_table(source)
     local result = {}
@@ -166,7 +166,7 @@ end
 ---@field spec SlotSpec
 ---@field default_value Widget|Widget[]?
 ---@overload fun(spec: SlotSpec, default_value: Widget|Widget[]?): self
-local SlotWrap = std.class.new('SlotWrap', { StatelessWidget })
+local SlotWrap = std.class.new('SlotWrap', StatelessWidget)
 
 function SlotWrap:__init(spec, default_value)
     if not std.isinstance(spec, SlotSpec) then
@@ -211,7 +211,7 @@ end
 ---@field sequence integer
 ---@field scope_sequence integer
 ---@overload fun(slot_id: string, widget: Widget, op: SlotOperation?, opts: table<string, any>?, scope_id: string, sequence: integer, scope_sequence: integer): self
-local Contribution = std.class.new('Contribution', {})
+local Contribution = std.class.new('Contribution')
 
 function Contribution:__init(slot_id, widget, op, opts, scope_id, sequence, scope_sequence)
     if type(slot_id) ~= 'string' or slot_id == '' then
@@ -239,7 +239,7 @@ end
 ---@field _sealed boolean
 ---@field _snapshot Contribution[]?
 ---@overload fun(): self
-local ContributionRegistry = std.class.new('ContributionRegistry', {})
+local ContributionRegistry = std.class.new('ContributionRegistry')
 
 function ContributionRegistry:__init()
     self._entries = {}
@@ -415,7 +415,7 @@ end
 ---@field on_warning fun(diagnostic: table)?
 ---@field _used table<Contribution, true>
 ---@overload fun(contributions: Contribution[]?, options: { on_warning: fun(diagnostic: table)? }?): self
-local CompositionAssembler = std.class.new('CompositionAssembler', {})
+local CompositionAssembler = std.class.new('CompositionAssembler')
 
 local function widget_copy(widget)
     local clone = widget.__class:__new()

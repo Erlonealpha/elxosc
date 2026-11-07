@@ -22,7 +22,7 @@ local M = {}
 ---@field context Element?
 ---@field _resources table[]
 ---@overload fun(): self
-local State = std.class.new('State', {})
+local State = std.class.new('State')
 
 function State:__init()
     self.widget = nil

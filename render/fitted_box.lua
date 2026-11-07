@@ -46,7 +46,7 @@ local M = {}
 ---@field alignment Offset
 ---@field clip boolean
 ---@overload fun(child: RenderObject?, options: FittedBoxOpts?): self
-local RenderFittedBox = std.class.new('RenderFittedBox', { RenderObject })
+local RenderFittedBox = std.class.new('RenderFittedBox', RenderObject)
 
 ---@class FittedBoxMapping
 ---@field transform Matrix2D

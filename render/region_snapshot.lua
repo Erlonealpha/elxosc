@@ -30,7 +30,7 @@ end
 ---@field root RenderObject?
 ---@field private _regions PointerRegion[]
 ---@overload fun(options: _RegionSnapshotOptions): self
-local RegionSnapshot = std.class.new('RegionSnapshot', {})
+local RegionSnapshot = std.class.new('RegionSnapshot')
 
 function RegionSnapshot:__init(options)
     self.generation = options.generation

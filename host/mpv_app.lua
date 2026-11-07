@@ -82,7 +82,7 @@ local M = {}
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
 ---@overload fun(root_widget: Widget, options: { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, player_theme: PlayerThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
-local App = std.class.new('App', {})
+local App = std.class.new('App')
 
 function App:__init(root_widget, options)
     options = options or {}

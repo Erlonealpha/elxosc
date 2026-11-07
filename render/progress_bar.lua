@@ -199,7 +199,7 @@ end
 ---@field _seek_mode 'keyframe'|'exact'
 ---@field _pending_seek_mode 'keyframe'|'exact'?
 ---@overload fun(options?: _RenderProgressBarOptions): self
-local RenderProgressBar = std.class.new('RenderProgressBar', { RenderObject })
+local RenderProgressBar = std.class.new('RenderProgressBar', RenderObject)
 
 function RenderProgressBar:__init(options)
     RenderObject.__init(self)

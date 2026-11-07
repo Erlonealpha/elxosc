@@ -23,7 +23,7 @@ local M = {}
 
 ---@class ObjectKey : LocalKey
 ---@overload fun(value: any): self
-local ObjectKey = std.class.new('ObjectKey', { LocalKey })
+local ObjectKey = std.class.new('ObjectKey', LocalKey)
 
 function ObjectKey:__init(value)
     self.value = value
@@ -45,7 +45,7 @@ end
 ---@field debug_label string?
 ---@field _registrations table<BuildOwner, Element>
 ---@overload fun(debug_label: string?): self
-local GlobalKey = std.class.new('GlobalKey', { Key })
+local GlobalKey = std.class.new('GlobalKey', Key)
 
 function GlobalKey:__init(debug_label)
     self.value = nil

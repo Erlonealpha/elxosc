@@ -136,7 +136,7 @@ end
 ---@field shadow_radius number
 ---@field extra TextStyleExtra?
 ---@overload fun(options: _TextStyleOptions?): self
-local TextStyle = std.class.new('TextStyle', {})
+local TextStyle = std.class.new('TextStyle')
 
 ---@param options _TextStyleOptions?
 function TextStyle:__init(options)

@@ -26,7 +26,7 @@ local M = {}
 ---@field width number?
 ---@field height number?
 ---@overload fun(width: number?, height: number?, child: RenderObject?): self
-local RenderSizedBox = std.class.new('RenderSizedBox', { RenderObject })
+local RenderSizedBox = std.class.new('RenderSizedBox', RenderObject)
 
 function RenderSizedBox:__init(width, height, child)
     std.super(RenderSizedBox, self, RenderObject).__init(self)

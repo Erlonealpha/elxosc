@@ -30,7 +30,7 @@ end
 ---@field b number 0..1
 ---@field a number 0..1 (1 = opaque)
 ---@overload fun(r: number?, g: number?, b: number?, a: number?): self
-local Color = std.class.new('Color', {})
+local Color = std.class.new('Color')
 
 function Color:__init(r, g, b, a)
     self.r = r or 0

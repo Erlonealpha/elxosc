@@ -25,7 +25,7 @@ local M = {}
 ---@field offset Offset
 ---@field _anchor_explicit boolean
 ---@overload fun(options?: _TextPaintOptions): self
-local TextPaint = std.class.new('TextPaint', {})
+local TextPaint = std.class.new('TextPaint')
 
 local option_names = {
     anchor = true,

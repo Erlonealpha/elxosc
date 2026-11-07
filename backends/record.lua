@@ -17,7 +17,7 @@ local M = {}
 ---@class RecordCanvas : Canvas
 ---@field ops table[]
 ---@overload fun(): self
-local RecordCanvas = std.class.new('RecordCanvas', { Canvas })
+local RecordCanvas = std.class.new('RecordCanvas', Canvas)
 
 function RecordCanvas:__init()
     self.ops = {}

@@ -53,7 +53,7 @@ end
 ---@field private _error string?
 ---@field private _error_kind AssMeasureErrorKind?
 ---@overload fun(options: _AssMeasureOptions): self
-local AssMeasure = std.class.new('AssMeasure', {})
+local AssMeasure = std.class.new('AssMeasure')
 
 function AssMeasure:__init(options)
     self.res_x = resolution(options.res_x, 'res_x')

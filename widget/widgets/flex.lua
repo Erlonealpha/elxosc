@@ -32,7 +32,7 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 ---@field flex number
 ---@field fit FlexFit
 ---@overload fun(child: Widget?, options?: _FlexibleOptions): self
-local Flexible = std.class.new('Flexible', { ParentDataWidget })
+local Flexible = std.class.new('Flexible', ParentDataWidget)
 
 ---@param child Widget?
 ---@param options? _FlexibleOptions
@@ -81,7 +81,7 @@ end
 ---@field cross_alignment CrossAlignment
 ---@field spacing number
 ---@overload fun(direction: FlexDirection, options?: _FlexOptions): self
-local Flex = std.class.new('Flex', { MultiChildRenderObjectWidget })
+local Flex = std.class.new('Flex', MultiChildRenderObjectWidget)
 
 ---@param direction FlexDirection
 ---@param options? _FlexOptions

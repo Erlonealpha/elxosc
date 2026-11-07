@@ -25,7 +25,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class ConstrainedBox : SingleChildRenderObjectWidget
 ---@field constraints Constraints
 ---@overload fun(options?: _ConstrainedBoxOptions): self
-local ConstrainedBox = std.class.new('ConstrainedBox', { SingleChildRenderObjectWidget })
+local ConstrainedBox = std.class.new('ConstrainedBox', SingleChildRenderObjectWidget)
 
 ---@param options? _ConstrainedBoxOptions
 function ConstrainedBox:__init(options)
@@ -49,7 +49,7 @@ end
 ---@field max_width? number
 ---@field max_height? number
 ---@overload fun(options?: _LimitedBoxOptions): self
-local LimitedBox = std.class.new('LimitedBox', { SingleChildRenderObjectWidget })
+local LimitedBox = std.class.new('LimitedBox', SingleChildRenderObjectWidget)
 
 ---@param options? _LimitedBoxOptions
 function LimitedBox:__init(options)

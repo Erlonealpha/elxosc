@@ -18,7 +18,7 @@ local M = {}
 ---@field handler fun(time: number)?
 ---@field _disposed boolean
 ---@overload fun(): self
-local FrameClock = std.class.new('FrameClock', {})
+local FrameClock = std.class.new('FrameClock')
 
 function FrameClock:__init()
     self.handler = nil

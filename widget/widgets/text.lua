@@ -30,7 +30,7 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint): self
-local TextRenderObjectWidget = std.class.new('TextRenderObjectWidget', { LeafRenderObjectWidget })
+local TextRenderObjectWidget = std.class.new('TextRenderObjectWidget', LeafRenderObjectWidget)
 
 function TextRenderObjectWidget:__init(text, style, text_layout, text_paint)
     self.text = text
@@ -66,7 +66,7 @@ end
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
 ---@overload fun(text: string | number, options: _TextOptions?): self
-local Text = std.class.new('Text', { StatelessWidget })
+local Text = std.class.new('Text', StatelessWidget)
 
 ---@param text string | number
 ---@param options _TextOptions?

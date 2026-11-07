@@ -161,7 +161,7 @@ end
 ---@field name string
 ---@field _batch_group table?
 ---@overload fun(owner: MpPlayerContext, name: string, callback: fun(name: string, value: any)): self
-local MpPropertySubscription = std.class.new('MpPropertySubscription', {})
+local MpPropertySubscription = std.class.new('MpPropertySubscription')
 
 function MpPropertySubscription:__init(owner, name, callback)
     self._owner = owner
@@ -196,7 +196,7 @@ end
 ---@field name string
 ---@field _handle any
 ---@overload fun(owner: MpPlayerContext, name: string): self
-local MpCapabilitySubscription = std.class.new('MpCapabilitySubscription', {})
+local MpCapabilitySubscription = std.class.new('MpCapabilitySubscription')
 
 function MpCapabilitySubscription:__init(owner, name)
     self._active = true
@@ -255,7 +255,7 @@ end
 ---@field _async_handles table<function, true>
 ---@field _disposed boolean
 ---@overload fun(store: PlayerStore, options: MpPlayerContextOptions?): self
-local MpPlayerContext = std.class.new('MpPlayerContext', {})
+local MpPlayerContext = std.class.new('MpPlayerContext')
 
 ---@param name string
 ---@param subscription MpPropertySubscription

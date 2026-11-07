@@ -59,7 +59,7 @@ local M = {}
 ---@class HostActions : std.object
 ---@field private _callbacks table<string, function>
 ---@overload fun(options?: _HostActionsOptions): self
-local HostActions = std.class.new('HostActions', {})
+local HostActions = std.class.new('HostActions')
 
 local ACTIONS = {
     'play_pause', 'replay', 'seek', 'seek_to', 'set_pause',
@@ -370,8 +370,8 @@ end
 ---@field actions HostActions
 ---@field child Widget?
 ---@overload fun(options: _HostActionsScopeOptions): self
-local HostActionsScope = std.class.new('HostActionsScope', { InheritedWidget })
-local HostActionsScopeClass = HostActionsScope --[[@as std.Class]]
+local HostActionsScope = std.class.new('HostActionsScope', InheritedWidget)
+local HostActionsScopeClass = HostActionsScope --[[@as std.class]]
 
 function HostActionsScope:__init(options)
     if type(options) ~= 'table' then

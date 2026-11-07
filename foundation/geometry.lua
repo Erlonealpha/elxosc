@@ -30,7 +30,7 @@ local M = {}
 ---@field x number
 ---@field y number
 ---@overload fun(x: number?, y: number?): self
-local Offset = std.class.new('Offset', {})
+local Offset = std.class.new('Offset')
 
 function Offset:__init(x, y)
     self.x = x or 0
@@ -106,7 +106,7 @@ end
 ---@field x int
 ---@field y int
 ---@overload fun(x: int?, y: int?): self
-local Point = std.class.new('Point', {})
+local Point = std.class.new('Point')
 
 function Point:__init(x, y)
     self.x = x or 0
@@ -186,7 +186,7 @@ end
 ---@field width number
 ---@field height number
 ---@overload fun(width: number?, height: number?): self
-local Size = std.class.new('Size', {})
+local Size = std.class.new('Size')
 
 function Size:__init(width, height)
     self.width = width or 0
@@ -261,7 +261,7 @@ end
 ---@field right number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
-local Rect = std.class.new('Rect', {})
+local Rect = std.class.new('Rect')
 
 function Rect:__init(left, top, right, bottom)
     self.left = left or 0
@@ -408,7 +408,7 @@ end
 ---@field right number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
-local EdgeInsets = std.class.new('EdgeInsets', {})
+local EdgeInsets = std.class.new('EdgeInsets')
 
 function EdgeInsets:__init(left, top, right, bottom)
     self.left = left or 0

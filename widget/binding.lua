@@ -32,7 +32,7 @@ local M = {}
 ---@field _disposed boolean
 ---@field _owns_pipeline_owner boolean
 ---@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, scheduler: Scheduler?): self
-local WidgetTree = std.class.new('WidgetTree', {})
+local WidgetTree = std.class.new('WidgetTree')
 
 function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.binding = binding
@@ -149,7 +149,7 @@ end
 ---@class WidgetsBinding : BindingBase
 ---@field _trees table<WidgetTree, true>
 ---@overload fun(): self
-local WidgetsBinding = std.class.new('WidgetsBinding', { BindingBase })
+local WidgetsBinding = std.class.new('WidgetsBinding', BindingBase)
 
 function WidgetsBinding:__init()
     ---@diagnostic disable-next-line: param-type-mismatch, generic-constraint-mismatch

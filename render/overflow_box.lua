@@ -24,7 +24,7 @@ local M = {}
 ---@class RenderUnconstrainedBox : RenderObject
 ---@field alignment Offset
 ---@overload fun(child: RenderObject?, alignment: Offset?): self
-local RenderUnconstrainedBox = std.class.new('RenderUnconstrainedBox', { RenderObject })
+local RenderUnconstrainedBox = std.class.new('RenderUnconstrainedBox', RenderObject)
 
 function RenderUnconstrainedBox:__init(child, alignment)
     RenderObject.__init(self)
@@ -62,7 +62,7 @@ end
 ---@class RenderOverflowBox : RenderObject
 ---@field opts OverflowBoxOpts
 ---@overload fun(child: RenderObject?, options: OverflowBoxOpts?): self
-local RenderOverflowBox = std.class.new('RenderOverflowBox', { RenderObject })
+local RenderOverflowBox = std.class.new('RenderOverflowBox', RenderObject)
 
 function RenderOverflowBox:__init(child, options)
     RenderObject.__init(self)

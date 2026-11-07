@@ -30,7 +30,7 @@ end
 ---@field clock FrameClock
 ---@field _disposed boolean
 ---@overload fun(clock: FrameClock): self
-local Scheduler = std.class.new('Scheduler', {})
+local Scheduler = std.class.new('Scheduler')
 
 function Scheduler:__init(clock)
     self.clock = clock

@@ -9,7 +9,7 @@ local Color = color.Color
 
 ---@class TextButton : ButtonBase
 ---@overload fun(options: _TextButtonOptions?): self
-local TextButton = std.class.new('TextButton', { ButtonBase })
+local TextButton = std.class.new('TextButton', ButtonBase)
 ---@param options _TextButtonOptions?
 function TextButton:__init(options)
     options = options or {}

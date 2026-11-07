@@ -90,7 +90,7 @@ local owned_sections = {}
 ---@field _mouse_callback fun(name: string, mouse: table)?
 ---@field _shutdown boolean
 ---@overload fun(options: MpInputOptions): self
-local MpInput = std.class.new('MpInput', {})
+local MpInput = std.class.new('MpInput')
 
 function MpInput:__init(options)
     options = options or {}

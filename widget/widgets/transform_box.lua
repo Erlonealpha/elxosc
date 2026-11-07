@@ -30,7 +30,7 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@field scale_controller AnimationController?
 ---@field scale_tween Tween<Size>?
 ---@overload fun(child: Widget?, options?: _TransformBoxOptions): self
-local TransformBox = std.class.new('TransformBox', { SingleChildRenderObjectWidget })
+local TransformBox = std.class.new('TransformBox', SingleChildRenderObjectWidget)
 
 ---@param child Widget?
 ---@param options? _TransformBoxOptions
@@ -80,7 +80,7 @@ end
 ---@field alignment Offset
 ---@field clip boolean
 ---@overload fun(child: Widget?, options?: _LayoutScaleBoxOptions): self
-local LayoutScaleBox = std.class.new('LayoutScaleBox', { SingleChildRenderObjectWidget })
+local LayoutScaleBox = std.class.new('LayoutScaleBox', SingleChildRenderObjectWidget)
 
 ---@param child Widget?
 ---@param options? _LayoutScaleBoxOptions

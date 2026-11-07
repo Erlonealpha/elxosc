@@ -48,7 +48,7 @@ local FITS = {
 ---@class UnconstrainedBox : SingleChildRenderObjectWidget
 ---@field alignment Offset
 ---@overload fun(options?: _UnconstrainedBoxOptions): self
-local UnconstrainedBox = std.class.new('UnconstrainedBox', { SingleChildRenderObjectWidget })
+local UnconstrainedBox = std.class.new('UnconstrainedBox', SingleChildRenderObjectWidget)
 
 ---@param options? _UnconstrainedBoxOptions
 function UnconstrainedBox:__init(options)
@@ -71,7 +71,7 @@ end
 ---@class OverflowBox : SingleChildRenderObjectWidget
 ---@field opts OverflowBoxOpts
 ---@overload fun(options?: _OverflowBoxOptions): self
-local OverflowBox = std.class.new('OverflowBox', { SingleChildRenderObjectWidget })
+local OverflowBox = std.class.new('OverflowBox', SingleChildRenderObjectWidget)
 
 ---@param options? _OverflowBoxOptions
 function OverflowBox:__init(options)
@@ -104,7 +104,7 @@ end
 ---@field fit FittedBoxFit
 ---@field alignment Offset
 ---@overload fun(child: Widget?, options?: _FittedBoxOptions): self
-local FittedBox = std.class.new('FittedBox', { SingleChildRenderObjectWidget })
+local FittedBox = std.class.new('FittedBox', SingleChildRenderObjectWidget)
 
 ---@param child Widget?
 ---@param options? _FittedBoxOptions

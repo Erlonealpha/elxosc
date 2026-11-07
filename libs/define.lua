@@ -54,7 +54,7 @@ local M = {}
 ---@field _defined_scopes table<string, true> scopes with an accepted initial payload
 ---@field _sealed_contributions Contribution[]?
 ---@overload fun(options: DefineOptions?): self
-local DefineSession = std.class.new('DefineSession', {})
+local DefineSession = std.class.new('DefineSession')
 
 function DefineSession:__init(options)
     options = options or {}

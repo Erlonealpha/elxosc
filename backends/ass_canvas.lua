@@ -146,7 +146,7 @@ end
 ---@field events string[] one ASS `Text` line per drawing call
 ---@field subpixel integer `\p` level (4 = 8x sub-pixel, the assdraw default)
 ---@overload fun(subpixel: integer?): self
-local AssCanvas = std.class.new('AssCanvas', { Canvas })
+local AssCanvas = std.class.new('AssCanvas', Canvas)
 
 function AssCanvas:__init(subpixel)
     self.events = {}
@@ -418,12 +418,19 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     tags[#tags + 1] = self:_clip_tag()
     tags[#tags + 1] = '}'
 
-    local lines = {}
-    -- Paragraph.line_height is a logical advance; \N uses libass font metrics.
-    for i, line in ipairs(paragraph.lines) do
-        lines[i] = escape_text(line)
+    local concat_lines = function ()
+        local r
+        for _, line in ipairs(paragraph.lines) do
+            if r == nil then
+                r = escape_text(line)
+            else
+                -- Paragraph.line_height is a logical advance; \N uses libass font metrics.
+                r = r .. '\\N' .. escape_text(line)
+            end
+        end
+        return r
     end
-    self:_push(concat(tags) .. concat(lines, '\\N'))
+    self:_push(concat(tags) .. concat_lines())
 end
 
 M.AssCanvas = AssCanvas

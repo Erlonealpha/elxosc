@@ -180,7 +180,7 @@ end
 ---@class PlayerSnapshot : std.object
 ---@field private _fields table<string, true>
 ---@overload fun(fields: _PlayerSnapshotOptions?): self
-local PlayerSnapshot = std.class.new('PlayerSnapshot', {})
+local PlayerSnapshot = std.class.new('PlayerSnapshot')
 
 local function readonly_value(value)
     if type(value) ~= 'table' then
@@ -313,7 +313,7 @@ end
 ---@field private _selected any?
 ---@field private _store PlayerStore?
 ---@overload fun(options: _PlayerSubscriptionOptions): self
-local PlayerSubscription = std.class.new('PlayerSubscription', {})
+local PlayerSubscription = std.class.new('PlayerSubscription')
 
 ---@class _PlayerSubscriptionOptions
 ---@field store PlayerStore
@@ -400,7 +400,7 @@ end
 ---@field private _notifying boolean
 ---@field on_error fun(error: any, subscription: PlayerSubscription?)?
 ---@overload fun(snapshot: PlayerSnapshot|_PlayerSnapshotOptions?, options: _PlayerStoreOptions?): self
-local PlayerStore = std.class.new('PlayerStore', {})
+local PlayerStore = std.class.new('PlayerStore')
 
 ---@class _PlayerStoreOptions
 ---@field on_error fun(error: any, subscription: PlayerSubscription?)
@@ -541,7 +541,7 @@ end
 ---@field child Widget?
 ---@field key any?
 ---@overload fun(options: _PlayerProviderOptions): self
-local PlayerProvider = std.class.new('PlayerProvider', { Provider })
+local PlayerProvider = std.class.new('PlayerProvider', Provider)
 
 function PlayerProvider:__init(options)
     if type(options) ~= 'table' then
@@ -561,25 +561,25 @@ end
 ---@param context BuildContext
 ---@return PlayerProvider
 function PlayerProvider.of(context)
-    return Provider.of(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider]]
+    return Provider.of(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider]]
 end
 
 ---@param context BuildContext
 ---@return PlayerProvider?
 function PlayerProvider.maybe_of(context)
-    return Provider.maybe_of(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider?]]
+    return Provider.maybe_of(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider?]]
 end
 
 ---@param context BuildContext
 ---@return PlayerProvider
 function PlayerProvider.read(context)
-    return Provider.read(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider]]
+    return Provider.read(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider]]
 end
 
 ---@param context BuildContext
 ---@return PlayerProvider?
 function PlayerProvider.maybe_read(context)
-    return Provider.maybe_read(context, PlayerProvider --[[@as std.Class]]) --[[@as PlayerProvider?]]
+    return Provider.maybe_read(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider?]]
 end
 
 ---@param context BuildContext
@@ -599,7 +599,7 @@ end
 ---@field name string
 ---@field builder PlayerCapabilityBuilder
 ---@overload fun(options: _PlayerCapabilityOptions): self
-local PlayerCapability = std.class.new('PlayerCapability', { StatelessWidget })
+local PlayerCapability = std.class.new('PlayerCapability', StatelessWidget)
 
 function PlayerCapability:__init(options)
     if type(options) ~= 'table' then
@@ -633,7 +633,7 @@ end
 ---@field snapshot PlayerSnapshot
 ---@field subscription PlayerSubscription?
 ---@overload fun(): self
-local PlayerScopeState = std.class.new('PlayerScopeState', { State })
+local PlayerScopeState = std.class.new('PlayerScopeState', State)
 
 function PlayerScopeState:__init()
     std.super(PlayerScopeState, self, State).__init(self)
@@ -692,7 +692,7 @@ end
 ---@field child Widget?
 ---@field key any?
 ---@overload fun(options: _PlayerScopeOptions): self
-local PlayerScope = std.class.new('PlayerScope', { StatefulWidget })
+local PlayerScope = std.class.new('PlayerScope', StatefulWidget)
 
 function PlayerScope:__init(options)
     if type(options) ~= 'table' then

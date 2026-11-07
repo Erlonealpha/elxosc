@@ -19,9 +19,9 @@ local M = {}
 
 ---@class Widget : std.object
 ---@field key any?
----@field __class std.Class
+---@field __class std.class
 ---@overload fun(key: any?): self
-local Widget = std.class.new('Widget', {})
+local Widget = std.class.new('Widget')
 
 function Widget:__init(key)
     self.key = key
@@ -58,7 +58,7 @@ end
 --- "nothing".
 ---@class StatelessWidget : Widget
 ---@overload fun(key: any?): self
-local StatelessWidget = std.class.new('StatelessWidget', { Widget })
+local StatelessWidget = std.class.new('StatelessWidget', Widget)
 
 ---@param context BuildContext
 ---@return Widget?
@@ -70,7 +70,7 @@ end
 --- A widget that owns a `State` (Flutter's `StatefulWidget`).
 ---@class StatefulWidget : Widget
 ---@overload fun(key: any?): self
-local StatefulWidget = std.class.new('StatefulWidget', { Widget })
+local StatefulWidget = std.class.new('StatefulWidget', Widget)
 
 ---@return State
 function StatefulWidget:create_state()
@@ -83,7 +83,7 @@ end
 ---@class ProxyWidget : Widget
 ---@field child Widget?
 ---@overload fun(child: Widget?, key: any?): self
-local ProxyWidget = std.class.new('ProxyWidget', { Widget })
+local ProxyWidget = std.class.new('ProxyWidget', Widget)
 
 function ProxyWidget:child_widgets()
     return self.child and { self.child } or {}
@@ -93,7 +93,7 @@ end
 --- (Flutter's `ParentDataWidget`, e.g. `Flexible`).
 ---@class ParentDataWidget : ProxyWidget
 ---@overload fun(child: Widget?, key: any?): self
-local ParentDataWidget = std.class.new('ParentDataWidget', { ProxyWidget })
+local ParentDataWidget = std.class.new('ParentDataWidget', ProxyWidget)
 
 ---@param render_object RenderObject
 function ParentDataWidget:apply_parent_data(render_object)
@@ -108,7 +108,7 @@ end
 --- registers them so they rebuild when the value changes.
 ---@class InheritedWidget : ProxyWidget
 ---@overload fun(child: Widget?, key: any?): self
-local InheritedWidget = std.class.new('InheritedWidget', { ProxyWidget })
+local InheritedWidget = std.class.new('InheritedWidget', ProxyWidget)
 
 --- Whether dependents must rebuild after this widget is replaced.
 ---@param old_widget InheritedWidget
@@ -123,7 +123,7 @@ end
 --- `RenderObjectWidget`).
 ---@class RenderObjectWidget : Widget
 ---@overload fun(key: any?): self
-local RenderObjectWidget = std.class.new('RenderObjectWidget', { Widget })
+local RenderObjectWidget = std.class.new('RenderObjectWidget', Widget)
 
 ---@return RenderObject
 function RenderObjectWidget:create_render_object()
@@ -136,13 +136,13 @@ function RenderObjectWidget:update_render_object(render_object) end
 
 ---@class LeafRenderObjectWidget : RenderObjectWidget
 ---@overload fun(key: any?): self
-local LeafRenderObjectWidget = std.class.new('LeafRenderObjectWidget', { RenderObjectWidget })
+local LeafRenderObjectWidget = std.class.new('LeafRenderObjectWidget', RenderObjectWidget)
 
 ---@class SingleChildRenderObjectWidget : RenderObjectWidget
 ---@field child Widget?
 ---@overload fun(key: any?): self
 local SingleChildRenderObjectWidget =
-    std.class.new('SingleChildRenderObjectWidget', { RenderObjectWidget })
+    std.class.new('SingleChildRenderObjectWidget', RenderObjectWidget)
 
 function SingleChildRenderObjectWidget:child_widgets()
     return self.child and { self.child } or {}
@@ -152,7 +152,7 @@ end
 ---@field children Widget[]
 ---@overload fun(key: any?): self
 local MultiChildRenderObjectWidget =
-    std.class.new('MultiChildRenderObjectWidget', { RenderObjectWidget })
+    std.class.new('MultiChildRenderObjectWidget', RenderObjectWidget)
 
 function MultiChildRenderObjectWidget:child_widgets()
     return self.children or {}

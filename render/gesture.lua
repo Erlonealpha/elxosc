@@ -43,7 +43,7 @@ local M = {}
 ---@field _last_pointer_event PointerEvent?
 ---@field _initial_state_sync boolean
 ---@overload fun(child: RenderObject?, handlers: GestureHandlers?): self
-local RenderGesture = std.class.new('RenderGesture', { RenderObject })
+local RenderGesture = std.class.new('RenderGesture', RenderObject)
 
 function RenderGesture:__init(child, handlers)
     std.super(RenderGesture, self, RenderObject).__init(self)

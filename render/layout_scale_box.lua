@@ -39,7 +39,7 @@ end
 ---@field clip boolean
 ---@field _scale_animation table?
 ---@overload fun(child: RenderObject?, options?: _RenderLayoutScaleBoxOptions): self
-local RenderLayoutScaleBox = std.class.new('RenderLayoutScaleBox', { RenderObject })
+local RenderLayoutScaleBox = std.class.new('RenderLayoutScaleBox', RenderObject)
 
 ---@param scale Size
 ---@return Size

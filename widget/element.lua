@@ -47,7 +47,7 @@ local M = {}
 ---@field _inherited_dependencies table<InheritedElement, true>
 ---@field _lifecycle_phase string
 ---@overload fun(widget: Widget):self
-local Element = std.class.new('Element', {})
+local Element = std.class.new('Element')
 
 --- `BuildContext` is Flutter's name for "the handle a build gets"; here the
 --- handle *is* the element itself.
@@ -247,7 +247,7 @@ end
 --- Walk up to the nearest ancestor with the exact runtime class
 --- `widget_class` and register this element as a dependent, so it is rebuilt
 --- when that provider changes.
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return InheritedWidget?
 function Element:depend_on_inherited(widget_class)
     self:_assert_can_depend()
@@ -261,13 +261,13 @@ function Element:depend_on_inherited(widget_class)
     return inherited.widget --[[@as InheritedWidget]]
 end
 
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return InheritedWidget?
 function Element:depend_on_inherited_widget_of_exact_type(widget_class)
     return self:depend_on_inherited(widget_class)
 end
 
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return InheritedWidget?
 function Element:get_inherited_widget(widget_class)
     self:_assert_can_read()
@@ -279,7 +279,7 @@ function Element:get_inherited_widget(widget_class)
     return inherited.widget --[[@as InheritedWidget]]
 end
 
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return InheritedWidget?
 function Element:get_inherited_widget_of_exact_type(widget_class)
     return self:get_inherited_widget(widget_class)
@@ -292,13 +292,13 @@ function Element:_clear_inherited_dependencies()
     self._inherited_dependencies = {}
 end
 
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return Element?
 function Element:find_inherited(widget_class)
     return self:find_inherited_exact(widget_class)
 end
 
----@param widget_class std.Class
+---@param widget_class std.class
 ---@return Element?
 function Element:find_inherited_exact(widget_class)
     local element = self.parent
@@ -386,7 +386,7 @@ end
 ---@class StatelessElement : Element
 ---@field child Element?
 ---@overload fun(widget:Widget):self
-local StatelessElement = std.class.new('StatelessElement', { Element })
+local StatelessElement = std.class.new('StatelessElement', Element)
 
 function StatelessElement:__init(widget)
     std.super(StatelessElement, self, Element).__init(self, widget)
@@ -424,7 +424,7 @@ end
 ---@field state State
 ---@field _dependencies_changed boolean
 ---@overload fun(widget: Widget):self
-local StatefulElement = std.class.new('StatefulElement', { Element })
+local StatefulElement = std.class.new('StatefulElement', Element)
 
 function StatefulElement:__init(widget)
     std.super(StatefulElement, self, Element).__init(self, widget)
@@ -521,7 +521,7 @@ end
 ---@class ProxyElement : Element
 ---@field child Element?
 ---@overload fun(widget: Widget):self
-local ProxyElement = std.class.new('ProxyElement', { Element })
+local ProxyElement = std.class.new('ProxyElement', Element)
 
 function ProxyElement:__init(widget)
     std.super(ProxyElement, self, Element).__init(self, widget)
@@ -550,7 +550,7 @@ end
 
 ---@class ParentDataElement : ProxyElement
 ---@overload fun(widget: Widget):self
-local ParentDataElement = std.class.new('ParentDataElement', { ProxyElement })
+local ParentDataElement = std.class.new('ParentDataElement', ProxyElement)
 
 function ParentDataElement:unmount()
     local render_object = self.child and self.child:first_render_object()
@@ -577,7 +577,7 @@ end
 ---@class InheritedElement : ProxyElement
 ---@field dependents table<Element, true>
 ---@overload fun(widget: InheritedWidget): self
-local InheritedElement = std.class.new('InheritedElement', { ProxyElement })
+local InheritedElement = std.class.new('InheritedElement', ProxyElement)
 
 function InheritedElement:__init(widget)
     std.super(InheritedElement, self, ProxyElement).__init(self, widget)
@@ -624,7 +624,7 @@ end
 ---@class RenderObjectElement : Element
 ---@field render_object RenderObject
 ---@overload fun(widget: Widget):self
-local RenderObjectElement = std.class.new('RenderObjectElement', { Element })
+local RenderObjectElement = std.class.new('RenderObjectElement', Element)
 
 function RenderObjectElement:__init(widget)
     std.super(RenderObjectElement, self, Element).__init(self, widget)
@@ -669,13 +669,13 @@ end
 
 ---@class LeafRenderObjectElement : RenderObjectElement
 ---@overload fun(widget: Widget):self
-local LeafRenderObjectElement = std.class.new('LeafRenderObjectElement', { RenderObjectElement })
+local LeafRenderObjectElement = std.class.new('LeafRenderObjectElement', RenderObjectElement)
 
 ---@class SingleChildRenderObjectElement : RenderObjectElement
 ---@field child Element?
 ---@overload fun(widget: Widget):self
 local SingleChildRenderObjectElement =
-    std.class.new('SingleChildRenderObjectElement', { RenderObjectElement })
+    std.class.new('SingleChildRenderObjectElement', RenderObjectElement)
 
 function SingleChildRenderObjectElement:__init(widget)
     std.super(SingleChildRenderObjectElement, self, RenderObjectElement).__init(self, widget)
@@ -707,7 +707,7 @@ end
 ---@field children Element[]
 ---@overload fun(widget: Widget):self
 local MultiChildRenderObjectElement =
-    std.class.new('MultiChildRenderObjectElement', { RenderObjectElement })
+    std.class.new('MultiChildRenderObjectElement', RenderObjectElement)
 
 function MultiChildRenderObjectElement:__init(widget)
     std.super(MultiChildRenderObjectElement, self, RenderObjectElement).__init(self, widget)

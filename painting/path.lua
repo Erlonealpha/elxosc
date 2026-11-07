@@ -41,7 +41,7 @@ local KAPPA = 0.5522847498307936
 
 ---@class Path : std.object
 ---@overload fun(): self
-local Path = std.class.new('Path', {})
+local Path = std.class.new('Path')
 
 function Path:__init()
     --- Each entry is `{ verb, numbers... }`, e.g. `{ 'line_to', x, y }`.

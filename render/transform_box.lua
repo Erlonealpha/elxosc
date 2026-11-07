@@ -36,7 +36,7 @@ end
 ---@field clip boolean
 ---@field _scale_animation table?
 ---@overload fun(child: RenderObject?, options?: _RenderTransformBoxOptions): self
-local RenderTransformBox = std.class.new('RenderTransformBox', { RenderObject })
+local RenderTransformBox = std.class.new('RenderTransformBox', RenderObject)
 
 ---@param scale Size
 ---@return Size

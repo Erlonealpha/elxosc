@@ -26,7 +26,7 @@ local M = {}
 ---@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
 ---@field preferred_size Size?
 ---@overload fun(draw: (fun(canvas: Canvas, offset: Offset, size: Size))?, options: CustomPaintOpts?): self
-local RenderCustomPaint = std.class.new('RenderCustomPaint', { RenderObject })
+local RenderCustomPaint = std.class.new('RenderCustomPaint', RenderObject)
 
 function RenderCustomPaint:__init(draw, options)
     RenderObject.__init(self)

@@ -200,7 +200,7 @@ end
 ---@field _assembled boolean
 ---@field _payload_disposer_mark integer?
 ---@overload fun(options: MpDefineOptions?): self
-local MpDefine = std.class.new('MpDefine', {})
+local MpDefine = std.class.new('MpDefine')
 
 function MpDefine:__init(options)
     options = options or {}

@@ -16,7 +16,7 @@ local M = {}
 ---@class RenderPadding : RenderObject
 ---@field padding EdgeInsets
 ---@overload fun(padding: EdgeInsets, child: RenderObject?): self
-local RenderPadding = std.class.new('RenderPadding', { RenderObject })
+local RenderPadding = std.class.new('RenderPadding', RenderObject)
 
 function RenderPadding:__init(padding, child)
     RenderObject.__init(self)

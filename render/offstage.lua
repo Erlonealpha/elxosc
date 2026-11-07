@@ -20,7 +20,7 @@ local M = {}
 ---@class RenderOffstage : RenderObject
 ---@field offstage boolean
 ---@overload fun(offstage: boolean?, child: RenderObject?): self
-local RenderOffstage = std.class.new('RenderOffstage', { RenderObject })
+local RenderOffstage = std.class.new('RenderOffstage', RenderObject)
 
 function RenderOffstage:__init(offstage, child)
     std.super(RenderOffstage, self, RenderObject).__init(self)

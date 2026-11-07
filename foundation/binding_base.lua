@@ -19,7 +19,7 @@ local current_binding
 ---@field _disposing boolean
 ---@field phase string
 ---@overload fun(): self
-local BindingBase = std.class.new('BindingBase', {})
+local BindingBase = std.class.new('BindingBase')
 
 function BindingBase:__init()
     self._initialized = true

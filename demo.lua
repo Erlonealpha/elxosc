@@ -95,7 +95,7 @@ end
 ---@field navigation_returns      integer
 ---@field result_unsubscribe      (fun(): boolean)?
 ---@overload fun(): self
-local DemoState = std.class.new('DemoState', { State })
+local DemoState = std.class.new('DemoState', State)
 
 function DemoState:__init()
   std.super(DemoState, self, State).__init(self)
@@ -572,7 +572,7 @@ end
 ---@field navigator NavigatorState?
 ---@field on_close fun()?
 ---@overload fun(options?: _DemoOptions): self
-local Demo = std.class.new('Demo', { StatefulWidget })
+local Demo = std.class.new('Demo', StatefulWidget)
 
 function Demo:__init(options)
   options = options or {}
@@ -608,7 +608,7 @@ end
 ---@class _DemoControlLink : std.object
 ---@field open fun()?
 ---@overload fun(): self
-local DemoControlLink = std.class.new('_DemoControlLink', {})
+local DemoControlLink = std.class.new('_DemoControlLink')
 
 function DemoControlLink:__init()
     self.open = nil
@@ -617,7 +617,7 @@ end
 ---@class DemoLauncher : StatefulWidget
 ---@field controller _DemoControlLink
 ---@overload fun(options?: _DemoLauncherOptions): self
-local DemoLauncher = std.class.new('DemoLauncher', { StatefulWidget })
+local DemoLauncher = std.class.new('DemoLauncher', StatefulWidget)
 
 function DemoLauncher:__init(options)
     self.key = options and options.key or 'demo-launcher'
@@ -628,7 +628,7 @@ end
 ---@field opened boolean
 ---@field pages Page[]
 ---@overload fun(): self
-local DemoLauncherState = std.class.new('DemoLauncherState', { State })
+local DemoLauncherState = std.class.new('DemoLauncherState', State)
 
 function DemoLauncherState:init_state()
     self.opened = false
@@ -687,7 +687,7 @@ end
 ---@class DemoButton : StatelessWidget
 ---@field controller _DemoControlLink
 ---@overload fun(options: _DemoButtonOptions): self
-local DemoButton = std.class.new('DemoButton', { widget_mod.StatelessWidget })
+local DemoButton = std.class.new('DemoButton', widget_mod.StatelessWidget)
 
 function DemoButton:__init(options)
     self.controller = options and options.controller or DemoControlLink()

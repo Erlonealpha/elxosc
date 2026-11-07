@@ -99,7 +99,7 @@ end
 ---@field private _region_snapshot RegionSnapshot?
 ---@field private _cancelled_buttons table<PointerButton, true>
 ---@overload fun(root: RenderObject?): self
-local RenderOwner = std.class.new('RenderOwner', {})
+local RenderOwner = std.class.new('RenderOwner')
 
 function RenderOwner:__init(root)
     self.root = nil

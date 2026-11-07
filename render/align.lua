@@ -19,7 +19,7 @@ local M = {}
 ---@field width_factor number?
 ---@field height_factor number?
 ---@overload fun(alignment: Offset?, child: RenderObject?, width_factor: number?, height_factor: number?): self
-local RenderAlign = std.class.new('RenderAlign', { RenderObject })
+local RenderAlign = std.class.new('RenderAlign', RenderObject)
 
 function RenderAlign:__init(alignment, child, width_factor, height_factor)
     RenderObject.__init(self)

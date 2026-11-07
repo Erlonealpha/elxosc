@@ -38,7 +38,7 @@ local M = {}
 ---@field glow_color_override Color?
 ---@field glow_radius_override number?
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): self
-local RenderText = std.class.new('RenderText', { RenderObject })
+local RenderText = std.class.new('RenderText', RenderObject)
 
 ---@param text string
 ---@param style TextStyle

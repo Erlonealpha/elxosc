@@ -81,7 +81,7 @@ local M = {}
 ---@field on_hover_leave fun()?
 ---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
 ---@overload fun(options?: _PlayerTooltipOptions): self
-local PlayerTooltip = std.class.new('PlayerTooltip', { StatefulWidget })
+local PlayerTooltip = std.class.new('PlayerTooltip', StatefulWidget)
 
 function PlayerTooltip:__init(options)
     options = options or {}
@@ -126,7 +126,7 @@ end
 ---@field _paragraph_style TextStyle?
 ---@field _auto_hide_visible boolean
 ---@overload fun(): self
-local PlayerTooltipState = std.class.new('PlayerTooltipState', { State })
+local PlayerTooltipState = std.class.new('PlayerTooltipState', State)
 
 function PlayerTooltipState:init_state()
     self.hovered = false

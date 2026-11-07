@@ -48,7 +48,7 @@ end
 ---@field accent_color Color
 ---@field text_style TextStyle
 ---@overload fun(options?: _ThemeDataOptions): self
-local ThemeData = std.class.new('ThemeData', {})
+local ThemeData = std.class.new('ThemeData')
 
 function ThemeData:__init(options)
     options = options or {}
@@ -83,8 +83,8 @@ end
 ---@field data ThemeData
 ---@field child Widget?
 ---@overload fun(options: _ThemeOptions): self
-local Theme = std.class.new('Theme', { InheritedWidget })
-local ThemeClass = Theme --[[@as std.Class]]
+local Theme = std.class.new('Theme', InheritedWidget)
+local ThemeClass = Theme --[[@as std.class]]
 
 function Theme:__init(options)
     if type(options) ~= 'table' then
@@ -132,7 +132,7 @@ end
 ---@field height number
 ---@field initialized boolean
 ---@overload fun(options: _DisplaySnapshotOptions): self
-local DisplaySnapshot = std.class.new('DisplaySnapshot', {})
+local DisplaySnapshot = std.class.new('DisplaySnapshot')
 
 function DisplaySnapshot:__init(options)
     if type(options) ~= 'table' then
@@ -168,8 +168,8 @@ end
 ---@field snapshot DisplaySnapshot
 ---@field child Widget?
 ---@overload fun(options: _DisplayScopeOptions): self
-local DisplayScope = std.class.new('DisplayScope', { InheritedWidget })
-local DisplayScopeClass = DisplayScope --[[@as std.Class]]
+local DisplayScope = std.class.new('DisplayScope', InheritedWidget)
+local DisplayScopeClass = DisplayScope --[[@as std.class]]
 
 function DisplayScope:__init(options)
     if type(options) ~= 'table' then
@@ -216,8 +216,8 @@ end
 ---@field style TextStyle
 ---@field child Widget?
 ---@overload fun(options: _DefaultTextStyleOptions): self
-local DefaultTextStyle = std.class.new('DefaultTextStyle', { InheritedWidget })
-local DefaultTextStyleClass = DefaultTextStyle --[[@as std.Class]]
+local DefaultTextStyle = std.class.new('DefaultTextStyle', InheritedWidget)
+local DefaultTextStyleClass = DefaultTextStyle --[[@as std.class]]
 
 function DefaultTextStyle:__init(options)
     if type(options) ~= 'table' then

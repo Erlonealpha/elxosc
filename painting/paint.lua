@@ -52,7 +52,7 @@ M.StrokeJoin = {
 ---@field antialias boolean hint for backends that support it
 ---@field blur_radius number non-negative backend-neutral blur intent
 ---@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): self
-local Paint = std.class.new('Paint', {})
+local Paint = std.class.new('Paint')
 
 function Paint:__init(color_, style, stroke_width)
     self.color = color_ or Color.argb(0xFF000000)

@@ -28,19 +28,19 @@ local M = {}
 --- A `StatefulWidget` subclass a script can complete with `create_state`.
 ---@generic T
 ---@param name string
----@param parent std.Class? defaults to `StatefulWidget`
+---@param parent std.class? defaults to `StatefulWidget`
 ---@return T the new class (EmmyLua cannot model a callable class, so `T` is open)
 function M.new_widget(name, parent)
-    return std.class.new(name, { parent or widget_mod.StatefulWidget })
+    return std.class.new(name, parent or widget_mod.StatefulWidget)
 end
 
 --- A `State` subclass a script can complete with `__init` / `build`.
 ---@generic T
 ---@param name string
----@param parent std.Class? defaults to `State`
+---@param parent std.class? defaults to `State`
 ---@return T the new class (see `new_widget`)
 function M.new_state(name, parent)
-    return std.class.new(name, { parent or state_mod.State })
+    return std.class.new(name, parent or state_mod.State)
 end
 
 --- The names a scope can use without declaring them.

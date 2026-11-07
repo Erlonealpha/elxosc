@@ -60,7 +60,7 @@ local DEFAULT_SIZE = 24
 ---@field grade number
 ---@field optical_size number
 ---@overload fun(name: FluentIconNames, options: _IconOptions?): self
-local Icon = std.class.new('Icon', { StatelessWidget })
+local Icon = std.class.new('Icon', StatelessWidget)
 
 ---@param name string
 ---@param value any

@@ -31,7 +31,7 @@ local M = {}
 ---@field tx number x translation
 ---@field ty number y translation
 ---@overload fun(a: number?, b: number?, c: number?, d: number?, tx: number?, ty: number?): self
-local Matrix2D = std.class.new('Matrix2D', {})
+local Matrix2D = std.class.new('Matrix2D')
 
 ---@param a number?
 ---@param b number?

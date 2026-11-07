@@ -83,7 +83,7 @@ end
 ---@field hover_shadow_color Color?
 ---@field hover_shadow_radius number?
 ---@overload fun(options: _PlayerTimeDisplayOptions): self
-local PlayerTimeDisplay = std.class.new('PlayerTimeDisplay', { StatefulWidget })
+local PlayerTimeDisplay = std.class.new('PlayerTimeDisplay', StatefulWidget)
 
 function PlayerTimeDisplay:__init(options)
     options = options or {}
@@ -110,7 +110,7 @@ end
 ---@field show_remaining boolean
 ---@field show_milliseconds boolean
 ---@overload fun(): self
-local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', { State })
+local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', State)
 
 function PlayerTimeDisplayState:init_state()
     local widget = self.widget --[[@as PlayerTimeDisplay]]
@@ -195,7 +195,7 @@ end
 ---@field hover_shadow_radius number
 ---@field on_tap fun()?
 ---@overload fun(options: _PlayerHoverTextOptions): self
-local PlayerHoverText = std.class.new('PlayerHoverText', { StatelessWidget })
+local PlayerHoverText = std.class.new('PlayerHoverText', StatelessWidget)
 
 function PlayerHoverText:__init(options)
     options = options or {}

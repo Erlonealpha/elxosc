@@ -60,7 +60,7 @@ local M = {}
 ---@field links string[]
 ---@field stats string
 ---@overload fun(options: _PlayerDescriptionLayerOptions): self
-local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer', { StatefulWidget })
+local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer', StatefulWidget)
 
 function PlayerDescriptionLayer:__init(options)
     options = options or {}
@@ -81,7 +81,7 @@ end
 ---@field scroll number
 ---@field selected_link integer
 ---@overload fun(): self
-local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState', { State })
+local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState', State)
 
 function PlayerDescriptionLayerState:init_state()
     self.open = false

@@ -18,7 +18,7 @@ local M = {}
 ---@field lines string[] the wrapped lines, in visual order
 ---@field line_height number uniform logical line advance, not an exact ASS baseline distance
 ---@overload fun(text: string, style: TextStyle, size: Size, lines: string[], line_height: number): self
-local Paragraph = std.class.new('Paragraph', {})
+local Paragraph = std.class.new('Paragraph')
 
 function Paragraph:__init(text, style, size, lines, line_height)
     self.text = text

@@ -13,7 +13,7 @@ local M = {}
 ---@field _dirty_elements Element[]
 ---@field _dirty_set table<Element, true>
 ---@overload fun(schedule_rebuild: fun()?): self
-local BuildScope = std.class.new('BuildScope', {})
+local BuildScope = std.class.new('BuildScope')
 
 function BuildScope:__init(schedule_rebuild)
     self.schedule_rebuild = schedule_rebuild

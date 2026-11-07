@@ -27,7 +27,7 @@ local M = {}
 ---@field _last_frame number?
 ---@field _disposed boolean
 ---@overload fun(delay: number?): self
-local MpFrameClock = std.class.new('MpFrameClock', { FrameClock })
+local MpFrameClock = std.class.new('MpFrameClock', FrameClock)
 
 function MpFrameClock:__init(delay)
     self.delay = delay or (1 / 60)
@@ -89,7 +89,7 @@ end
 ---@field _last_h number
 ---@field _removed boolean
 ---@overload fun(z: number?): self
-local AssPresenter = std.class.new('AssPresenter', {})
+local AssPresenter = std.class.new('AssPresenter')
 
 function AssPresenter:__init(z)
     self.overlay = mp.create_osd_overlay('ass-events')

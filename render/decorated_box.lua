@@ -47,7 +47,7 @@ local M = {}
 ---@field shadow_radius number?
 ---@field blur_radius number
 ---@overload fun(options: _DecorationOptions?): self
-local Decoration = std.class.new('Decoration', {})
+local Decoration = std.class.new('Decoration')
 
 function Decoration:__init(options)
     options = options or {}
@@ -64,7 +64,7 @@ end
 ---@class RenderDecoratedBox : RenderObject
 ---@field decoration Decoration
 ---@overload fun(decoration: Decoration, child: RenderObject?): self
-local RenderDecoratedBox = std.class.new('RenderDecoratedBox', { RenderObject })
+local RenderDecoratedBox = std.class.new('RenderDecoratedBox', RenderObject)
 
 function RenderDecoratedBox:__init(decoration, child)
     std.super(RenderDecoratedBox, self, RenderObject).__init(self)
