@@ -22,8 +22,13 @@ def suite(tmp_path):
         pytest.skip("LuaJIT is unavailable")
     directory = tmp_path / "suite with spaces" / "test"
     directory.mkdir(parents=True)
-    for name in ("run.lua", "runner.lua", "framework.lua", "support.lua"):
+    for name in ("run.lua", "support.lua", "dependency.lua", "bootstrap.lua",
+                 "framework.lua", "runner.lua", "mp_stub.lua"):
         shutil.copy2(ROOT / "test" / name, directory / name)
+    dependency = ROOT / "mpv-luatest"
+    if not (dependency / "src" / "mpv_luatest" / "suite.lua").is_file():
+        pytest.fail('mpv-luatest is missing; run git submodule update --init --recursive')
+    shutil.copytree(dependency / "src", directory.parent / "mpv-luatest" / "src")
     return executable, directory
 
 
@@ -110,3 +115,35 @@ def test_help_and_absolute_entrypoint(suite):
     result = subprocess.run([executable, str(directory / "run.lua")], cwd=directory.parent,
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_project_adapters_share_dependency_modules(suite):
+    _, directory = suite
+    write_test(directory, 'test_identity.lua', """
+local api = require 'mpv_luatest'
+F.eq(F, api.framework, 'framework module identity')
+F.eq(dofile('test/framework.lua'), api.framework, 'framework adapter identity')
+F.eq(dofile('test/runner.lua'), api.runner, 'runner adapter identity')
+F.eq(dofile('test/mp_stub.lua'), api.mp_stub, 'mp adapter identity')
+local mp = api.mp_stub.install()
+mp.set_key_bindings({}, 'elxosc-input', 'force')
+mp.set_key_bindings({}, 'other', 'force')
+F.eq(api.mp_stub.fake.bindings.section, 'elxosc-input', 'project primary input section')
+api.mp_stub.fake.mouse = { x = 7 }
+api.mp_stub.reset()
+F.eq(api.mp_stub.fake.mouse.x, 7, 'project legacy reset contract')
+""")
+    executable, _ = suite
+    result = subprocess.run([executable, 'test/run.lua'], cwd=directory.parent,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert 'ALL GOOD: 6 checks passed' in result.stdout
+
+
+def test_missing_dependency_fails_with_setup_instruction(suite):
+    _, directory = suite
+    dependency = directory.parent / 'mpv-luatest'
+    dependency.rename(directory.parent / 'absent-dependency')
+    result = run(suite)
+    assert result.returncode == 1
+    assert 'git submodule update --init --recursive' in result.stderr

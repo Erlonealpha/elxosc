@@ -2,7 +2,48 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 最新检查：内存调查（2026-11-07）
+## 当前入口：mpv-luatest 开发依赖（2026-11-08）
+
+离线运行器、断言和 mp 桩由独立项目 `mpv-luatest` 提供，Git submodule URL 为
+`https://github.com/Erlonealpha/mpv-luatest`，根目录 gitlink 固定提交 `66e921c`。
+独立项目仅需 LuaJIT 和系统 shell；它的 Python/pytest 只供框架自检。
+elxosc 的 sibling elxlib 依赖、`debug_msg` 和 input section/mouse 兼容设置
+属于 `test/support.lua`、`test/bootstrap.lua` 与 `test/mp_stub.lua`。
+真实宿主 fixture 继续由本项目维护，不使用该桩。
+
+```text
+git submodule update --init --recursive
+luajit test/run.lua
+luajit mpv-luatest/run.lua --bootstrap test/bootstrap.lua
+emmylua_check . --warnings-as-errors
+uv run --group test python -m pytest -q test/real_host test/test_runner.py test/test_ass_measure_cli.py test/test_benchmark_cli.py --tb=short
+```
+
+`test/run.lua` 只组装项目默认配置并调用 `mpv_luatest.suite.main`。
+`test/framework.lua`、`test/runner.lua`、`test/mp_stub.lua` 不再含通用实现，
+它们返回依赖的同一模块对象。`test/dependency.lua` 从测试目录定位根目录依赖；
+缺失时明确提示 submodule 初始化命令。CLI 回归复制真实适配入口和依赖源码到
+临时目录，覆盖相对/绝对入口、空格路径、发现/筛选、失败继续、模块身份和依赖缺失。
+core benchmark 只增加模块搜索路径，继续验证不加载 mp/stub。
+
+现有测试类已迁移为直接 parent 的 `std.class.new`、局部命名空间、继承与构造器
+声明；两种入口均 **2330 checks passed**，EmmyLua **No issues found**。
+框架提交 `66e921c` 在独立临时克隆中通过 **41 Lua checks / 30 Python tests**、
+可运行示例 **2 checks** 和 EmmyLua 零诊断，不依赖 elxosc 工作区。
+项目 runner CLI 现为 **16 tests**。
+
+历史 ASS benchmark fixture 从 `46bc4a2` 读取服务源码后，只将空 parent table
+调用替换为当前 class 构造签名；三种测量策略仍计算真实 bounds，生产实现不 patch。
+类型修复与此 fixture 已先提交为 `b8fdc7c`。最终串行完整 Python 检查为
+**46 passed in 32.28s**，无 skip：real-host **16**、runner **16**、测量 CLI **11**、
+benchmark CLI **3**，包含用户修补的 ASS fixture。此前完整运行曾出现 Demo 点击和
+AutoHide 真实输入失败，单独复验通过；最终完整运行也全部通过。
+
+依赖更新先在 `mpv-luatest/` 检查代码、Lua/CLI 回归和文档，再运行本项目全部检查，
+最后提交 gitlink 的新版本。初次发布需先把固定的框架提交发布到上述 URL，
+随后其他 checkout 才能取得该提交；本轮不自动 push 或创建远端发布。
+
+## 历史检查：内存调查（2026-11-07）
 
 快照修复提交`ee06341`（调查基线`242ad73`）：新增五项 Lua GC 所有权测试、12 assertions及一个真实宿主
 GC回归。普通完整Lua **158 failures / 2172 passes**；当前外部elxlib工作区的class
@@ -27,7 +68,7 @@ fixture只在隔离副本开启用户可能关闭的入口，生产`main.lua`不
 拒绝且不作正式数据；最终逐样本验证hidden/opacity。未测长时私有环境、ModernX、
 Linux和native分配栈。脚本/分辨率/依赖版本、采样限制见完整JSON。
 
-## 当前基线：通用 ASS 测量与 benchmark（2026-11-06）
+## 历史基线：通用 ASS 测量与 benchmark（2026-11-06）
 
 完整 Lua **2318 checks passed**、EmmyLua **No issues found**。完整 Python **43 passed**：
 real-host **15**、runner **14**、测量 CLI **11**、benchmark CLI **3**。AssMeasure 使用固定
@@ -389,7 +430,7 @@ checks 的提交前结果继续有效；本轮新增探针的完整 EmmyLua 检�
 新增回归覆盖全强度文本 glow、固定音量圆点、受控右侧按钮插入且不改变 pin/fullscreen
 位置、三个 Define slot、Demo close/dispose/reopen 和原有 Page/Popup/ESC 行为。
 
-`test/run.lua` 是无 mpv 依赖的总入口，自动发现 `test_*.lua`，并递归进入以 `test`
+`test/run.lua` 是 mpv-luatest 的项目适配入口。共享运行器自动发现 `test_*.lua`，并递归进入以 `test`
 开头的测试组目录；其他目录（包括 `real_host` 和 fixtures）不进入 Lua suite。
 文件按相对路径排序。筛选器各段按字面子串匹配，并允许省略 `test_` 和 `.lua`：
 `player/layout` 匹配 `test_player/test_layout.lua`；单段可匹配任意深度的组或文件。

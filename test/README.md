@@ -1,21 +1,36 @@
 # elxosc test-suite
 
-Standalone smoke/regression tests for the elxosc framework core. They run on a
-bare **LuaJIT** -- mpv is not needed: `elxosc.*` is loaded straight from this
-repository and `elxlibs.*` from the sibling `elxlib` checkout, without running
-elxlib's real `init.lua` (no ffi / DLL-path setup).
+Smoke/regression tests for the elxosc framework core, run by the pinned
+[mpv-luatest](../mpv-luatest/README.md) development dependency. They use bare
+**LuaJIT**: project modules load by bare names from this repository and
+`elxlibs.*` from the sibling `elxlib`, without its native `init.lua` setup.
 
 ## Running
 
 ```sh
 cd scripts/elxosc
+git submodule update --init --recursive
 luajit test/run.lua             # whole suite
 luajit test/run.lua flutter_runtime/lifecycle # matching group/file components
 luajit test/run.lua -v          # full file/section/success logs
 uv run --group test python -m pytest -q test/test_runner.py # CLI regression tests
+luajit mpv-luatest/run.lua --bootstrap test/bootstrap.lua # direct dependency CLI
 ```
 
 Exit code is `0` when everything passes, `1` otherwise.
+
+`test/run.lua` delegates to `mpv_luatest.suite`; `dependency.lua` locates the
+root-level submodule and reports the initialization command when it is absent.
+`support.lua` owns project/elxlib paths and `debug_msg`; `bootstrap.lua` configures
+the primary `elxosc-input` section and legacy mouse persistence. The dependency
+contains no project-specific adapter. `framework.lua`, `runner.lua`, and
+`mp_stub.lua` are thin compatibility imports of its canonical module objects.
+Core benchmark setup adds module paths without loading mp or the fake host.
+
+The submodule URL is `https://github.com/Erlonealpha/mpv-luatest`. Publish the
+recorded framework commit there before consumers initialize it. Upgrade the
+submodule pointer after verifying the project suite, and commit that pointer
+with the relevant adapter/documentation changes.
 
 Discovery is automatic and sorted by relative path: `test_*.lua` files at the root
 or recursively below directories starting with `test`. Other directories are ignored.
@@ -40,11 +55,15 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-06): **2290 Lua checks**;
-runner CLI regression: **14 passed**; `emmylua_check .`: **No issues found**.
-The ASS measurement slice adds host-boundary Lua tests, two real-host cases and
-11 CLI schema/failure tests. The production Demo injection switch remains enabled.
-Real-host **14 passed**, runner **14 passed** and measurement CLI **11 passed**.
+Current baseline (2026-11-08): **2330 Lua checks** through both the project
+adapter and direct dependency CLI; project runner regression **16 passed**;
+`emmylua_check . --warnings-as-errors`: **No issues found**. The historical ASS
+benchmark source is patched only for the current `std.class.new` signature in
+its isolated fixture. The complete Python suite is **46 passed**, with no skips
+(real-host 16, runner 16, measurement CLI 11, benchmark CLI 3).
+Framework commit `66e921c` passes checks in an independent clone: **41 Lua
+checks**, the example's **2 checks**, **30 CLI regressions**, and zero EmmyLua
+diagnostics.
 Commands and scope are recorded in
 [`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
 [`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
@@ -132,12 +151,12 @@ submission endpoint are documented in
 
 | File | Contents |
 | --- | --- |
-| `run.lua`, `runner.lua` | Bootstrap, recursive discovery, component filters and CLI options |
+| `run.lua`, `dependency.lua` | Project entry and pinned dependency lookup |
+| `runner.lua`, `framework.lua`, `mp_stub.lua` | Compatibility imports; shared implementation lives in mpv-luatest |
 | `test_runner.py` | Real CLI subprocess checks: groups, filters, verbosity, failures, paths with spaces |
 | `test_flutter_runtime/` | `core`, `binding`, `lifecycle`, `keys`, `paint`, `host_pipeline` runtime groups |
 | `runtime_support.lua` | Mounted State probe and deterministic clocks for runtime tests |
-| `support.lua` | Bootstrap: makes the elxosc modules / `elxlibs.*` require-able |
-| `framework.lua` | Tiny assertion/reporting helpers |
+| `support.lua`, `bootstrap.lua` | Project/elxlib paths, debug global and project stub configuration |
 | `test_foundation.lua` | Geometry value types, colour, paint, path, canvas contract |
 | `test_text.lua` | Options-only `TextStyle`/`TextPaint`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
@@ -157,7 +176,6 @@ submission endpoint are documented in
 | `test_demo_navigation.lua` | Mounted demo buttons, retained home State, results, popup card/barrier hit testing, ESC and cleanup |
 | `test_navigation.lua` | Page/Route reconciliation, push/pop results, Popup barrier and ESC |
 | `test_presentation.lua` | RegionSnapshot isolation, ASS event boundaries, presenter retry/cache, clear and shutdown |
-| `mp_stub.lua` | Shared `mp` stub for the host-layer tests (not a test file) |
 | `test_ass.lua` | ASS colour/anchor encoding, axis scaling, clipping, drawing emission, visual offsets and estimating text layout |
 | `constraints_examples.lua` | Fixtures: the 29 doc examples as elxosc widget trees (not a test file) |
 | `test_constraints_examples.lua` | The 29 `flutter/constraints` examples: raw `ass-events` vs expected |

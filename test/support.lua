@@ -23,6 +23,9 @@ function S.bootstrap(test_dir)
         if prefix then
             osc_root = prefix
             scripts_root = prefix .. '/..'
+        elseif test_dir == '.' then
+            osc_root = '..'
+            scripts_root = '../..'
         else
             osc_root = '.'
             scripts_root = '..'
@@ -39,6 +42,10 @@ function S.bootstrap(test_dir)
         scripts_root .. '/elxlib/?/init.lua',
         package.path,
     }, ';')
+
+    -- Add only the dependency's module paths. Core benchmarks keep mp/stub
+    -- unloaded; the suite bootstrap and host tests configure it separately.
+    assert(loadfile(test_dir .. '/dependency.lua'))()
 
     -- normally defined by elxlib's init.lua
     ---@diagnostic disable-next-line: global-in-non-module

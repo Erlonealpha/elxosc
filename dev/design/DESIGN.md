@@ -113,6 +113,13 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
+2026-11-08 测试类迁移后完整 **2330 Lua checks**，项目入口与独立
+`mpv-luatest` CLI 均通过，EmmyLua **No issues found**。离线测试运行器、断言和
+mp 桩改为根目录 `mpv-luatest/` Git submodule 开发依赖；项目路径、elxlib 加载与
+桩配置仍由 `test/` 管理。独立仓库不含 elxosc 适配文件，生产运行时不加载它。
+完整 Python **46 passed**，无 skip；依赖安装、版本更新和验证详情见
+[TESTING.md](TESTING.md)。
+
 2026-11-06 通用 ASS 测量与 benchmark 完成后为 **2318 Lua checks**、EmmyLua
 **No issues found**、real-host **15 passed**、runner **14 passed**、测量 CLI **11 passed**、
 benchmark CLI **3 passed**。AssMeasure 固定初始化分辨率、复用隐藏 overlay/native command、

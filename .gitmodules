@@ -1,0 +1,3 @@
+[submodule "mpv-luatest"]
+	path = mpv-luatest
+	url = https://github.com/Erlonealpha/mpv-luatest

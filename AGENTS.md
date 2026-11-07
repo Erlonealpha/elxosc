@@ -46,6 +46,7 @@ document disagree, use the current code and current design documents.
 | `demo.lua` | executable showcase of rendering, input, and animation |
 | `test/` | Lua unit/integration tests and the mp stub |
 | `test/real_host/` | isolated mpv/mpv.net integration tests |
+| `mpv-luatest/` | Pinned Git submodule for offline tests; development only |
 | `dev/` | design documents and non-production sketches |
 | `fonts/` | bundled font metadata and generated glyph names |
 | `tools/` | offline generation utilities |
@@ -164,6 +165,7 @@ Run from the repository root. Local executable names are kept in the ignored
 the current machine. The commands below use the default WSL tool names.
 
 ```text
+git submodule update --init --recursive
 luajit test/run.lua
 emmylua_check .
 uv run --group test python -m pytest -q test/real_host
@@ -176,14 +178,18 @@ The real-host fixture uses an isolated config and ownership-bounded cleanup.
 Never replace it with a command that kills mpv by image name. Real-host tests
 should skip only when the required host is genuinely unavailable.
 
-Lua tests use `test/run.lua`; new files are named `test_*.lua` and must be
-registered by the runner. Host modules may use `test/mp_stub.lua`, while
+Lua tests use `test/run.lua`, which delegates to the pinned `mpv-luatest`
+development dependency. New files are named `test_*.lua` and are discovered
+automatically. Host modules may use the `test/mp_stub.lua` compatibility import, while
 `test/real_host/` verifies behavior against a real process.
 
-Runner update (2026-10-27): registration is now automatic discovery of
+Runner behavior (2026-10-27, now owned by mpv-luatest): automatic discovery of
 `test_*.lua`, including nested group directories whose names start with `test`.
 Use slash-separated group/file filters and `-v` for full logs; default logs show
-failures and the summary. This supersedes the manual-registration rule above.
+failures and the summary. Keep project/elxlib bootstrap and compatibility
+configuration in `test/`; shared runner/assertion/stub changes belong to the
+independent submodule. Test that repository independently and revalidate elxosc
+before updating its gitlink. See `dev/design/TESTING.md` for setup and ownership.
 
 ## 8. Documentation and commits
 
