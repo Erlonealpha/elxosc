@@ -55,12 +55,14 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-08): **2330 Lua checks** through both the project
+Current baseline (2026-11-09): **2367 Lua checks** through both the project
 adapter and direct dependency CLI; project runner regression **16 passed**;
 `emmylua_check . --warnings-as-errors`: **No issues found**. The historical ASS
 benchmark source is patched only for the current `std.class.new` signature in
-its isolated fixture. The complete Python suite is **46 passed**, with no skips
-(real-host 16, runner 16, measurement CLI 11, benchmark CLI 3).
+its isolated fixture. The project Python suite is **47 passed**, with no skips
+(real-host 17, runner 16, measurement CLI 11, benchmark CLI 3).
+The initialized user-selected dependency checkout is `307bcc3`; the existing
+gitlink change is preserved.
 Framework commit `66e921c` passes checks in an independent clone: **41 Lua
 checks**, the example's **2 checks**, **30 CLI regressions**, and zero EmmyLua
 diagnostics.

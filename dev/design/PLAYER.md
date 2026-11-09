@@ -24,12 +24,20 @@ WidgetsApp
 内容；未贡献时 `WindowLayer` 为空，应用可以显式提供逻辑页面 owner，不创建额外
 presenter/root。开发 Demo 的 Navigator 由 Define 注入的 WindowLayer 内容拥有。
 
-当前默认入口公开 `app.extension`、`app.window_layer` 和 `player.controls.extra_right_control` 三个 Define/Slot
-入口（`set`/`replace`）。后者只接受一个 Widget，在 Main 底部置顶按钮左侧占一个 24×24
-逻辑按钮格、45 逻辑像素步长；后续右侧控件向左顺移。未贡献时不占空间。按钮继承 Main
-scale、AutoHide 和默认控制器可见性；贡献内容自己拥有运行时行为，Define 仍仅执行一次。
-Main
-标题栏、窗口控制和底部播放器骨架不是扩展的隐式 target；它们只能
+当前默认入口公开 `app.extension`、`app.window_layer`（`set`/`replace`）与
+`player.controls.left`、`player.controls.right`（仅 `append`）四个 Define/Slot 入口。
+底部左右扩展允许多个 scope 按注册顺序添加按钮，每个占 24×24 逻辑按钮格、45 逻辑像素
+步长。左侧从音量控件后向内追加，右侧从置顶按钮左侧向内追加，后续右侧内置控件向左
+顺移。空贡献不占空间；组与中央播放控件之间保留 21px，空间不足时隐藏该组。
+按钮继承 Main scale、AutoHide 和默认控制器生命周期；贡献内容自己拥有运行时行为，
+Define 仍仅执行一次。原 `player.controls.extra_right_control` 单按钮入口已移除。
+
+`PlayerControlBar` 拷贝 `children`，负责固定按钮格；`PlayerControlButton` 提供图标、点击
+回调与 enabled 状态，复用 Main 的主题、hover/pressed/glow/disabled 样式。直接构造 Main
+时可使用 `left_controls`/`right_controls` 传入 PlayerControlBar；默认入口先组装 SlotWrap。
+开发 Demo 使用右侧追加入口。
+
+Main 标题栏、窗口控制和底部播放器骨架不是扩展的隐式 target；它们只能
 由播放器入口或未来另行批准的应用组合提供。
 
 `AutoHide` 只包裹 MainEntry。Main 的 fade-out 在完成前保持绘制、命中和 pointer regions；
@@ -229,7 +237,7 @@ nested Navigator 状态恢复或复杂 transition 协商。
 
 `main.lua` 的临时 `demo_enabled = true` 开关控制开发内容注入，未来由配置系统替代。
 入口发布受保护的 `development-demo` 模块，再执行单次 Define payload：
-`app.window_layer` 贡献 `DemoLauncher`，`player.controls.extra_right_control` 贡献按钮。
+`app.window_layer` 贡献 `DemoLauncher`，`player.controls.right` 追加按钮。
 两个 Widget 共享一个 runtime controller，内容和按钮都由 Define 构造；
 `main_layout.build_app()` / `build_app_description()` 不接受 extension/pages 形参。
 开发 scope 保留一个 starter，直到初始化窗口关闭再 seal，允许其他脚本先登记贡献。

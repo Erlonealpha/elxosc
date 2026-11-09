@@ -586,11 +586,11 @@ end)
 F.test('an injected right control preserves pin/fullscreen spacing and moves later controls', function()
     local base = player_layout_mod.geometry_for('original', 1280, 720, { info_button = true })
     local extra = player_layout_mod.geometry_for('original', 1280, 720, {
-        info_button = true, extra_right_control = true,
+        info_button = true, right_control_count = 1,
     })
     F.eq(extra.right.fullscreen, base.right.fullscreen, 'fullscreen position is preserved')
     F.eq(extra.right.ontop, base.right.ontop, 'pin position is preserved')
-    F.eq(extra.right.extra_right_control.right, extra.right.ontop.right - 45,
+    F.eq(extra.right.right_controls.right, extra.right.ontop.right - 45,
         'extra control occupies the next left button grid')
     F.eq(extra.right.info.right, base.right.info.right - 45, 'later controls shift by one grid')
 end)

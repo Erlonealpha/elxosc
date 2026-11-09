@@ -60,9 +60,8 @@ local M = {}
 ---@param snapshot PlayerSnapshot?
 ---@param title string
 ---@param layout_geometry table<string, any>
----@param extra_right_control Widget?
 ---@return Widget[]
-local function default_controller(theme, actions, snapshot, title, layout_geometry, extra_right_control)
+local function default_controller(theme, actions, snapshot, title, layout_geometry)
     local children = {}
     local function bounded_interaction(interaction, item_rect)
         if interaction == nil then
@@ -847,9 +846,6 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                 theme.side_button_size, theme.side_button_color, item.callback, nil,
                 bounded_interaction(item, item_rect)))
         end
-    end
-    if extra_right_control and layout_geometry.visibility.extra_right_control then
-        children[#children + 1] = positioned(layout_geometry.right.extra_right_control, extra_right_control)
     end
     return children
 end

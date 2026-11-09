@@ -147,18 +147,42 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     result.volume_background = rect(155, center_y - 1, options.volume_width or 80, 2)
     result.volume = rect(155, center_y - 4, options.volume_width or 80, 8)
 
+    local function control_count(name)
+        local count = non_negative(name, options[name] or 0)
+        if count % 1 ~= 0 then
+            raise(std.ValueError('PlayerLayout.' .. name .. ' must be an integer'))
+        end
+        return count
+    end
+    local left_count = control_count('left_control_count')
+    local right_count = control_count('right_control_count')
+    local center_left, center_right = viewport_width, 0
+    for _, bounds in pairs(result.center) do
+        center_left = min(center_left, bounds.left)
+        center_right = max(center_right, bounds.right)
+    end
+
     local right_center = viewport_width - 37
     local function right_control(name, enabled, threshold)
         if enabled then
             result.right[name] = centered(right_center, center_y, 24, 24)
             result.visibility[name] = viewport_width >= threshold - outeroffset
+                and (not result.visibility.right_controls or result.right[name].left >= center_right + 21)
             right_center = right_center - 45
         end
     end
     right_control('fullscreen', true, 250)
     right_control('loop', options.loop_button == true, 600)
     right_control('ontop', options.ontop_button ~= false, 700)
-    right_control('extra_right_control', options.extra_right_control == true, 250)
+    if right_count > 0 then
+        local bounds = rect(right_center - 12 - (right_count - 1) * 45, center_y - 12,
+            24 + (right_count - 1) * 45, 24)
+        result.right.right_controls = bounds
+        result.visibility.right_controls = bounds.left >= center_right + 21
+        if result.visibility.right_controls then
+            right_center = right_center - right_count * 45
+        end
+    end
     right_control('info', options.info_button == true, 500)
     right_control('screenshot', options.screenshot_button == true, 300)
     right_control('download', options.download_button == true and options.is_url == true, 400)
@@ -168,6 +192,23 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     result.visibility.volume = viewport_width >= 700 - outeroffset
     result.visibility.volume_slider = viewport_width >= 900 - outeroffset
     result.visibility.volume_control = options.volume_control ~= false
+    if left_count > 0 then
+        local left_center = 37
+        if result.visibility.subtitle then
+            left_center = 127
+        elseif result.visibility.audio then
+            left_center = 82
+        end
+        if result.visibility.volume_control and result.visibility.volume then
+            left_center = 172
+        end
+        if result.visibility.volume_control and result.visibility.volume_slider then
+            left_center = result.volume.right + 33
+        end
+        local bounds = rect(left_center - 12, center_y - 12, 24 + (left_count - 1) * 45, 24)
+        result.side.left_controls = bounds
+        result.visibility.left_controls = bounds.right <= center_left - 21
+    end
     result.visibility.title = options.show_title ~= false
     result.visibility.chapter = options.show_chapter_title ~= false
     result.visibility.description = options.has_description == true and options.show_description ~= false

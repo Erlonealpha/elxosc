@@ -146,7 +146,7 @@ single Widget/Element/RenderObject owner remains authoritative.
 
 The old nine-region scaffold, fixed grid ids and `more` are not part of the current application
 entry. The default application exposes the controlled Define targets `app.extension`,
-`app.window_layer`, and `player.controls.extra_right_control`, with `set` and `replace`.
+`app.window_layer` (`set`/`replace`) and `player.controls.left`/`right` (`append` only).
 Main shell fields are not implicit targets. Config/API hot updates only feed
 State/Provider or explicit setters. They do not mutate mounted Widgets or reload
 extension code.

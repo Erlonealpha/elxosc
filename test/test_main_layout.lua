@@ -162,13 +162,14 @@ F.test('the production description exposes one Extension content boundary', func
     local ids = {}
     collect_slot_ids(main_layout.build_app_description(), ids)
     F.eq(ids['app.extension'], 1, 'one extension slot is declared')
-    F.eq(ids['player.controls.extra_right_control'], 1, 'one controlled right button slot is declared')
+    F.eq(ids['player.controls.left'], 1, 'one append-only left button slot is declared')
+    F.eq(ids['player.controls.right'], 1, 'one append-only right button slot is declared')
     F.eq(ids['app.window_layer'], 1, 'one controlled window content slot is declared')
     local count = 0
     for _ in pairs(ids) do
         count = count + 1
     end
-    F.eq(count, 3, 'no shell or root replacement slots are declared')
+    F.eq(count, 4, 'no shell or root replacement slots are declared')
 
     ---@class ExtensionBoundary : StatelessWidget
     ---@overload fun(key: any?): self

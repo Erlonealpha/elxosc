@@ -211,6 +211,21 @@ def _running_host(tmp_path, extra_args=()):
                 # path and makes mp.get_script_directory() return nil.
                 argument = f"--script={staged_elxosc}"
         staged_args.append(argument)
+    # mpv.net applies repeated --script arguments as replacements and handles
+    # --scripts-append after startup. Pass the complete startup list once so
+    # every Define contributor is loaded during the initialization window.
+    startup_scripts = []
+    other_args = []
+    for argument in staged_args:
+        if argument.startswith('--script='):
+            startup_scripts.append(argument.removeprefix('--script='))
+        elif argument.startswith('--scripts-append='):
+            startup_scripts.append(argument.removeprefix('--scripts-append='))
+        else:
+            other_args.append(argument)
+    if startup_scripts:
+        other_args.append('--scripts=' + os.pathsep.join(startup_scripts))
+    staged_args = other_args
     if os.name == "nt":
         address = rf"\\.\pipe\elxosc-test-{uuid.uuid4().hex}"
     else:

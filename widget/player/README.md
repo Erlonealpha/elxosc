@@ -22,6 +22,8 @@ composition. It remains mpv-free; host commands and snapshots enter through
 - `icon_map.lua` — ModernX semantic control names mapped to the bundled
   Material Symbols Rounded glyph names and typed size/variation defaults.
 - `init.lua` — aggregate entry preserving direct-module class identity.
+- `extension_controls.lua` — `PlayerControlBar` fixed cells and `PlayerControlButton`
+  themed icons for appended bottom controls.
 
 The generic `WidgetsApp` ambient wrapper remains in `widget/app.lua`. That module
 re-exports the player classes for compatibility; new player composition should
@@ -65,10 +67,14 @@ Thumbnail request, label and frame share rounded host-pixel coordinates; the the
 `thumbnail_border`/`thumbnail_border_radius`/color/outline default to ModernX's
 1px white frame with a black outline. The frame uses the existing Canvas.
 Text hover uses fully opaque glow; the volume handle remains visible at the same size
-before and during hover. `Main.extra_right_control` adds one scaled 24×24 control grid
-to the left of pin, with 45-unit spacing; an empty `SizedBox.shrink()` reserves no space.
-The production Define targets are `app.extension`, `app.window_layer`, and
-`player.controls.extra_right_control`; see [PLAYER.md](../../dev/design/PLAYER.md).
+before and during hover. `Main.left_controls`/`right_controls` accept `PlayerControlBar`
+groups of scaled 24×24 cells with 45-unit steps. Left contributions start after the
+visible volume controls; right contributions start to the left of pin. Each group
+appends inward in registration order and hides if it cannot clear the center controls.
+Empty groups reserve no space. `PlayerControlButton` shares the built-in icon styles.
+The production Define targets are `app.extension`, `app.window_layer` (`set`/`replace`)
+and `player.controls.left`/`right` (`append` only); the former single-button slot is
+removed. See [PLAYER.md](../../dev/design/PLAYER.md).
 
 `PlayerThemeData.layout_option` selects `original` or `reduced`. Both use the finite
 `Positioned` parent-data contract for controller, seekbar, metadata, side controls and window

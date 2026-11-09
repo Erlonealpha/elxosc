@@ -2,7 +2,35 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前入口：mpv-luatest 开发依赖（2026-11-08）
+## 当前检查：底部扩展按钮（2026-11-09）
+
+底部左右 Slot 均只允许 append，旧单按钮 Slot 移除。新增离线回归覆盖跨 scope 顺序、
+拒绝 replace、空组、有限整数边界、original/reduced 几何、1.5 倍输入和禁用按钮。
+新增真实宿主回归点击两侧各两个按钮；fixture 把启动脚本合并为一次 `--scripts` 列表，
+避免 mpv.net 覆盖重复 `--script` 或延后应用 `--scripts-append`。
+
+本地父仓库基于 `866e0c8` 工作区；用户已有 main/binding/tool/gitlink 改动保留。
+子模块已经初始化且用户检出 `307bcc3`，本轮检查使用该版本，没有执行会重置它的
+submodule update，也未修改依赖源码或暂存该 gitlink。
+Lua 全套及直接依赖入口均 **2367 checks passed**；项目
+`emmylua_check --warnings-as-errors` 为 **No issues found**。
+
+项目 Python 回归 **47 passed**、无 skips：real-host **17**、runner **16**、
+测量 CLI **11**、benchmark CLI **3**。真实输入回归验证两侧追加按钮的独立点击，
+不扩大为视觉像素验收。
+
+```text
+luajit test/run.lua
+luajit mpv-luatest/run.lua --bootstrap test/bootstrap.lua
+emmylua_check . --warnings-as-errors
+uv run --group test python -m pytest -q test/real_host test/test_runner.py test/test_ass_measure_cli.py test/test_benchmark_cli.py --tb=short
+```
+
+真实宿主使用 `ELXOSC_MPV_BINARY=E:/mpvnet/mpvnet.com`、`ELXOSC_TEST_DEMO_ENTRY=1`，
+鼠标测试串行运行。最初多脚本参数导致未加载 peer；单列表修正后定向回归和最终
+完整回归通过。测试探针副本在验证后清理，避免重复类型污染静态检查。
+
+## 历史入口：mpv-luatest 开发依赖（2026-11-08）
 
 离线运行器、断言和 mp 桩由独立项目 `mpv-luatest` 提供，Git submodule URL 为
 `https://github.com/Erlonealpha/mpv-luatest`，根目录 gitlink 固定提交 `66e921c`。

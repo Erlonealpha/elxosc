@@ -15,8 +15,7 @@ local icon_mod = require 'widget.widgets.icon'
 local state_mod = require 'widget.state'
 local widget_mod = require 'widget.widget'
 local player_context = require 'widget.player_context'
-local player_theme_mod = require 'widget.player.theme'
-local player_visuals_mod = require 'widget.player.visuals'
+local extension_controls_mod = require 'widget.player.extension_controls'
 local tween_mod = require 'animation.tween'
 local navigation_mod = require 'widget.navigation'
 
@@ -694,15 +693,9 @@ function DemoButton:__init(options)
 end
 
 function DemoButton:build(context)
-    local scope = player_theme_mod.PlayerTheme.maybe_of(context)
-    local theme = scope and scope.data or player_theme_mod.PlayerThemeData()
-    return IconButton({
+    return extension_controls_mod.PlayerControlButton({
         key = 'demo-launch-button',
-        icon = Container({
-            alignment = Offset(0.5, 0.5),
-            child = Icon('science', { size = theme.side_button_size, color = theme.side_button_color }),
-        }),
-        style = player_visuals_mod.control_style(theme),
+        icon = 'science',
         on_click = function()
             if self.controller.open then
                 self.controller.open()
@@ -723,7 +716,7 @@ M.define_source = [[
 import('development-demo')
 local content, button = create_demo()
 bind('app.window_layer', content)
-bind('player.controls.extra_right_control', button)
+bind('player.controls.right', button)
 ]]
 M.DemoLauncher = DemoLauncher
 
