@@ -9,6 +9,7 @@ local geometry = require 'foundation.geometry'
 
 local Offset = geometry.Offset
 
+---@class elxosc.render.painting_context
 local M = {}
 
 ---@class PaintingContext : std.object

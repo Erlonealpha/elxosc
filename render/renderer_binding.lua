@@ -5,6 +5,7 @@
 -- resource; the renderer binding capability belongs to the one framework
 -- binding composition.
 
+---@class elxosc.render.renderer_binding
 local M = {}
 
 ---@class RendererBindingRole

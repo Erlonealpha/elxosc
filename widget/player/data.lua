@@ -15,6 +15,7 @@ local SPONSOR_COLORS = {
     filler = Color.hex('#8D99AE'),
 }
 
+---@class elxosc.widget.player.data
 local M = {}
 
 local function snapshot_text(snapshot, names, fallback)

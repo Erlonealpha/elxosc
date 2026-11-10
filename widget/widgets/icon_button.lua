@@ -31,4 +31,7 @@ function IconButton:__init(options)
     ButtonBase.__init(self, config)
 end
 
-return { IconButton = IconButton }
+---@class elxosc.widget.widgets.icon_button
+local M = { IconButton = IconButton }
+
+return M

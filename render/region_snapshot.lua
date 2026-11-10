@@ -62,4 +62,7 @@ function RegionSnapshot:same_regions(other)
     return true
 end
 
-return { RegionSnapshot = RegionSnapshot }
+---@class elxosc.render.region_snapshot
+local M = { RegionSnapshot = RegionSnapshot }
+
+return M

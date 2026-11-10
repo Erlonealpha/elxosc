@@ -28,6 +28,7 @@ local min = math.min
 local max = math.max
 local huge = math.huge
 
+---@class elxosc.layout.constraints
 local M = {}
 
 ---@param value number

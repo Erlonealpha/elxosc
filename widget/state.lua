@@ -15,6 +15,7 @@ local raise = std.raise
 local Ticker = ticker_mod.Ticker
 local AnimationController = controller_mod.AnimationController
 
+---@class elxosc.widget.state
 local M = {}
 
 ---@class State : std.object

@@ -106,4 +106,7 @@ function Container:child_widgets()
     return self.child and { self.child } or {}
 end
 
-return { Container = Container }
+---@class elxosc.widget.widgets.container
+local M = { Container = Container }
+
+return M

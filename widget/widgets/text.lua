@@ -16,6 +16,7 @@ local DefaultTextStyle = ambient_mod.DefaultTextStyle
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 
+---@class elxosc.widget.widgets.text
 local M = {}
 
 ---@class _TextOptions

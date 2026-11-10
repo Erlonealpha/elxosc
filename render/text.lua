@@ -24,6 +24,7 @@ local Paragraph = paragraph_mod.Paragraph
 local Color = color_mod.Color
 local raise = std.raise
 
+---@class elxosc.render.text
 local M = {}
 
 ---@class RenderText : RenderObject

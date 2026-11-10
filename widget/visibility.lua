@@ -15,6 +15,7 @@ local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local State = require('widget.state').State
 
+---@class elxosc.widget.visibility
 local M = {}
 
 --== Opacity ================================================================

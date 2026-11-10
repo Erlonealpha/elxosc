@@ -39,6 +39,7 @@ local SizedBox = layout_widgets.SizedBox
 local LayoutScaleBox = layout_widgets.LayoutScaleBox
 
 local raise = std.raise
+---@class elxosc.widget.player.app
 local M = {}
 
 ---@alias WindowTopBarMode

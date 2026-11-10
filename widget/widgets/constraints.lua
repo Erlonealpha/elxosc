@@ -71,4 +71,7 @@ function LimitedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
-return { ConstrainedBox = ConstrainedBox, LimitedBox = LimitedBox }
+---@class elxosc.widget.widgets.constraints
+local M = { ConstrainedBox = ConstrainedBox, LimitedBox = LimitedBox }
+
+return M

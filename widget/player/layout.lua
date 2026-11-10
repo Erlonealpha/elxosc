@@ -32,6 +32,7 @@ local default_title_bar = visuals_mod.default_title_bar
 local default_window_controls = visuals_mod.default_window_controls
 local default_controller = controls_mod.default_controller
 
+---@class elxosc.widget.player.layout
 local M = {}
 
 ---@class _PlayerLayoutOptions

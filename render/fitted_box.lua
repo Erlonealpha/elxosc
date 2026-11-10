@@ -25,6 +25,7 @@ local math = math
 local min = math.min
 local max = math.max
 
+---@class elxosc.render.fitted_box
 local M = {}
 
 ---@alias FittedBoxFit

@@ -13,6 +13,7 @@ local widget_mod = require 'widget.widget'
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
+---@class elxosc.widget.provider
 local M = {}
 
 ---@class _ProviderOptions

@@ -19,6 +19,7 @@ local kindof = std.kindof
 local LocalKey = foundation_key.LocalKey
 local Key = foundation_key.Key
 
+---@class elxosc.widget.key : elxosc.foundation.key
 local M = {}
 
 ---@class ObjectKey : LocalKey

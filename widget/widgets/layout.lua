@@ -19,29 +19,7 @@ local container_mod = require 'widget.widgets.container'
 local offset_box_mod = require 'widget.widgets.offset_box'
 local transform_box_mod = require 'widget.widgets.transform_box'
 
----@class elxwidgets_layout
----@field Padding Padding
----@field Align Align
----@field Center fun(child: Widget?, options?: _CenterOptions): Align
----@field SizedBox SizedBox
----@field DecoratedBox DecoratedBox
----@field Flexible Flexible
----@field Expanded fun(child: Widget?, options?: _ExpandedOptions): Flexible
----@field Spacer fun(options?: _ExpandedOptions): Flexible
----@field Flex Flex
----@field Row fun(options?: _FlexOptions): Flex
----@field Column fun(options?: _FlexOptions): Flex
----@field Stack Stack
----@field Positioned Positioned
----@field ConstrainedBox ConstrainedBox
----@field LimitedBox LimitedBox
----@field UnconstrainedBox UnconstrainedBox
----@field OverflowBox OverflowBox
----@field FittedBox FittedBox
----@field Container Container
----@field OffsetBox OffsetBox
----@field TransformBox TransformBox
----@field LayoutScaleBox LayoutScaleBox
+---@class elxosc.widget.widgets.layout : elxosc.widget.widgets.padding, elxosc.widget.widgets.align, elxosc.widget.widgets.sized_box, elxosc.widget.widgets.decorated_box, elxosc.widget.widgets.flex, elxosc.widget.widgets.stack, elxosc.widget.widgets.positioned, elxosc.widget.widgets.constraints, elxosc.widget.widgets.overflow, elxosc.widget.widgets.container, elxosc.widget.widgets.offset_box, elxosc.widget.widgets.transform_box
 local M = {}
 
 M.Padding = padding_mod.Padding

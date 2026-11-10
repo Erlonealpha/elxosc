@@ -50,12 +50,16 @@ root so `.emmyrc.json` (library paths, `runtime.special.raise`, ...) applies:
 emmylua_check .
 ```
 
+`test_exports.lua` checks consumers annotated with canonical module types and
+module/record/array intersections; Define tests cover standard descriptors,
+local `import_as` packages, transactional rollback, and owned subscription cleanup.
+
 Both gates are expected to be clean: `No issues found` and `ALL GOOD`.
 The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-09): **2367 Lua checks** through both the project
+Current baseline (2026-11-10): **2540 Lua checks** through both the project
 adapter and direct dependency CLI; project runner regression **16 passed**;
 `emmylua_check . --warnings-as-errors`: **No issues found**. The historical ASS
 benchmark source is patched only for the current `std.class.new` signature in

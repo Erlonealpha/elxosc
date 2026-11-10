@@ -88,4 +88,7 @@ function PlayerControlButton:build(context)
     })
 end
 
-return { PlayerControlBar = PlayerControlBar, PlayerControlButton = PlayerControlButton }
+---@class elxosc.widget.player.extension_controls
+local M = { PlayerControlBar = PlayerControlBar, PlayerControlButton = PlayerControlButton }
+
+return M

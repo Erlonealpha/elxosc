@@ -3,26 +3,17 @@
 
 -- The define DSL surface (dev/design/DESIGN.md §4.2).
 --
--- Two factories and one default name table:
+-- Two factories for extension-owned classes:
 --   * `new_widget` / `new_state` let a script declare a `StatefulWidget` +
 --     `State` pair without touching `std` (see `dev/feat_example.lua`);
---   * `builtins()` is the set of names every scope may read as-is — the widget
---     library plus the value types those constructors take.
 --
--- mpv-free on purpose: a host merges its own names (`print`, `mp`, ...) on top
--- of `builtins()` and hands the result to `DefineSession`.
+-- Available builtins are selected explicitly by host/mpv_define.lua.
 
 local std = require 'elxlibs.std'
-local geometry = require 'foundation.geometry'
-local color = require 'foundation.color'
-local paint = require 'painting.paint'
-local text_style = require 'text.text_style'
 local widget_mod = require 'widget.widget'
 local state_mod = require 'widget.state'
-local transform_mod = require 'foundation.transform'
-local anchor_mod = require 'foundation.anchor'
-local text_paint_mod = require 'painting.text_paint'
 
+---@class elxosc.libs.dsl
 local M = {}
 
 --- A `StatefulWidget` subclass a script can complete with `create_state`.
@@ -41,35 +32,6 @@ end
 ---@return T the new class (see `new_widget`)
 function M.new_state(name, parent)
     return std.class.new(name, parent or state_mod.State)
-end
-
---- The names a scope can use without declaring them.
----@return table<string, any>
-function M.builtins()
-    local out = {}
-    local sources = {
-        require 'widget',
-        {
-            Offset = geometry.Offset,
-            Size = geometry.Size,
-            Rect = geometry.Rect,
-            EdgeInsets = geometry.EdgeInsets,
-            Color = color.Color,
-            Paint = paint.Paint,
-            TextStyle = text_style.TextStyle,
-            Matrix2D = transform_mod.Matrix2D,
-            Anchor = anchor_mod.Anchor,
-            TextPaint = text_paint_mod.TextPaint,
-        },
-    }
-    for _, source in ipairs(sources) do
-        for name, value in pairs(source) do
-            out[name] = value
-        end
-    end
-    out.new_widget = M.new_widget
-    out.new_state = M.new_state
-    return out
 end
 
 return M

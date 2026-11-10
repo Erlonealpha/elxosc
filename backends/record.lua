@@ -12,6 +12,7 @@ local canvas = require 'painting.canvas'
 
 local Canvas = canvas.Canvas
 
+---@class elxosc.backends.record
 local M = {}
 
 ---@class RecordCanvas : Canvas

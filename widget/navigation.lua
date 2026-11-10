@@ -29,6 +29,7 @@ local Container = container_mod.Container
 local raise = std.raise
 local Color = color_mod.Color
 
+---@class elxosc.widget.navigation
 local M = {}
 
 local function copy_array(values)

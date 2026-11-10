@@ -20,6 +20,7 @@ local color_mod = require 'foundation.color'
 local Color = color_mod.Color
 local ColorTransparent = Color.rgba255(0, 0, 0, 0)
 
+---@class elxosc.widget.widgets.hover_text
 local M = {}
 local default_style = text_style_mod.TextStyle({ wrap = false })
 

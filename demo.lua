@@ -52,6 +52,7 @@ local Page = navigation_mod.Page
 local PopupPage = navigation_mod.PopupPage
 local Navigator = navigation_mod.Navigator
 
+---@class elxosc.demo
 local M = {}
 
 ---@param children Widget[]

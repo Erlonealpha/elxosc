@@ -22,4 +22,7 @@ function TextButton:__init(options)
     })
     ButtonBase.__init(self, config)
 end
-return { TextButton = TextButton }
+---@class elxosc.widget.widgets.text_button
+local M = { TextButton = TextButton }
+
+return M

@@ -10,6 +10,7 @@ local geometry = require 'foundation.geometry'
 local Offset = geometry.Offset
 local raise = std.raise
 
+---@class elxosc.foundation.anchor
 local M = {}
 
 ---@alias AnchorName

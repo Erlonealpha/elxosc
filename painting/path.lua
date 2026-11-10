@@ -16,6 +16,7 @@ local math = math
 local string = string
 local min = math.min
 
+---@class elxosc.painting.path
 local M = {}
 
 --- The drawing verbs a backend must understand.

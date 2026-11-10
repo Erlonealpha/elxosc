@@ -292,4 +292,7 @@ function ButtonBase:child_widgets()
     return {}
 end
 
-return { ButtonBase = ButtonBase, ButtonStyle = ButtonStyle, copy_options = copy_options }
+---@class elxosc.widget.widgets.button_base
+local M = { ButtonBase = ButtonBase, ButtonStyle = ButtonStyle, copy_options = copy_options }
+
+return M

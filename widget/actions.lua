@@ -9,6 +9,7 @@ local widget_mod = require 'widget.widget'
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
+---@class elxosc.widget.actions
 local M = {}
 
 ---@class _HostActionsOptions

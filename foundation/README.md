@@ -7,6 +7,8 @@ It must remain usable without mpv.
 
 - `geometry.lua` — `Offset`, `Point`, `Size`, `Rect`, and `EdgeInsets`.
 - `color.lua` — immutable-by-convention RGBA `Color` values.
+- `exports.lua` — the standard `foundation` package descriptor; its typed exports
+  combine geometry, color, transform, and anchor modules.
 - `anchor.lua` — nine paint anchors and box fractions.
 - `transform.lua` — finite 2D matrix composition, point/rect mapping, and inverse.
 - `pointer_event.lua` — validated mouse event values. It accepts the historical

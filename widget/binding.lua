@@ -20,6 +20,7 @@ local BindingBase = binding_base.BindingBase
 local BuildOwner = build_owner_mod.BuildOwner
 local can_update = widget_mod.can_update
 
+---@class elxosc.widget.binding
 local M = {}
 
 ---@class WidgetTree : std.object

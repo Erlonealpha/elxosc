@@ -14,6 +14,7 @@ local Size = geometry.Size
 local Color = color_mod.Color
 local raise = std.raise
 
+---@class elxosc.animation.tween
 local M = {}
 
 ---@alias TweenSupportedValue

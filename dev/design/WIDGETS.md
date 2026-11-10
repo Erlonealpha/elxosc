@@ -105,6 +105,13 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 的同一对象。新增控件应优先创建独立模块，再补聚合入口、模块 README 和加载/行为
 测试。
 
+生产模块表使用 `elxosc.<模块路径>` 类型；直接模块和聚合入口仍保持对象 identity。
+`widget.exports` 的 `{ name = 'widget', exports = widgets }` 描述使用模块交叉类型，
+保留 canonical 构造器、context 和 Slot 接口，排除会覆盖 Define `bind` 的 registry helper；
+player 的描述复用显式 `elxosc.widget.player.components`。包收集和默认 builtins
+选择分别属于 `libs.exports` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
+完整包。类型名前缀不改变运行时 require 或 import 包名。
+
 `Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds
 使用同一逻辑坐标空间。标签测量只在文本/样式改变时进行，pointer 移动只标记 paint，
 保留输入 snapshot 和 child click/capture。AutoHide 隐藏和 State.dispose 调用 hover

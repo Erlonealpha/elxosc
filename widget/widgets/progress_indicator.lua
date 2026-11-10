@@ -94,4 +94,7 @@ function LinearProgressIndicator:create_state()
     return LinearProgressIndicatorState()
 end
 
-return { LinearProgressIndicator = LinearProgressIndicator }
+---@class elxosc.widget.widgets.progress_indicator
+local M = { LinearProgressIndicator = LinearProgressIndicator }
+
+return M

@@ -39,6 +39,7 @@ local huge = math.huge
 local ipairs = ipairs
 local raise = std.raise
 
+---@class elxosc.render.flex
 local M = {}
 
 ---@alias MainAlignment

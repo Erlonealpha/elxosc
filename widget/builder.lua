@@ -12,6 +12,7 @@ local widget_mod = require 'widget.widget'
 local Widget = widget_mod.Widget
 local raise = std.raise
 
+---@class elxosc.widget.builder
 local M = {}
 
 ---@param name any

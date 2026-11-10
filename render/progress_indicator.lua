@@ -8,6 +8,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local raise = std.raise
 
+---@class elxosc.render.progress_indicator
 local M = {}
 
 local function finite(value, name)

@@ -12,6 +12,7 @@ local color = require 'foundation.color'
 
 local Color = color.Color
 
+---@class elxosc.painting.paint
 local M = {}
 
 ---@alias PaintStyle

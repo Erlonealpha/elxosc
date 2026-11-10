@@ -2,7 +2,27 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前检查：标准控件与 player 导出（2026-11-10）
+## 当前检查：模块类型与扩展包标准化（2026-11-10）
+
+136 个生产模块的返回表声明 `elxosc.<模块路径>` 类型，运行时 require 和 import
+包名保持不变。标准包使用 `{ name, exports, loader? }`，导出表复用模块类型，
+统一收集后由 `mpv_define` 注册；默认 builtins 使用显式清单。
+新增回归验证描述注册/保护/非法边界、canonical class identity、模块交叉类型及数组
+字段、标准 widget 扁平导入保留 Define bind、`import_as` 无环境注入、scope loader、
+payload 外调用拒绝、transaction 回滚和失败 scope 重试。mp/player 的订阅清理覆盖
+shutdown，修复 player disposer
+丢失 `self`。真实两侧扩展按钮使用局部 `import_as('mp')`/`import_as('player')`。
+
+基于 `c853a09` 工作区，保留用户入口、工具和子模块版本等已有修改；依赖仍使用
+已初始化的 `307bcc3`，没有执行会重置该 checkout 的 submodule update。
+项目 `luajit test/run.lua` 和直接依赖 CLI 均为 **2540 checks passed**；
+`emmylua_check . --warnings-as-errors` 为 **No issues found**，`git diff --check` 通过。
+完整串行 Python **47 passed in 37.53s**、无 skips：real-host **17**、runner **16**、
+测量 CLI **11**、benchmark CLI **3**。
+前两次整套各有一次原生点击失败，分别为扩展按钮和 Demo；扩展按钮单独重跑通过，
+最后整套通过。没有改变生产输入或 fixture 来掩盖这两次间歇失败，不能据此证明其根因。
+
+## 历史检查：标准控件与 player 导出（2026-11-10）
 
 `Tooltip`、`LinearProgressIndicator`、`Slider`、`HoverText` 标准组件覆盖独立使用、聚合/直接模块
 身份、caller options 保持、标签居中与边界裁切、hover paragraph/input snapshot

@@ -33,4 +33,7 @@ function PlayerTooltip:__init(options)
     Tooltip.__init(self, config)
 end
 
-return { PlayerTooltip = PlayerTooltip }
+---@class elxosc.widget.player.tooltip
+local M = { PlayerTooltip = PlayerTooltip }
+
+return M

@@ -10,6 +10,7 @@
 
 local slot_mod = require 'widget.slot'
 
+---@class elxosc.widget.bind
 local M = {}
 
 M.SlotSpec = slot_mod.SlotSpec

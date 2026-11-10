@@ -10,6 +10,7 @@ local widget_mod = require 'widget.widget'
 local RenderGesture = gesture_mod.RenderGesture
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
+---@class elxosc.widget.widgets.gesture_detector
 local M = {}
 
 ---@class GestureDetector : SingleChildRenderObjectWidget

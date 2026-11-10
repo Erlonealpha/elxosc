@@ -4,6 +4,7 @@
 -- Flutter-style PaintingBinding role facade.  Canvas instances are owned by
 -- the host/owner scope; this capability does not create another Binding.
 
+---@class elxosc.painting.painting_binding
 local M = {}
 
 ---@class PaintingBindingRole

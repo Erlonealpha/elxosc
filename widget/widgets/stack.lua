@@ -40,4 +40,7 @@ function Stack:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
-return { Stack = Stack }
+---@class elxosc.widget.widgets.stack
+local M = { Stack = Stack }
+
+return M

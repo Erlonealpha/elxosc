@@ -8,6 +8,7 @@ local Color = color_mod.Color
 local InheritedWidget = widget_mod.InheritedWidget
 local raise = std.raise
 
+---@class elxosc.widget.player.theme
 local M = {}
 
 ---@alias PlayerLayoutOption

@@ -18,6 +18,7 @@ local progress_widgets = require 'widget.widgets.progress_indicator'
 local slider_widgets = require 'widget.widgets.slider'
 local hover_text_widgets = require 'widget.widgets.hover_text'
 
+---@class elxosc.widget.widgets.basic
 local M = {
     Text = text_widgets.Text,
     Icon = icon_widgets.Icon,

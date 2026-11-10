@@ -39,4 +39,7 @@ function OffsetBox:update_render_object(render_object)
     render_object:set_offset(self.offset)
 end
 
-return { OffsetBox = OffsetBox }
+---@class elxosc.widget.widgets.offset_box
+local M = { OffsetBox = OffsetBox }
+
+return M

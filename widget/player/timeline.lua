@@ -169,4 +169,7 @@ function Timeline:update_render_object(render_object)
     render_object:set_enabled(self.enabled)
 end
 
-return { Timeline = Timeline }
+---@class elxosc.widget.player.timeline
+local M = { Timeline = Timeline }
+
+return M

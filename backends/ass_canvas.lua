@@ -65,6 +65,7 @@ local ASS_TEXT_ALIGN_ANCHORS = {
     [Align.RIGHT] = 6,
 }
 
+---@class elxosc.backends.ass_canvas
 local M = {}
 
 ---@param channel number 0..1

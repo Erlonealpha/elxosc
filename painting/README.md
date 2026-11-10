@@ -9,6 +9,8 @@ must remain independent of mpv and concrete ASS output.
 - `paint.lua` — fill/stroke style, stroke width, cap, join, and color.
 - `path.lua` — path verbs and primitive lowering.
 - `text_paint.lua` — explicit text anchor and visual offset.
+- `exports.lua` — the standard `painting` descriptor with intersected module types
+  for Canvas, Paint, Path, and TextPaint exports.
 
 Coordinates are logical pixels. `TextPaint.offset` affects visual painting only;
 layout and hit testing remain RenderObject responsibilities. Concrete backends belong

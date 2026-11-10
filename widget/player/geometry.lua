@@ -10,6 +10,7 @@ local max = math.max
 local min = math.min
 local huge = math.huge
 
+---@class elxosc.widget.player.geometry
 local M = {}
 
 local function finite(name, value)

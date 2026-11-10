@@ -5,6 +5,7 @@
 local mp = require 'mp'
 local std = require 'elxlibs.std'
 
+---@class elxosc.host.ass_measure
 local M = {}
 local floor = math.floor
 

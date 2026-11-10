@@ -12,6 +12,7 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
+---@class elxosc.render.align
 local M = {}
 
 ---@class RenderAlign : RenderObject

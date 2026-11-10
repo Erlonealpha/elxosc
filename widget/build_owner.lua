@@ -11,6 +11,7 @@ local std = require 'elxlibs.std'
 local build_scope_mod = require 'widget.build_scope'
 local key_mod = require 'widget.key'
 
+---@class elxosc.widget.build_owner
 local M = {}
 local BuildScope = build_scope_mod.BuildScope
 local GlobalKey = key_mod.GlobalKey

@@ -16,6 +16,7 @@ local State = state_mod.State
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 
+---@class elxosc.widget.player_context
 local M = {}
 
 -- LuaJIT weak-key tables are not ephemerons: a strong value that reaches its

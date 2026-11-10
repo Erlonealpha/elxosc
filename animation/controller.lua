@@ -14,6 +14,7 @@ local raise = std.raise
 local min = math.min
 local max = math.max
 
+---@class elxosc.animation.controller
 local M = {}
 
 ---@alias AnimationStatus

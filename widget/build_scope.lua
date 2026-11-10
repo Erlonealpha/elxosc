@@ -5,6 +5,7 @@
 
 local std = require 'elxlibs.std'
 
+---@class elxosc.widget.build_scope
 local M = {}
 
 ---@class BuildScope : std.object

@@ -12,7 +12,7 @@ local geometry = require 'foundation.geometry'
 local color = require 'foundation.color'
 local text_style = require 'text.text_style'
 local constraints_mod = require 'layout.constraints'
----@type elxwidgets_layout
+---@type elxosc.widget.widgets.layout
 local lay = require 'widget.widgets.layout'
 local basic = require 'widget.widgets.basic'
 

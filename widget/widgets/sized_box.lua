@@ -83,4 +83,7 @@ function SizedBox.from_size(size, options)
     })
 end
 
-return { SizedBox = SizedBox }
+---@class elxosc.widget.widgets.sized_box
+local M = { SizedBox = SizedBox }
+
+return M

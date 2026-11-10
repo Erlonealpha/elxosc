@@ -26,4 +26,7 @@ function OutlinedButton:__init(options)
     ButtonBase.__init(self, config)
 end
 
-return { OutlinedButton = OutlinedButton }
+---@class elxosc.widget.widgets.outlined_button
+local M = { OutlinedButton = OutlinedButton }
+
+return M

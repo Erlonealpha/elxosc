@@ -25,6 +25,7 @@ local ipairs = ipairs
 local huge = math.huge
 local raise = std.raise
 
+---@class elxosc.render.render_object
 local M = {}
 
 ---@alias FlexFit

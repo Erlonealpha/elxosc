@@ -14,6 +14,7 @@ local Anchor = anchor_mod.Anchor
 local raise = std.raise
 local rawget = rawget
 
+---@class elxosc.painting.text_paint
 local M = {}
 
 ---@class _TextPaintOptions

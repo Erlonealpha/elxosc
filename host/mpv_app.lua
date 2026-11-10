@@ -50,6 +50,7 @@ local AssPresenter = mpv_primitives.AssPresenter
 local PlayerScope = player_context.PlayerScope
 local Navigator = require('widget.navigation').Navigator
 
+---@class elxosc.host.mpv_app
 local M = {}
 
 ---@class Display

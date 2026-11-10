@@ -169,7 +169,7 @@ end)
 F.test('player import exposes explicit component identities and constructs Define content', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })
-    local exports = require 'widget.player.exports'
+    local exports = require('widget.player.exports').exports
     local env = {}
     define.session.modules:import_into('player', env, 'extension')
     for name, value in pairs(exports) do
@@ -196,6 +196,71 @@ F.test('player import exposes explicit component identities and constructs Defin
         'Define uses the canonical class')
     tree:dispose()
     define:shutdown()
+end)
+
+F.test('host collects standard packages and keeps builtins independent of registry additions', function()
+    reset_fake()
+    local define = MpDefine({ builtins = {} })
+    for _, package in ipairs(require('libs.exports').collect()) do
+        F.ok(define.session.modules:is_protected(package.name), 'protected package: ' .. package.name)
+        if package.name ~= 'player' then
+            F.eq(define.session.modules:get(package.name), package.exports,
+                'canonical export table: ' .. package.name)
+        end
+    end
+    F.eq(define.session.api.Text, nil, 'empty builtins override does not implicitly expose packages')
+    define.session.modules:add('additional', { accidental_global = 42 })
+    F.eq(define.session.api.accidental_global, nil, 'new module does not expand builtins')
+    define:shutdown()
+end)
+
+F.test('flattened standard widget import preserves the Define bind protocol', function()
+    reset_fake()
+    local define = MpDefine({ builtins = {} })
+    define.session:define_start()
+    define.session:define('widgets', [[
+        import('widget')
+        bind('slot', Text('standard package'))
+    ]])
+    local env = define.session:env_for('widgets')
+    F.eq(env.bind, define.session.api.bind, 'scope-aware bind remains available')
+    F.eq(env.Text, Text, 'standard package keeps canonical constructors')
+    define.session:define_end()
+    local owner, tree = mount(define:assemble(scaffold(Text('root'))))
+    F.ok(owner.root ~= nil, 'imported standard widgets mount through Define')
+    tree:dispose()
+    define:shutdown()
+end)
+
+F.test('import_as mp and player keep scope names local and owned subscriptions are cleaned', function()
+    reset_fake()
+    local store = PlayerStore({ value = 1 })
+    local define = MpDefine({ builtins = {}, player_store = store })
+    define:listen()
+    local log = dispatcher()
+    log.define_start()
+    log.define('namespaced', [[
+        host = import_as('mp')
+        player_api = import_as('player')
+        host.on_prop('pause', function() end)
+        host.on_message(function() end)
+        updated = 0
+        player_api.on_update(function() updated = updated + 1 end)
+        current = player_api.get_snapshot().value
+    ]])
+    local env = define.session:env_for('namespaced')
+    F.eq(env.get_prop, nil, 'mp names are not injected')
+    F.eq(env.on_message, nil, 'loader names are not injected')
+    F.eq(env.Timeline, nil, 'player names are not injected')
+    F.eq(env.current, 1, 'player snapshot through namespaced package')
+    F.ok(fake.log.namespaced ~= nil, 'scope message callback installed')
+    store:replace({ value = 2 })
+    F.eq(env.updated, 1, 'subscription receives updates')
+    define:shutdown()
+    F.eq(#fake.unobserved, 1, 'mp observer released')
+    F.eq(fake.log.namespaced, nil, 'scope message callback released')
+    store:replace({ value = 3 })
+    F.eq(env.updated, 1, 'player subscription released')
 end)
 
 F.section('host define: the window')

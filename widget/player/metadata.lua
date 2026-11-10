@@ -1,5 +1,6 @@
 -- Host-independent metadata normalization for the default player.
 
+---@class elxosc.widget.player.metadata
 local M = {}
 
 local function snapshot_value(snapshot, name)

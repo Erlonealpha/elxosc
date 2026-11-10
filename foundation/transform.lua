@@ -21,6 +21,7 @@ local min = math.min
 local max = math.max
 local format = string.format
 
+---@class elxosc.foundation.transform
 local M = {}
 
 ---@class Matrix2D : std.object

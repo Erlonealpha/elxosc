@@ -64,4 +64,8 @@ local function Center(child, options)
     })
 end
 
-return { Align = Align, Center = Center }
+---@class elxosc.widget.widgets.align
+---@field Center fun(child: Widget?, options?: _CenterOptions): Align
+local M = { Align = Align, Center = Center }
+
+return M

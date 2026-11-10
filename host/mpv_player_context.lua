@@ -12,6 +12,7 @@ local raise = std.raise
 local PlayerSnapshot = player_context.PlayerSnapshot
 local PlayerStore = player_context.PlayerStore
 
+---@class elxosc.host.mpv_player_context
 local M = {}
 
 local DEFAULT_PLAYER_PROPERTIES = {

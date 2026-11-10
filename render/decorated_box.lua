@@ -25,6 +25,7 @@ local function validate_blur(value)
     return value
 end
 
+---@class elxosc.render.decorated_box
 local M = {}
 
 ---@class _DecorationOptions

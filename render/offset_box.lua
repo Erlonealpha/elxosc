@@ -18,6 +18,7 @@ local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
 local RenderObject = render_object.RenderObject
 
+---@class elxosc.render.offset_box
 local M = {}
 
 ---@class RenderOffsetBox : RenderObject

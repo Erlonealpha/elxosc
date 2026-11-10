@@ -112,7 +112,10 @@ function LayoutScaleBox:update_render_object(render_object)
     render_object:set_clip(self.clip)
 end
 
-return {
+---@class elxosc.widget.widgets.transform_box
+local M = {
     TransformBox = TransformBox,
     LayoutScaleBox = LayoutScaleBox,
 }
+
+return M

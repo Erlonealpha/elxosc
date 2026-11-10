@@ -31,6 +31,7 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 local GlobalKey = key_mod.GlobalKey
 local LocalKey = foundation_key.LocalKey
 
+---@class elxosc.widget.element
 local M = {}
 
 --== base =================================================================

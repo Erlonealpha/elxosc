@@ -16,6 +16,7 @@ local string = string
 local floor = math.floor
 local format = string.format
 
+---@class elxosc.foundation.color
 local M = {}
 
 ---@param channel number 0..1

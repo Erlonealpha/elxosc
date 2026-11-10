@@ -17,6 +17,7 @@ local Color = color_mod.Color
 local TextStyle = text_style_mod.TextStyle
 local InheritedWidget = widget_mod.InheritedWidget
 
+---@class elxosc.widget.ambient
 local M = {}
 
 local function is_finite(value)

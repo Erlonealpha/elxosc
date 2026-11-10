@@ -30,6 +30,7 @@ local SizedBox = layout_widgets.SizedBox
 
 local raise = std.raise
 
+---@class elxosc.widget.app : elxosc.widget.player.app
 local M = {}
 
 local function child_or_empty(child)

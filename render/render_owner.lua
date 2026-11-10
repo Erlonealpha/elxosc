@@ -22,6 +22,7 @@ local RegionSnapshot = region_snapshot.RegionSnapshot
 local raise = std.raise
 local POINTER_BUTTONS = { left = true, middle = true, right = true }
 
+---@class elxosc.render.render_owner
 local M = {}
 
 ---@param value boolean?

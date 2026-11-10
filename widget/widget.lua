@@ -15,6 +15,7 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
+---@class elxosc.widget.widget
 local M = {}
 
 ---@class Widget : std.object

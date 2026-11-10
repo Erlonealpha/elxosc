@@ -25,4 +25,7 @@ function ElevatedButton:__init(options)
     ButtonBase.__init(self, config)
 end
 
-return { ElevatedButton = ElevatedButton }
+---@class elxosc.widget.widgets.elevated_button
+local M = { ElevatedButton = ElevatedButton }
+
+return M

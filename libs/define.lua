@@ -7,7 +7,7 @@
 -- Deliberately thin. It owns three things and nothing more:
 --   * the phase machine and the message routing;
 --   * the scopes — one environment per scope id, reused across payloads;
---   * the three DSL builtins that need that state: `import` / `mod` / `bind`.
+--   * the scope-aware DSL: `import` / `import_as` / `mod` / `bind`.
 --
 -- Everything else is injected. `builtins` are the names every scope can read
 -- (widget constructors, `print`, ...); modules come from `libs/modules.lua`; and
@@ -23,6 +23,7 @@ local raise = std.raise
 local ModuleRegistry = modules_mod.ModuleRegistry
 local ContributionRegistry = bind_mod.ContributionRegistry
 
+---@class elxosc.libs.define
 local M = {}
 
 ---@class DefineOptions
@@ -82,6 +83,9 @@ function DefineSession:__init(options)
     api['import'] = function(name)
         self:_import(name)
     end
+    api['import_as'] = function(name)
+        return self:_import_as(name)
+    end
     api['require'] = api['import']
     api['mod'] = function(name, data)
         self:_mod(name, data)
@@ -119,7 +123,17 @@ function DefineSession:_import(name)
 end
 
 ---@param name string
----@param data table<string, any>?
+---@return table
+function DefineSession:_import_as(name)
+    if self.current_env == nil then
+        raise(std.RuntimeError(string.format(
+            "import_as('%s') outside of a define payload", name)))
+    end
+    return self.modules:import_as(name, self.current_define --[[@as string]])
+end
+
+---@param name string
+---@param data table?
 function DefineSession:_mod(name, data)
     local env = data or self.current_env
     if env == nil then

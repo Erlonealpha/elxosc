@@ -6,6 +6,11 @@ binding, and the public widget library. It must remain independent of mpv.
 ## Public entry points
 
 - `widget.lua` — Widget base classes and type/key reuse rules.
+- `exports.lua` — the standard `widget` descriptor, with module intersection types
+  for constructors, context APIs, and Slot values. It excludes the framework's
+  registry-based bind helper so the scope's Define `bind` remains available.
+  Default scope builtins are selected separately
+  by `host/mpv_define.lua`.
 - `builder.lua` — semantic `ContextBuilder`/`SlotBuilder` contracts and runtime
   callback, mounted-context and `Widget|nil` result validation.
 - `element.lua` — mounted Element classes and Widget-to-RenderObject connection.

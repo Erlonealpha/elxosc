@@ -14,6 +14,7 @@ local Color = color_mod.Color
 local Offset = geometry.Offset
 local raise = std.raise
 
+---@class elxosc.text.text_style
 local M = {}
 
 ---@alias TextAlign

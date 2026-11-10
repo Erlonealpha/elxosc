@@ -8,6 +8,7 @@ local std = require 'elxlibs.std'
 
 local huge = math.huge
 local raise = std.raise
+---@class elxosc.foundation.key_event
 local M = {}
 
 ---@alias KeyEventType

@@ -21,6 +21,7 @@ local huge = math.huge
 local min = math.min
 local max = math.max
 
+---@class elxosc.render.timeline
 local M = {}
 
 ---@alias TimelinePhase

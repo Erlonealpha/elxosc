@@ -20,6 +20,7 @@ local RenderObject = render_object.RenderObject
 local raise = std.raise
 local huge = math.huge
 
+---@class elxosc.render.layout_scale_box
 local M = {}
 
 ---@param value number

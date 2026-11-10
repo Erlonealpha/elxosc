@@ -9,6 +9,7 @@ local actions_mod = require 'widget.actions'
 
 local HostActions = actions_mod.HostActions
 
+---@class elxosc.host.mpv_actions
 local M = {}
 
 local function open_url_command(url)

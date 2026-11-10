@@ -128,4 +128,7 @@ function Icon:build()
     })
 end
 
-return { Icon = Icon }
+---@class elxosc.widget.widgets.icon
+local M = { Icon = Icon }
+
+return M

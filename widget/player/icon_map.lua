@@ -7,6 +7,7 @@ local geometry = require 'foundation.geometry'
 local Icon = icon_widgets.Icon
 local Offset = geometry.Offset
 
+---@class elxosc.widget.player.icon_map
 local M = {}
 
 ---@alias ModernXIconName

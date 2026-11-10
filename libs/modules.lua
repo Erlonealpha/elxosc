@@ -17,10 +17,39 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
+---@class elxosc.libs.modules
 local M = {}
 
+---@class DefinePackageDescriptor
+---@field name string runtime import name
+---@field exports table
+---@field loader fun(exports: table, scope_id: string)? scope-specific additions
+
+---@class DefinePackage<T> : DefinePackageDescriptor
+---@field exports T
+
+--- Register a standard export descriptor as a protected host package.
+---@param registry ModuleRegistry
+---@param package DefinePackageDescriptor
+function M.register_package(registry, package)
+    if type(package) ~= 'table' then
+        raise(std.TypeError('Define package must be a table'))
+    end
+    if registry:has(package.name) then
+        raise(std.RuntimeError('duplicate Define package: ' .. tostring(package.name)))
+    end
+    if package.loader ~= nil and type(package.loader) ~= 'function' then
+        raise(std.TypeError('Define package loader must be a function'))
+    end
+    registry:add(package.name, package.exports)
+    if package.loader then
+        registry:add_loader(package.name, package.loader)
+    end
+    registry:protect(package.name)
+end
+
 ---@class ModuleRegistry : std.object
----@field mods table<string, table<string, any>>
+---@field mods table<string, table>
 ---@field loaders table<string, fun(env: table, scope_id: string)>
 ---@field protected_names table<string, true>
 ---@overload fun(): self
@@ -60,7 +89,7 @@ end
 
 --- Register a data module (host side).
 ---@param name string
----@param data table<string, any>
+---@param data table
 function ModuleRegistry:add(name, data)
     if type(name) ~= 'string' or name == '' then
         raise(std.ValueError('the module name must be a non-empty string'))
@@ -74,7 +103,7 @@ end
 --- Publish `data` under `name` (the `mod` builtin). Refuses to shadow a
 --- protected module.
 ---@param name string
----@param data table<string, any>
+---@param data table
 function ModuleRegistry:publish(name, data)
     if self.protected_names[name] then
         raise(std.RuntimeError(string.format("mod('%s'): the module is protected", name)))
@@ -111,9 +140,30 @@ function ModuleRegistry:has(name)
 end
 
 ---@param name string
----@return table<string, any>?
+---@return table?
 function ModuleRegistry:get(name)
     return self.mods[name]
+end
+
+--- Resolve into a fresh package table without injecting into the caller environment.
+---@param name string
+---@param scope_id string
+---@return table
+function ModuleRegistry:import_as(name, scope_id)
+    local data = self.mods[name]
+    local loader = self.loaders[name]
+    if data == nil and loader == nil then
+        raise(std.ImportError(string.format(
+            "import_as('%s'): module '%s' has not been published", name, name)))
+    end
+    local package = {}
+    for key, value in pairs(data or {}) do
+        package[key] = value
+    end
+    if loader then
+        loader(package, scope_id)
+    end
+    return package
 end
 
 --- Flatten `name` into `env`, then run its loader.

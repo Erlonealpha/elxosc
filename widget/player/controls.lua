@@ -55,6 +55,7 @@ local panel = visuals_mod.panel
 local icon_control = visuals_mod.icon_control
 local positioned = visuals_mod.positioned
 
+---@class elxosc.widget.player.controls
 local M = {}
 
 ---@param theme PlayerThemeData

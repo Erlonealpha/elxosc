@@ -32,6 +32,7 @@ local AutoHide = visibility_mod.AutoHide
 local max = math.max
 local raise = std.raise
 
+---@class elxosc.widget.widgets.tooltip
 local M = {}
 local default_style = TextStyle({ wrap = false })
 

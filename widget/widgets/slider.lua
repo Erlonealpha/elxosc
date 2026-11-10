@@ -26,4 +26,7 @@ function Slider:update_render_object(render_object)
     render_object:configure(self)
 end
 
-return { Slider = Slider }
+---@class elxosc.widget.widgets.slider
+local M = { Slider = Slider }
+
+return M

@@ -19,6 +19,7 @@ local SlotWrap = slot_mod.SlotWrap
 local CompositionAssembler = slot_mod.CompositionAssembler
 local PlayerControlBar = extension_controls_mod.PlayerControlBar
 
+---@class elxosc.main_layout
 local M = {}
 
 ---@alias PlayerControlSide

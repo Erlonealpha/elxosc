@@ -10,6 +10,7 @@ local metadata_mod = require 'widget.player.metadata'
 local extension_controls_mod = require 'widget.player.extension_controls'
 local text_controls_mod = require 'widget.player.text_controls'
 
+---@class elxosc.widget.player : elxosc.widget.player.app, elxosc.widget.player.timeline, elxosc.widget.player.icon_map, elxosc.widget.player.theme, elxosc.widget.player.layout, elxosc.widget.player.tooltip, elxosc.widget.player.metadata, elxosc.widget.player.extension_controls, elxosc.widget.player.text_controls
 local M = {}
 M.PlayerIcons = icon_map
 M.PlayerMain = app_mod.Main

@@ -38,4 +38,7 @@ function Padding:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
-return { Padding = Padding }
+---@class elxosc.widget.widgets.padding
+local M = { Padding = Padding }
+
+return M

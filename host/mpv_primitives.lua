@@ -15,6 +15,7 @@ local frame_clock = require 'scheduler.frame_clock'
 local FrameClock = frame_clock.FrameClock
 local math = math
 
+---@class elxosc.host.mpv_primitives
 local M = {}
 
 --== frame clock ===========================================================

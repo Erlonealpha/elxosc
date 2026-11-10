@@ -37,4 +37,7 @@ function DecoratedBox:update_render_object(render_object)
     render_object:mark_needs_paint()
 end
 
-return { Decoration = Decoration, DecoratedBox = DecoratedBox }
+---@class elxosc.widget.widgets.decorated_box
+local M = { Decoration = Decoration, DecoratedBox = DecoratedBox }
+
+return M

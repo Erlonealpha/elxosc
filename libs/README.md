@@ -6,10 +6,22 @@ trees from controlled Lua sources. It must not import `mp`.
 ## Public entry points
 
 - `sandbox.lua` — restricted environments and portable chunk loading.
-- `modules.lua` — data modules, scope-aware loaders, and protected names.
+- `modules.lua` — `DefinePackage<T>` descriptors, registration, data modules,
+  scope-aware loaders, and protected names.
+- `exports.lua` — the central collection of standard extension packages.
 - `define.lua` — Define phase machine, scopes, transactional payloads and
-  `import`/`mod`/`bind` builtins.
-- `dsl.lua` — `new_widget`, `new_state`, and builtins assembly helpers.
+  `import`/`import_as`/`mod`/`bind` builtins.
+- `dsl.lua` — `new_widget` and `new_state` class factories.
+
+Packages describe `{ name, exports, loader? }`, with `exports` typed by canonical
+module types or intersections. `host/mpv_define.lua` registers them and explicitly
+selects default builtins. Runtime package names stay short (`widget`, `player`,
+`mp`); module table types use `elxosc.*`.
+
+`import` (and its `require` alias) injects package names into the scope environment.
+`import_as` returns a fresh shallow package table and runs the loader there, without
+environment injection. Both resolve inside the active payload transaction; class,
+nested value, and array member identities are preserved.
 
 Define is the sole extension-content ingress and currently an initialization-time
 construction protocol. Each payload stages its contributions and module publishes;

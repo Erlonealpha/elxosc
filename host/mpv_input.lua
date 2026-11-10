@@ -41,6 +41,7 @@ local function pixel_ceil(value)
     return ceil(value) --[[@as integer]]
 end
 
+---@class elxosc.host.mpv_input
 local M = {}
 
 local INPUT_SECTION = 'elxosc-input'

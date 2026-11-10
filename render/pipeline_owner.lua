@@ -8,7 +8,10 @@ local render_owner = require 'render.render_owner'
 
 local PipelineOwner = render_owner.RenderOwner
 
-return {
+---@class elxosc.render.pipeline_owner
+local M = {
     PipelineOwner = PipelineOwner,
     RenderOwner = PipelineOwner,
 }
+
+return M

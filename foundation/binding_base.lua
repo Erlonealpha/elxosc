@@ -8,6 +8,7 @@
 
 local std = require 'elxlibs.std'
 
+---@class elxosc.foundation.binding_base
 local M = {}
 local raise = std.raise
 ---@type BindingBase?

@@ -33,6 +33,12 @@ libs → widget/bind and host assembly
 通过 `Canvas`、`TextLayout`、`FrameClock` 和输入值对象进入核心。所有模块使用裸
 模块名并避免 require cycle；聚合入口必须返回直接模块导出的同一对象。
 
+生产模块的返回表拥有 `elxosc.<模块路径>` EmmyLua 类型；`init.lua` 采用所属包名。
+前缀只用于类型，不改变 require 路径。扩展导出使用 `DefinePackage<T>` 的
+`{ name, exports, loader? }` 描述，`T` 复用模块类型，合并表可使用 `&`。
+`libs.exports.collect()` 统一收集标准包；host 增加 runtime facade，注册到
+ModuleRegistry，并独立选择默认 builtins。新增包不会自动扩展 scope 的全局名称。
+
 ## Flutter runtime 对齐
 
 运行时采用 Flutter-style concrete Binding singleton 加 owner scope 拓扑：

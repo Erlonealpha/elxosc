@@ -7,6 +7,7 @@ local ParentDataWidget = widget_mod.ParentDataWidget
 local raise = std.raise
 local huge = math.huge
 
+---@class elxosc.widget.widgets.positioned
 local M = {}
 
 ---@class _PositionedOptions

@@ -10,6 +10,7 @@
 
 local std = require 'elxlibs.std'
 
+---@class elxosc.scheduler.ticker
 local M = {}
 
 ---@class Ticker : std.object

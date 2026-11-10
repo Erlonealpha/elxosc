@@ -16,6 +16,7 @@ local Widget = widget_mod.Widget
 local StatelessWidget = widget_mod.StatelessWidget
 local raise = std.raise
 
+---@class elxosc.widget.slot
 local M = {}
 
 ---@alias SlotOperation 'replace'|'set'|'append'

@@ -18,6 +18,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
+---@class elxosc.render.gesture
 local M = {}
 
 ---@class GestureHandlers

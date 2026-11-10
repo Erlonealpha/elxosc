@@ -13,6 +13,7 @@ local text_layout = require 'text.text_layout'
 
 local TextLayout = text_layout.TextLayout
 
+---@class elxosc.backends.ass_text_layout
 local M = {}
 
 ---@param codepoint integer

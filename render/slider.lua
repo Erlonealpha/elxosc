@@ -13,6 +13,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local raise = std.raise
 
+---@class elxosc.render.slider
 local M = {}
 
 local function finite(value, name)

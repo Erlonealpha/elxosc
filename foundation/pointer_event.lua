@@ -13,6 +13,7 @@ local Offset = geometry.Offset
 local floor = math.floor
 local raise = std.raise
 local huge = math.huge
+---@class elxosc.foundation.pointer_event
 local M = {}
 
 ---@alias PointerEventType

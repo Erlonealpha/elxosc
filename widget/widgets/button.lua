@@ -26,4 +26,7 @@ function Button:__init(options)
     })
     ButtonBase.__init(self, config)
 end
-return { Button = Button }
+---@class elxosc.widget.widgets.button
+local M = { Button = Button }
+
+return M

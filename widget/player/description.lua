@@ -35,6 +35,7 @@ local ColorBlack = Color.rgba255(0, 0, 0, 255)
 local text_controls_mod = require 'widget.player.text_controls'
 local PlayerHoverText = text_controls_mod.PlayerHoverText
 
+---@class elxosc.widget.player.description
 local M = {}
 
 ---@class _PlayerDescriptionLayerOptions

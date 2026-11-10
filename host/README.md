@@ -10,7 +10,8 @@ outside the reusable layers.
 - `mpv_primitives.lua` — `MpFrameClock` and `AssPresenter`, the mpv-backed
   framework adapters owned by `App`.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
-- `mpv_define.lua` — script-message Define transport and host module facade.
+- `mpv_define.lua` — script-message Define transport, standard package registration,
+  explicit default builtins, and host module facades.
 - `mpv_player_context.lua` — mpv property observers bridged to `PlayerStore`.
 - `ass_measure.lua` — explicitly invoked general ASS `compute_bounds` utility,
   with fixed instance resolution and a reusable hidden overlay. App does not load it.
@@ -41,8 +42,11 @@ the sole extension-content ingress.
 `App` is the sole lifecycle owner for the clock, scheduler, display observers,
 input, canvas, presenter and shutdown. It accepts an optional `player_store` and wraps its root in `PlayerScope`. The
 `player` Define module exposes `get_snapshot()`/`on_update()` and the explicit
-component list in `widget/player/exports.lua`; `import('player')` copies those names
-into the extension scope. Canonical player controls, themes and context accessors
+component list in `widget/player/components.lua`, wrapped by `exports.lua`.
+`import('player')` copies those names into the extension scope;
+`import_as('player')` returns the package without injecting names. Standard packages
+are collected by `libs/exports.lua`; adding one does not expand default builtins.
+Canonical player controls, themes and context accessors
 are shared with framework consumers. Updates do not re-run Define source.
 Define contributions are assembled once after seal, before the
 WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Property,

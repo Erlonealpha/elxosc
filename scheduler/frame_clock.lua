@@ -12,6 +12,7 @@ local std = require 'elxlibs.std'
 
 local raise = std.raise
 
+---@class elxosc.scheduler.frame_clock
 local M = {}
 
 ---@class FrameClock : std.object

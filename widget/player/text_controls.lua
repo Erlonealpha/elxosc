@@ -14,6 +14,7 @@ local HoverText = require('widget.widgets.hover_text').HoverText
 local data_mod = require 'widget.player.data'
 local format_time = data_mod.format_time
 
+---@class elxosc.widget.player.text_controls
 local M = {}
 
 ---@alias PlayerTimeToggleMode

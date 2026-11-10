@@ -25,6 +25,7 @@ local navigation_mod = require 'widget.navigation'
 local app_mod = require 'widget.app'
 local player_mod = require 'widget.player'
 
+---@class elxosc.widget : elxosc.widget.widget, elxosc.widget.builder, elxosc.widget.element, elxosc.widget.state, elxosc.widget.key, elxosc.widget.build_owner, elxosc.widget.build_scope, elxosc.widget.binding, elxosc.widget.widgets_binding, elxosc.widget.provider, elxosc.widget.player_context, elxosc.widget.ambient, elxosc.widget.actions, elxosc.widget.visibility, elxosc.widget.overlay, elxosc.widget.navigation, elxosc.widget.app, elxosc.widget.player, elxosc.widget.widgets.layout, elxosc.widget.widgets.basic, elxosc.widget.bind
 local M = {}
 
 for _, mod in ipairs({

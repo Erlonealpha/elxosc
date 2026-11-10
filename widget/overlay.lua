@@ -26,6 +26,7 @@ local Offstage = offstage_mod.Offstage
 
 local raise = std.raise
 
+---@class elxosc.widget.overlay
 local M = {}
 
 local function copy_array(values)

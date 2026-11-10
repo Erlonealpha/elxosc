@@ -16,6 +16,7 @@ local RenderObject = render_object.RenderObject
 local raise = std.raise
 local huge = math.huge
 
+---@class elxosc.render.opacity
 local M = {}
 
 ---@param value number

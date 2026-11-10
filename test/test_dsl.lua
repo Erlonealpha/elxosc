@@ -1,4 +1,4 @@
--- The define DSL factories: `new_widget` / `new_state` / `builtins`.
+-- Define class factories and the host's explicit builtins surface.
 ---@namespace test.dsl
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
@@ -9,6 +9,9 @@ local F = require('framework')
 local std = require('elxlibs.std')
 
 local dsl = require('libs.dsl')
+local mp_stub = require 'mp_stub'
+mp_stub.install()
+local host_define = require 'host.mpv_define'
 
 local text_layout = require('text.text_layout')
 local text_style_mod = require 'text.text_style'
@@ -84,10 +87,10 @@ end)
 
 --== builtins ==============================================================
 
-F.section('dsl: builtins')
+F.section('host define: builtins')
 
 F.test('builtins exposes the widget library', function()
-    local b = dsl.builtins()
+    local b = host_define.builtins()
     F.ok(b.Text ~= nil, 'Text')
     F.ok(b.Icon ~= nil, 'Icon')
     F.ok(b.Container ~= nil, 'Container')
@@ -100,7 +103,7 @@ F.test('builtins exposes the widget library', function()
 end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()
-    local b = dsl.builtins()
+    local b = host_define.builtins()
     local slot = require('widget.slot')
     local widget_api = require('widget')
     F.eq(b.SlotSpec, slot.SlotSpec, 'DSL SlotSpec')
@@ -138,7 +141,7 @@ F.test('layout modules and aggregate preserve class identity', function()
 end)
 
 F.test('builtins exposes the value types', function()
-    local b = dsl.builtins()
+    local b = host_define.builtins()
     F.ok(b.EdgeInsets ~= nil, 'EdgeInsets')
     F.ok(b.Color ~= nil, 'Color')
     F.ok(b.TextStyle ~= nil, 'TextStyle')
@@ -152,9 +155,19 @@ F.test('builtins exposes the value types', function()
 end)
 
 F.test('builtins exposes the two factories', function()
-    local b = dsl.builtins()
+    local b = host_define.builtins()
     F.eq(b.new_widget, dsl.new_widget, 'new_widget')
     F.eq(b.new_state, dsl.new_state, 'new_state')
+end)
+
+F.test('builtins exclude registry and runtime assembly helpers', function()
+    local b = host_define.builtins()
+    F.eq(b.BuildOwner, nil, 'build ownership belongs to the runtime')
+    F.eq(b.WidgetTree, nil, 'mounted tree management belongs to the runtime')
+    F.eq(b.PlayerStore, nil, 'store mutation is not a default builtin')
+    F.eq(b.CompositionAssembler, nil, 'host assembles Define contributions')
+    F.eq(b.bind, nil, 'DefineSession owns the scope-aware bind entry')
+    F.eq(b.geometry_for, nil, 'player geometry helper is not a default builtin')
 end)
 
 --== end to end ============================================================

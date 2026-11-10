@@ -143,8 +143,11 @@ function FittedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
-return {
+---@class elxosc.widget.widgets.overflow
+local M = {
     UnconstrainedBox = UnconstrainedBox,
     OverflowBox = OverflowBox,
     FittedBox = FittedBox
 }
+
+return M

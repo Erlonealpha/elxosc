@@ -128,4 +128,11 @@ local function Column(options)
     return Flex('column', options)
 end
 
-return { Flexible = Flexible, Expanded = Expanded, Spacer = Spacer, Flex = Flex, Row = Row, Column = Column }
+---@class elxosc.widget.widgets.flex
+---@field Row fun(options?: _FlexOptions): Flex
+---@field Column fun(options?: _FlexOptions): Flex
+---@field Expanded fun(child: Widget?, options?: _ExpandedOptions): Flexible
+---@field Spacer fun(options?: _ExpandedOptions): Flexible
+local M = { Flexible = Flexible, Expanded = Expanded, Spacer = Spacer, Flex = Flex, Row = Row, Column = Column }
+
+return M

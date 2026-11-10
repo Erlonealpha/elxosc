@@ -8,7 +8,10 @@
 
 local binding = require 'widget.binding'
 
-return {
+---@class elxosc.widget.widgets_binding
+local M = {
     WidgetsBinding = binding.WidgetsBinding,
     WidgetBinding = binding.WidgetBinding,
 }
+
+return M

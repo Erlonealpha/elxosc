@@ -125,4 +125,7 @@ function ButtonStyle:shadow_for(elevation)
     return Color.rgba255(0, 0, 0, math.min(100, 18 + elevation * 8))
 end
 
-return { ButtonStyle = ButtonStyle }
+---@class elxosc.widget.widgets.button_style
+local M = { ButtonStyle = ButtonStyle }
+
+return M

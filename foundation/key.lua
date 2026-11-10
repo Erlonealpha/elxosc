@@ -7,6 +7,7 @@
 
 local std = require 'elxlibs.std'
 
+---@class elxosc.foundation.key
 local M = {}
 local rawequal = rawequal
 local kindof = std.kindof

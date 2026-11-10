@@ -24,10 +24,13 @@ composition. It remains mpv-free; host commands and snapshots enter through
 - `icon_map.lua` — ModernX semantic control names mapped to the bundled
   Material Symbols Rounded glyph names and typed size/variation defaults.
 - `init.lua` — aggregate entry preserving direct-module class identity.
-- `exports.lua` — explicit components for the protected Define `player` module;
+- `components.lua` — explicit components for the protected Define `player` module;
   exports canonical classes, PlayerProvider/PlayerCapability, HostActions and
   `PlayerIcons`, excluding internal State, geometry and assembly helpers.
   `PlayerMain` names the existing `Main` class in this extension API.
+- `exports.lua` — `{ name = 'player', exports = components }`, a typed package
+  descriptor collected centrally and registered by `mpv_define`. The host adds
+  `get_snapshot`/`on_update`; `import_as('player')` returns these names locally.
 - `extension_controls.lua` — `PlayerControlBar` fixed cells and `PlayerControlButton`
   themed icons for appended bottom controls.
 

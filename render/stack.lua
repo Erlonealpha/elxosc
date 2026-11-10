@@ -21,6 +21,7 @@ local max = math.max
 local ipairs = ipairs
 local huge = math.huge
 
+---@class elxosc.render.stack
 local M = {}
 
 ---@class StackOpts
