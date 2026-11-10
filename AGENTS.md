@@ -158,8 +158,9 @@ Widget construction protocol, not a runtime tree manager:
    module README or design direction when a public contract changes.
 3. Add tests for public behavior, invalid boundaries, lifecycle/dirty behavior,
    module loading, and aggregate/direct-module identity as applicable.
-4. Run the complete checks listed below. A focused test is useful during
-   iteration but does not replace the full suite before committing.
+4. For code changes, run the complete Lua suite and EmmyLua checks listed below.
+   Select real-host tests by affected behavior; normally run only the related
+   files or cases rather than the full real-host suite.
 5. Review `git diff --check`, `git diff --stat`, and `git status --short`. Stage
    only the intended files for each commit. Splitting code, design, and guide
    changes into separate commits is encouraged.
@@ -174,11 +175,24 @@ the current machine. The commands below use the default WSL tool names.
 git submodule update --init --recursive
 luajit test/run.lua
 emmylua_check .
-uv run --group test python -m pytest -q test/real_host
 ```
 
 The current local baseline is recorded in `dev/design/TESTING.md`; update the
 current design/testing documents when the intentional test count changes.
+
+Run real-host tests when changes affect behavior they cover, such as script
+loading, presentation, input, Define wiring, or player integration. In most cases,
+run only the affected test files or cases, for example:
+
+```text
+uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
+```
+
+Documentation-only changes and changes without relevant host impact do not need
+real-host tests. Avoid running the full real-host suite by default; use it when
+host impact is broad or cannot reasonably be bounded, or when explicitly requested.
+Report the selected scope and the reason for a full run. Passed checks do not need
+repeating without new changes, failures, or unresolved concerns.
 
 The real-host fixture uses an isolated config and ownership-bounded cleanup.
 Never replace it with a command that kills mpv by image name. Real-host tests

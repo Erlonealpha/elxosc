@@ -2,6 +2,21 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
+## 测试范围选择
+
+代码改动仍运行完整 Lua suite 和 EmmyLua；real-host 按受影响的行为选择，大部分
+时候只运行相关测试文件或用例。脚本加载、presentation、输入、Define 接线、播放器
+集成等改动涉及真实宿主验证时才运行对应 real-host 测试；纯文档或没有相关宿主影响
+的改动无需运行。
+
+尽量不运行全量 real-host。仅在宿主影响广泛、无法合理限定范围或用户明确要求时
+运行全量，并说明原因。已通过的检查没有新改动、失败或未解决问题时无需重复。
+下文完整运行结果是历史验证记录，不表示每次提交都要求全量 real-host。
+
+```text
+uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
+```
+
 ## 当前检查：库目录与多级模块（2026-11-10）
 
 框架实现迁至 `lib/src/`，每层 `lib/*.lua` 收集普通导出表与源码 namespace，
@@ -607,6 +622,8 @@ OSD resize 后的 mouse area 坐标仍主要由 Lua host stub 覆盖；Linux 本
 
 ## 改动后的检查顺序
 
-先运行受影响的 focused suite，再运行完整 Lua suite、EmmyLua 和 real-host suite。
+代码改动先运行受影响的 focused suite，再运行完整 Lua suite 和 EmmyLua。
+涉及真实宿主行为时，大部分情况下仅运行相关 real-host 文件或用例；全量运行条件见
+上文“测试范围选择”。纯文档改动检查文档差异即可。
 提交前检查 `git diff --check`、`git diff --stat`、`git status --short`，并在提交
 说明中只写实际执行过的命令。

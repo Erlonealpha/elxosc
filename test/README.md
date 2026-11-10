@@ -92,12 +92,20 @@ POSIX process group) as a bounded fallback. It never searches for or kills
 processes by image name. Existing Lua host tests above still use an `mp` stub;
 these Python tests do not.
 
-From this repository root:
+Run real-host tests when changes affect behavior they cover, such as script loading,
+presentation, input, Define wiring, or player integration. In most cases, select
+only the affected files or cases. Documentation-only changes and changes without
+relevant host impact do not need real-host tests. Avoid full real-host runs by
+default; use the full suite when host impact is broad or cannot reasonably be
+bounded, or when explicitly requested, and report why. Passed checks need not be
+repeated without new changes, failures, or unresolved concerns.
+
+From this repository root, for an extension-button change:
 
 ```sh
-uv run --group test python -m pytest -q test/real_host
+uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 # or, if pytest is already installed in your Python:
-python -m pytest -q test/real_host
+python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
 `uv` resolves the declared pytest test dependency into the ignored local
