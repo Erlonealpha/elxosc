@@ -8,8 +8,13 @@ local text = require 'text.exports'
 local widgets = require 'widget.exports'
 local player = require 'widget.player.exports'
 
----@alias ExtensionPackage elxosc.foundation.exports | elxosc.painting.exports | elxosc.text.exports | elxosc.widget.exports | elxosc.widget.player.exports
----@alias ExtensionPackages ExtensionPackage[]
+---@alias ExtensionPackages {
+---     [1]: elxosc.foundation.exports,
+---     [2]: elxosc.painting.exports,
+---     [3]: elxosc.text.exports,
+---     [4]: elxosc.widget.exports,
+---     [5]: elxosc.widget.player.exports,
+--- }
 
 ---@class elxosc.libs.exports
 local M = {}

@@ -153,7 +153,6 @@ end
 local WidgetsBinding = std.class.new('WidgetsBinding', BindingBase)
 
 function WidgetsBinding:__init()
-    ---@diagnostic disable-next-line: param-type-mismatch, generic-constraint-mismatch
     std.super(WidgetsBinding, self, BindingBase).__init(self)
     self:claim_instance()
     self._trees = {}

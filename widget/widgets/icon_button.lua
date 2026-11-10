@@ -32,6 +32,8 @@ function IconButton:__init(options)
 end
 
 ---@class elxosc.widget.widgets.icon_button
-local M = { IconButton = IconButton }
+local M = {
+    IconButton = IconButton
+}
 
 return M

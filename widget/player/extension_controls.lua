@@ -6,6 +6,7 @@ local basic_mod = require 'widget.widgets.basic'
 local geometry = require 'foundation.geometry'
 local theme_mod = require 'widget.player.theme'
 local visuals_mod = require 'widget.player.visuals'
+
 local StatelessWidget = widget_mod.StatelessWidget
 local Widget = widget_mod.Widget
 local Row = layout_mod.Row
@@ -89,6 +90,9 @@ function PlayerControlButton:build(context)
 end
 
 ---@class elxosc.widget.player.extension_controls
-local M = { PlayerControlBar = PlayerControlBar, PlayerControlButton = PlayerControlButton }
+local M = {
+    PlayerControlBar = PlayerControlBar,
+    PlayerControlButton = PlayerControlButton
+}
 
 return M

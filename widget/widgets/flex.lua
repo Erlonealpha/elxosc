@@ -133,6 +133,13 @@ end
 ---@field Column fun(options?: _FlexOptions): Flex
 ---@field Expanded fun(child: Widget?, options?: _ExpandedOptions): Flexible
 ---@field Spacer fun(options?: _ExpandedOptions): Flexible
-local M = { Flexible = Flexible, Expanded = Expanded, Spacer = Spacer, Flex = Flex, Row = Row, Column = Column }
+local M = {
+    Flexible = Flexible,
+    Expanded = Expanded,
+    Spacer = Spacer,
+    Flex = Flex,
+    Row = Row,
+    Column = Column
+}
 
 return M
