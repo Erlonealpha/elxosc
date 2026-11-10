@@ -40,8 +40,11 @@ the sole extension-content ingress.
 
 `App` is the sole lifecycle owner for the clock, scheduler, display observers,
 input, canvas, presenter and shutdown. It accepts an optional `player_store` and wraps its root in `PlayerScope`. The
-`player` Define module exposes only `get_snapshot()` and `on_update()`; updates do not
-re-run Define source. Define contributions are assembled once after seal, before the
+`player` Define module exposes `get_snapshot()`/`on_update()` and the explicit
+component list in `widget/player/exports.lua`; `import('player')` copies those names
+into the extension scope. Canonical player controls, themes and context accessors
+are shared with framework consumers. Updates do not re-run Define source.
+Define contributions are assembled once after seal, before the
 WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Property,
 event and scope-message subscriptions return idempotent disposable handles and
 `MpDefine:shutdown()` releases the host-owned handles.

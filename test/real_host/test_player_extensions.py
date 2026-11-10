@@ -18,6 +18,7 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
         "local mp = require 'mp'\n"
         "local code = [[\n"
         "import('mp')\n"
+        "import('player')\n"
         "bind('player.controls.left', PlayerControlButton({ icon = 'toggle_off', "
         "on_click = function() set_prop('user-data/extensions-left', 'first') end }))\n"
         "bind('player.controls.left', PlayerControlButton({ icon = 'toggle_on', "

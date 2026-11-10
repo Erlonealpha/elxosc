@@ -98,11 +98,42 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
   ConstrainedBox、LimitedBox、OverflowBox、UnconstrainedBox、FittedBox、
   OffsetBox、TransformBox、LayoutScaleBox；
 - 内容：Text、Icon、CustomPaint；
-- 输入：GestureDetector、Button 及其样式/变体、IconButton。
+- 输入：GestureDetector、Button 及其样式/变体、IconButton、HoverText、Tooltip 和 Slider；
+- 进度显示：LinearProgressIndicator。
 
 兼容聚合入口 `widget.widgets.basic` 和 `widget.widgets.layout` 只重导出独立模块
 的同一对象。新增控件应优先创建独立模块，再补聚合入口、模块 README 和加载/行为
 测试。
+
+`Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds
+使用同一逻辑坐标空间。标签测量只在文本/样式改变时进行，pointer 移动只标记 paint，
+保留输入 snapshot 和 child click/capture。AutoHide 隐藏和 State.dispose 调用 hover
+清理 hook；外部预览由调用方通过 hook 接入，标准组件不读取宿主 capability。
+`PlayerTooltip` 只提供播放器默认样式。
+
+`Slider` 独立负责有限 `min <= max` 区间内的受控数值选择、可选 `divisions` 和
+`secondary_track_value`。`on_changed(value)`、`on_change_start(previous_value)` 和
+`on_change_end(final_value)` 分离；取消也通过 end 完成交互。缺少 changed 回调或
+空区间禁用输入。Widget 发布新 value 才改变显示值，RenderSlider 始终复用，值更新
+只标记 paint。默认水平轨道有留白、thumb/overlay 和明确 disabled 样式；无界布局使用
+144 逻辑像素轨道加留白。当前支持 tap-and-slide；wheel 由外层 GestureDetector 决定。
+
+`LinearProgressIndicator` 只读显示 0..1 进度，finite value 在边界 clamp；nil 表示
+不确定进度，通过 State-owned ticker 在 Scheduler/frame clock 上更新 paint。确定进度
+和 dispose 停止 ticker，不确定模式要求 Scheduler。它没有 thumb、seek 或 pointer API。
+播放器 `Timeline`/`RenderTimeline` 在 Slider 基础上扩展章节/cache/range 绘制与媒体
+seek phases，核心拖动/capture 复用 RenderSlider。原混合 ProgressBar/SeekBar 入口移除。
+volume 的对数映射与 timeline seek 仍属于播放器业务层。
+`HoverText` 复用 ButtonBase 的 foreground/glow paint-only 更新，播放器时间格式
+切换保留在 `PlayerTimeDisplay` State。
+
+参考本机 Flutter `9b575904345`：
+[`slider.dart`](https://github.com/flutter/flutter/blob/9b575904345/packages/flutter/lib/src/material/slider.dart)
+的受控数值、独立回调、空区间禁用和 track/thumb；
+[`progress_indicator.dart`](https://github.com/flutter/flutter/blob/9b575904345/packages/flutter/lib/src/material/progress_indicator.dart)
+的 determinate/indeterminate 划分和 ticker 生命周期。
+这里实现该行为分离与当前框架绘制/输入契约，不宣称完整 Material、focus、semantics、
+RangeSlider 或 SliderTheme shape API；ASS 动画仍为每帧静态输出。
 
 ## 绑定和插槽
 

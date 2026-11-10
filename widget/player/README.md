@@ -13,15 +13,21 @@ composition. It remains mpv-free; host commands and snapshots enter through
   compatibility export returns the same function.
 - `description.lua` — description preview, panel and keyboard lifecycle; its class
   remains available through the player aggregate and `layout.lua`.
-- `progress_bar.lua` — `ProgressBar`/`SeekBar`, the Widget front end for the
-  fixed-layout player progress RenderObject.
-- `tooltip.lua` — `PlayerTooltip`, an in-tree hover tooltip that preserves the
-  wrapped control's pointer routing and disabled-state feedback.
+- `timeline.lua` — `Timeline`, a media Slider specialization with chapter markers,
+  cache ranges and seek phases; the mixed ProgressBar/SeekBar entry is removed.
+- `tooltip.lua` — `PlayerTooltip`, standard Tooltip with player visual defaults;
+  hover, fit, paragraph reuse and resource cleanup live in the standard component.
+- `text_controls.lua` — `PlayerTimeDisplay` owns time-format toggles;
+  `PlayerHoverText` aliases standard HoverText. Volume uses standard Slider.
 - `metadata.lua` — host-independent title, URL/live, description, date and file-size
   normalization used by the player shell.
 - `icon_map.lua` — ModernX semantic control names mapped to the bundled
   Material Symbols Rounded glyph names and typed size/variation defaults.
 - `init.lua` — aggregate entry preserving direct-module class identity.
+- `exports.lua` — explicit components for the protected Define `player` module;
+  exports canonical classes, PlayerProvider/PlayerCapability, HostActions and
+  `PlayerIcons`, excluding internal State, geometry and assembly helpers.
+  `PlayerMain` names the existing `Main` class in this extension API.
 - `extension_controls.lua` — `PlayerControlBar` fixed cells and `PlayerControlButton`
   themed icons for appended bottom controls.
 
@@ -36,7 +42,8 @@ fields, so the same policy controls both the visible top bar and the top wake zo
 The application converts top/bottom wake-zone heights using Main's effective scale;
 scale changes replace the zone policy through the normal rebuild pipeline.
 
-`ProgressBar` keeps a stable input RenderObject for hover, wheel, drag capture, exact/keyframe
+`Timeline` keeps a stable RenderTimeline over RenderSlider's drag/capture lifecycle for hover,
+wheel, exact/keyframe
 seek, chapter context-seek, cache/SponsorBlock ranges and markers. Normal and persistent cache
 ranges use mpv's `seekable-ranges` data; the continuous demuxer cache duration is not painted as a
 ModernX seekbar fill. Playback controls use `HostActions` for playlist,
@@ -45,6 +52,9 @@ Soft-repeat is frame-clock driven, while selector actions and track-list feedbac
 host actions/messages. Seekbar hover uses an in-tree time/chapter tooltip and switches to the
 optional thumbfast capability when the host reports it; unavailable capabilities retain a clear
 disabled/loading/error tooltip path.
+Standard Slider owns numeric selection; volume's linear/logarithmic conversion and
+outer GestureDetector wheel steps remain in `controls.lua`. `progress_bar_height`
+is retained as the existing PlayerThemeData configuration field.
 Metadata fallback, idle state, and the description preview/panel also remain inside
 the same tree; idle mode does not retain player pointer regions.
 The description panel supports link selection/open through `HostActions`, while

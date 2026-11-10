@@ -4,7 +4,7 @@ local geometry = require 'foundation.geometry'
 local text_style_mod = require 'text.text_style'
 local basic_widgets = require 'widget.widgets.basic'
 local layout_widgets = require 'widget.widgets.layout'
-local progress_mod = require 'widget.player.progress_bar'
+local timeline_mod = require 'widget.player.timeline'
 local tooltip_mod = require 'widget.player.tooltip'
 local metadata_mod = require 'widget.player.metadata'
 local paint_mod = require 'painting.paint'
@@ -16,7 +16,9 @@ local TextStyle = text_style_mod.TextStyle
 local Container = layout_widgets.Container
 local SizedBox = layout_widgets.SizedBox
 local Text = basic_widgets.Text
-local ProgressBar = progress_mod.ProgressBar
+local Timeline = timeline_mod.Timeline
+local Slider = basic_widgets.Slider
+local GestureDetector = basic_widgets.GestureDetector
 local PlayerTooltip = tooltip_mod.PlayerTooltip
 local player_metadata = metadata_mod
 
@@ -158,7 +160,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         panel(theme, theme.controller_color, theme.controller_border_color,
             theme.controller_blur_radius, false))
     if layout_geometry.visibility.persistent_progress then
-        children[#children + 1] = positioned(layout_geometry.persistent_progress, ProgressBar({
+        children[#children + 1] = positioned(layout_geometry.persistent_progress, Timeline({
             progress = progress,
             buffered = 0,
             height = theme.persistent_progress_height,
@@ -216,7 +218,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
         end
     end
-    local seekbar = ProgressBar({
+    local seekbar = Timeline({
         progress = progress,
         buffered = 0,
         height = theme.progress_bar_height,
@@ -441,30 +443,27 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
             return clamp_fraction(fraction) * volume_max
         end
-        children[#children + 1] = positioned(layout_geometry.volume, ProgressBar({
-            progress = volume_to_fraction(volume),
-            buffered = 0,
+        children[#children + 1] = positioned(layout_geometry.volume, GestureDetector(Slider({
+            value = volume_to_fraction(volume),
             height = 8,
-            handle_size = 0.8,
-            hover_handle_size = 0.8,
-            hover_expand = theme.volume_hit_expand,
-            track_color = ColorTransparent,
-            progress_color = theme.volume_progress_color,
-            buffered_color = ColorTransparent,
-            handle_color = theme.volume_progress_color,
-            hover_track_color = nil,
-            hover_progress_color = nil,
-            hover_handle_color = nil,
-            on_seek = function(fraction, phase)
-                if phase == 'start' or phase == 'update' or phase == 'end' then
-                    actions:set_volume(fraction_to_volume(fraction))
-                end
+            track_height = 2,
+            track_inset = 0,
+            thumb_radius = 8 * 0.45 * 0.8,
+            overlay_radius = 0,
+            hit_expand = theme.volume_hit_expand,
+            inactive_color = ColorTransparent,
+            active_color = theme.volume_progress_color,
+            thumb_color = theme.volume_progress_color,
+            on_changed = function(fraction)
+                actions:set_volume(fraction_to_volume(fraction))
             end,
-            on_wheel = function(delta)
+        }), {
+            expand = theme.volume_hit_expand,
+            on_wheel = function(_, delta)
+                delta = type(delta) == 'table' and delta.y or delta
                 local next_volume = max(0, min(volume_max, volume + (delta > 0 and 5 or -5)))
                 actions:set_volume(next_volume)
             end,
-            enabled = true,
         }))
         children[#children + 1] = positioned(layout_geometry.volume, PlayerTooltip({
             child = SizedBox({

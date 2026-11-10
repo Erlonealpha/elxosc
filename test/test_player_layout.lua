@@ -16,7 +16,7 @@ local actions_mod = require('widget.actions')
 local player_context = require('widget.player_context')
 local player_layout_mod = require('widget.player.layout')
 local player_theme_mod = require('widget.player.theme')
-local progress_mod = require('widget.player.progress_bar')
+local progress_mod = require('widget.player.timeline')
 local tooltip_mod = require('widget.player.tooltip')
 local record_mod = require('backends.record')
 local ass_mod = require('backends.ass_canvas')
@@ -34,7 +34,7 @@ local PlayerStore = player_context.PlayerStore
 local PlayerScope = player_context.PlayerScope
 local PlayerLayout = player_layout_mod.PlayerLayout
 local PlayerThemeData = player_theme_mod.PlayerThemeData
-local ProgressBar = progress_mod.ProgressBar
+local Timeline = progress_mod.Timeline
 local PlayerTooltip = tooltip_mod.PlayerTooltip
 local PlayerDescriptionLayer = player_layout_mod.PlayerDescriptionLayer
 local RecordCanvas = record_mod.RecordCanvas
@@ -188,7 +188,7 @@ F.test('tooltip moves paint directly with stable layout, input and child identit
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     local identity = progress.render_object
     local snapshot = owner:region_snapshot()
     owner:paint(AssCanvas())
@@ -369,7 +369,7 @@ F.test('PlayerLayout mounts Positioned geometry and records layer order', functi
         actions = HostActions({ seek_to = function() end }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     F.ok(progress ~= nil, 'the root-relative seekbar mounts')
     if progress == nil then
         return
@@ -466,7 +466,7 @@ F.test('idle player state removes controls and presents the empty state', functi
     local canvas = AssCanvas()
     owner:paint(canvas)
     F.contains(canvas:text(), 'No media loaded', 'idle state presents an empty message')
-    F.ok(find_widget_element(binding.root_element, ProgressBar) == nil,
+    F.ok(find_widget_element(binding.root_element, Timeline) == nil,
         'idle state does not mount the seekbar')
     local has_down = false
     for _, region in ipairs(owner:pointer_regions()) do
@@ -568,7 +568,7 @@ F.test('seekbar hover shows a formatted time and chapter fallback tooltip', func
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     F.ok(progress ~= nil, 'seekbar mounts for tooltip test')
     if progress == nil then
         return
@@ -641,8 +641,8 @@ F.test('volume hover shows the current value with a fixed round handle', functio
     local canvas = AssCanvas()
     owner:paint(canvas)
     F.contains(canvas:text(), '50%', 'volume tooltip reports the hovered value')
-    local render_progress_class = require('render.progress_bar').RenderProgressBar
-    ---@type RenderProgressBar?
+    local render_progress_class = require('render.slider').RenderSlider
+    ---@type RenderSlider?
     local fixed_handle
     for _, progress in ipairs(owner:pointer_regions()) do
         if std.isinstance(progress.node, render_progress_class)
@@ -651,8 +651,8 @@ F.test('volume hover shows the current value with a fixed round handle', functio
         end
     end
     F.ok(fixed_handle ~= nil, 'volume slider has an interactive render node')
-    F.eq(fixed_handle.handle_size, 0.8, 'normal volume handle is visible')
-    F.eq(fixed_handle.hover_handle_size, fixed_handle.handle_size, 'hover keeps the same handle size')
+    F.close(fixed_handle.thumb_radius, 2.88, 'normal volume handle is visible')
+    F.eq(fixed_handle.overlay_radius, 0, 'hover keeps the same handle size')
     local record = RecordCanvas()
     fixed_handle:mark_needs_paint()
     owner:paint(record)
@@ -800,7 +800,7 @@ F.test('persistent progress uses seekable cache ranges instead of a continuous b
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local bars = find_widget_elements(binding.root_element, ProgressBar)
+    local bars = find_widget_elements(binding.root_element, Timeline)
     local persistent
     for _, element in ipairs(bars) do
         if element.widget.height == 17 then
@@ -844,7 +844,7 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     F.ok(progress ~= nil, 'seekbar mounts for thumbfast')
     if progress == nil then
         return
@@ -940,7 +940,7 @@ F.test('WidgetsApp PlayerTheme selects the reduced layout without changing its c
         actions = HostActions({ seek_to = function() end }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     F.ok(progress ~= nil, 'reduced layout mounts the seekbar')
     if progress == nil then
         return

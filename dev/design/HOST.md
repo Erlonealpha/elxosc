@@ -139,10 +139,20 @@ mp option/property or public API event
 当前 6.3 实现提供 host-independent `PlayerStore`、`PlayerSnapshot`/capability values 和 host-side
 `MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，支持 coalesced
 batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unobserve_property` 和
-释放 adapter/timer handles。Define 的 `player` 模块只提供：
+释放 adapter/timer handles。Define 的受保护 `player` 模块提供：
 
 - `get_snapshot()`：读取当前只读快照；
 - `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
+
+`import('player')` 还向 scope 注入 `widget/player/exports.lua` 显式列出的同一类对象：
+`PlayerMain`（`Main` 的同类别名）、`WindowLayer`、`DefaultApp`、`PlayerLayout`、`PlayerDescriptionLayer`、
+`PlayerTheme`/`PlayerThemeData`、`PlayerControlBar`/`PlayerControlButton`、
+`PlayerTimeDisplay`/`PlayerHoverText`、`PlayerTooltip`、`Timeline`、
+`PlayerProvider`、`PlayerCapability` 和 `HostActions`。`PlayerIcons` 提供
+`spec`/`glyph_name`/`icon` 语义图标入口，不扁平注入短名称。
+内部 State、geometry 和 controller assembly helper 不属于此导出清单。
+标准 `Tooltip`、`Slider`、`LinearProgressIndicator`、`HoverText` 通过现有 Widget DSL builtins
+可用；播放器适配复用标准实现。该模块仍无内容热注入或 mounted tree 管理能力。
 
 框架内消费者可以使用 `PlayerStore:subscribe_selector(selector, callback)` 只监听相关
 字段；列表/窗口/metadata 更新不必让所有 selector consumer 重建。缺失 capability 始终以

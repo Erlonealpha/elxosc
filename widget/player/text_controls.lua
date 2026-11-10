@@ -2,55 +2,26 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'foundation.geometry'
-local basic_widgets = require 'widget.widgets.basic'
-local layout_widgets = require 'widget.widgets.layout'
 local widget_mod = require 'widget.widget'
 
 local Offset = geometry.Offset
-local EdgeInsets = geometry.EdgeInsets
-local Container = layout_widgets.Container
-local Text = basic_widgets.Text
-local ButtonBase = basic_widgets.ButtonBase
-local ButtonStyle = basic_widgets.ButtonStyle
-local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local widget_state_mod = require 'widget.state'
 local State = widget_state_mod.State
 
 local raise = std.raise
-local color_mod = require 'foundation.color'
-local Color = color_mod.Color
-local ColorTransparent = Color.rgba255(0, 0, 0, 0)
+local HoverText = require('widget.widgets.hover_text').HoverText
 local data_mod = require 'widget.player.data'
 local format_time = data_mod.format_time
 
 local M = {}
 
-local function hover_text_button(child, foreground_color, hover_color, pressed_color,
-    glow_color, glow_radius, callback)
-    if callback == nil then
-        return child
-    end
-    return ButtonBase({
-        child = child,
-        on_click = callback,
-        style = ButtonStyle({
-            background_color = ColorTransparent,
-            hover_color = ColorTransparent,
-            pressed_color = ColorTransparent,
-            foreground_color = foreground_color,
-            hover_foreground_color = hover_color,
-            pressed_foreground_color = pressed_color,
-            padding = EdgeInsets.zero(),
-            radius = 0,
-            hover_scale = 1,
-            hover_shadow_color = glow_color,
-            hover_shadow_radius = glow_radius,
-        }),
-    })
-end
+---@alias PlayerTimeToggleMode
+--- | 'milliseconds'
+--- | 'remaining'
 
----@alias PlayerTimeToggleMode 'milliseconds'|'remaining'
+---@alias PlayerHoverText HoverText
+---@alias _PlayerHoverTextOptions _HoverTextOptions
 
 ---@class _PlayerTimeDisplayOptions
 ---@field value number?
@@ -156,12 +127,14 @@ function PlayerTimeDisplayState:build()
         label = prefix .. format_time(value, self.show_milliseconds, widget.fixed)
     end
     label = label .. widget.suffix
-    local child = Container({
+    return HoverText({
+        text = label,
+        style = widget.style,
         alignment = widget.alignment,
-        child = Text(label, { style = widget.style }),
-    })
-    return hover_text_button(child, widget.style.color, widget.hover_color,
-        widget.hover_color, widget.hover_shadow_color, widget.hover_shadow_radius, function()
+        hover_color = widget.hover_color,
+        hover_shadow_color = widget.hover_shadow_color,
+        hover_shadow_radius = widget.hover_shadow_radius,
+        on_tap = function()
             self:set_state(function()
                 if widget.toggle_mode == 'remaining' then
                     self.show_remaining = not self.show_remaining
@@ -169,56 +142,15 @@ function PlayerTimeDisplayState:build()
                     self.show_milliseconds = not self.show_milliseconds
                 end
             end)
-        end)
+        end,
+    })
 end
 
 function PlayerTimeDisplay:create_state()
     return PlayerTimeDisplayState()
 end
 
----@class _PlayerHoverTextOptions
----@field text string
----@field style TextStyle
----@field alignment Offset?
----@field hover_color Color?
----@field hover_shadow_color Color?
----@field hover_shadow_radius number?
----@field on_tap fun()?
----@field key any?
-
----@class PlayerHoverText : StatelessWidget
----@field text string
----@field style TextStyle
----@field alignment Offset
----@field hover_color Color
----@field hover_shadow_color Color?
----@field hover_shadow_radius number
----@field on_tap fun()?
----@overload fun(options: _PlayerHoverTextOptions): self
-local PlayerHoverText = std.class.new('PlayerHoverText', StatelessWidget)
-
-function PlayerHoverText:__init(options)
-    options = options or {}
-    self.key = options.key
-    self.text = options.text or ''
-    self.style = options.style
-    self.alignment = options.alignment or Offset(0.5, 0.5)
-    self.hover_color = options.hover_color or self.style.color
-    self.hover_shadow_color = options.hover_shadow_color
-    self.hover_shadow_radius = options.hover_shadow_radius or 0
-    self.on_tap = options.on_tap
-end
-
-function PlayerHoverText:build()
-    return hover_text_button(Container({
-        alignment = self.alignment,
-        child = Text(self.text, { style = self.style }),
-    }), self.style.color, self.hover_color, self.hover_color,
-    self.hover_shadow_color, self.hover_shadow_radius, self.on_tap)
-end
-
 M.PlayerTimeDisplay = PlayerTimeDisplay
-M.PlayerHoverText = PlayerHoverText
-M.hover_text_button = hover_text_button
+M.PlayerHoverText = HoverText
 
 return M

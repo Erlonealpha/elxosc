@@ -51,7 +51,7 @@ local AutoHide = visibility_mod.AutoHide
 local AutoHideController = visibility_mod.AutoHideController
 local PlayerStore = player_context.PlayerStore
 local PlayerScope = player_context.PlayerScope
-local ProgressBar = player_widgets.ProgressBar
+local Timeline = player_widgets.Timeline
 local FrameClock = frame_clock_mod.FrameClock
 local Scheduler = scheduler_mod.Scheduler
 
@@ -315,8 +315,8 @@ F.test('Main maps PlayerSnapshot time values into an interactive seek bar', func
         actions = actions,
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
-    F.ok(progress ~= nil, 'Main mounts the ProgressBar')
+    local progress = find_widget_element(binding.root_element, Timeline)
+    F.ok(progress ~= nil, 'Main mounts the Timeline')
     if progress == nil then
         return
     end
@@ -347,7 +347,7 @@ F.test('seek dragging pauses once, deduplicates motion and restores playback', f
         actions = actions,
         child = PlayerScope({ store = store, child = Main() }),
     }))
-    local progress = find_widget_element(binding.root_element, ProgressBar)
+    local progress = find_widget_element(binding.root_element, Timeline)
     F.ok(progress ~= nil, 'seek bar is mounted for the state machine')
     if progress == nil then
         return

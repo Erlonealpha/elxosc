@@ -2,7 +2,29 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前检查：底部扩展按钮（2026-11-09）
+## 当前检查：标准控件与 player 导出（2026-11-10）
+
+`Tooltip`、`LinearProgressIndicator`、`Slider`、`HoverText` 标准组件覆盖独立使用、聚合/直接模块
+身份、caller options 保持、标签居中与边界裁切、hover paragraph/input snapshot
+复用、点击透传、dispose 清理、数值区间与等分步数、独立 start/change/end 回调、
+受控值去重、空区间禁用、轨道留白/secondary track/disabled 样式、
+indeterminate ticker 启停和 paint-only 更新。`Timeline`/`RenderTimeline` 继承 Slider 并
+复用拖动 capture，播放器专有 chapter/cache/seek modes 留在 Timeline；旧 ProgressBar/
+SeekBar 删除。原播放器回归继续覆盖 AutoHide/thumbfast 清理、缩放、时间线、音量
+和文字 hover，volume wheel 通过播放器外层 GestureDetector 处理。
+Define 回归验证显式 player 导出、受保护模块、导入后构造并挂载组件；真实两侧
+扩展按钮测试显式执行 `import('player')`。
+
+本地父仓库基于 `dd7da33` 工作区，用户已有修改保留。已初始化子模块使用用户
+检出的 `307bcc3`，未执行会重置工作区的 submodule update，未修改依赖源码。
+最终 `luajit test/run.lua` 为 **2482 checks passed**；
+`emmylua_check . --warnings-as-errors` 为 **No issues found**。
+完整串行 Python 回归 **47 passed in 37.66s**、无 skips：real-host **17**、
+runner **16**、测量 CLI **11**、benchmark CLI **3**。
+此前完整和单项 Demo 点击因 Windows 通知遮挡失败，用户确认手测正常；
+移除遮挡后重新运行完整回归通过，未据此修改生产输入逻辑。
+
+## 历史检查：底部扩展按钮（2026-11-09）
 
 底部左右 Slot 均只允许 append，旧单按钮 Slot 移除。新增离线回归覆盖跨 scope 顺序、
 拒绝 replace、空组、有限整数边界、original/reduced 几何、1.5 倍输入和禁用按钮。

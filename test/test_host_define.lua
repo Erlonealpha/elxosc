@@ -166,6 +166,38 @@ end)
 
 --== the window ============================================================
 
+F.test('player import exposes explicit component identities and constructs Define content', function()
+    reset_fake()
+    local define = MpDefine({ builtins = {} })
+    local exports = require 'widget.player.exports'
+    local env = {}
+    define.session.modules:import_into('player', env, 'extension')
+    for name, value in pairs(exports) do
+        F.eq(env[name], value, 'player export identity: ' .. name)
+    end
+    F.eq(env.geometry_for, nil, 'internal geometry is excluded')
+    F.eq(env.default_controller, nil, 'internal assembly helper is excluded')
+    F.eq(env.PlayerStore, nil, 'host store mutation is not exported')
+    F.raises(function()
+        define.session.modules:publish('player', {})
+    end, 'protected', 'player module remains protected')
+    define:listen()
+    local log = dispatcher()
+    log.define_start()
+    log.define('extension', [[
+        import('player')
+        button = PlayerControlButton({ icon = 'toggle_on' })
+        bind('slot', PlayerTooltip({ text = 'extension', child = button }))
+    ]])
+    log.define_end()
+    local owner, tree = mount(define:assemble(scaffold(Text('root'))))
+    F.ok(owner.root ~= nil, 'imported controls mount through Define')
+    F.eq(define.session:env_for('extension').button.__class, exports.PlayerControlButton,
+        'Define uses the canonical class')
+    tree:dispose()
+    define:shutdown()
+end)
+
 F.section('host define: the window')
 
 F.test('define_start / define / define_end seal through the messages', function()

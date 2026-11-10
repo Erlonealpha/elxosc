@@ -33,10 +33,11 @@ binding, and the public widget library. It must remain independent of mpv.
   the host-independent `ModalBarrier`.
 - `app.lua` — generic `WidgetsApp` ambient wrapper and compatibility aggregate for player classes.
 - `player/` — default player shell components (`Main`, `WindowLayer`, `DefaultApp` and
-  `ProgressBar`); `widget/app.lua` retains the `WidgetsApp` ambient wrapper and compatibility
+  `Timeline`); `widget/app.lua` retains the `WidgetsApp` ambient wrapper and compatibility
   exports for the player classes.
 - `key.lua` — `ObjectKey` and `GlobalKey` extensions over the foundation key hierarchy.
-- `widgets/` — independent layout, content, input, button and progress-bar widgets, including
+- `widgets/` — independent layout, content, input, button, Tooltip, Slider, HoverText
+  and progress-bar widgets, including
   `Stack`/`Positioned` root-relative placement;
   `basic.lua` and `layout.lua` are compatibility aggregates.
 
@@ -122,7 +123,7 @@ simplicity; callers must treat it as a read-only context handle.
 
 `WidgetsApp` supplies the application ambients without requiring `mp`. `DefaultApp` owns one
 logical `Theatre` with stable Main, Extension and WindowLayer entries. `Main` uses a configurable
-uniform layout scale, a flow-based player shell, fixed-layout `ProgressBar` and explicitly
+uniform layout scale, a flow-based player shell, fixed-layout `Timeline` and explicitly
 injected `HostActions`. Progress/buffer/handle updates use paint-only RenderObject setters;
 bar height and layout scale remain layout-affecting. `AutoHide` only changes the Main entry;
 the Extension entry remains mounted and keeps its State when Main is hidden.

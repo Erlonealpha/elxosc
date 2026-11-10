@@ -50,7 +50,7 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默�
 
 - 顶部媒体标题、窗口最小化/全屏/关闭按钮；
 - 底部媒体 metadata、播放/暂停、相对 `seek(-/+10)`；
-- 固定布局 `ProgressBar`：当前进度、buffer range、handle、时间显示和拖拽；
+- 固定布局 `Timeline`：媒体 Slider，包含当前进度、buffer range、handle、时间显示和拖拽；
 - 拖拽结束通过 `HostActions:seek_to(seconds)` 发送绝对 seek，输入 capture 在移出控件后
   仍归原目标；
 - `PlayerSnapshot` 的播放/EOF、缓存、playlist/chapter/track、metadata、window 和 audio

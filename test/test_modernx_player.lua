@@ -13,7 +13,7 @@ local color_mod = require 'foundation.color'
 local pointer_event = require 'foundation.pointer_event'
 local constraints_mod = require 'layout.constraints'
 local render_owner_mod = require 'render.render_owner'
-local progress_mod = require 'render.progress_bar'
+local progress_mod = require 'render.timeline'
 local record_mod = require 'backends.record'
 local actions_mod = require 'widget.actions'
 local player_context = require 'widget.player_context'
@@ -21,14 +21,14 @@ local mpv_player_context = require 'host.mpv_player_context'
 local mpv_actions = require 'host.mpv_actions'
 local widget_api = require 'widget'
 local player_api = require 'widget.player'
-local progress_widget = require 'widget.player.progress_bar'
+local progress_widget = require 'widget.player.timeline'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Color = color_mod.Color
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner_mod.RenderOwner
-local RenderProgressBar = progress_mod.RenderProgressBar
+local RenderTimeline = progress_mod.RenderTimeline
 local RecordCanvas = record_mod.RecordCanvas
 local HostActions = actions_mod.HostActions
 local PlayerStore = player_context.PlayerStore
@@ -45,15 +45,15 @@ end
 
 F.section('modernx player: progress and input')
 
-F.test('player aggregate preserves direct ProgressBar identity', function()
-    F.eq(player_api.ProgressBar, progress_widget.ProgressBar,
-        'player aggregate/direct ProgressBar identity')
-    F.eq(widget_api.ProgressBar, progress_widget.ProgressBar,
-        'widget aggregate/player ProgressBar identity')
+F.test('player aggregate preserves direct Timeline identity', function()
+    F.eq(player_api.Timeline, progress_widget.Timeline,
+        'player aggregate/direct Timeline identity')
+    F.eq(widget_api.Timeline, progress_widget.Timeline,
+        'widget aggregate/player Timeline identity')
 end)
 
 F.test('progress bar paints track, buffer, progress and handle', function()
-    local bar = RenderProgressBar({ progress = 0.25, buffered = 0.6 })
+    local bar = RenderTimeline({ progress = 0.25, buffered = 0.6 })
     local owner = layout_bar(bar)
     local canvas = RecordCanvas()
     owner:paint(canvas)
@@ -64,7 +64,7 @@ end)
 F.test('progress updates are paint-only and seek capture keeps the last fraction', function()
     local phases = {}
     local fractions = {}
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         progress = 0.1,
         on_seek = function(fraction, phase)
             phases[#phases + 1] = phase
@@ -95,9 +95,9 @@ end)
 
 F.test('progress bar rejects invalid fractions at the render boundary', function()
     F.raises(function()
-        RenderProgressBar({ progress = 1.1 })
+        RenderTimeline({ progress = 1.1 })
     end, 'between 0 and 1', 'invalid initial progress')
-    local bar = RenderProgressBar()
+    local bar = RenderTimeline()
     F.raises(function()
         bar:set_buffered(-0.1)
     end, 'between 0 and 1', 'invalid buffered update')
@@ -108,7 +108,7 @@ F.test('progress hover, wheel, right-click and shift seek stay on one input regi
     local modes = {}
     local chapter_fraction
     local wheel_delta
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         progress = 0.25,
         hover_expand = 6,
         hover_handle_size = 1,
@@ -155,7 +155,7 @@ F.test('progress hover, wheel, right-click and shift seek stay on one input regi
 end)
 
 F.test('gap chapter markers cut the track instead of adding marker shapes', function()
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         progress = 0.75,
         buffered = 0.9,
         marker_style = 'gap',
@@ -174,7 +174,7 @@ end)
 
 F.test('progress ranges preserve optional SponsorBlock colors', function()
     local range_color = Color.hex('#6BCB77')
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         ranges = { { start = 0.1, ['end'] = 0.2, color = range_color } },
     })
     local owner = layout_bar(bar)
@@ -190,7 +190,7 @@ F.test('progress ranges preserve optional SponsorBlock colors', function()
 end)
 
 F.test('progress range expansion matches the ModernX cache gap', function()
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         range_expand = 7,
         ranges = { { start = 0.5, ['end'] = 0.5 } },
     })
@@ -210,7 +210,7 @@ end)
 
 F.test('seekbar configuration selects the default keyframe or exact mode', function()
     local mode
-    local bar = RenderProgressBar({
+    local bar = RenderTimeline({
         seek_mode = 'exact',
         on_seek = function(_, phase, selected_mode)
             if phase == 'start' then
@@ -222,6 +222,18 @@ F.test('seekbar configuration selects the default keyframe or exact mode', funct
     owner:dispatch_pointer('down', Offset(20, 10), 'left')
     F.eq(mode, 'exact', 'configured exact mode is used without shift')
     owner:dispatch_pointer('cancel')
+end)
+
+F.test('timeline uses slider capture and releases seek lifecycle when callback is removed', function()
+    local phases = {}
+    local bar = RenderTimeline({ on_seek = function(_, phase) phases[#phases + 1] = phase end })
+    F.ok(std.isinstance(bar, require('render.slider').RenderSlider), 'timeline specializes slider render')
+    local owner = layout_bar(bar)
+    owner:dispatch_pointer('down', Offset(40, 10), 'left')
+    bar:set_on_seek(nil)
+    F.eq(phases[#phases], 'cancel', 'seek callback loss cancels previous drag')
+    owner:dispatch_pointer('cancel')
+    F.eq(#phases, 2, 'capture cancellation does not duplicate cleanup')
 end)
 
 F.section('modernx player: snapshot and actions')

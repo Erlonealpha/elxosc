@@ -18,6 +18,7 @@ local define_mod = require 'libs.define'
 local modules_mod = require 'libs.modules'
 local slot_mod = require 'widget.slot'
 local player_context = require 'widget.player_context'
+local player_exports = require 'widget.player.exports'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
@@ -164,18 +165,21 @@ end
 ---@param store PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 function M.install_player_module(modules, store, register_disposer)
-    modules:add('player', {
-        get_snapshot = function()
-            return store:get()
-        end,
-        on_update = function(callback)
-            local subscription = store:subscribe(callback)
-            if register_disposer then
-                register_disposer(subscription.dispose)
-            end
-            return subscription
-        end,
-    })
+    local exports = {}
+    for name, value in pairs(player_exports) do
+        exports[name] = value
+    end
+    exports.get_snapshot = function()
+        return store:get()
+    end
+    exports.on_update = function(callback)
+        local subscription = store:subscribe(callback)
+        if register_disposer then
+            register_disposer(subscription.dispose)
+        end
+        return subscription
+    end
+    modules:add('player', exports)
     modules:protect('player')
 end
 
@@ -221,9 +225,7 @@ function MpDefine:__init(options)
     for name, value in pairs(options.builtins or dsl.builtins()) do
         builtins[name] = value
     end
-    builtins['print'] = function(...)
-        mp.msg.info(...)
-    end
+    builtins['print'] = mp.msg.info
 
     local modules = options.modules or ModuleRegistry()
     M.install_mp_module(modules, nil, register_disposer)
