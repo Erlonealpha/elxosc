@@ -2,7 +2,24 @@
 
 本文是测试入口和回归范围的当前说明。所有命令从仓库根目录执行。
 
-## 当前检查：模块类型与扩展包标准化（2026-11-10）
+## 当前检查：库目录与多级模块（2026-11-10）
+
+框架实现迁至 `lib/src/`，每层 `lib/*.lua` 收集普通导出表与源码 namespace，
+独立于 Define。`lib/material.lua` 接替默认 builtins 清单；原 `libs/` 迁为
+`extension/`，`mpv_define` 保留用户的 commandv/logger、observer 和 protected 字段修改。
+生产入口和离线消费者共享 `lib/module_loader.lua`；回归验证点路径、斜线加 `.lua`、
+显式 init 的同一模块与类 identity，所有库 collector、多级 import、未知子包拒绝、
+父包保护和扁平导入保留 Define 函数。真实扩展同时验证 `render.stack` 和
+`widget.widgets.slider`，原生点击两侧按钮。
+字体及 glyph metadata 归入 `lib/fonts/`，测量工具和宿主 fixture 使用该资源路径。
+
+项目入口和直接依赖 CLI 均为 **2820 checks passed**，EmmyLua **No issues found**。
+完整串行 Python **47 passed in 41.69s**、无 skips：real-host **17**、runner **16**、
+测量 CLI **11**、benchmark CLI **3**。目录迁移初次暴露 runner fixture 缺少加载器，
+已复制新 loader；新增宿主探针误用 sandbox 未提供的 tostring 已改正。
+已初始化子模块保持原有 `307bcc3`，未执行 submodule update 或修改依赖源码。
+
+## 历史检查：模块类型与扩展包标准化（2026-11-10）
 
 136 个生产模块的返回表声明 `elxosc.<模块路径>` 类型，运行时 require 和 import
 包名保持不变。标准包使用 `{ name, exports, loader? }`，导出表复用模块类型，
@@ -510,12 +527,12 @@ runtime identity、生命周期和 frame 顺序由离线/host stub 测试验收�
 视觉和交互手感。测试运行器 CLI 本身由 `test/test_runner.py` 的独立子进程测试覆盖。
 测试按层覆盖：
 
-- foundation/painting/text：值语义、边界校验、Canvas/TextLayout 契约；
-- layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；
-- animation/scheduler：假时钟、重复/反向、监听替换和 State 资源生命周期；
+- lib/src/foundation/painting/text：值语义、边界校验、Canvas/TextLayout 契约；
+- lib/src/layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；
+- lib/src/animation/scheduler：假时钟、重复/反向、监听替换和 State 资源生命周期；
 - widget：Widget/Element 复用、State rebuild、Builder contract/失败清理、ModernX Main/
   ProgressBar/AutoHide、聚合 identity、控件行为；
-- libs/Define：沙箱、模块、scope 首次 payload、transaction 失败隔离、module 延迟发布、
+- extension/Define：沙箱、模块、scope 首次 payload、transaction 失败隔离、module 延迟发布、
   bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；
 - Flutter runtime：BuildScope/inactive/finalize、PipelineOwner/RenderOwner identity、

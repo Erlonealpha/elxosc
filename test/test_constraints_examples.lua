@@ -19,13 +19,13 @@
 
 local F = require('framework')
 
-local geometry = require 'foundation.geometry'
-local constraints_mod = require 'layout.constraints'
-local render_owner = require 'render.render_owner'
-local binding_mod = require 'widget.binding'
-local ass_canvas = require 'backends.ass_canvas'
-local ass_text = require 'backends.ass_text_layout'
-local text_layout = require 'text.text_layout'
+local geometry = require 'src.foundation.geometry'
+local constraints_mod = require 'src.layout.constraints'
+local render_owner = require 'src.render.render_owner'
+local binding_mod = require 'src.widget.binding'
+local ass_canvas = require 'src.backends.ass_canvas'
+local ass_text = require 'src.backends.ass_text_layout'
+local text_layout = require 'src.text.text_layout'
 local fixtures = require 'constraints_examples'
 
 local Size = geometry.Size

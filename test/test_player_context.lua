@@ -5,20 +5,20 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local text_layout = require('text.text_layout')
-local widget_mod = require('widget.widget')
-local binding_mod = require('widget.binding')
-local provider_mod = require('widget.provider')
-local player_context = require('widget.player_context')
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local text_layout = require('src.text.text_layout')
+local widget_mod = require('src.widget.widget')
+local binding_mod = require('src.widget.binding')
+local provider_mod = require('src.widget.provider')
+local player_context = require('src.widget.player_context')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local StatelessWidget = widget_mod.StatelessWidget
-local state_mod = require('widget.state')
-local Text = require('widget.widgets.basic').Text
+local state_mod = require('src.widget.state')
+local Text = require('src.widget.widgets.basic').Text
 local Provider = provider_mod.Provider
 local PlayerSnapshot = player_context.PlayerSnapshot
 local PlayerStore = player_context.PlayerStore
@@ -61,7 +61,7 @@ end
 F.section('player context: provider lookup')
 
 F.test('the widget aggregate preserves context class identity', function()
-    local api = require('widget')
+    local api = require('src.widget')
     F.ok(api.Provider == Provider, 'Provider identity')
     F.ok(api.PlayerSnapshot == PlayerSnapshot, 'PlayerSnapshot identity')
     F.ok(api.PlayerStore == PlayerStore, 'PlayerStore identity')

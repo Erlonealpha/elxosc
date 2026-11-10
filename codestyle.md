@@ -4,14 +4,17 @@
 ## 本次更新后的约定
 
 - 每个生产模块返回的表声明独立的 `---@class elxosc.<模块路径>`，路径以 `.`
-  连接，`init.lua` 使用所属包名。例如 `widget/widgets/slider.lua` 声明
-  `elxosc.widget.widgets.slider`，`widget/init.lua` 声明 `elxosc.widget`。
+  连接，`init.lua` 使用所属包名。例如 `lib/src/widget/widgets/slider.lua` 声明
+  `elxosc.src.widget.widgets.slider`，`lib/src/widget/init.lua` 声明 `elxosc.src.widget`。
+  `lib/widget.lua` collector 声明 `elxosc.widget`，`extension/modules.lua` 声明
+  `elxosc.extension.modules`。类型路径相对于库根，不含物理 `lib/` 前缀。
   模块表与 Widget 等实例类型分别命名；显式导出字段保留构造器和函数签名。
 - 聚合表只重导出同一对象。完整重导出可继承来源模块类型；选取部分字段时只声明
   实际字段，不能通过继承虚报未导出的 API。扩展包使用 `DefinePackage<T>` 描述
   `{ name, exports, loader? }`，合并导出可用 `&` 连接模块类型（也可与数组合并）。
   `elxosc.` 是类型名前缀；运行时 `require`、`import`、`import_as` 仍使用裸模块名
-  和短包名，如 `widget.widgets.slider`、`widget`、`player`、`mp`。
+  和短包名。源码 require 使用 `src.widget.widgets.slider`，扩展 import 使用
+  `widget.widgets.slider`、`widget`、`player`、`mp`。
 - 重复使用的字符串联合提取为语义化的命名 alias，并逐行列出候选值。例如
   `MainAlignment`、`CrossAlignment`、`FlexDirection`、`PaintStyle`、`BindTarget`。
   声明、字段、参数及返回类型应复用同一 alias，而不是重复一长串字面量。

@@ -1,19 +1,19 @@
 -- Typed extension consumers exercise module tables without flattening imports.
 local F = require 'framework'
-local modules_mod = require 'libs.modules'
-local foundation_package = require 'foundation.exports'
-local painting_package = require 'painting.exports'
-local text_package = require 'text.exports'
-local widget_package = require 'widget.exports'
-local player_package = require 'widget.player.exports'
+local modules_mod = require 'extension.modules'
+local foundation_package = require 'foundation'
+local painting_package = require 'painting'
+local text_package = require 'text'
+local widget_package = require 'widget'
+local player_package = require 'player'
 
 F.section('exports: typed module consumers')
 
----@param values elxosc.foundation.exports.data
----@param painting elxosc.painting.exports.data
----@param text elxosc.text.exports.data
----@param widgets elxosc.widget.exports.data
----@param player elxosc.widget.player.components
+---@param values elxosc.foundation
+---@param painting elxosc.painting
+---@param text elxosc.text
+---@param widgets elxosc.widget
+---@param player elxosc.src.widget.player.components
 ---@return Slider, PlayerControlButton, TextStyle, Paint
 local function make_controls(values, painting, text, widgets, player)
     local size = values.Size(120, 24)
@@ -24,17 +24,17 @@ local function make_controls(values, painting, text, widgets, player)
 end
 
 F.test('typed descriptors retain canonical constructors and module intersections', function()
-    local slider, button, style, brush = make_controls(foundation_package.exports,
-        painting_package.exports, text_package.exports, widget_package.exports,
-        player_package.exports)
-    F.eq(slider.__class, require('widget.widgets.slider').Slider, 'Slider class identity')
-    F.eq(button.__class, require('widget.player.extension_controls').PlayerControlButton,
+    local slider, button, style, brush = make_controls(foundation_package,
+        painting_package, text_package, widget_package,
+        player_package)
+    F.eq(slider.__class, require('src.widget.widgets.slider').Slider, 'Slider class identity')
+    F.eq(button.__class, require('src.widget.player.extension_controls').PlayerControlButton,
         'player control identity')
     F.eq(style.font_size, 12, 'text module constructor')
     F.eq(brush.color.r, 255, 'foundation and painting module constructors')
 end)
 
----@alias TestArrayExports elxosc.widget.widgets.slider & {n: number} & string[]
+---@alias TestArrayExports elxosc.src.widget.widgets.slider & {n: number} & string[]
 
 ---@param exports TestArrayExports
 ---@return Slider, string?
@@ -44,7 +44,7 @@ end
 
 F.test('typed package intersections preserve named and array members', function()
     ---@type TestArrayExports
-    local exports = { Slider = require('widget.widgets.slider').Slider, n = 0.25, 'item' }
+    local exports = { Slider = require('src.widget.widgets.slider').Slider, n = 0.25, 'item' }
     ---@type DefinePackage<TestArrayExports>
     local package = { name = 'array-controls', exports = exports }
     local registry = modules_mod.ModuleRegistry()

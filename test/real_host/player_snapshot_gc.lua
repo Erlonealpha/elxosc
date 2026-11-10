@@ -3,8 +3,9 @@ local mp = require 'mp'
 local scripts = mp.command_native({ 'expand-path', '~~/scripts' })
 package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/init.lua'
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
+assert(loadfile(scripts .. '/elxosc/lib/module_loader.lua'))().install(scripts .. '/elxosc')
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
-local player_mod = require 'widget.player_context'
+local player_mod = require 'src.widget.player_context'
 local refs = setmetatable({}, { __mode = 'v' })
 local store = player_mod.PlayerStore({ time_pos = 0 })
 

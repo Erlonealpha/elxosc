@@ -28,7 +28,7 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 | --- | --- |
 | 平移、视觉偏移、颜色、纯绘制 scale、clip、subtree opacity | paint |
 | 宽高、padding、约束、字号、行距、布局 scale | layout + paint |
-| Widget 子树结构 | build，再按结果 layout/paint |
+| Widget 子树结构 | build，再按结果 lib/src/layout/paint |
 
 动画控制器不决定 dirty 类别；目标 RenderObject 的 setter 决定。动画监听在节点
 脱离 owner 时必须解除，替换 controller/tween 时必须移除旧监听。
@@ -36,8 +36,8 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 ## PipelineOwner 和 PaintingContext
 
 `PipelineOwner` 是 RenderObject pipeline 的规范名称；当前单根实现由
-`render/pipeline_owner.lua` 重导出既有 `RenderOwner` class，两个入口保持相同 identity。
-它负责 viewport、layout/paint dirty、`flush_layout()`、`flush_paint()` 和 visual update
+`lib/src/render/pipeline_owner.lua` 重导出既有 `RenderOwner` class，两个入口保持相同 identity。
+它负责 viewport、lib/src/layout/paint dirty、`flush_layout()`、`flush_paint()` 和 visual update
 通知；每个 attached WidgetTree 拥有自己的 PipelineOwner。通用命中路径、hover/capture
 仍归此 owner，mpv input section 和失焦/隐藏/resize 等取消策略及 presenter 归 host。
 
@@ -92,7 +92,7 @@ Entry list 或再挂载内容。每个 dirty frame 只 reset/paint/submit 一次
 暴露给 Widget。重叠颜色的真实宿主像素验证负责证明后写覆盖先写。
 
 AssPresenter 缓存已成功提交的数据与分辨率；失败提交可以重试。隐藏/清空输出提交空 ASS，
-保留同一 presenter；shutdown 幂等移除它，之后不可重新提交。空根完成 layout/paint 后也
+保留同一 presenter；shutdown 幂等移除它，之后不可重新提交。空根完成 lib/src/layout/paint 后也
 清除 dirty 状态，不能变成持续刷新的空帧。
 
 ## 输入和绘制的变换
@@ -148,7 +148,7 @@ RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸�
 2026-10-28 的 P0.5 评估进一步确认：当前单 Canvas/静态 ASS presenter 没有可公开承诺
 的 Flutter 同义 `RepaintBoundary` 或 `RelayoutBoundary`。paint isolation 和 relayout
 pruning 必须先经过同环境 benchmark、逐事件输出等价和输入/布局回归，再进入独立的
-render/backend 优化切片。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
+lib/src/render/backend 优化切片。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
 paint-only 或 layout + paint；`RenderLayoutScaleBox` 的 alignment 若改变 pointer mapping
 必须同步 invalidates input snapshot。ModernX fade 使用 `RenderOpacity.hidden`：fade-out 完成
 前保持 paint/input，完成时才移除 pointer regions；fade-in 先恢复 hidden=false，再由

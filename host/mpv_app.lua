@@ -17,20 +17,20 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local constraints_mod = require 'layout.constraints'
-local geometry = require 'foundation.geometry'
-local scheduler_mod = require 'scheduler.scheduler'
-local pipeline_owner = require 'render.pipeline_owner'
-local ass_canvas = require 'backends.ass_canvas'
-local ass_text_layout = require 'backends.ass_text_layout'
-local text_layout = require 'text.text_layout'
-local binding_mod = require 'widget.widgets_binding'
-local app_widgets = require 'widget.app'
-local ambient_mod = require 'widget.ambient'
+local constraints_mod = require 'src.layout.constraints'
+local geometry = require 'src.foundation.geometry'
+local scheduler_mod = require 'src.scheduler.scheduler'
+local pipeline_owner = require 'src.render.pipeline_owner'
+local ass_canvas = require 'src.backends.ass_canvas'
+local ass_text_layout = require 'src.backends.ass_text_layout'
+local text_layout = require 'src.text.text_layout'
+local binding_mod = require 'src.widget.widgets_binding'
+local app_widgets = require 'src.widget.app'
+local ambient_mod = require 'src.widget.ambient'
 local mpv_actions = require 'host.mpv_actions'
 local mpv_input = require 'host.mpv_input'
 local mpv_primitives = require 'host.mpv_primitives'
-local player_context = require 'widget.player_context'
+local player_context = require 'src.widget.player_context'
 
 local Constraints = constraints_mod.Constraints
 local Rect = geometry.Rect
@@ -43,12 +43,12 @@ local WidgetsBinding = binding_mod.WidgetsBinding
 local WidgetsApp = app_widgets.WidgetsApp
 local ThemeData = ambient_mod.ThemeData
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
-local PlayerThemeData = require('widget.player.theme').PlayerThemeData
+local PlayerThemeData = require('src.widget.player.theme').PlayerThemeData
 local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
 local PlayerScope = player_context.PlayerScope
-local Navigator = require('widget.navigation').Navigator
+local Navigator = require('src.widget.navigation').Navigator
 
 ---@class elxosc.host.mpv_app
 local M = {}

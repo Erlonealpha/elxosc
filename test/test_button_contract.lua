@@ -1,17 +1,17 @@
 -- Button construction preserves the caller's configuration and public behavior.
 
 local F = require 'framework'
-local geometry = require 'foundation.geometry'
-local color_mod = require 'foundation.color'
-local pointer_mod = require 'foundation.pointer_event'
-local key_event_mod = require 'foundation.key_event'
-local base_mod = require 'widget.widgets.button_base'
-local style_mod = require 'widget.widgets.button_style'
-local button_mod = require 'widget.widgets.button'
-local elevated_mod = require 'widget.widgets.elevated_button'
-local outlined_mod = require 'widget.widgets.outlined_button'
-local text_mod = require 'widget.widgets.text_button'
-local icon_mod = require 'widget.widgets.icon_button'
+local geometry = require 'src.foundation.geometry'
+local color_mod = require 'src.foundation.color'
+local pointer_mod = require 'src.foundation.pointer_event'
+local key_event_mod = require 'src.foundation.key_event'
+local base_mod = require 'src.widget.widgets.button_base'
+local style_mod = require 'src.widget.widgets.button_style'
+local button_mod = require 'src.widget.widgets.button'
+local elevated_mod = require 'src.widget.widgets.elevated_button'
+local outlined_mod = require 'src.widget.widgets.outlined_button'
+local text_mod = require 'src.widget.widgets.text_button'
+local icon_mod = require 'src.widget.widgets.icon_button'
 
 local Offset = geometry.Offset
 local EdgeInsets = geometry.EdgeInsets

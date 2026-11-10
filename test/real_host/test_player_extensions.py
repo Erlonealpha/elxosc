@@ -19,6 +19,11 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
         "local code = [[\n"
         "local host = import_as('mp')\n"
         "local player = import_as('player')\n"
+        "local stack = import_as('render.stack')\n"
+        "local widgets = import_as('widget.widgets.slider')\n"
+        "import('render.stack')\n"
+        "host.set_prop('user-data/extensions-modules', "
+        "(stack.RenderStack == RenderStack and widgets.Slider ~= nil) and 'true' or 'false')\n"
         "bind('player.controls.left', player.PlayerControlButton({ icon = 'toggle_off', "
         "on_click = function() host.set_prop('user-data/extensions-left', 'first') end }))\n"
         "bind('player.controls.left', player.PlayerControlButton({ icon = 'toggle_on', "
@@ -40,6 +45,7 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
     with real_host_factory(f'--script={script}', f'--scripts-append={peer}', '--force-window=yes',
                            '--geometry=1920x1080') as (client, _, process, log):
         wait_for_property(client, process, log, 'user-data/elxosc-demo-open', 'false')
+        wait_for_property(client, process, log, 'user-data/extensions-modules', 'true')
         client.command('set_property', 'pause', True)
         client.command('loadfile', str(media))
         wait_for_property(client, process, log, 'idle-active', False)

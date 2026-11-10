@@ -10,7 +10,7 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local frame_clock = require 'scheduler.frame_clock'
+local frame_clock = require 'src.scheduler.frame_clock'
 
 local FrameClock = frame_clock.FrameClock
 local math = math

@@ -25,16 +25,17 @@ document disagree, use the current code and current design documents.
 
 | Directory | Responsibility | Host dependency |
 | --- | --- | --- |
-| `foundation/` | Geometry, color, anchors, pointer values, matrices | None |
-| `painting/` | Canvas/Paint/Path/TextPaint contracts | None |
-| `text/` | Text styles, paragraphs, layout contract | None |
-| `layout/` | Box constraints and layout algebra | None |
-| `render/` | Mutable render tree, layout, paint, hit testing, dirty state | None |
-| `animation/` | Curves, tweens, frame-clock controllers | None |
-| `scheduler/` | Frame clock, scheduler phases, tickers | None |
-| `widget/` | Immutable widgets, elements, state, bindings, controls | None |
-| `backends/` | ASS and recording implementations of framework contracts | None |
-| `libs/` | Sandbox, module registry, Define/DSL support | None |
+| `lib/*.lua` | Layer collectors, namespaces, material construction surface | None |
+| `lib/src/foundation/` | Geometry, color, anchors, pointer values, matrices | None |
+| `lib/src/painting/` | Canvas/Paint/Path/TextPaint contracts | None |
+| `lib/src/text/` | Text styles, paragraphs, layout contract | None |
+| `lib/src/layout/` | Box constraints and layout algebra | None |
+| `lib/src/render/` | Mutable render tree, layout, paint, hit testing, dirty state | None |
+| `lib/src/animation/` | Curves, tweens, frame-clock controllers | None |
+| `lib/src/scheduler/` | Frame clock, scheduler phases, tickers | None |
+| `lib/src/widget/` | Immutable widgets, elements, state, bindings, controls | None |
+| `lib/src/backends/` | ASS and recording implementations of framework contracts | None |
+| `extension/` | Sandbox, module registry, Define/DSL support | None |
 
 ### Host, entry points, and support
 
@@ -48,7 +49,7 @@ document disagree, use the current code and current design documents.
 | `test/real_host/` | isolated mpv/mpv.net integration tests |
 | `mpv-luatest/` | Pinned Git submodule for offline tests; development only |
 | `dev/` | design documents and non-production sketches |
-| `fonts/` | bundled font metadata and generated glyph names |
+| `lib/fonts/` | bundled font metadata and generated glyph names |
 | `tools/` | offline generation utilities |
 
 Every major framework directory has a local `README.md`. Keep that README
@@ -63,17 +64,22 @@ The intended dependency direction is:
 foundation → painting/text → layout → render → widget → host → main
                          scheduler ────────────────┘
 backends implement painting/text contracts and are consumed by host
-libs provide sandbox/Define services and are consumed by host/entry assembly
+extension provides sandbox/Define services and is consumed by host/entry assembly
 ```
 
 The framework must remain usable without mpv. Only `host/`, `main.lua`, and
 `elxlib_load.lua` may require `mp`. In particular, do not add `mp` imports to
-`foundation/`, `painting/`, `text/`, `layout/`, `render/`, `animation/`,
-`scheduler/`, `widget/`, `backends/`, or `libs/`.
+`lib/src/foundation/`, `lib/src/painting/`, `lib/src/text/`, `lib/src/layout/`, `lib/src/render/`, `lib/src/animation/`,
+`lib/src/scheduler/`, `lib/src/widget/`, `lib/src/backends/`, or `extension/`.
 
-Use bare module names such as `require 'widget.widget'`; do not add an
+Use bare module names such as `require 'src.widget.widget'`; do not add an
 `elxosc.` prefix and do not introduce require cycles. Aggregate modules must
 return the same class objects as their direct modules.
+`lib/module_loader.lua` configures both public collectors (`require 'foundation'`)
+and canonical source modules (`require 'src.foundation.geometry'`). Slash paths with
+`.lua` and explicit `init` are runtime aliases; prefer dot paths in project code.
+Layer collectors are framework APIs independent of Define. `lib/material.lua` owns
+the default construction surface; `extension/exports.lua` owns import descriptors.
 
 ## 4. Non-negotiable framework contracts
 
@@ -129,7 +135,7 @@ Widget construction protocol, not a runtime tree manager:
 ## 5. Coding style and type contracts
 
 - Use four spaces, single-quoted project strings, expanded function bodies, and
-  readable module aliases (`local widget_mod = require 'widget.widget'`).
+  readable module aliases (`local widget_mod = require 'src.widget.widget'`).
 - Every `std.class.new` has explicit inheritance, instance fields, an Options
   type when it accepts options, and a constructor `---@overload` returning
   `self`.

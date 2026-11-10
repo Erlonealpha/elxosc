@@ -44,13 +44,16 @@ foundation ──┬──> painting ──┬──> render ──> widget ─�
 layout ───────────────────────────────┘          │
 animation ──> scheduler ─────────────────────────┘
 backends implements painting/text and is consumed by host
-libs provides sandbox/Define services and is consumed by host/entry assembly
+extension provides sandbox/Define services and is consumed by host/entry assembly
 ```
 
-框架核心按 `foundation/`、`painting/`、`text/`、`layout/`、`render/`、
-`animation/`、`scheduler/`、`widget/`、`backends/`、`libs/` 分区；`host/`、
+框架核心按 `lib/src/foundation/`、`lib/src/painting/`、`lib/src/text/`、`lib/src/layout/`、`lib/src/render/`、
+`lib/src/animation/`、`lib/src/scheduler/`、`lib/src/widget/`、`lib/src/backends/`、`extension/` 分区；`host/`、
 `main.lua` 和 `elxlib_load.lua` 是唯一的 mpv 边界。聚合模块必须转出独立模块的
 同一个类对象，不能重新定义兼容副本。
+`lib/*.lua` 为每个框架层统一收集导出，不依赖扩展系统；`lib/material.lua` 提供默认
+构造 surface。原 `libs/` 迁为 `extension/`。加载路径和多级 import 见
+[ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
 ## 三棵运行时树
 
@@ -69,7 +72,7 @@ setter 选择 `paint` 或 `layout + paint` 失效类型。
 ### 模块边界
 
 除 `host/`、`main.lua`、`elxlib_load.lua` 外不得加载 `mp`。模块使用裸 require
-名称，例如 `require 'render.text'`，不得引入 `elxosc.` 前缀或循环依赖。
+名称，例如 `require 'src.render.text'`，不得引入 `elxosc.` 前缀或循环依赖。
 模块返回表的 EmmyLua 类型使用 `elxosc.<模块路径>`；该前缀不属于运行时路径。
 扩展包描述、统一收集、host builtins 选择和 `import_as` 合同见 [HOST.md](HOST.md)。
 
@@ -114,6 +117,11 @@ Define/Slot 提供内容。Theatre 的 entry paint/input eligibility 与 host-le
 reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
+
+2026-11-10 框架库目录迁移与多级模块后 **2820 Lua checks**、EmmyLua
+**No issues found**、完整 Python **47 passed**，无 skip。`lib/src/` 提供实现，
+`lib/*.lua` 统一收集导出，`material` 接替 builtins；`extension/` 负责 Define，
+支持明确登记的多级 import。验证详情见 [TESTING.md](TESTING.md)。
 
 2026-11-10 标准控件拆分和扩展包标准化后完整 **2540 Lua checks**、EmmyLua
 **No issues found**、完整 Python **47 passed**，无 skip。模块返回表使用 `elxosc.*`

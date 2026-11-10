@@ -9,11 +9,11 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local geometry = require('foundation.geometry')
-local color = require('foundation.color')
-local paint = require('painting.paint')
-local path = require('painting.path')
-local canvas = require('painting.canvas')
+local geometry = require('src.foundation.geometry')
+local color = require('src.foundation.color')
+local paint = require('src.painting.paint')
+local path = require('src.painting.path')
+local canvas = require('src.painting.canvas')
 
 local Offset, Size, Rect, EdgeInsets =
     geometry.Offset, geometry.Size, geometry.Rect, geometry.EdgeInsets

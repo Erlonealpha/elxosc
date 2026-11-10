@@ -149,7 +149,7 @@ capture 是当前 MpInput 的产品策略；resize、Popup 出现和 Main 隐藏
 ### N5 RegionSnapshot 与 section cache
 
 单 RenderOwner 按 input generation 缓存 `RegionSnapshot`，快照复制 root-space rect、
-目标和事件资格。layout/tree/visibility 变化使快照失效；paint-only transform 与输入能力
+目标和事件资格。lib/src/layout/tree/visibility 变化使快照失效；paint-only transform 与输入能力
 setter 显式调用 `mark_needs_input()`，普通颜色变化和无状态改变的 mouse move 复用快照。
 `pointer_regions()` 返回快照的副本，host 不修改 owner 的缓存。
 

@@ -188,7 +188,7 @@ mpv property / host API event
     → PlayerProvider dependents rebuild
 ```
 
-核心入口位于 `widget/player_context.lua`，不依赖 mpv；宿主桥位于
+核心入口位于 `lib/src/widget/player_context.lua`，不依赖 mpv；宿主桥位于
 `host/mpv_player_context.lua`。`App` 接受可选 `player_store` 并把 root 放入
 `PlayerScope`。`MpDefine` 可以把同一个 Store 暴露为受控的 `player` module。
 

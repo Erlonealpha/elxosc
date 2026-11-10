@@ -5,9 +5,9 @@ local support = require 'runtime_support'
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 local app_mod = require 'host.mpv_app'
-local key_mod = require 'widget.key'
-local basic_mod = require 'widget.widgets.basic'
-local binding_mod = require 'widget.widgets_binding'
+local key_mod = require 'src.widget.key'
+local basic_mod = require 'src.widget.widgets.basic'
+local binding_mod = require 'src.widget.widgets_binding'
 
 F.section('runtime: host frame order and App ownership')
 

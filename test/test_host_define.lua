@@ -10,14 +10,14 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local text_layout = require('text.text_layout')
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local binding_mod = require('widget.binding')
-local slot_mod = require('widget.slot')
-local player_context = require('widget.player_context')
-local layout_widgets = require('widget.widgets.layout')
-local basic_widgets = require('widget.widgets.basic')
+local text_layout = require('src.text.text_layout')
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local binding_mod = require('src.widget.binding')
+local slot_mod = require('src.widget.slot')
+local player_context = require('src.widget.player_context')
+local layout_widgets = require('src.widget.widgets.layout')
+local basic_widgets = require('src.widget.widgets.basic')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -169,7 +169,7 @@ end)
 F.test('player import exposes explicit component identities and constructs Define content', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })
-    local exports = require('widget.player.exports').exports
+    local exports = require('player')
     local env = {}
     define.session.modules:import_into('player', env, 'extension')
     for name, value in pairs(exports) do
@@ -201,7 +201,7 @@ end)
 F.test('host collects standard packages and keeps builtins independent of registry additions', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })
-    for _, package in ipairs(require('libs.exports').collect()) do
+    for _, package in ipairs(require('extension.exports').collect()) do
         F.ok(define.session.modules:is_protected(package.name), 'protected package: ' .. package.name)
         if package.name ~= 'player' then
             F.eq(define.session.modules:get(package.name), package.exports,

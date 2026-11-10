@@ -9,16 +9,17 @@ mp.set_property('user-data/elxosc-anchor-loaded', 'yes')
 local scripts = mp.command_native({ 'expand-path', '~~/scripts' })
 package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/init.lua'
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
+assert(loadfile(scripts .. '/elxosc/lib/module_loader.lua'))().install(scripts .. '/elxosc')
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
 
-local geometry = require 'foundation.geometry'
-local anchor_mod = require 'foundation.anchor'
-local text_paint_mod = require 'painting.text_paint'
-local text_style = require 'text.text_style'
+local geometry = require 'src.foundation.geometry'
+local anchor_mod = require 'src.foundation.anchor'
+local text_paint_mod = require 'src.painting.text_paint'
+local text_style = require 'src.text.text_style'
 local app_mod = require 'host.mpv_app'
-local constraints_mod = require 'layout.constraints'
-local layout = require 'widget.widgets.layout'
-local basic = require 'widget.widgets.basic'
+local constraints_mod = require 'src.layout.constraints'
+local layout = require 'src.widget.widgets.layout'
+local basic = require 'src.widget.widgets.basic'
 
 local Offset = geometry.Offset
 local Anchor = anchor_mod.Anchor

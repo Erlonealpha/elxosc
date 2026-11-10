@@ -8,12 +8,12 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local color = require('foundation.color')
-local geometry = require('foundation.geometry')
-local anchor_mod = require('foundation.anchor')
-local text_paint_mod = require('painting.text_paint')
-local text_style = require('text.text_style')
-local text_layout = require('text.text_layout')
+local color = require('src.foundation.color')
+local geometry = require('src.foundation.geometry')
+local anchor_mod = require('src.foundation.anchor')
+local text_paint_mod = require('src.painting.text_paint')
+local text_style = require('src.text.text_style')
+local text_layout = require('src.text.text_layout')
 
 local Color = color.Color
 local Offset, Size = geometry.Offset, geometry.Size

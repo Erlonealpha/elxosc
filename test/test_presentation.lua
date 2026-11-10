@@ -3,16 +3,16 @@
 local F = require 'framework'
 local mp_stub = require 'mp_stub'
 mp_stub.install()
-local backend = require 'backends.ass_canvas'
+local backend = require 'src.backends.ass_canvas'
 local primitives = require 'host.mpv_primitives'
 local app_mod = require 'host.mpv_app'
-local overlay_mod = require 'widget.overlay'
-local layout = require 'widget.widgets.layout'
-local geometry = require 'foundation.geometry'
-local color = require 'foundation.color'
-local paint = require 'painting.paint'
-local owner_mod = require 'render.render_owner'
-local gesture_mod = require 'render.gesture'
+local overlay_mod = require 'src.widget.overlay'
+local layout = require 'src.widget.widgets.layout'
+local geometry = require 'src.foundation.geometry'
+local color = require 'src.foundation.color'
+local paint = require 'src.painting.paint'
+local owner_mod = require 'src.render.render_owner'
+local gesture_mod = require 'src.render.gesture'
 
 local AssCanvas = backend.AssCanvas
 local AssPresenter = primitives.AssPresenter
@@ -28,7 +28,7 @@ local RenderGesture = gesture_mod.RenderGesture
 local fake = mp_stub.fake
 
 local function box(width, height)
-    local custom = require 'render.custom_paint'
+    local custom = require 'src.render.custom_paint'
     return custom.RenderCustomPaint(nil, { preferred_size = geometry.Size(width, height) })
 end
 
@@ -37,7 +37,7 @@ F.section('presentation: single canvas')
 F.test('RegionSnapshot is cached and protects the owner from mutation', function()
     local gesture = RenderGesture(box(20, 10), { on_tap = function() end })
     local owner = RenderOwner(gesture)
-    owner:set_viewport(require('layout.constraints').Constraints.tight(40, 30))
+    owner:set_viewport(require('src.layout.constraints').Constraints.tight(40, 30))
     owner:layout()
     local first = owner:region_snapshot()
     local second = owner:region_snapshot()

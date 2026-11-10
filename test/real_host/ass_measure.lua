@@ -4,6 +4,7 @@ local utils = require 'mp.utils'
 local scripts = mp.command_native({ 'expand-path', '~~/scripts' })
 package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/init.lua'
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
+assert(loadfile(scripts .. '/elxosc/lib/module_loader.lua'))().install(scripts .. '/elxosc')
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
 
 local measure_mod = require 'host.ass_measure'

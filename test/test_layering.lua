@@ -60,15 +60,7 @@ end
 ---@param path string
 ---@return boolean
 local function is_framework(path)
-    return path:match('/foundation/') ~= nil
-        or path:match('/painting/') ~= nil
-        or path:match('/text/') ~= nil
-        or path:match('/scheduler/') ~= nil
-        or path:match('/layout/') ~= nil
-        or path:match('/render/') ~= nil
-        or path:match('/widget/') ~= nil
-        or path:match('/backends/') ~= nil
-        or path:match('/libs/') ~= nil
+    return path:match('/lib/') ~= nil or path:match('/extension/') ~= nil
 end
 
 --- Matches `require 'mp'`, `require("mp.utils")`, `require 'mp.assdraw'` ...

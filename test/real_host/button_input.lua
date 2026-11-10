@@ -8,13 +8,14 @@ package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/ini
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
 -- Initialize the staged library entry point with its expected module name.
 -- The fixture disables automatic script loading and loads this directory once.
+assert(loadfile(scripts .. '/elxosc/lib/module_loader.lua'))().install(scripts .. '/elxosc')
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
 
-local geometry = require 'foundation.geometry'
-local Constraints = require('layout.constraints').Constraints
+local geometry = require 'src.foundation.geometry'
+local Constraints = require('src.layout.constraints').Constraints
 local app_mod = require 'host.mpv_app'
-local layout = require 'widget.widgets.layout'
-local basic = require 'widget.widgets.basic'
+local layout = require 'src.widget.widgets.layout'
+local basic = require 'src.widget.widgets.basic'
 
 local count, dispatched = 0, 0
 mp.set_property('user-data/elxosc-test-clicks', '0')

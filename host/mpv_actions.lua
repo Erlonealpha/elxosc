@@ -5,7 +5,7 @@
 
 local mp = require 'mp'
 
-local actions_mod = require 'widget.actions'
+local actions_mod = require 'src.widget.actions'
 
 local HostActions = actions_mod.HostActions
 

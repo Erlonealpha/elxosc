@@ -2,11 +2,11 @@
 ---@namespace test.runtime
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil
 local std = require 'elxlibs.std'
-local widget_mod = require 'widget.widget'
-local state_mod = require 'widget.state'
-local layout_mod = require 'widget.widgets.layout'
-local binding_mod = require 'widget.widgets_binding'
-local constraints_mod = require 'layout.constraints'
+local widget_mod = require 'src.widget.widget'
+local state_mod = require 'src.widget.state'
+local layout_mod = require 'src.widget.widgets.layout'
+local binding_mod = require 'src.widget.widgets_binding'
+local constraints_mod = require 'src.layout.constraints'
 
 local M = {}
 ---@class ProbeState : State

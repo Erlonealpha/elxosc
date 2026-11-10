@@ -7,16 +7,16 @@
 
 local F = require('framework')
 
-local geometry = require('foundation.geometry')
-local color = require('foundation.color')
-local anchor_mod = require('foundation.anchor')
-local paint = require('painting.paint')
-local path_mod = require('painting.path')
-local text_paint_mod = require('painting.text_paint')
-local text_style = require('text.text_style')
-local painting_context = require('render.painting_context')
-local ass_canvas = require('backends.ass_canvas')
-local ass_text = require('backends.ass_text_layout')
+local geometry = require('src.foundation.geometry')
+local color = require('src.foundation.color')
+local anchor_mod = require('src.foundation.anchor')
+local paint = require('src.painting.paint')
+local path_mod = require('src.painting.path')
+local text_paint_mod = require('src.painting.text_paint')
+local text_style = require('src.text.text_style')
+local painting_context = require('src.render.painting_context')
+local ass_canvas = require('src.backends.ass_canvas')
+local ass_text = require('src.backends.ass_text_layout')
 
 local Offset, Size, Rect = geometry.Offset, geometry.Size, geometry.Rect
 local Color = color.Color

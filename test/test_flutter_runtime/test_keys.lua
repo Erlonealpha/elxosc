@@ -2,9 +2,9 @@
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
 local support = require 'runtime_support'
-local slot_mod = require 'widget.slot'
-local key_mod = require 'widget.key'
-local layout_mod = require 'widget.widgets.layout'
+local slot_mod = require 'src.widget.slot'
+local key_mod = require 'src.widget.key'
+local layout_mod = require 'src.widget.widgets.layout'
 
 F.section('runtime: Key identity through composition and reorder')
 

@@ -118,8 +118,8 @@ def measure(client, process, log, input_path='', repeats=3, timeout=5):
     environment['libass_version'] = ({'compiled_hex': version[1], 'runtime_hex': version[2]}
                                      if version else None)
     environment['libass_version_source'] = 'host libass log' if version else 'not exposed by host'
-    font_file = ROOT / 'fonts' / 'MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf'
-    environment['bundled_font'] = {'file': f'fonts/{font_file.name}',
+    font_file = ROOT / 'lib' / 'fonts' / 'MaterialSymbolsRounded-VariableFont_FILL,GRAD,opsz,wght.ttf'
+    environment['bundled_font'] = {'file': f'lib/fonts/{font_file.name}',
         'sha256': hashlib.sha256(font_file.read_bytes()).hexdigest()}
     revision = subprocess.run(['git', 'rev-parse', '--short', 'HEAD'], cwd=ROOT,
                               capture_output=True, text=True)
@@ -185,7 +185,7 @@ def main(argv=None):
                     input_path.write_text(json.dumps(bundle, ensure_ascii=False), encoding='utf-8')
                 script = ROOT / 'test' / 'real_host' / 'ass_measure.lua'
                 with host_helpers._running_host(temporary, (f'--script={script}', '--force-window=yes',
-                        '--geometry=640x360', f'--osd-fonts-dir={ROOT / "fonts"}',
+                        '--geometry=640x360', f'--osd-fonts-dir={ROOT / "lib" / "fonts"}',
                         '--msg-level=osd/libass=debug')) as (client, _, process, log):
                     report = measure(client, process, log, input_path, args.repeats, args.timeout)
     except (OSError, ValueError, RuntimeError, AssertionError, TimeoutError,

@@ -2,9 +2,9 @@
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
 local support = require 'runtime_support'
-local layout_mod = require 'widget.widgets.layout'
-local key_mod = require 'widget.key'
-local navigation_mod = require 'widget.navigation'
+local layout_mod = require 'src.widget.widgets.layout'
+local key_mod = require 'src.widget.key'
+local navigation_mod = require 'src.widget.navigation'
 local Probe = support.Probe
 local SizedBox = layout_mod.SizedBox
 

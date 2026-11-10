@@ -12,10 +12,10 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local geometry = require 'foundation.geometry'
-local pointer_event = require 'foundation.pointer_event'
-local key_event = require 'foundation.key_event'
-local region_snapshot = require 'render.region_snapshot'
+local geometry = require 'src.foundation.geometry'
+local pointer_event = require 'src.foundation.pointer_event'
+local key_event = require 'src.foundation.key_event'
+local region_snapshot = require 'src.render.region_snapshot'
 
 local Offset = geometry.Offset
 local PointerEvent = pointer_event.PointerEvent

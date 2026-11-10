@@ -4,7 +4,7 @@
 
 ## Widget 不可变
 
-Widget 是轻量描述，不负责 layout/paint，也不在 mount 后修改自己的 child 或
+Widget 是轻量描述，不负责 lib/src/layout/paint，也不在 mount 后修改自己的 child 或
 options。构造器应复制/规范化 caller options；运行时变化放进 State 或 RenderObject
 的明确 setter。
 
@@ -66,7 +66,7 @@ Builder 回调按语义分为三类，不提供接受任意参数的统一回调
 3. `StatelessWidget:build` / `State:build`：由 Element rebuild 管线调用，使用同一个
    `Widget|nil` 返回值边界。
 
-`widget/builder.lua` 提供 `call_context`、`call_slot`、`validate_context` 和
+`lib/src/widget/builder.lua` 提供 `call_context`、`call_slot`、`validate_context` 和
 `validate_result`。它们只负责 callback/context/result 的边界验证，不持有 Widget tree 或
 host 状态。nil 表示空子树；其他返回值在所属边界报 `TypeError`。Builder 抛出的原始错误
 保持不变；失败 mount/rebuild 由 Element 的既有部分树清理和后续恢复语义处理。BuildScope
@@ -78,12 +78,12 @@ Overlay/Route 的完成通知通过 `BuildOwner:after_finalize()` 在子树 disp
 执行，顺序为内容 State 清理 → Page.on_pop → result listeners → Page.on_dispose。
 结果监听器可更新仍存活的 State；WidgetTree 在 layout 前处理这轮新增 dirty。
 
-迁移期 alias 的调用方和删除门槛见 `widget/README.md`；相等名称只导出同一 class。
+迁移期 alias 的调用方和删除门槛见 `lib/src/widget/README.md`；相等名称只导出同一 class。
 
 ## Key identity
 
-Key 层级位于 `foundation/key.lua`：`Key → LocalKey → ValueKey/UniqueKey`；
-`ObjectKey` 和 `GlobalKey` 由 `widget/key.lua` 扩展。LocalKey 只要求同一父 Element
+Key 层级位于 `lib/src/foundation/key.lua`：`Key → LocalKey → ValueKey/UniqueKey`；
+`ObjectKey` 和 `GlobalKey` 由 `lib/src/widget/key.lua` 扩展。LocalKey 只要求同一父 Element
 的直接 children 唯一；重复 LocalKey 产生 BuildOwner diagnostic。GlobalKey 在一个
 BuildOwner 内注册、查找和检测重复，unmount/finalize 后清理 stale entry。
 
@@ -92,7 +92,7 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 
 ## 控件层
 
-`widget/widgets/` 按职责拆成：
+`lib/src/widget/widgets/` 按职责拆成：
 
 - 布局：Padding、Align、SizedBox、Container、Flex/Row/Column、Stack、
   ConstrainedBox、LimitedBox、OverflowBox、UnconstrainedBox、FittedBox、
@@ -109,7 +109,7 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 `widget.exports` 的 `{ name = 'widget', exports = widgets }` 描述使用模块交叉类型，
 保留 canonical 构造器、context 和 Slot 接口，排除会覆盖 Define `bind` 的 registry helper；
 player 的描述复用显式 `elxosc.widget.player.components`。包收集和默认 builtins
-选择分别属于 `libs.exports` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
+选择分别属于 `extension.exports` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
 完整包。类型名前缀不改变运行时 require 或 import 包名。
 
 `Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds
@@ -218,7 +218,7 @@ pop/ESC；Popup 的 barrier/content 是同一 Route 的成对 entries。
 
 当前 `BuildContext` 是 `Element` 的类型别名，并支持基于精确运行时 class identity 的
 InheritedWidget 查询：监听式 `depend_on_inherited_widget_of_exact_type()` 和非监听式
-`get_inherited_widget_of_exact_type()`。`widget/provider.lua` 在此基础上提供稳定的
+`get_inherited_widget_of_exact_type()`。`lib/src/widget/provider.lua` 在此基础上提供稳定的
 `Provider.of(context)` / `Provider.maybe_of(context)` 入口；具体 Provider 可以通过
 `SomeProvider.of(context)` 和 `SomeProvider.maybe_of(context)` 查询最近的同类祖先。
 
@@ -245,6 +245,6 @@ Inherited Provider Widget，不是 `package:provider` 风格的业务值容器�
 
 - 选项表有 `_TypeNameOptions` 类型，构造器不修改调用方表。
 - Widget 字段只保存声明式配置，副作用放到事件或 State 生命周期。
-- 对应 RenderObject setter 正确区分 layout/paint dirty。
+- 对应 RenderObject setter 正确区分 lib/src/layout/paint dirty。
 - 独立模块、聚合入口和 `std.class` identity 有测试。
 - 需要 host 能力时通过回调、State 或 Define module 注入，不 require `mp`。

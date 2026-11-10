@@ -5,21 +5,21 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local geometry = require('foundation.geometry')
-local constraints_mod = require('layout.constraints')
-local text_layout = require('text.text_layout')
-local render_owner = require('render.render_owner')
-local binding_mod = require('widget.binding')
-local app_mod = require('widget.app')
-local ambient_mod = require('widget.ambient')
-local actions_mod = require('widget.actions')
-local player_context = require('widget.player_context')
-local player_layout_mod = require('widget.player.layout')
-local player_theme_mod = require('widget.player.theme')
-local progress_mod = require('widget.player.timeline')
-local tooltip_mod = require('widget.player.tooltip')
-local record_mod = require('backends.record')
-local ass_mod = require('backends.ass_canvas')
+local geometry = require('src.foundation.geometry')
+local constraints_mod = require('src.layout.constraints')
+local text_layout = require('src.text.text_layout')
+local render_owner = require('src.render.render_owner')
+local binding_mod = require('src.widget.binding')
+local app_mod = require('src.widget.app')
+local ambient_mod = require('src.widget.ambient')
+local actions_mod = require('src.widget.actions')
+local player_context = require('src.widget.player_context')
+local player_layout_mod = require('src.widget.player.layout')
+local player_theme_mod = require('src.widget.player.theme')
+local progress_mod = require('src.widget.player.timeline')
+local tooltip_mod = require('src.widget.player.tooltip')
+local record_mod = require('src.backends.record')
+local ass_mod = require('src.backends.ass_canvas')
 
 local Rect = geometry.Rect
 local Size = geometry.Size
@@ -29,7 +29,7 @@ local WidgetBinding = binding_mod.WidgetBinding
 local WidgetsApp = app_mod.WidgetsApp
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local HostActions = actions_mod.HostActions
-local Main = require('widget.player.app').Main
+local Main = require('src.widget.player.app').Main
 local PlayerStore = player_context.PlayerStore
 local PlayerScope = player_context.PlayerScope
 local PlayerLayout = player_layout_mod.PlayerLayout
@@ -89,11 +89,11 @@ end
 F.section('player layout: theme and geometry')
 
 F.test('player component extraction preserves public module identity', function()
-    F.eq(require('widget.player.geometry').geometry_for, player_layout_mod.geometry_for,
+    F.eq(require('src.widget.player.geometry').geometry_for, player_layout_mod.geometry_for,
         'geometry remains the same function through the compatibility entry')
-    F.eq(require('widget.player.description').PlayerDescriptionLayer, PlayerDescriptionLayer,
+    F.eq(require('src.widget.player.description').PlayerDescriptionLayer, PlayerDescriptionLayer,
         'description class remains the same object through layout')
-    F.eq(require('widget.player').PlayerDescriptionLayer, PlayerDescriptionLayer,
+    F.eq(require('src.widget.player').PlayerDescriptionLayer, PlayerDescriptionLayer,
         'player aggregate exports the direct description class')
 end)
 
@@ -105,7 +105,7 @@ F.test('window controls and title use the top-edge ModernX placement', function(
 end)
 
 F.test('blurred backgrounds cross viewport edges without an internal edge line', function()
-    local visuals = require('widget.player.visuals')
+    local visuals = require('src.widget.player.visuals')
     local theme = PlayerThemeData()
     for _, top in ipairs({ true, false }) do
         local canvas = RecordCanvas()
@@ -120,7 +120,7 @@ F.test('blurred backgrounds cross viewport edges without an internal edge line',
 end)
 
 F.test('volume icons distinguish zero volume from mute', function()
-    local icon_class = require('widget.widgets.icon').Icon
+    local icon_class = require('src.widget.widgets.icon').Icon
     for _, fixture in ipairs({
         { volume = 100, mute = false, icon = 'volume_up' },
         { volume = 50, mute = false, icon = 'volume_down' },
@@ -145,8 +145,8 @@ F.test('volume icons distinguish zero volume from mute', function()
 end)
 
 F.test('disabled player controls are translucent and do not claim click input', function()
-    local icon_buttons = require('widget.widgets.icon_button').IconButton
-    local render_text_class = require('render.text').RenderText
+    local icon_buttons = require('src.widget.widgets.icon_button').IconButton
+    local render_text_class = require('src.render.text').RenderText
     local owner, binding = mount(WidgetsApp({
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = Main(),
@@ -250,9 +250,9 @@ F.test('PlayerThemeData freezes ModernX original defaults', function()
     F.eq(theme.hover_scale, 1.15, 'hover scale')
     F.eq(theme.thumbnail_border, 1, 'thumbnail border is one physical pixel')
     F.eq(theme.thumbnail_border_radius, 5, 'thumbnail radius matches ModernX')
-    F.eq(theme.thumbnail_border_color, require('foundation.color').Color.rgba255(255, 255, 255),
+    F.eq(theme.thumbnail_border_color, require('src.foundation.color').Color.rgba255(255, 255, 255),
         'thumbnail border is white')
-    F.eq(theme.thumbnail_border_outline, require('foundation.color').Color.rgba255(0, 0, 0),
+    F.eq(theme.thumbnail_border_outline, require('src.foundation.color').Color.rgba255(0, 0, 0),
         'thumbnail border outline is black')
     F.ok(theme.compact_mode, 'compact mode follows the ModernX default')
     F.ok(not theme.info_button and not theme.loop_button, 'optional controls start disabled')
@@ -641,7 +641,7 @@ F.test('volume hover shows the current value with a fixed round handle', functio
     local canvas = AssCanvas()
     owner:paint(canvas)
     F.contains(canvas:text(), '50%', 'volume tooltip reports the hovered value')
-    local render_progress_class = require('render.slider').RenderSlider
+    local render_progress_class = require('src.render.slider').RenderSlider
     ---@type RenderSlider?
     local fixed_handle
     for _, progress in ipairs(owner:pointer_regions()) do
@@ -708,8 +708,8 @@ F.test('scaled seek tooltip stays below thumbfast and shares its clamped center'
     F.eq(frame[1][1], image:inflate(2 / 1.5), 'outline surrounds the exact scaled external image')
     F.eq(frame[2][1], image:inflate(1 / 1.5), 'border surrounds the exact scaled external image')
     F.close(frame[2][2], 1 / 1.5, 'radius is capped to the physical border padding')
-    F.eq(frame[1][3].color, require('foundation.color').Color.rgba255(0, 0, 0), 'black outline')
-    F.eq(frame[2][3].color, require('foundation.color').Color.rgba255(255, 255, 255), 'white border')
+    F.eq(frame[1][3].color, require('src.foundation.color').Color.rgba255(0, 0, 0), 'black outline')
+    F.eq(frame[2][3].color, require('src.foundation.color').Color.rgba255(255, 255, 255), 'white border')
 end)
 
 F.test('thumbnail frame can be disabled without changing the preview request', function()
@@ -740,7 +740,7 @@ F.test('thumbnail frame can be disabled without changing the preview request', f
 end)
 
 F.test('AutoHide clears a retained thumbnail at fade start and suppresses fading requests', function()
-    local visibility = require('widget.visibility')
+    local visibility = require('src.widget.visibility')
     local controller = visibility.AutoHideController()
     local cleared, requested = 0, 0
     local store = PlayerStore({

@@ -1,19 +1,19 @@
 -- Paint traversal, backend equivalence and exceptional save/restore boundaries.
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
-local geometry = require 'foundation.geometry'
-local color_mod = require 'foundation.color'
-local constraints_mod = require 'layout.constraints'
-local context_mod = require 'render.painting_context'
-local owner_mod = require 'render.pipeline_owner'
-local record_mod = require 'backends.record'
-local ass_mod = require 'backends.ass_canvas'
-local sized_mod = require 'render.sized_box'
-local decorated_mod = require 'render.decorated_box'
-local offset_mod = require 'render.offset_box'
-local transform_mod = require 'render.transform_box'
-local scale_mod = require 'render.layout_scale_box'
-local fitted_mod = require 'render.fitted_box'
+local geometry = require 'src.foundation.geometry'
+local color_mod = require 'src.foundation.color'
+local constraints_mod = require 'src.layout.constraints'
+local context_mod = require 'src.render.painting_context'
+local owner_mod = require 'src.render.pipeline_owner'
+local record_mod = require 'src.backends.record'
+local ass_mod = require 'src.backends.ass_canvas'
+local sized_mod = require 'src.render.sized_box'
+local decorated_mod = require 'src.render.decorated_box'
+local offset_mod = require 'src.render.offset_box'
+local transform_mod = require 'src.render.transform_box'
+local scale_mod = require 'src.render.layout_scale_box'
+local fitted_mod = require 'src.render.fitted_box'
 local Offset, Size, Rect = geometry.Offset, geometry.Size, geometry.Rect
 local Constraints = constraints_mod.Constraints
 local PaintingContext = context_mod.PaintingContext

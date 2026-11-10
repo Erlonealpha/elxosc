@@ -1,0 +1,48 @@
+-- This file is part of elxosc and is released under the terms of the MIT license.
+-- Copyright (C) 2026 ErloneAlpha
+
+-- Layout widgets: the declarative front end for the `render/` boxes.
+-- `Row`, `Column`, `Center`, `Expanded` and `Spacer` are plain functions that
+-- return the corresponding widget. Imports here share the direct modules'
+-- class identities so element reuse behaves the same through either entry point.
+
+local padding_mod = require 'src.widget.widgets.padding'
+local align_mod = require 'src.widget.widgets.align'
+local sized_box_mod = require 'src.widget.widgets.sized_box'
+local decorated_box_mod = require 'src.widget.widgets.decorated_box'
+local flex_mod = require 'src.widget.widgets.flex'
+local stack_mod = require 'src.widget.widgets.stack'
+local positioned_mod = require 'src.widget.widgets.positioned'
+local constraints_mod = require 'src.widget.widgets.constraints'
+local overflow_mod = require 'src.widget.widgets.overflow'
+local container_mod = require 'src.widget.widgets.container'
+local offset_box_mod = require 'src.widget.widgets.offset_box'
+local transform_box_mod = require 'src.widget.widgets.transform_box'
+
+---@class elxosc.src.widget.widgets.layout : elxosc.src.widget.widgets.padding, elxosc.src.widget.widgets.align, elxosc.src.widget.widgets.sized_box, elxosc.src.widget.widgets.decorated_box, elxosc.src.widget.widgets.flex, elxosc.src.widget.widgets.stack, elxosc.src.widget.widgets.positioned, elxosc.src.widget.widgets.constraints, elxosc.src.widget.widgets.overflow, elxosc.src.widget.widgets.container, elxosc.src.widget.widgets.offset_box, elxosc.src.widget.widgets.transform_box
+local M = {}
+
+M.Padding = padding_mod.Padding
+M.Align = align_mod.Align
+M.Center = align_mod.Center
+M.SizedBox = sized_box_mod.SizedBox
+M.DecoratedBox = decorated_box_mod.DecoratedBox
+M.Flexible = flex_mod.Flexible
+M.Expanded = flex_mod.Expanded
+M.Spacer = flex_mod.Spacer
+M.Flex = flex_mod.Flex
+M.Row = flex_mod.Row
+M.Column = flex_mod.Column
+M.Stack = stack_mod.Stack
+M.Positioned = positioned_mod.Positioned
+M.ConstrainedBox = constraints_mod.ConstrainedBox
+M.LimitedBox = constraints_mod.LimitedBox
+M.UnconstrainedBox = overflow_mod.UnconstrainedBox
+M.OverflowBox = overflow_mod.OverflowBox
+M.FittedBox = overflow_mod.FittedBox
+M.Container = container_mod.Container
+M.OffsetBox = offset_box_mod.OffsetBox
+M.TransformBox = transform_box_mod.TransformBox
+M.LayoutScaleBox = transform_box_mod.LayoutScaleBox
+
+return M

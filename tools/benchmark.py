@@ -94,7 +94,7 @@ def host(iterations, warmup, rounds, directory, legacy_ref):
     legacy_file.write_bytes(legacy)
     script = ROOT / 'test' / 'real_host' / 'ass_measure_benchmark.lua'
     with measure_tool.host_helpers._running_host(directory / 'host', (f'--script={script}', '--force-window=yes',
-            '--geometry=640x360', f'--osd-fonts-dir={ROOT / "fonts"}', '--msg-level=osd/libass=warn')) as (client, _, process, log):
+            '--geometry=640x360', f'--osd-fonts-dir={ROOT / "lib" / "fonts"}', '--msg-level=osd/libass=warn')) as (client, _, process, log):
         measure_tool.wait_property(client, process, log, 'user-data/elxosc-ass-benchmark-ready', 10)
         viewport = measure_tool.wait_viewport(client, process, 10)
         scenarios = []

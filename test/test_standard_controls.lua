@@ -4,21 +4,21 @@
 
 local F = require 'framework'
 local std = require 'elxlibs.std'
-local geometry = require 'foundation.geometry'
-local text_layout = require 'text.text_layout'
-local TextStyle = require('text.text_style').TextStyle
-local Color = require('foundation.color').Color
-local Constraints = require('layout.constraints').Constraints
-local RenderOwner = require('render.render_owner').RenderOwner
-local WidgetBinding = require('widget.binding').WidgetBinding
-local RecordCanvas = require('backends.record').RecordCanvas
-local basic = require 'widget.widgets.basic'
-local Tooltip = require('widget.widgets.tooltip').Tooltip
-local LinearProgressIndicator = require('widget.widgets.progress_indicator').LinearProgressIndicator
-local Slider = require('widget.widgets.slider').Slider
-local HoverText = require('widget.widgets.hover_text').HoverText
+local geometry = require 'src.foundation.geometry'
+local text_layout = require 'src.text.text_layout'
+local TextStyle = require('src.text.text_style').TextStyle
+local Color = require('src.foundation.color').Color
+local Constraints = require('src.layout.constraints').Constraints
+local RenderOwner = require('src.render.render_owner').RenderOwner
+local WidgetBinding = require('src.widget.binding').WidgetBinding
+local RecordCanvas = require('src.backends.record').RecordCanvas
+local basic = require 'src.widget.widgets.basic'
+local Tooltip = require('src.widget.widgets.tooltip').Tooltip
+local LinearProgressIndicator = require('src.widget.widgets.progress_indicator').LinearProgressIndicator
+local Slider = require('src.widget.widgets.slider').Slider
+local HoverText = require('src.widget.widgets.hover_text').HoverText
 local Offset = geometry.Offset
-local FrameClock = require('scheduler.frame_clock').FrameClock
+local FrameClock = require('src.scheduler.frame_clock').FrameClock
 
 ---@class ControlClock : FrameClock
 ---@field time number
@@ -72,20 +72,20 @@ end
 F.section('standard controls')
 
 F.test('standard aggregates and player adapters share the owning classes', function()
-    local widgets = require 'widget'
+    local widgets = require 'src.widget'
     for name, class in pairs({ Tooltip = Tooltip, LinearProgressIndicator = LinearProgressIndicator, Slider = Slider,
         HoverText = HoverText }) do
         F.eq(basic[name], class, 'basic identity: ' .. name)
         F.eq(widgets[name], class, 'widget identity: ' .. name)
     end
-    local Timeline = require('widget.player.timeline').Timeline
+    local Timeline = require('src.widget.player.timeline').Timeline
     F.eq(widgets.Timeline, Timeline, 'timeline aggregate identity')
     F.ok(std.isinstance(Timeline(), Slider), 'timeline specializes the slider widget')
     F.eq(widgets.ProgressBar, nil, 'mixed progress/seek API removed')
     F.ok(not std.isinstance(Slider(), Timeline), 'standard slider is independent of timeline')
-    F.eq(require('widget.player.text_controls').PlayerHoverText, HoverText, 'text alias')
+    F.eq(require('src.widget.player.text_controls').PlayerHoverText, HoverText, 'text alias')
     local options = { text = 'tip' }
-    local player_tip = require('widget.player.tooltip').PlayerTooltip(options)
+    local player_tip = require('src.widget.player.tooltip').PlayerTooltip(options)
     F.ok(std.isinstance(player_tip, Tooltip), 'player inherits standard tooltip lifecycle')
     F.eq(options.style, nil, 'player default does not modify caller options')
     F.eq(player_tip.style.font_size, 18, 'player visual default is preserved')
@@ -275,7 +275,7 @@ F.test('linear progress is read-only, clamps finite values and has no thumb or s
 end)
 
 F.test('indeterminate progress uses owned ticker without rebuilds and releases it on mode/dispose', function()
-    local Scheduler = require('scheduler.scheduler').Scheduler
+    local Scheduler = require('src.scheduler.scheduler').Scheduler
     local clock = ControlClock()
     local scheduler = Scheduler(clock)
     local owner = RenderOwner()

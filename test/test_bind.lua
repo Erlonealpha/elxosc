@@ -5,14 +5,14 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local text_layout = require('text.text_layout')
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local widget_mod = require('widget.widget')
-local binding_mod = require('widget.binding')
-local layout_widgets = require('widget.widgets.layout')
-local basic_widgets = require('widget.widgets.basic')
-local slot_mod = require('widget.slot')
+local text_layout = require('src.text.text_layout')
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local widget_mod = require('src.widget.widget')
+local binding_mod = require('src.widget.binding')
+local layout_widgets = require('src.widget.widgets.layout')
+local basic_widgets = require('src.widget.widgets.basic')
+local slot_mod = require('src.widget.slot')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner

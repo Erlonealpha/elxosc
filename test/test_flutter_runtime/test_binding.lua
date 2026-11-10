@@ -2,11 +2,11 @@
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
 local support = require 'runtime_support'
-local binding_mod = require 'widget.widgets_binding'
-local scheduler_mod = require 'scheduler.scheduler'
-local pipeline_mod = require 'render.pipeline_owner'
-local key_mod = require 'widget.key'
-local layout_mod = require 'widget.widgets.layout'
+local binding_mod = require 'src.widget.widgets_binding'
+local scheduler_mod = require 'src.scheduler.scheduler'
+local pipeline_mod = require 'src.render.pipeline_owner'
+local key_mod = require 'src.widget.key'
+local layout_mod = require 'src.widget.widgets.layout'
 local WidgetsBinding = binding_mod.WidgetsBinding
 
 F.section('runtime: shared Binding and independent owners')

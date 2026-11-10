@@ -2,7 +2,7 @@
 --
 -- The suite runs on a bare LuaJIT (no mpv needed). The elxosc modules are
 -- loaded straight from this repository by their bare name (e.g.
--- `require 'foundation.color'`, no `elxosc.` prefix) and `elxlibs.*` from the
+-- `require 'src.foundation.color'`, no `elxosc.` prefix) and `elxlibs.*` from the
 -- sibling `elxlib` checkout, so the real elxlib `init.lua` (ffi / DLL-path
 -- setup) never runs.
 
@@ -42,6 +42,7 @@ function S.bootstrap(test_dir)
         scripts_root .. '/elxlib/?/init.lua',
         package.path,
     }, ';')
+    assert(loadfile(osc_root .. '/lib/module_loader.lua'))().install(osc_root)
 
     -- Add only the dependency's module paths. Core benchmarks keep mp/stub
     -- unloaded; the suite bootstrap and host tests configure it separately.

@@ -1,0 +1,44 @@
+-- This file is part of elxosc and is released under the terms of the MIT license.
+-- Copyright (C) 2026 ErloneAlpha
+
+local std = require 'elxlibs.std'
+local geometry = require 'src.foundation.geometry'
+local padding_mod = require 'src.render.padding'
+local widget_mod = require 'src.widget.widget'
+
+local EdgeInsets = geometry.EdgeInsets
+local RenderPadding = padding_mod.RenderPadding
+local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
+
+---@class _PaddingOptions
+---@field padding? EdgeInsets
+---@field key? any
+
+---@class Padding : SingleChildRenderObjectWidget
+---@field padding EdgeInsets
+---@overload fun(child: Widget?, options?: _PaddingOptions): self
+local Padding = std.class.new('Padding', SingleChildRenderObjectWidget)
+
+---@param child Widget?
+---@param options? _PaddingOptions
+function Padding:__init(child, options)
+    options = options or {}
+    self.key = options.key
+    self.child = child
+    self.padding = options.padding or EdgeInsets.zero()
+end
+
+function Padding:create_render_object()
+    return RenderPadding(self.padding)
+end
+
+---@param render_object RenderPadding
+function Padding:update_render_object(render_object)
+    render_object.padding = self.padding
+    render_object:mark_needs_layout()
+end
+
+---@class elxosc.src.widget.widgets.padding
+local M = { Padding = Padding }
+
+return M

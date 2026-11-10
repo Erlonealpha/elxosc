@@ -103,7 +103,7 @@ mp.register_script_message('elxosc-memory-sample', sample)
 -- The no-UI control loads this file directly and has no framework dependency.
 if mp.get_script_directory() then
     local app_mod = require 'host.mpv_app'
-    local player_mod = require 'widget.player_context'
+    local player_mod = require 'src.widget.player_context'
     local app_api = app_mod --[[@as any]]
     local start = app_api.start
     app_api.start = function(build, options)

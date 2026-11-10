@@ -25,6 +25,8 @@ def suite(tmp_path):
     for name in ("run.lua", "support.lua", "dependency.lua", "bootstrap.lua",
                  "framework.lua", "runner.lua", "mp_stub.lua"):
         shutil.copy2(ROOT / "test" / name, directory / name)
+    (directory.parent / 'lib').mkdir()
+    shutil.copy2(ROOT / 'lib' / 'module_loader.lua', directory.parent / 'lib' / 'module_loader.lua')
     dependency = ROOT / "mpv-luatest"
     if not (dependency / "src" / "mpv_luatest" / "suite.lua").is_file():
         pytest.fail('mpv-luatest is missing; run git submodule update --init --recursive')

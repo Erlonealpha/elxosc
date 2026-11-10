@@ -10,11 +10,11 @@ mp_stub.install()
 mp_stub.reset()
 local app_mod = require 'host.mpv_app'
 local main_mod = require 'main_layout'
-local player_mod = require 'widget.player_context'
-local actions_mod = require 'widget.actions'
-local element_mod = require 'widget.element'
+local player_mod = require 'src.widget.player_context'
+local actions_mod = require 'src.widget.actions'
+local element_mod = require 'src.widget.element'
 local ffi = require 'ffi'
-local geometry_mod = require 'foundation.geometry'
+local geometry_mod = require 'src.foundation.geometry'
 local Offset = geometry_mod.Offset
 
 local now = os.clock

@@ -4,10 +4,10 @@
 -- shell and root replacement targets are intentionally not exposed here.
 -- Development content uses the same Define slot as other extensions.
 
-local app_mod = require 'widget.player.app'
-local slot_mod = require 'widget.slot'
-local layout_widgets = require 'widget.widgets.layout'
-local extension_controls_mod = require 'widget.player.extension_controls'
+local app_mod = require 'src.widget.player.app'
+local slot_mod = require 'src.widget.slot'
+local layout_widgets = require 'src.widget.widgets.layout'
+local extension_controls_mod = require 'src.widget.player.extension_controls'
 
 local DefaultApp = app_mod.DefaultApp
 local Main = app_mod.Main

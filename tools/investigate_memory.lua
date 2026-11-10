@@ -2,17 +2,17 @@
 local support_mod = require 'test.support'
 support_mod.bootstrap('test')
 if arg[2] then
-    package.preload['widget.player_context'] = assert(loadfile(arg[2]))
+    package.preload['src.widget.player_context'] = assert(loadfile(arg[2]))
 end
-local player_mod = require 'widget.player_context'
+local player_mod = require 'src.widget.player_context'
 local std = require 'elxlibs.std'
 local json_mod = require 'elxlibs.json'
 local scenes_mod = require 'tools.benchmark_scenes'
-local binding_mod = require 'widget.widgets_binding'
-local constraints_mod = require 'layout.constraints'
-local text_mod = require 'text.text_layout'
-local ass_layout_mod = require 'backends.ass_text_layout'
-local ass_mod = require 'backends.ass_canvas'
+local binding_mod = require 'src.widget.widgets_binding'
+local constraints_mod = require 'src.layout.constraints'
+local text_mod = require 'src.text.text_layout'
+local ass_layout_mod = require 'src.backends.ass_text_layout'
+local ass_mod = require 'src.backends.ass_canvas'
 local ffi = require 'ffi'
 local process_memory
 if ffi.os == 'Windows' then

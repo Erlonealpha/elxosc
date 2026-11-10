@@ -25,7 +25,7 @@ local std = require 'elxlibs.std'
 local mpv_app = require 'host.mpv_app'
 local mpv_define = require 'host.mpv_define'
 local mpv_player_context = require 'host.mpv_player_context'
-local player_context = require 'widget.player_context'
+local player_context = require 'src.widget.player_context'
 local main_layout = require 'main_layout'
 
 local MpDefine = mpv_define.MpDefine

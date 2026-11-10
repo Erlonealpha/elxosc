@@ -5,17 +5,17 @@
 local F = require 'framework'
 local std = require 'elxlibs.std'
 local support = require 'runtime_support'
-local text_layout = require 'text.text_layout'
+local text_layout = require 'src.text.text_layout'
 
-local widget_api = require 'widget'
-local builder_mod = require 'widget.builder'
-local widget_mod = require 'widget.widget'
-local state_mod = require 'widget.state'
-local key_mod = require 'widget.key'
-local basic_widgets = require 'widget.widgets.basic'
-local overlay_mod = require 'widget.overlay'
-local navigation_mod = require 'widget.navigation'
-local slot_mod = require 'widget.slot'
+local widget_api = require 'src.widget'
+local builder_mod = require 'src.widget.builder'
+local widget_mod = require 'src.widget.widget'
+local state_mod = require 'src.widget.state'
+local key_mod = require 'src.widget.key'
+local basic_widgets = require 'src.widget.widgets.basic'
+local overlay_mod = require 'src.widget.overlay'
+local navigation_mod = require 'src.widget.navigation'
+local slot_mod = require 'src.widget.slot'
 
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget

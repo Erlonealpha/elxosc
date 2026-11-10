@@ -8,36 +8,36 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local dsl = require('libs.dsl')
+local dsl = require('src.widget.dsl')
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 local host_define = require 'host.mpv_define'
 
-local text_layout = require('text.text_layout')
-local text_style_mod = require 'text.text_style'
-local transform_mod = require 'foundation.transform'
-local anchor_mod = require 'foundation.anchor'
-local text_paint_mod = require 'painting.text_paint'
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local binding_mod = require('widget.binding')
-local widget_mod = require('widget.widget')
-local state_mod = require('widget.state')
-local layout_widgets = require('widget.widgets.layout')
-local basic_widgets = require('widget.widgets.basic')
-local text_widgets = require('widget.widgets.text')
-local custom_paint_widgets = require('widget.widgets.custom_paint')
-local gesture_widgets = require('widget.widgets.gesture_detector')
-local button_widgets = require('widget.widgets.button')
-local padding_widgets = require('widget.widgets.padding')
-local align_widgets = require('widget.widgets.align')
-local sized_box_widgets = require('widget.widgets.sized_box')
-local decorated_box_widgets = require('widget.widgets.decorated_box')
-local flex_widgets = require('widget.widgets.flex')
-local stack_widgets = require('widget.widgets.stack')
-local constraints_widgets = require('widget.widgets.constraints')
-local overflow_widgets = require('widget.widgets.overflow')
-local container_widgets = require('widget.widgets.container')
+local text_layout = require('src.text.text_layout')
+local text_style_mod = require 'src.text.text_style'
+local transform_mod = require 'src.foundation.transform'
+local anchor_mod = require 'src.foundation.anchor'
+local text_paint_mod = require 'src.painting.text_paint'
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local binding_mod = require('src.widget.binding')
+local widget_mod = require('src.widget.widget')
+local state_mod = require('src.widget.state')
+local layout_widgets = require('src.widget.widgets.layout')
+local basic_widgets = require('src.widget.widgets.basic')
+local text_widgets = require('src.widget.widgets.text')
+local custom_paint_widgets = require('src.widget.widgets.custom_paint')
+local gesture_widgets = require('src.widget.widgets.gesture_detector')
+local button_widgets = require('src.widget.widgets.button')
+local padding_widgets = require('src.widget.widgets.padding')
+local align_widgets = require('src.widget.widgets.align')
+local sized_box_widgets = require('src.widget.widgets.sized_box')
+local decorated_box_widgets = require('src.widget.widgets.decorated_box')
+local flex_widgets = require('src.widget.widgets.flex')
+local stack_widgets = require('src.widget.widgets.stack')
+local constraints_widgets = require('src.widget.widgets.constraints')
+local overflow_widgets = require('src.widget.widgets.overflow')
+local container_widgets = require('src.widget.widgets.container')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -104,8 +104,8 @@ end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()
     local b = host_define.builtins()
-    local slot = require('widget.slot')
-    local widget_api = require('widget')
+    local slot = require('src.widget.slot')
+    local widget_api = require('src.widget')
     F.eq(b.SlotSpec, slot.SlotSpec, 'DSL SlotSpec')
     F.eq(widget_api.SlotSpec, slot.SlotSpec, 'widget SlotSpec')
     F.eq(widget_api.CompositionAssembler, slot.CompositionAssembler,
@@ -120,7 +120,7 @@ F.test('basic widget module remains a compatibility aggregate', function()
 end)
 
 F.test('layout modules and aggregate preserve class identity', function()
-    local widget_api = require('widget')
+    local widget_api = require('src.widget')
     local expected = {
         Padding = padding_widgets.Padding, Align = align_widgets.Align, Center = align_widgets.Center,
         SizedBox = sized_box_widgets.SizedBox, DecoratedBox = decorated_box_widgets.DecoratedBox,

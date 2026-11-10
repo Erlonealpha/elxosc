@@ -2,8 +2,9 @@
 
 Smoke/regression tests for the elxosc framework core, run by the pinned
 [mpv-luatest](../mpv-luatest/README.md) development dependency. They use bare
-**LuaJIT**: project modules load by bare names from this repository and
-`elxlibs.*` from the sibling `elxlib`, without its native `init.lua` setup.
+**LuaJIT**: framework modules load as `src.*` from `lib/src/`, public collectors
+load from `lib/*.lua`, and extension/host modules load from the repository root.
+The sibling `elxlib` supplies `elxlibs.*`, without its native `init.lua` setup.
 
 ## Running
 
@@ -59,7 +60,7 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-10): **2540 Lua checks** through both the project
+Current baseline (2026-11-10): **2820 Lua checks** through both the project
 adapter and direct dependency CLI; project runner regression **16 passed**;
 `emmylua_check . --warnings-as-errors`: **No issues found**. The historical ASS
 benchmark source is patched only for the current `std.class.new` signature in

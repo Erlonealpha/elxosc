@@ -8,16 +8,16 @@
 
 | 分区 | 所有权 | 主要入口 |
 | --- | --- | --- |
-| `foundation/` | 无宿主值类型和数学 | `geometry`, `color`, `anchor`, `transform`, `pointer_event`, `key_event` |
-| `painting/` | 绘制契约和值对象 | `Canvas`, `Paint`, `Path`, `TextPaint` |
-| `text/` | 文本意图和布局结果 | `TextStyle`, `Paragraph`, `TextLayout` |
-| `layout/` | 约束代数 | `Constraints` |
-| `render/` | 持久化渲染树 | `RenderObject`, `PipelineOwner`/`RenderOwner` 及 RenderBox |
-| `animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
-| `scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
-| `widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `PlayerStore` |
-| `backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
-| `libs/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
+| `lib/src/foundation/` | 无宿主值类型和数学 | `geometry`, `color`, `anchor`, `transform`, `pointer_event`, `key_event` |
+| `lib/src/painting/` | 绘制契约和值对象 | `Canvas`, `Paint`, `Path`, `TextPaint` |
+| `lib/src/text/` | 文本意图和布局结果 | `TextStyle`, `Paragraph`, `TextLayout` |
+| `lib/src/layout/` | 约束代数 | `Constraints` |
+| `lib/src/render/` | 持久化渲染树 | `RenderObject`, `PipelineOwner`/`RenderOwner` 及 RenderBox |
+| `lib/src/animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
+| `lib/src/scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
+| `lib/src/widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `PlayerStore` |
+| `lib/src/backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
+| `extension/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
 | `host/` | mpv 接线 | `App`, `MpFrameClock`, `MpInput`, `MpDefine` |
 
 ## 依赖规则
@@ -26,18 +26,29 @@
 foundation → painting/text → layout → render → widget → host → main.lua
                          scheduler ────────────────┘
 backends → painting/text contracts
-libs → widget/bind and host assembly
+extension → widget/slot and host assembly
 ```
 
 `render` 不认识 Widget，`widget` 不认识 mpv，`backends` 不读取 mpv 状态。宿主只
 通过 `Canvas`、`TextLayout`、`FrameClock` 和输入值对象进入核心。所有模块使用裸
 模块名并避免 require cycle；聚合入口必须返回直接模块导出的同一对象。
 
-生产模块的返回表拥有 `elxosc.<模块路径>` EmmyLua 类型；`init.lua` 采用所属包名。
-前缀只用于类型，不改变 require 路径。扩展导出使用 `DefinePackage<T>` 的
-`{ name, exports, loader? }` 描述，`T` 复用模块类型，合并表可使用 `&`。
-`libs.exports.collect()` 统一收集标准包；host 增加 runtime facade，注册到
-ModuleRegistry，并独立选择默认 builtins。新增包不会自动扩展 scope 的全局名称。
+框架源码统一位于 `lib/src/`。`lib/foundation.lua`、`lib/render.lua` 等每层入口
+收集普通导出表及子模块 namespace；这项职责独立于扩展系统。`lib/material.lua`
+收集默认构造器、值类型和类工厂，代替 host 内的 builtins 清单。
+
+`elxlib_load.lua` 与离线入口共享 `lib/module_loader.lua`：`require 'foundation'`
+加载公开 collector，`require 'src.foundation.geometry'` 加载源码。
+`require 'src/foundation/geometry.lua'` 和显式 `src/widget/init.lua` 也支持，并映射到
+同一 canonical 模块，避免 class 和 Binding singleton 重复。项目代码优先使用点路径。
+源码类型为 `elxosc.src.foundation.geometry`，collector 为 `elxosc.foundation`；
+`init.lua` 使用源码包名，类型名前缀不进入运行时路径。
+
+`extension/` 是原 `libs/` 的 sandbox、Define 和 ModuleRegistry 所有者。
+`extension.exports.collect()` 将库表和源码子模块包装成 `{ name, exports, loader? }`，
+host 增加 runtime facade 后统一注册。`import('render.stack')`、
+`import_as('widget.widgets.slider')` 解析明确登记的多级包，不遍历任意对象字段。
+受保护父包同时保护未登记的子名称；新增包不扩大 `material` 默认 surface。
 
 ## Flutter runtime 对齐
 

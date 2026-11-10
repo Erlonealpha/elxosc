@@ -7,7 +7,7 @@ local F = require('framework')
 local mp_stub = require('mp_stub')
 mp_stub.install()
 
-local player_context = require('widget.player_context')
+local player_context = require('src.widget.player_context')
 local mpv_player_context = require('host.mpv_player_context')
 
 local PlayerStore = player_context.PlayerStore

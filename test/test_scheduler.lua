@@ -8,9 +8,9 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local frame_clock = require('scheduler.frame_clock')
-local scheduler_mod = require('scheduler.scheduler')
-local ticker_mod = require('scheduler.ticker')
+local frame_clock = require('src.scheduler.frame_clock')
+local scheduler_mod = require('src.scheduler.scheduler')
+local ticker_mod = require('src.scheduler.ticker')
 
 local FrameClock = frame_clock.FrameClock
 local Scheduler = scheduler_mod.Scheduler

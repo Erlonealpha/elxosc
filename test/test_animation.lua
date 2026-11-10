@@ -7,34 +7,34 @@
 local F = require 'framework'
 local std = require 'elxlibs.std'
 
-local geometry = require 'foundation.geometry'
-local transform_mod = require 'foundation.transform'
-local constraints_mod = require 'layout.constraints'
-local render_owner_mod = require 'render.render_owner'
-local custom_paint_mod = require 'render.custom_paint'
-local offset_box_mod = require 'render.offset_box'
-local transform_box_mod = require 'render.transform_box'
-local layout_scale_box_mod = require 'render.layout_scale_box'
-local record_mod = require 'backends.record'
-local ass_canvas_mod = require 'backends.ass_canvas'
-local ass_text_layout_mod = require 'backends.ass_text_layout'
-local render_text_mod = require 'render.text'
-local text_style_mod = require 'text.text_style'
-local scheduler_mod = require 'scheduler.scheduler'
-local frame_clock_mod = require 'scheduler.frame_clock'
-local controller_mod = require 'animation.controller'
-local curve_mod = require 'animation.curve'
-local tween_mod = require 'animation.tween'
-local binding_mod = require 'widget.binding'
-local widget_mod = require 'widget.widget'
-local state_mod = require 'widget.state'
-local layout_widgets = require 'widget.widgets.layout'
+local geometry = require 'src.foundation.geometry'
+local transform_mod = require 'src.foundation.transform'
+local constraints_mod = require 'src.layout.constraints'
+local render_owner_mod = require 'src.render.render_owner'
+local custom_paint_mod = require 'src.render.custom_paint'
+local offset_box_mod = require 'src.render.offset_box'
+local transform_box_mod = require 'src.render.transform_box'
+local layout_scale_box_mod = require 'src.render.layout_scale_box'
+local record_mod = require 'src.backends.record'
+local ass_canvas_mod = require 'src.backends.ass_canvas'
+local ass_text_layout_mod = require 'src.backends.ass_text_layout'
+local render_text_mod = require 'src.render.text'
+local text_style_mod = require 'src.text.text_style'
+local scheduler_mod = require 'src.scheduler.scheduler'
+local frame_clock_mod = require 'src.scheduler.frame_clock'
+local controller_mod = require 'src.animation.controller'
+local curve_mod = require 'src.animation.curve'
+local tween_mod = require 'src.animation.tween'
+local binding_mod = require 'src.widget.binding'
+local widget_mod = require 'src.widget.widget'
+local state_mod = require 'src.widget.state'
+local layout_widgets = require 'src.widget.widgets.layout'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Rect = geometry.Rect
-local Color = require('foundation.color').Color
-local Paint = require('painting.paint').Paint
+local Color = require('src.foundation.color').Color
+local Paint = require('src.painting.paint').Paint
 local Matrix2D = transform_mod.Matrix2D
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner_mod.RenderOwner
@@ -434,9 +434,9 @@ end)
 F.section('animation: module and widget identity')
 
 F.test('OffsetBox and animation aggregate exports are stable', function()
-    local animation = require 'animation'
+    local animation = require 'src.animation'
     F.eq(animation.AnimationController, AnimationController, 'controller aggregate')
     F.eq(animation.Tween, Tween, 'tween aggregate')
     F.eq(layout_widgets.OffsetBox, OffsetBox, 'offset widget aggregate')
-    F.eq(require('widget').OffsetBox, OffsetBox, 'widget aggregate')
+    F.eq(require('src.widget').OffsetBox, OffsetBox, 'widget aggregate')
 end)

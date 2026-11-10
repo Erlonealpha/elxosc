@@ -6,17 +6,17 @@
 
 local F = require('framework')
 
-local geometry = require('foundation.geometry')
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local pointer_event = require('foundation.pointer_event')
-local custom_paint = require('render.custom_paint')
-local fitted_box = require('render.fitted_box')
-local gesture_mod = require('render.gesture')
-local layout_scale_box = require('render.layout_scale_box')
-local offset_box = require('render.offset_box')
-local padding_mod = require('render.padding')
-local transform_box = require('render.transform_box')
+local geometry = require('src.foundation.geometry')
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local pointer_event = require('src.foundation.pointer_event')
+local custom_paint = require('src.render.custom_paint')
+local fitted_box = require('src.render.fitted_box')
+local gesture_mod = require('src.render.gesture')
+local layout_scale_box = require('src.render.layout_scale_box')
+local offset_box = require('src.render.offset_box')
+local padding_mod = require('src.render.padding')
+local transform_box = require('src.render.transform_box')
 
 local Offset, Size, Rect, EdgeInsets = geometry.Offset, geometry.Size, geometry.Rect, geometry.EdgeInsets
 local Constraints = constraints_mod.Constraints

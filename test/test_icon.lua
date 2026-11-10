@@ -8,18 +8,18 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local color = require('foundation.color')
-local geometry = require('foundation.geometry')
-local text_layout = require('text.text_layout')
-local constraints_mod = require('layout.constraints')
-local render_owner = require('render.render_owner')
-local ass_canvas = require('backends.ass_canvas')
-local record = require('backends.record')
-local binding_mod = require('widget.binding')
-local basic_widgets = require('widget.widgets.basic')
-local icon_mod = require('widget.widgets.icon')
-local player_mod = require('widget.player')
-local icon_map = require('widget.player.icon_map')
+local color = require('src.foundation.color')
+local geometry = require('src.foundation.geometry')
+local text_layout = require('src.text.text_layout')
+local constraints_mod = require('src.layout.constraints')
+local render_owner = require('src.render.render_owner')
+local ass_canvas = require('src.backends.ass_canvas')
+local record = require('src.backends.record')
+local binding_mod = require('src.widget.binding')
+local basic_widgets = require('src.widget.widgets.basic')
+local icon_mod = require('src.widget.widgets.icon')
+local player_mod = require('src.widget.player')
+local icon_map = require('src.widget.player.icon_map')
 
 local Color = color.Color
 local Offset = geometry.Offset
@@ -31,7 +31,7 @@ local WidgetBinding = binding_mod.WidgetBinding
 local Icon = icon_mod.Icon
 local IconButton = basic_widgets.IconButton
 
--- Matches `FluentIconFontName` in fonts/fluent_icon_names.lua.
+-- Matches `FluentIconFontName` in lib/fonts/fluent_icon_names.lua.
 local ICON_FONT = 'Material Symbols Rounded'
 
 ---@class FixedLayout : TextLayout
@@ -128,7 +128,7 @@ end)
 F.test('the class is shared across module and aggregate entry points', function()
     F.eq(icon_mod.Icon, Icon, 'direct module')
     F.eq(basic_widgets.Icon, Icon, 'basic aggregate')
-    F.eq(require('widget').Icon, Icon, 'widget aggregate')
+    F.eq(require('src.widget').Icon, Icon, 'widget aggregate')
 end)
 
 F.section('icon: rendering')

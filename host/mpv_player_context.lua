@@ -6,7 +6,7 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local player_context = require 'widget.player_context'
+local player_context = require 'src.widget.player_context'
 
 local raise = std.raise
 local PlayerSnapshot = player_context.PlayerSnapshot

@@ -80,20 +80,27 @@ Widget constructors、`new_widget`、`new_state`、DefaultApp/Slot 接口和宿�
 State、消息和页面逻辑，也可以使用播放器预先提供的配置/API 更新接口。
 
 模块使用统一描述 `DefinePackage<T> = { name, exports, loader? }`；`exports` 是类型化的
-导出表，合并表通过 `&` 复用来源模块类型。`libs.exports.collect()` 收集
-`foundation`、`painting`、`text`、`widget`、`player` 标准包，`mpv_define` 为 player
+导出表，合并表通过 `&` 复用来源模块类型。框架 `lib/*.lua` 无条件收集每层的普通
+导出表与 namespace，独立于 Define。`extension.exports.collect()` 包装所有层 collector、
+material/player 与源码子模块，`mpv_define` 为 player
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
 `elxosc.*` 只用于生产模块返回表的 EmmyLua 类型。
 
-`mpv_define.builtins()` 显式选择构造器、值类型、Slot 接口和类工厂，不自动复制包
-或内部 runtime helper。`MpDefineOptions.builtins` 替换这份默认表，host 仍提供
-`print`。`libs.dsl` 只提供类工厂；scope 的 `bind` 始终由 DefineSession 提供。
+`lib/material.lua` 显式选择构造器、值类型、Slot 接口和类工厂，
+`mpv_define.builtins()` 返回该表。`MpDefineOptions.builtins` 替换默认 surface，host
+仍提供 `print`。`src.widget.dsl` 只提供类工厂；scope 的 `bind` 由 DefineSession 提供。
 
 `import('player')`/`require('player')` 将名称写入 scope env；
 `local player = import_as('player')` 返回包而不注入名称。两者只允许在 payload 中调用，
 均使用当前 transaction 可见的模块。`import_as` 浅复制顶层导出并在返回表中执行
 `loader(package, scope_id)`；数组成员保留，嵌套值和 class 对象仍共享 identity。
 `import_as('mp')` 的 `on_message`/`emit` 因此仍绑定当前 scope。
+
+多级 `import('render.stack')` 和 `import_as('widget.widgets.slider')` 使用相同解析
+规则：只读取 registry 明确登记的模块，不把任意类字段当成模块或加载文件。
+受保护父包阻止 `mod('render.*', ...)`；未知子包仍为 ImportError。扁平导入后恢复
+Define 自有的 `import`/`import_as`/`require`/`mod`/`bind`，避免框架 helper 覆盖协议。
+mp facade 保留 `commandv(...)` 和 `logger`（`mp.msg`）的当前接口。
 
 代码在 `define_end` 前登记声明；每个 payload 先在 transaction 中执行，成功后才提交
 Contribution 和 module publish。seal 后由一个 `CompositionAssembler` 按 `SlotSpec` 生成
@@ -160,8 +167,8 @@ batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unob
 - `get_snapshot()`：读取当前只读快照；
 - `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
 
-`import('player')` 还向 scope 注入 `widget/player/components.lua` 显式列出的同一类对象；
-`widget/player/exports.lua` 将该表包装成标准 `player` 包描述：
+`import('player')` 还向 scope 注入 `lib/src/widget/player/components.lua` 显式列出的同一类对象；
+`lib/player.lua` 返回该表，`extension/exports.lua` 包装成标准 `player` 包描述：
 `PlayerMain`（`Main` 的同类别名）、`WindowLayer`、`DefaultApp`、`PlayerLayout`、`PlayerDescriptionLayer`、
 `PlayerTheme`/`PlayerThemeData`、`PlayerControlBar`/`PlayerControlButton`、
 `PlayerTimeDisplay`/`PlayerHoverText`、`PlayerTooltip`、`Timeline`、
@@ -170,8 +177,8 @@ batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unob
 内部 State、geometry 和 controller assembly helper 不属于此导出清单。
 标准 `Tooltip`、`Slider`、`LinearProgressIndicator`、`HoverText` 通过显式选择的 builtins
 或 `import_as('widget')` 可用；播放器适配复用标准实现。
-`widget` 包排除 registry-based `bind` helper，扁平 import 后仍使用 DefineSession 的
-scope-aware `bind`。局部包可注解为 `elxosc.widget.exports.data`、`elxosc.host.mpv_define.player` 或
+`widget` collector 保留完整 framework helper；扁平 import 后由 DefineSession 恢复
+scope-aware `bind`。局部包可注解为 `elxosc.widget`、`elxosc.host.mpv_define.player` 或
 `elxosc.host.mpv_define.mp`。该模块仍无内容热注入或 mounted tree 管理能力。
 
 框架内消费者可以使用 `PlayerStore:subscribe_selector(selector, callback)` 只监听相关

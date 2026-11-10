@@ -8,20 +8,20 @@ local std = require 'elxlibs.std'
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 
-local geometry = require 'foundation.geometry'
-local color_mod = require 'foundation.color'
-local pointer_event = require 'foundation.pointer_event'
-local constraints_mod = require 'layout.constraints'
-local render_owner_mod = require 'render.render_owner'
-local progress_mod = require 'render.timeline'
-local record_mod = require 'backends.record'
-local actions_mod = require 'widget.actions'
-local player_context = require 'widget.player_context'
+local geometry = require 'src.foundation.geometry'
+local color_mod = require 'src.foundation.color'
+local pointer_event = require 'src.foundation.pointer_event'
+local constraints_mod = require 'src.layout.constraints'
+local render_owner_mod = require 'src.render.render_owner'
+local progress_mod = require 'src.render.timeline'
+local record_mod = require 'src.backends.record'
+local actions_mod = require 'src.widget.actions'
+local player_context = require 'src.widget.player_context'
 local mpv_player_context = require 'host.mpv_player_context'
 local mpv_actions = require 'host.mpv_actions'
-local widget_api = require 'widget'
-local player_api = require 'widget.player'
-local progress_widget = require 'widget.player.timeline'
+local widget_api = require 'src.widget'
+local player_api = require 'src.widget.player'
+local progress_widget = require 'src.widget.player.timeline'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
@@ -227,7 +227,7 @@ end)
 F.test('timeline uses slider capture and releases seek lifecycle when callback is removed', function()
     local phases = {}
     local bar = RenderTimeline({ on_seek = function(_, phase) phases[#phases + 1] = phase end })
-    F.ok(std.isinstance(bar, require('render.slider').RenderSlider), 'timeline specializes slider render')
+    F.ok(std.isinstance(bar, require('src.render.slider').RenderSlider), 'timeline specializes slider render')
     local owner = layout_bar(bar)
     owner:dispatch_pointer('down', Offset(40, 10), 'left')
     bar:set_on_seek(nil)

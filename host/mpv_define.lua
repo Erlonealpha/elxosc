@@ -13,20 +13,12 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local dsl = require 'libs.dsl'
-local define_mod = require 'libs.define'
-local modules_mod = require 'libs.modules'
-local slot_mod = require 'widget.slot'
-local player_context = require 'widget.player_context'
-local player_exports = require 'widget.player.exports'
-local exports_mod = require 'libs.exports'
-local geometry = require 'foundation.geometry'
-local color = require 'foundation.color'
-local paint = require 'painting.paint'
-local text_style = require 'text.text_style'
-local transform = require 'foundation.transform'
-local anchor = require 'foundation.anchor'
-local text_paint = require 'painting.text_paint'
+local define_mod = require 'extension.define'
+local modules_mod = require 'extension.modules'
+local slot_mod = require 'src.widget.slot'
+local player_context = require 'src.widget.player_context'
+local player_exports = require 'player'
+local exports_mod = require 'extension.exports'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
@@ -41,151 +33,17 @@ local M = {}
 ---@field is_active fun(): boolean
 ---@field dispose fun(): boolean
 
----@class MpFacadeExports
----@field get_prop fun(name: string): any
----@field set_prop fun(name: string, value: any)
----@field get_time fun(): number
----@field command fun(...: any): boolean?, string?
----@field log fun(...: any)
----@field on_prop fun(name: string, callback: fun(name: string, value: any)): MpFacadeSubscription
----@field on_event fun(name: string, callback: fun(event: table)): MpFacadeSubscription
----@field message_to fun(...: any)
-
----@class MpScopeExports
----@field on_message fun(callback: fun(...: any)): MpFacadeSubscription
----@field emit fun(...: any)
-
 ---@alias elxosc.host.mpv_define.mp MpFacadeExports & MpScopeExports
 
 ---@class PlayerRuntimeExports
 ---@field get_snapshot fun(): PlayerSnapshot
 ---@field on_update fun(callback: fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)): PlayerSubscription
 
----@alias elxosc.host.mpv_define.player elxosc.widget.player.components & PlayerRuntimeExports
+---@alias elxosc.host.mpv_define.player elxosc.src.widget.player.components & PlayerRuntimeExports
 
---- Explicit default scope surface; adding a package does not expand builtins.
----@return DefineBuiltins
+---@return elxosc.material
 function M.builtins()
-    local widgets = require 'widget'
-    ---@class DefineBuiltins
-    local out = {
-        Widget = widgets.Widget,
-        StatelessWidget = widgets.StatelessWidget,
-        StatefulWidget = widgets.StatefulWidget,
-        ProxyWidget = widgets.ProxyWidget,
-        ParentDataWidget = widgets.ParentDataWidget,
-        InheritedWidget = widgets.InheritedWidget,
-        RenderObjectWidget = widgets.RenderObjectWidget,
-        LeafRenderObjectWidget = widgets.LeafRenderObjectWidget,
-        SingleChildRenderObjectWidget = widgets.SingleChildRenderObjectWidget,
-        MultiChildRenderObjectWidget = widgets.MultiChildRenderObjectWidget,
-        State = widgets.State,
-        Key = widgets.Key,
-        LocalKey = widgets.LocalKey,
-        UniqueKey = widgets.UniqueKey,
-        ValueKey = widgets.ValueKey,
-        ObjectKey = widgets.ObjectKey,
-        GlobalKey = widgets.GlobalKey,
-        Provider = widgets.Provider,
-        PlayerProvider = widgets.PlayerProvider,
-        PlayerCapability = widgets.PlayerCapability,
-        PlayerSnapshot = widgets.PlayerSnapshot,
-        PlayerScope = widgets.PlayerScope,
-        Theme = widgets.Theme,
-        ThemeData = widgets.ThemeData,
-        DefaultTextStyle = widgets.DefaultTextStyle,
-        DisplaySnapshot = widgets.DisplaySnapshot,
-        DisplayScope = widgets.DisplayScope,
-        HostActions = widgets.HostActions,
-        HostActionsScope = widgets.HostActionsScope,
-        Opacity = widgets.Opacity,
-        Offstage = widgets.Offstage,
-        Visibility = widgets.Visibility,
-        AutoHide = widgets.AutoHide,
-        AutoHideController = widgets.AutoHideController,
-        Overlay = widgets.Overlay,
-        OverlayEntry = widgets.OverlayEntry,
-        OverlayEntryWidget = widgets.OverlayEntryWidget,
-        OverlayScope = widgets.OverlayScope,
-        Theatre = widgets.Theatre,
-        Navigator = widgets.Navigator,
-        NavigatorScope = widgets.NavigatorScope,
-        Page = widgets.Page,
-        PopupPage = widgets.PopupPage,
-        Route = widgets.Route,
-        PopupRoute = widgets.PopupRoute,
-        RouteResult = widgets.RouteResult,
-        ModalBarrier = widgets.ModalBarrier,
-        WidgetsApp = widgets.WidgetsApp,
-        DefaultApp = widgets.DefaultApp,
-        Main = widgets.Main,
-        PlayerMain = widgets.PlayerMain,
-        WindowLayer = widgets.WindowLayer,
-        PlayerTheme = widgets.PlayerTheme,
-        PlayerThemeData = widgets.PlayerThemeData,
-        PlayerLayout = widgets.PlayerLayout,
-        PlayerDescriptionLayer = widgets.PlayerDescriptionLayer,
-        PlayerControlBar = widgets.PlayerControlBar,
-        PlayerControlButton = widgets.PlayerControlButton,
-        PlayerTimeDisplay = widgets.PlayerTimeDisplay,
-        PlayerHoverText = widgets.PlayerHoverText,
-        PlayerTooltip = widgets.PlayerTooltip,
-        PlayerIcons = widgets.PlayerIcons,
-        Timeline = widgets.Timeline,
-        SlotSpec = widgets.SlotSpec,
-        SlotWrap = widgets.SlotWrap,
-        Text = widgets.Text,
-        Icon = widgets.Icon,
-        CustomPaint = widgets.CustomPaint,
-        GestureDetector = widgets.GestureDetector,
-        Button = widgets.Button,
-        ButtonBase = widgets.ButtonBase,
-        ButtonStyle = widgets.ButtonStyle,
-        ElevatedButton = widgets.ElevatedButton,
-        OutlinedButton = widgets.OutlinedButton,
-        TextButton = widgets.TextButton,
-        IconButton = widgets.IconButton,
-        Tooltip = widgets.Tooltip,
-        LinearProgressIndicator = widgets.LinearProgressIndicator,
-        Slider = widgets.Slider,
-        HoverText = widgets.HoverText,
-        Padding = widgets.Padding,
-        Align = widgets.Align,
-        Center = widgets.Center,
-        SizedBox = widgets.SizedBox,
-        DecoratedBox = widgets.DecoratedBox,
-        Flexible = widgets.Flexible,
-        Expanded = widgets.Expanded,
-        Spacer = widgets.Spacer,
-        Flex = widgets.Flex,
-        Row = widgets.Row,
-        Column = widgets.Column,
-        Stack = widgets.Stack,
-        Positioned = widgets.Positioned,
-        ConstrainedBox = widgets.ConstrainedBox,
-        LimitedBox = widgets.LimitedBox,
-        UnconstrainedBox = widgets.UnconstrainedBox,
-        OverflowBox = widgets.OverflowBox,
-        FittedBox = widgets.FittedBox,
-        Container = widgets.Container,
-        OffsetBox = widgets.OffsetBox,
-        TransformBox = widgets.TransformBox,
-        LayoutScaleBox = widgets.LayoutScaleBox,
-        Offset = geometry.Offset,
-        Point = geometry.Point,
-        Size = geometry.Size,
-        Rect = geometry.Rect,
-        EdgeInsets = geometry.EdgeInsets,
-        Color = color.Color,
-        Paint = paint.Paint,
-        TextStyle = text_style.TextStyle,
-        Matrix2D = transform.Matrix2D,
-        Anchor = anchor.Anchor,
-        TextPaint = text_paint.TextPaint,
-        new_widget = dsl.new_widget,
-        new_state = dsl.new_state,
-    }
-    return out
+    return require 'material'
 end
 
 --== the `mp` module =======================================================
@@ -196,15 +54,10 @@ end
 --- This is why `mods` and `loaders` are separate tables: the framework never
 --- learns what `mp` is, and `on_message` is scope-specific because the loader
 --- receives the scope id.
----@param observe fun(name: string, cb: fun(name: string, value: any))? defaults to `mp.observe_property`
 ---@param register_disposer fun(dispose: fun())?
 ---@return DefinePackage<MpFacadeExports>
-local function mp_package(observe, register_disposer)
-    observe = observe or function(name, cb)
-        mp.observe_property(name, 'native', cb)
-    end
-
-    ---@type MpFacadeExports
+local function mp_package(register_disposer)
+    ---@class MpFacadeExports
     local exports = {
         get_prop = function(name)
             return mp.get_property_native(name)
@@ -215,12 +68,10 @@ local function mp_package(observe, register_disposer)
         get_time = function()
             return mp.get_time()
         end,
-        command = function(...)
+        commandv = function(...)
             return mp.commandv(...)
         end,
-        log = function(...)
-            mp.msg.info(...)
-        end,
+        logger = mp.msg,
         --- `cb(name, value)`, the same shape `mp.observe_property` uses.
         on_prop = function(name, cb)
             if type(name) ~= 'string' or name == '' then
@@ -229,7 +80,7 @@ local function mp_package(observe, register_disposer)
             if type(cb) ~= 'function' then
                 error('mp.on_prop expects a callback', 2)
             end
-            observe(name, cb)
+            mp.observe_property(name, 'native', cb)
             local active = true
             local subscription = {
                 is_active = function()
@@ -288,6 +139,7 @@ local function mp_package(observe, register_disposer)
         end
     }
 
+    ---@class MpScopeExports
     local function loader(env, scope_id)
         -- Messages this scope can receive: `script-message-to elxosc <scope> ...`
         env.on_message = function(cb)
@@ -327,7 +179,7 @@ end
 local function player_package(store, register_disposer)
     ---@type elxosc.host.mpv_define.player
     local exports = {}
-    for name, value in pairs(player_exports.exports) do
+    for name, value in pairs(player_exports) do
         exports[name] = value
     end
     exports.get_snapshot = function()
@@ -342,21 +194,7 @@ local function player_package(store, register_disposer)
         end
         return subscription
     end
-    return { name = player_exports.name, exports = exports }
-end
-
----@param modules ModuleRegistry
----@param observe fun(name: string, cb: fun(name: string, value: any))?
----@param register_disposer fun(dispose: fun())?
-function M.install_mp_module(modules, observe, register_disposer)
-    modules_mod.register_package(modules, mp_package(observe, register_disposer))
-end
-
----@param modules ModuleRegistry
----@param store PlayerStore
----@param register_disposer fun(dispose: fun())?
-function M.install_player_module(modules, store, register_disposer)
-    modules_mod.register_package(modules, player_package(store, register_disposer))
+    return { name = 'player', exports = exports }
 end
 
 --- Every extension package is registered here; runtime packages add owned APIs.
@@ -364,11 +202,11 @@ end
 ---@param store PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 function M.install_modules(modules, store, register_disposer)
-    ---@type DefinePackage<table>[]
+    ---@type DefinePackageDescriptor[]
     local packages = exports_mod.collect()
-    packages[#packages + 1] = mp_package(nil, register_disposer)
+    packages[#packages + 1] = mp_package(register_disposer)
     for i, package in ipairs(packages) do
-        if package.name == player_exports.name then
+        if package.name == 'player' then
             packages[i] = player_package(store, register_disposer)
         end
     end
@@ -391,12 +229,12 @@ end
 ---@field session DefineSession
 ---@field on_sealed fun()? called when the last `define_end` arrives
 ---@field player_store PlayerStore
----@field _listening boolean
----@field _allow_start boolean
----@field _disposers fun()[]
----@field _shutdown boolean
----@field _assembled boolean
----@field _payload_disposer_mark integer?
+---@field protected _listening boolean
+---@field protected _allow_start boolean
+---@field protected _disposers fun()[]
+---@field protected _shutdown boolean
+---@field protected _assembled boolean
+---@field protected _payload_disposer_mark integer?
 ---@overload fun(options: MpDefineOptions?): self
 local MpDefine = std.class.new('MpDefine')
 

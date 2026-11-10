@@ -5,23 +5,23 @@
 local F = require 'framework'
 local std = require 'elxlibs.std'
 
-local geometry = require 'foundation.geometry'
-local foundation_key = require 'foundation.key'
-local binding_base = require 'foundation.binding_base'
-local scheduler_binding_mod = require 'scheduler.scheduler_binding'
-local painting_binding_mod = require 'painting.painting_binding'
-local painting_context_mod = require 'render.painting_context'
-local pipeline_owner_mod = require 'render.pipeline_owner'
-local renderer_binding_mod = require 'render.renderer_binding'
-local render_owner_mod = require 'render.render_owner'
-local record = require 'backends.record'
-local constraints_mod = require 'layout.constraints'
-local widget_mod = require 'widget.widget'
-local widget_key = require 'widget.key'
-local widget_binding = require 'widget.widgets_binding'
-local build_scope_mod = require 'widget.build_scope'
-local build_owner_mod = require 'widget.build_owner'
-local layout_widgets = require 'widget.widgets.layout'
+local geometry = require 'src.foundation.geometry'
+local foundation_key = require 'src.foundation.key'
+local binding_base = require 'src.foundation.binding_base'
+local scheduler_binding_mod = require 'src.scheduler.scheduler_binding'
+local painting_binding_mod = require 'src.painting.painting_binding'
+local painting_context_mod = require 'src.render.painting_context'
+local pipeline_owner_mod = require 'src.render.pipeline_owner'
+local renderer_binding_mod = require 'src.render.renderer_binding'
+local render_owner_mod = require 'src.render.render_owner'
+local record = require 'src.backends.record'
+local constraints_mod = require 'src.layout.constraints'
+local widget_mod = require 'src.widget.widget'
+local widget_key = require 'src.widget.key'
+local widget_binding = require 'src.widget.widgets_binding'
+local build_scope_mod = require 'src.widget.build_scope'
+local build_owner_mod = require 'src.widget.build_owner'
+local layout_widgets = require 'src.widget.widgets.layout'
 
 local Rect = geometry.Rect
 local Offset = geometry.Offset
@@ -216,7 +216,7 @@ F.test('PaintingContext brackets clipping and forwards Canvas operations', funct
 end)
 
 F.test('RenderObject painting accepts both Canvas and PaintingContext', function()
-    local color = require 'foundation.color'
+    local color = require 'src.foundation.color'
     local owner, tree = mount(layout_widgets.Container({
         width = 10, height = 10, color = color.Color.rgba255(255, 0, 0),
     }))

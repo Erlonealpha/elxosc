@@ -15,7 +15,7 @@ spec.loader.exec_module(measure_tool)
 def test_framework_measurement_samples_are_stable(real_host_factory):
     script = Path(__file__).with_name('ass_measure.lua')
     with real_host_factory(f'--script={script}', '--force-window=yes', '--geometry=640x360',
-            f'--osd-fonts-dir={ROOT / "fonts"}', '--msg-level=osd/libass=debug') as (client, _, process, log):
+            f'--osd-fonts-dir={ROOT / "lib" / "fonts"}', '--msg-level=osd/libass=debug') as (client, _, process, log):
         report = measure_tool.measure(client, process, log)
         assert report['status'] == 'ok', report
         assert len(report['samples']) == 6
@@ -86,7 +86,7 @@ def test_measure_benchmark_compares_real_bounds_for_all_strategies(real_host_fac
     source.write_bytes(legacy)
     script = Path(__file__).with_name('ass_measure_benchmark.lua')
     with real_host_factory(f'--script={script}', '--force-window=yes', '--geometry=640x360',
-            f'--osd-fonts-dir={ROOT / "fonts"}') as (client, _, process, log):
+            f'--osd-fonts-dir={ROOT / "lib" / "fonts"}') as (client, _, process, log):
         measure_tool.wait_property(client, process, log, 'user-data/elxosc-ass-benchmark-ready', 10)
         measure_tool.wait_viewport(client, process, 10)
         client.command('script-message', 'elxosc-ass-benchmark', str(source), '2', '1', '1')
