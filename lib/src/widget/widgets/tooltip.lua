@@ -17,7 +17,6 @@ local positioned_mod = require 'src.widget.widgets.positioned'
 local text_layout_mod = require 'src.text.text_layout'
 local text_paint_mod = require 'src.painting.text_paint'
 local anchor_mod = require 'src.foundation.anchor'
-local visibility_mod = require 'src.widget.visibility'
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
@@ -28,7 +27,6 @@ local Stack = stack_mod.Stack
 local Positioned = positioned_mod.Positioned
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
-local AutoHide = visibility_mod.AutoHide
 local max = math.max
 local raise = std.raise
 
@@ -67,6 +65,7 @@ end
 ---@field expand number?
 ---@field on_hover_point fun(point: Offset, label: string?)?
 ---@field on_hover_leave fun()?
+---@field hover_enabled (fun(context: BuildContext): boolean)?
 ---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
 ---@field key any?
 
@@ -92,6 +91,7 @@ end
 ---@field expand number
 ---@field on_hover_point fun(point: Offset, label: string?)?
 ---@field on_hover_leave fun()?
+---@field hover_enabled (fun(context: BuildContext): boolean)?
 ---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
 ---@overload fun(options?: _TooltipOptions): self
 local Tooltip = std.class.new('Tooltip', StatefulWidget)
@@ -120,6 +120,10 @@ function Tooltip:__init(options)
     self.expand = coordinate(options.expand or 0, 'expand', true)
     self.on_hover_point = options.on_hover_point
     self.on_hover_leave = options.on_hover_leave
+    self.hover_enabled = options.hover_enabled
+    if self.hover_enabled ~= nil and type(self.hover_enabled) ~= 'function' then
+        raise(std.TypeError('Tooltip.hover_enabled must be a function'))
+    end
     self.paint_for_point = options.paint_for_point
 end
 
@@ -130,7 +134,7 @@ end
 ---@field _paragraph Paragraph?
 ---@field _paragraph_label string?
 ---@field _paragraph_style TextStyle?
----@field _auto_hide_visible boolean
+---@field _hover_enabled boolean
 ---@overload fun(): self
 local TooltipState = std.class.new('TooltipState', State)
 
@@ -138,28 +142,22 @@ function TooltipState:init_state()
     self.hovered = false
     self.hover_label = ''
     self.hover_point = nil
-    self._auto_hide_visible = true
-    self:did_auto_hide_visibility_change()
+    self._hover_enabled = true
+    self:refresh_hover_visibility()
 end
 
-function TooltipState:did_auto_hide_visibility_change()
-    local ancestor = self.context and self.context.parent
-    local visible = true
-    while ancestor do
-        if std.isinstance(ancestor.widget, AutoHide) and not ancestor.widget.controller.visible then
-            visible = false
-            break
-        end
-        ancestor = ancestor.parent
-    end
-    self._auto_hide_visible = visible
+-- Upper layers can cancel hover resources without changing child input capture.
+function TooltipState:refresh_hover_visibility()
+    local widget = self.widget --[[@as Tooltip]]
+    local visible = not widget.hover_enabled or widget.hover_enabled(assert(self.context))
+    self._hover_enabled = visible
     if not visible then
         self:_clear_hover()
     end
 end
 
 function TooltipState:_hover_allowed()
-    return self._auto_hide_visible
+    return self._hover_enabled
 end
 
 function TooltipState:did_update_widget(old_widget)
@@ -168,7 +166,7 @@ function TooltipState:did_update_widget(old_widget)
     if self.hovered and old.on_hover_point and not widget.on_hover_point then
         self:_clear_hover(old)
     end
-    self:did_auto_hide_visibility_change()
+    self:refresh_hover_visibility()
 end
 
 ---@return string

@@ -60,7 +60,7 @@ end
 ---@param path string
 ---@return boolean
 local function is_framework(path)
-    return path:match('/lib/') ~= nil or path:match('/extension/') ~= nil
+    return path:match('/lib/') ~= nil or path:match('/define/') ~= nil or path:match('/player/') ~= nil
 end
 
 --- Matches `require 'mp'`, `require("mp.utils")`, `require 'mp.assdraw'` ...
@@ -97,6 +97,24 @@ F.test('no framework module requires mp', function()
         end
     end
     F.eq(#offenders, 0, 'framework modules reaching for mpv: ' .. table.concat(offenders, ' ; '))
+end)
+
+F.test('lib cannot require player, Define or host modules', function()
+    local offenders = {}
+    for _, path in ipairs(files) do
+        if path:match('/lib/') then
+            for line in ((read_file(path) or '') .. '\n'):gmatch('([^\n]*)\n') do
+                local code = line:gsub('%-%-.*$', '')
+                local target = code:match("require%s*%(?%s*['\"]([^'\"]+)['\"]")
+                if target and (target == 'player' or target == 'define'
+                    or target:match('^player%.') or target:match('^define%.')
+                    or target:match('^host%.')) then
+                    offenders[#offenders + 1] = path .. ' -> ' .. target
+                end
+            end
+        end
+    end
+    F.eq(#offenders, 0, 'framework application imports: ' .. table.concat(offenders, '; '))
 end)
 
 F.test('explicit ASS measurement is not loaded by production runtime modules', function()

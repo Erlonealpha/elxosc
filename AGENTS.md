@@ -35,7 +35,8 @@ document disagree, use the current code and current design documents.
 | `lib/src/scheduler/` | Frame clock, scheduler phases, tickers | None |
 | `lib/src/widget/` | Immutable widgets, elements, state, bindings, controls | None |
 | `lib/src/backends/` | ASS and recording implementations of framework contracts | None |
-| `extension/` | Sandbox, module registry, Define/DSL support | None |
+| `define/` | Sandbox, module registry, Define/DSL/Slot support | None |
+| `player/` | Media state/actions, shell, Timeline and AutoHide | None |
 
 ### Host, entry points, and support
 
@@ -64,13 +65,14 @@ The intended dependency direction is:
 foundation → painting/text → layout → render → widget → host → main
                          scheduler ────────────────┘
 backends implement painting/text contracts and are consumed by host
-extension provides sandbox/Define services and is consumed by host/entry assembly
+define provides construction services consumed by player/host/entry assembly
+player provides media components and policies consumed by host/entry assembly
 ```
 
 The framework must remain usable without mpv. Only `host/`, `main.lua`, and
 `elxlib_load.lua` may require `mp`. In particular, do not add `mp` imports to
 `lib/src/foundation/`, `lib/src/painting/`, `lib/src/text/`, `lib/src/layout/`, `lib/src/render/`, `lib/src/animation/`,
-`lib/src/scheduler/`, `lib/src/widget/`, `lib/src/backends/`, or `extension/`.
+`lib/src/scheduler/`, `lib/src/widget/`, `lib/src/backends/`, or `define/` or `player/`.
 
 Use bare module names such as `require 'src.widget.widget'`; do not add an
 `elxosc.` prefix and do not introduce require cycles. Aggregate modules must
@@ -79,7 +81,12 @@ return the same class objects as their direct modules.
 and canonical source modules (`require 'src.foundation.geometry'`). Slash paths with
 `.lua` and explicit `init` are runtime aliases; prefer dot paths in project code.
 Layer collectors are framework APIs independent of Define. `lib/material.lua` owns
-the default construction surface; `extension/exports.lua` owns import descriptors.
+the framework construction surface; `host/builtins.lua` selects default Define
+builtins; `host/package_catalog.lua` owns import descriptors. Application source
+modules use `player.src.*` and `define.src.*`; lib must not import those packages.
+Framework collectors export source members, without attaching child module tables.
+Load source modules or exact registered subpackages separately. Named exported values
+such as Anchor and Curves may remain tables; module names do not imply nested fields.
 
 ## 4. Non-negotiable framework contracts
 

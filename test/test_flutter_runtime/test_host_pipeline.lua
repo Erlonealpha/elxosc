@@ -89,3 +89,107 @@ F.test('State disposal failure cannot strand host presentation or timers', funct
     F.ok(not app.scheduler:is_frame_scheduled(), 'scheduler stopped after failure')
     F.ok(binding_mod.WidgetsBinding.instance():is_initialized(), 'shared binding remains usable')
 end)
+
+F.test('failed mount releases partial host resources and supplied disposer once', function()
+    mp_stub.reset()
+    local disposed = 0
+    F.raises(function()
+        app_mod.App(support.Probe({
+            on_build = function()
+                error('initial mount failed')
+            end,
+        }), {
+            on_dispose = function()
+                disposed = disposed + 1
+            end,
+        })
+    end, 'initial mount failed', 'original mount error')
+    F.eq(disposed, 1, 'external cleanup ran once')
+    F.eq(mp_stub.fake.overlay.removes, 1, 'partial presenter removed')
+    F.ok(binding_mod.WidgetsBinding.instance():is_initialized(), 'shared Binding survived')
+    local app = app_mod.App(basic_mod.Text('after failure'))
+    mp_stub.pump()
+    F.contains(app.presenter.overlay.data, 'after failure', 'runtime can restart')
+    app:shutdown()
+end)
+
+F.test('observer and input initialization errors clean earlier resources', function()
+    -- Each cached host module retains the mp stub installed when it was loaded.
+    local function captured_mp(callback)
+        for index = 1, 20 do
+            local name, value = debug.getupvalue(callback, index)
+            if name == 'mp' then
+                return value
+            end
+        end
+        error('host callback has no mp upvalue')
+    end
+    for _, failing_name in ipairs({ 'display-fps', 'mouse-pos' }) do
+        mp_stub.reset()
+        local observer_method = failing_name == 'mouse-pos' and require('host.mpv_input').MpInput._bind_mouse
+            or app_mod.App._observe
+        local mp = captured_mp(observer_method)
+        local original = mp.observe_property
+        local disposed = 0
+        local old_unobserve = mp.unobserve_property
+        mp.observe_property = function(name, kind, callback)
+            original(name, kind, callback)
+            if name == failing_name then
+                error('observer installation failed ' .. name)
+            end
+        end
+        local ok, err = pcall(app_mod.App, basic_mod.Text('partial'), {
+            on_dispose = function()
+                disposed = disposed + 1
+            end,
+        })
+        mp.observe_property = original
+        mp.unobserve_property = old_unobserve
+        F.ok(not ok and tostring(err):find('observer installation failed', 1, true),
+            'original observer error ' .. failing_name)
+        F.eq(disposed, 1, 'one external disposer ' .. failing_name)
+        F.eq(mp_stub.fake.overlay.removes, 1, 'presenter removed ' .. failing_name)
+        for _, event in ipairs(mp_stub.fake.events) do
+            local released = false
+            for _, unobserved in ipairs(mp_stub.fake.unobserved) do
+                released = released or event.cb == unobserved
+            end
+            F.ok(released, 'partial observer released: ' .. event.name)
+        end
+    end
+end)
+
+F.test('player adapter disposes context after mount or user teardown failure', function()
+    local player_app = require 'host.mpv_player_app'
+    local context_mod = require 'host.mpv_player_context'
+    local PlayerStore = require('player.src.context').PlayerStore
+    for _, during_mount in ipairs({ true, false }) do
+        mp_stub.reset()
+        local store = PlayerStore()
+        local context = context_mod.MpPlayerContext(store)
+        local calls = 0
+        local dispose = context.dispose
+        context.dispose = function(self)
+            calls = calls + 1
+            return dispose(self)
+        end
+        F.raises(function()
+            local app = player_app.PlayerHostApp(support.Probe({
+                on_build = during_mount and function() error('player mount failed') end or nil,
+                on_dispose = not during_mount and function() error('player dispose failed') end or nil,
+            }), { player_store = store, player_context = context })
+            app:shutdown()
+        end, during_mount and 'player mount failed' or 'player dispose failed', 'player failure surfaced')
+        F.eq(calls, 1, 'context has one cleanup owner')
+        F.ok(context._disposed, 'context closed')
+        F.eq(next(store._subscriptions), nil, 'partial PlayerScope subscription released')
+        for _, event in ipairs(mp_stub.fake.events) do
+            local released = false
+            for _, unobserved in ipairs(mp_stub.fake.unobserved) do
+                released = released or event.cb == unobserved
+            end
+            F.ok(released, 'player observer released: ' .. event.name)
+        end
+        F.eq(mp_stub.fake.overlay.removes, 1, 'player presenter removed')
+    end
+end)

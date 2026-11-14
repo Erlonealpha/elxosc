@@ -17,7 +17,63 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：库目录与多级模块（2026-11-10）
+## 当前检查：整合模块成员导出（2026-11-14）
+
+用户手改 lib/material、lib/widget、lib/render 后确认整合模块不直接导出子模块。
+其余 lib collectors 同步移除附加的 source 表，保留原 class/function/具名值表。
+成员与独立 source 保持身份；catalog 继续分别注册整合包和子包，多级 import 不依赖
+整合表中的嵌套字段。更新测试区分来源模块与成员，验证所有 lib collectors 不附加
+注册子包、Anchor/Curves 仍共享身份、整合和 source import 构造相同类。
+
+完整 Lua **2993 checks passed**；严格 EmmyLua **No issues found**。
+定向 Python **2 passed in 7.11s**、无 skip：仅 framework isolation 与 player_extensions，
+覆盖独立框架运行、多级扩展导入及两侧按钮；无全量 real-host，未重跑已忽略的 Demo 点击。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors
+uv run --group test python -m pytest -q test/test_framework_packages.py test/real_host/test_player_extensions.py --tb=short
+```
+
+FPK-1 既有结果保留下节；本次为已完成阶段的导出合同补充，未启动 FPK-2/3。
+
+## 检查：FPK-1 框架与上层分离（2026-11-14）
+
+开发分支 feat/framework-packages，基线 e563262（阶段 0 文档已提交），本阶段代码在工作区。
+player/Define 迁出、通用 WidgetsApp/App、明确 player assembly、115 字段 builtins 和
+Tooltip hover policy 已实施；widgets/Material 扁平与 export/meta 未实施。
+
+完整 Lua **2976 checks passed**；EmmyLua **No issues found**（warnings-as-errors）。
+新增分层守卫、application source/class identity、通用 Tooltip 策略/捕获/清理、App 部分
+mount/property/input 初始化失败和 player 正常/异常 context cleanup 回归。
+独立框架测试仅复制 lib，reject player/Define/mp imports，验证文字 paint/input/dispose。
+Define 的 transaction/scope/protection/before-mount assembly 与 snapshot/selector/GC
+回归继续随完整 Lua 通过。已初始化 mpv-luatest 保持原 gitlink，未修改源码或运行更新。
+
+定向 Python **9 passed**、无 skip：framework isolation 1、real-host 6、fixture cleanup 2。
+仅选择入口、Demo 开关/导航、AutoHide/thumbfast、左右按钮与 snapshot GC；不运行全量
+real-host、ASS measurement 或不相关布局探针。
+
+最终复验 **8 passed, 1 failed in 25.48s**：Demo 按钮第一次原生点击后
+user-data/elxosc-demo-open 仍为 false；脚本未退出，其他测试通过。此前相同定向组
+曾 **9 passed in 22.09s**。用户随后确认失败为人为因素并要求忽略；本次保留结果，
+停止追查/重跑，生产输入和 fixture 保持。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors
+ELXOSC_LUAJIT=E:/lua/local/LuaJIT/bin/luajit.exe
+ELXOSC_MPV_BINARY=E:/mpvnet/mpvnet.com
+uv run --group test python -m pytest -q test/test_framework_packages.py test/real_host/test_elxosc.py test/real_host/test_player_extensions.py test/real_host/test_player_snapshot_gc.py test/real_host/test_lifecycle.py --tb=short
+```
+
+一次中间验证暴露测试仍引用旧聚合、stub 字段和命名类型模板，修正对应消费者后通过；
+未通过增加旧路径 fallback 或屏蔽生产诊断解决。通用 Tooltip 在淡出开始释放 preview，
+PlayerTooltip 通过上层 callback 保持 nested/controller replacement 清理。
+离线 hover probe 已迁移并执行：200 warmup/2000 samples，无 Element rebuild/layout/input
+invalidation；仅验证工具接线，单次未做同机前后对照，不据此宣称 240Hz 性能提升。
+
+## 历史检查：库目录与多级模块（2026-11-10）
 
 框架实现迁至 `lib/src/`，每层 `lib/*.lua` 收集普通导出表与源码 namespace，
 独立于 Define。`lib/material.lua` 接替默认 builtins 清单；原 `libs/` 迁为

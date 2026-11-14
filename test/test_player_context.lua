@@ -11,7 +11,7 @@ local text_layout = require('src.text.text_layout')
 local widget_mod = require('src.widget.widget')
 local binding_mod = require('src.widget.binding')
 local provider_mod = require('src.widget.provider')
-local player_context = require('src.widget.player_context')
+local player_context = require('player.src.context')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -60,9 +60,9 @@ end
 
 F.section('player context: provider lookup')
 
-F.test('the widget aggregate preserves context class identity', function()
-    local api = require('src.widget')
-    F.ok(api.Provider == Provider, 'Provider identity')
+F.test('the player aggregate preserves context class identity', function()
+    local api = require('player')
+    F.ok(require('widget').Provider == Provider, 'framework Provider identity')
     F.ok(api.PlayerSnapshot == PlayerSnapshot, 'PlayerSnapshot identity')
     F.ok(api.PlayerStore == PlayerStore, 'PlayerStore identity')
     F.ok(api.PlayerProvider == PlayerProvider, 'PlayerProvider identity')
@@ -365,7 +365,7 @@ end)
 
 F.test('PlayerSnapshot rejects invalid data at its boundary', function()
     F.raises(function()
-        PlayerSnapshot('not a table' --[[@as _PlayerSnapshotOptions]])
+        PlayerSnapshot('not a table' --[[@as elxosc.player._PlayerSnapshotOptions]])
     end, 'TypeError', 'non-table snapshot')
     F.raises(function()
         PlayerSnapshot({ value = math.huge })
@@ -478,10 +478,10 @@ end)
 
 F.test('PlayerStore rejects invalid non-nil initial values', function()
     F.raises(function()
-        PlayerStore(false --[[@as PlayerSnapshot]])
+        PlayerStore(false --[[@as elxosc.player.PlayerSnapshot]])
     end, 'TypeError', 'boolean initial snapshot')
     F.raises(function()
-        PlayerStore(0 --[[@as PlayerSnapshot]])
+        PlayerStore(0 --[[@as elxosc.player.PlayerSnapshot]])
     end, 'TypeError', 'number initial snapshot')
 end)
 

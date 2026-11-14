@@ -3,8 +3,8 @@
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require 'framework'
-local metadata = require 'src.widget.player.metadata'
-local PlayerSnapshot = require('src.widget.player_context').PlayerSnapshot
+local metadata = require 'player.src.metadata'
+local PlayerSnapshot = require('player.src.context').PlayerSnapshot
 
 F.section('player metadata')
 

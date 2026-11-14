@@ -2,9 +2,9 @@
 local support_mod = require 'test.support'
 support_mod.bootstrap('test')
 if arg[2] then
-    package.preload['src.widget.player_context'] = assert(loadfile(arg[2]))
+    package.preload['player.src.context'] = assert(loadfile(arg[2]))
 end
-local player_mod = require 'src.widget.player_context'
+local player_mod = require 'player.src.context'
 local std = require 'elxlibs.std'
 local json_mod = require 'elxlibs.json'
 local scenes_mod = require 'tools.benchmark_scenes'

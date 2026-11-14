@@ -2,11 +2,17 @@
 
 本文负责 mpv 边界、帧循环、ASS presenter、输入接线以及初始化期 Define。
 
-## 已确认的接线重组（2026-11-14，代码待迁移）
+## FPK-1 实施状态（2026-11-14）
 
-框架/player/Define 的目标所有权见 [架构](ARCHITECTURE.md)。当前 extension 将更名 define，
+player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
+新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
+[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+
+## 已确认的接线重组（2026-11-14，FPK-1 已实施，后续分层待实施）
+
+框架/player/Define 的目标所有权见 [架构](ARCHITECTURE.md)。原 extension 已更名 define，
 host.mpv_app 保留通用 frame/tree/input/presenter/display lifecycle；播放器默认观察、
-Theme/PlayerScope/HostActions 和 activity 路由迁到明确的 host player assembly。
+Theme/PlayerScope/HostActions 和 activity 路由已归 host.mpv_player_app。
 通用 App 不默认订阅媒体属性或识别播放器 State methods。每个 context/adapter/timer
 只有一个 disposer owner，正常/异常 shutdown 都清理；Main 的 hover/捕获和 resize 行为保持。
 
@@ -15,7 +21,7 @@ Theme/PlayerScope/HostActions 和 activity 路由迁到明确的 host player ass
 整合包可导入；show/hide 只整理单条来源，不充当权限或隐藏框架的手段。多级名字精确
 登记，不按任意对象字段/文件路径查找。source alias 的 slash/init 解析仍归 module_loader。
 
-默认 builtins 从所属 collector 手动选择，保持当前 material 表的 115 个公开字段。
+默认 builtins 从所属 collector 手动选择，保持迁移前 material 表的 115 个公开字段。
 Material 将只拥有框架样式控件和基础 widgets 的重导出；player/Slot/DSL 字段由其 owning
 包提供。新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
 DefineSession 仍生成和恢复 scope-aware import/import_as/require/mod/bind；print 由 host 提供。
@@ -28,7 +34,7 @@ scope builtins/facade、import_as 字面包名重载和类工厂提示；允许�
 import 不返回包、import_as 返回浅包且不注入环境的区别必须在提示中准确表达。
 扩展自有类型可以自己的 namespace；meta 不管理 mounted tree、源码热重载或 scope shutdown。
 
-上述为待实施合同；下文路径、默认组装和测试基线描述当前代码。首次 payload/transaction、
+上述接线边界已实施；export 与 meta 为后续合同。下文描述当前代码。首次 payload/transaction、
 protected names、loader scope、fresh description before mount 和资源清理语义不改变。
 
 ## 宿主边界
@@ -57,8 +63,8 @@ mp property / input / dirty callback
     → AssPresenter.push only when data or resolution changed
 ```
 
-App 将内容根包在 `WidgetsApp` 中，注入 `DisplaySnapshot`、`ThemeData`、默认文字样式和
-host-independent `HostActions`。显示尺寸变化只替换 immutable snapshot 并沿正常 Widget/
+通用 App 将内容根包在 `WidgetsApp` 中，注入 `DisplaySnapshot` 和默认文字样式。
+PlayerHostApp 明确注入 Theme/PlayerTheme、PlayerScope 和 HostActionsScope。显示尺寸变化只替换 immutable snapshot 并沿正常 Widget/
 Inherited dirty 管线更新，不把 `mp` 传入 framework。默认 mpv actions 由
 `host/mpv_actions.lua` 实现为受控 `cycle`/`seek`/`quit` 命令。
 
@@ -110,14 +116,14 @@ State、消息和页面逻辑，也可以使用播放器预先提供的配置/AP
 
 模块使用统一描述 `DefinePackage<T> = { name, exports, loader? }`；`exports` 是类型化的
 导出表，合并表通过 `&` 复用来源模块类型。框架 `lib/*.lua` 无条件收集每层的普通
-导出表与 namespace，独立于 Define。`extension.exports.collect()` 包装所有层 collector、
+成员导出表，独立于 Define，不附加子模块表。`host.package_catalog.collect()` 包装所有层 collector、
 material/player 与源码子模块，`mpv_define` 为 player
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
 `elxosc.*` 只用于生产模块返回表的 EmmyLua 类型。
 
-`lib/material.lua` 显式选择构造器、值类型、Slot 接口和类工厂，
-`mpv_define.builtins()` 返回该表。`MpDefineOptions.builtins` 替换默认 surface，host
-仍提供 `print`。`src.widget.dsl` 只提供类工厂；scope 的 `bind` 由 DefineSession 提供。
+`host/builtins.lua` 显式选择框架构造器、值类型、player/Slot 接口和类工厂，
+`mpv_define.builtins()` 返回该表；`lib/material.lua` 仅收集框架。`MpDefineOptions.builtins` 替换默认 surface，host
+仍提供 `print`。`define.src.dsl` 只提供类工厂；scope 的 `bind` 由 DefineSession 提供。
 
 `import('player')`/`require('player')` 将名称写入 scope env；
 `local player = import_as('player')` 返回包而不注入名称。两者只允许在 payload 中调用，
@@ -127,6 +133,8 @@ material/player 与源码子模块，`mpv_define` 为 player
 
 多级 `import('render.stack')` 和 `import_as('widget.widgets.slider')` 使用相同解析
 规则：只读取 registry 明确登记的模块，不把任意类字段当成模块或加载文件。
+整合包与子包分别登记；`import_as('render').RenderStack` 是成员，
+`import_as('render.stack')` 返回独立子包，前者没有 stack 子模块字段。
 受保护父包阻止 `mod('render.*', ...)`；未知子包仍为 ImportError。扁平导入后恢复
 Define 自有的 `import`/`import_as`/`require`/`mod`/`bind`，避免框架 helper 覆盖协议。
 mp facade 保留 `commandv(...)` 和 `logger`（`mp.msg`）的当前接口。
@@ -196,8 +204,8 @@ batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unob
 - `get_snapshot()`：读取当前只读快照；
 - `on_update(callback)`：订阅 Store 更新并返回可 dispose 句柄。
 
-`import('player')` 还向 scope 注入 `lib/src/widget/player/components.lua` 显式列出的同一类对象；
-`lib/player.lua` 返回该表，`extension/exports.lua` 包装成标准 `player` 包描述：
+`import('player')` 还向 scope 注入 `player/src/components.lua` 显式列出的同一类对象；
+`player/init.lua` 返回该表，`host/package_catalog.lua` 包装成标准 `player` 包描述：
 `PlayerMain`（`Main` 的同类别名）、`WindowLayer`、`DefaultApp`、`PlayerLayout`、`PlayerDescriptionLayer`、
 `PlayerTheme`/`PlayerThemeData`、`PlayerControlBar`/`PlayerControlButton`、
 `PlayerTimeDisplay`/`PlayerHoverText`、`PlayerTooltip`、`Timeline`、

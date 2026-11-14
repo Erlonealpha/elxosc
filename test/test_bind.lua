@@ -12,7 +12,7 @@ local widget_mod = require('src.widget.widget')
 local binding_mod = require('src.widget.binding')
 local layout_widgets = require('src.widget.widgets.layout')
 local basic_widgets = require('src.widget.widgets.basic')
-local slot_mod = require('src.widget.slot')
+local slot_mod = require('define.src.slot')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner

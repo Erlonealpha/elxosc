@@ -3,7 +3,7 @@
 Smoke/regression tests for the elxosc framework core, run by the pinned
 [mpv-luatest](../mpv-luatest/README.md) development dependency. They use bare
 **LuaJIT**: framework modules load as `src.*` from `lib/src/`, public collectors
-load from `lib/*.lua`, and extension/host modules load from the repository root.
+load from `lib/*.lua`, and player/Define/host modules load from the repository root.
 The sibling `elxlib` supplies `elxlibs.*`, without its native `init.lua` setup.
 
 ## Running
@@ -41,6 +41,10 @@ prefix and `.lua` suffix. For example, `player/layout` selects
 Both `-v filter` and `filter -v` work. Default output contains failures (with file,
 section and test name) and the summary. `-h` shows usage; invalid options and empty
 matches fail. Tests with failed assertions are never printed as successful.
+
+The framework isolation test stages only lib and elxlib, with player/Define/mp
+imports rejected, then mounts, paints text, dispatches input and disposes. Run
+`uv run --group test python -m pytest -q test/test_framework_packages.py`.
 
 ## Static analysis
 

@@ -11,20 +11,20 @@ local geometry = require('src.foundation.geometry')
 local text_layout = require('src.text.text_layout')
 local render_owner = require('src.render.render_owner')
 local binding_mod = require('src.widget.binding')
-local slot_mod = require('src.widget.slot')
+local slot_mod = require('define.src.slot')
 local basic_widgets = require('src.widget.widgets.basic')
-local player_widgets = require('src.widget.player')
+local player_widgets = require('player')
 local layout_widgets = require('src.widget.widgets.layout')
 local widget_mod = require('src.widget.widget')
 local state_mod = require('src.widget.state')
 local frame_clock_mod = require('src.scheduler.frame_clock')
 local scheduler_mod = require('src.scheduler.scheduler')
-local app_mod = require('src.widget.app')
+local app_mod = require('player.src.ambients')
 local ambient_mod = require('src.widget.ambient')
-local actions_mod = require('src.widget.actions')
+local actions_mod = require('player.src.actions')
 local visibility_mod = require('src.widget.visibility')
-local player_context = require('src.widget.player_context')
-local main_layout = require('main_layout')
+local player_context = require('player.src.context')
+local main_layout = require('player.src.composition')
 local navigation_mod = require('src.widget.navigation')
 
 local Constraints = constraints_mod.Constraints
@@ -37,9 +37,9 @@ local Column = layout_widgets.Column
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local State = state_mod.State
-local WidgetsApp = app_mod.WidgetsApp
-local DefaultApp = app_mod.DefaultApp
-local Main = app_mod.Main
+local WidgetsApp = app_mod.PlayerApp
+local DefaultApp = require('player.src.app').DefaultApp
+local Main = require('player.src.app').Main
 local ThemeData = ambient_mod.ThemeData
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local HostActions = actions_mod.HostActions
@@ -47,8 +47,8 @@ local SlotWrap = slot_mod.SlotWrap
 local ContributionRegistry = slot_mod.ContributionRegistry
 local CompositionAssembler = slot_mod.CompositionAssembler
 local Navigator = navigation_mod.Navigator
-local AutoHide = visibility_mod.AutoHide
-local AutoHideController = visibility_mod.AutoHideController
+local AutoHide = require('player.src.auto_hide').AutoHide
+local AutoHideController = require('player.src.auto_hide').AutoHideController
 local PlayerStore = player_context.PlayerStore
 local PlayerScope = player_context.PlayerScope
 local Timeline = player_widgets.Timeline
@@ -495,7 +495,7 @@ F.test('AutoHide validates the top hover zone', function()
 end)
 
 F.test('tooltip cleanup starts before the AutoHide fade removes input', function()
-    local tooltip_mod = require('src.widget.player.tooltip')
+    local tooltip_mod = require('player.src.tooltip')
     local clock = ManualClock()
     local scheduler = Scheduler(clock)
     local controller = AutoHideController()
@@ -525,7 +525,7 @@ F.test('tooltip cleanup starts before the AutoHide fade removes input', function
 end)
 
 F.test('retained tooltip follows AutoHide controller replacement and nested hiding', function()
-    local tooltip_mod = require('src.widget.player.tooltip')
+    local tooltip_mod = require('player.src.tooltip')
     local outer = AutoHideController()
     local inner = AutoHideController()
     local replacement = AutoHideController(false)

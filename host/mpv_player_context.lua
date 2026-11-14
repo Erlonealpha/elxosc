@@ -6,7 +6,7 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local player_context = require 'src.widget.player_context'
+local player_context = require 'player.src.context'
 
 local raise = std.raise
 local PlayerSnapshot = player_context.PlayerSnapshot
@@ -248,14 +248,14 @@ end
 ---@field on_error fun(name: string, error: any)?
 
 ---@class MpPlayerContext : std.object
----@field store PlayerStore
+---@field store elxosc.player.PlayerStore
 ---@field on_error fun(name: string, error: any)?
 ---@field _properties table<string, MpPropertySubscription>
 ---@field _batches table<table, true>
 ---@field _capabilities table<string, MpCapabilitySubscription>
 ---@field _async_handles table<function, true>
 ---@field _disposed boolean
----@overload fun(store: PlayerStore, options: MpPlayerContextOptions?): self
+---@overload fun(store: elxosc.player.PlayerStore, options: MpPlayerContextOptions?): self
 local MpPlayerContext = std.class.new('MpPlayerContext')
 
 ---@param name string
@@ -323,8 +323,8 @@ function MpPlayerContext:register_async(cancel)
     end
 end
 
----@param snapshot PlayerSnapshot|PlayerSnapshotFields
----@return PlayerSnapshot
+---@param snapshot elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields
+---@return elxosc.player.PlayerSnapshot
 function MpPlayerContext:publish(snapshot)
     if self._disposed then
         raise(std.RuntimeError('MpPlayerContext is disposed'))
@@ -333,7 +333,7 @@ function MpPlayerContext:publish(snapshot)
 end
 
 ---@param name string
----@param transform? fun(value: any, current: PlayerSnapshot): PlayerSnapshot|PlayerSnapshotFields?
+---@param transform? fun(value: any, current: elxosc.player.PlayerSnapshot): elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields?
 ---@return MpPropertySubscription
 function MpPlayerContext:observe(name, transform)
     if self._disposed then
@@ -360,7 +360,7 @@ function MpPlayerContext:observe(name, transform)
             return current:copy({ [property_name] = next_value })
         end
         local ok, transformed = pcall(make_snapshot, value, self.store:get())
-        ---@type PlayerSnapshot|PlayerSnapshotFields?
+        ---@type elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields?
         local next_snapshot = transformed
         if not ok then
             if self.on_error then
@@ -387,7 +387,7 @@ end
 
 ---@class MpBatchPropertyDefinition
 ---@field name string mpv property name
----@field field string PlayerSnapshot field name
+---@field field string elxosc.player.PlayerSnapshot field name
 ---@field normalize fun(value: any): any?
 
 ---@param definitions MpBatchPropertyDefinition[]
@@ -539,7 +539,7 @@ function MpPlayerContext:observe_default_properties(options)
 end
 
 ---@param name string
----@param status CapabilityStatus
+---@param status elxosc.player.CapabilityStatus
 ---@param detail string?
 ---@param error_message string?
 function MpPlayerContext:set_capability(name, status, detail, error_message)
@@ -570,10 +570,10 @@ function MpPlayerContext:set_capability(name, status, detail, error_message)
 end
 
 ---@class MpCapabilityAdapter
----@field start fun(report: fun(status: CapabilityStatus, detail: string?, error: string?)): any
+---@field start fun(report: fun(status: elxosc.player.CapabilityStatus, detail: string?, error: string?)): any
 
 ---@param name string
----@param adapter MpCapabilityAdapter|fun(report: fun(status: CapabilityStatus, detail: string?, error: string?)): any
+---@param adapter MpCapabilityAdapter|fun(report: fun(status: elxosc.player.CapabilityStatus, detail: string?, error: string?)): any
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_capability(name, adapter)
     if self._disposed then

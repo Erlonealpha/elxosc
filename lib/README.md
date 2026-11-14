@@ -1,37 +1,28 @@
 # Framework library
 
-`lib/src/` owns the host-independent framework implementation. `lib/*.lua` collects
-each layer's exports regardless of whether Define exposes them. Collectors return
-ordinary typed Lua tables and share the source modules' classes and nested values.
+`lib/src/` contains only the reusable framework. Source modules and `lib/*.lua`
+collectors do not require player, Define, host or mp. Collectors expose the same
+classes as direct modules, independently of extension registration.
 
-After bootstrap, `require 'foundation'` loads `lib/foundation.lua` and
-`require 'src.foundation.geometry'` loads `lib/src/foundation/geometry.lua`.
-The shared loader also accepts `src/foundation/geometry.lua` and explicit
-`src/widget/init.lua`; these spellings resolve to the same canonical module table.
-Prefer dot paths without a suffix in project code for EmmyLua file resolution.
-Layers without an earlier source aggregate expose `src.<layer>.init` as the same
-public collector. Existing animation/widget source aggregates retain their API.
+Collectors expose selected source members, without attaching child module tables.
+For example, `require('render').RenderStack` is a member export; the source module
+is loaded through `require 'src.render.stack'` or the independent Define package
+`import_as('render.stack')`. Named source values such as Anchor and Curves retain
+their table identity. Package names and collectors do not form an object hierarchy.
 
-Every layer has an entry: `foundation`, `painting`, `text`, `layout`, `render`,
-`animation`, `scheduler`, `widget`, and `backends`. A collector exposes both flat
-constructors and source namespaces, such as `render.RenderStack`/`render.stack` and
-`widget.widgets.slider`. `widget.bind_module` names the source bind module because
-`widget.bind` is its registry helper. Render's colliding normalizers are also
-available as `normalize_slider` and `normalize_progress_indicator`.
+Public layers are `foundation`, `painting`, `text`, `layout`, `render`, `animation`,
+`scheduler`, `widget`, `backends` and `material`. Source names remain `src.<layer>.*`
+during FPK-1; widgets flattening and Material ownership are the next phase.
+`material` currently collects framework controls and value constructors;
+`host/builtins.lua` owns the explicit default Define construction surface.
 
-`material.lua` selects the default construction surface previously assembled as
-host builtins: widgets, geometry, styles, and class factories. `player.lua` exports
-the explicit player components. They are usable without the extension system;
-`extension/exports.lua` owns descriptors and import names, while `host/mpv_define.lua`
-adds scope-aware mpv/player services and registers them.
+`module_loader.install(root)` supports public collectors and canonical sources,
+including dot/slash paths, `.lua` suffixes and explicit `init` aliases. Application
+sources use `player.src.*` and `define.src.*` under the repository root; they do not
+add another bare `src` search root. Prefer canonical dot paths in project code.
 
-`module_loader.install(repository_root)` sets the library/source paths and the
-canonical source searcher. The mpv entry invokes it through `elxlib_load.lua`;
-standalone consumers load it with `loadfile` and provide the sibling `elxlib` paths.
-EmmyLua consumers add `lib` to `workspace.packages` in their local analyzer config.
+`fonts/` owns bundled font metadata. EmmyLua consumers add `lib` and the repository
+root to their workspace packages. Tests also supply the independent sibling elxlib.
 
-Source ownership and invariants remain in each layer's README. See
-[architecture](../dev/design/ARCHITECTURE.md) and [host protocol](../dev/design/HOST.md).
-
-`fonts/` contains the bundled font and generated glyph metadata. Host fixtures and
-offline measurement tools resolve these resources from `lib/fonts/`.
+See [architecture](../dev/design/ARCHITECTURE.md),
+[widgets](../dev/design/WIDGETS.md) and [host](../dev/design/HOST.md).

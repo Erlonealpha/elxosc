@@ -4,14 +4,14 @@
 ---@class elxosc.backends : elxosc.src.backends.ass_canvas, elxosc.src.backends.ass_text_layout, elxosc.src.backends.record
 local M = {}
 
-M.ass_canvas = require 'src.backends.ass_canvas'
-M.ass_text_layout = require 'src.backends.ass_text_layout'
-M.record = require 'src.backends.record'
+local ass_canvas = require 'src.backends.ass_canvas'
+local ass_text_layout = require 'src.backends.ass_text_layout'
+local record = require 'src.backends.record'
 
 for _, source in ipairs({
-    M.ass_canvas,
-    M.ass_text_layout,
-    M.record,
+    ass_canvas,
+    ass_text_layout,
+    record,
 }) do
     for name, value in pairs(source) do
         if M[name] == nil then

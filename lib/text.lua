@@ -4,14 +4,14 @@
 ---@class elxosc.text : elxosc.src.text.paragraph, elxosc.src.text.text_layout, elxosc.src.text.text_style
 local M = {}
 
-M.paragraph = require 'src.text.paragraph'
-M.text_layout = require 'src.text.text_layout'
-M.text_style = require 'src.text.text_style'
+local paragraph = require 'src.text.paragraph'
+local text_layout = require 'src.text.text_layout'
+local text_style = require 'src.text.text_style'
 
 for _, source in ipairs({
-    M.paragraph,
-    M.text_layout,
-    M.text_style,
+    paragraph,
+    text_layout,
+    text_style,
 }) do
     for name, value in pairs(source) do
         if M[name] == nil then

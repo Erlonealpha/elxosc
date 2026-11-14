@@ -4,10 +4,10 @@
 ---@class elxosc.layout : elxosc.src.layout.constraints
 local M = {}
 
-M.constraints = require 'src.layout.constraints'
+local constraints = require 'src.layout.constraints'
 
 for _, source in ipairs({
-    M.constraints,
+    constraints,
 }) do
     for name, value in pairs(source) do
         if M[name] == nil then

@@ -9,15 +9,15 @@ local geometry = require 'src.foundation.geometry'
 local Constraints = require('src.layout.constraints').Constraints
 local RenderOwner = require('src.render.render_owner').RenderOwner
 local WidgetBinding = require('src.widget.binding').WidgetBinding
-local WidgetsApp = require('src.widget.app').WidgetsApp
+local WidgetsApp = require('player.src.ambients').PlayerApp
 local DisplaySnapshot = require('src.widget.ambient').DisplaySnapshot
-local PlayerScope = require('src.widget.player_context').PlayerScope
-local PlayerStore = require('src.widget.player_context').PlayerStore
-local ContributionRegistry = require('src.widget.slot').ContributionRegistry
-local CompositionAssembler = require('src.widget.slot').CompositionAssembler
-local extension_mod = require 'src.widget.player.extension_controls'
-local geometry_for = require('src.widget.player.geometry').geometry_for
-local main_layout = require 'main_layout'
+local PlayerScope = require('player.src.context').PlayerScope
+local PlayerStore = require('player.src.context').PlayerStore
+local ContributionRegistry = require('define.src.slot').ContributionRegistry
+local CompositionAssembler = require('define.src.slot').CompositionAssembler
+local extension_mod = require 'player.src.extension_controls'
+local geometry_for = require('player.src.geometry').geometry_for
+local main_layout = require 'player.src.composition'
 local PlayerControlBar = extension_mod.PlayerControlBar
 local PlayerControlButton = extension_mod.PlayerControlButton
 
@@ -32,8 +32,8 @@ text_layout.set_default(ExtensionTextLayout())
 F.section('player extensions')
 
 F.test('aggregates expose the same public control classes and options stay immutable', function()
-    F.eq(require('src.widget.player').PlayerControlBar, PlayerControlBar, 'player bar identity')
-    F.eq(require('src.widget').PlayerControlButton, PlayerControlButton, 'DSL button identity')
+    F.eq(require('player').PlayerControlBar, PlayerControlBar, 'player bar identity')
+    F.eq(require('player').PlayerControlButton, PlayerControlButton, 'DSL button identity')
     local children = { PlayerControlButton({ icon = 'toggle_on' }) }
     local bar = PlayerControlBar({ children = children })
     children[2] = PlayerControlButton({ icon = 'toggle_off' })

@@ -30,8 +30,6 @@ Source modules load as `src.render.*`; the host-independent collector is
   discrete steps, secondary track, disabled styles and start/change/end callbacks.
 - `progress_indicator.lua` — read-only linear progress, determinate fill and
   indeterminate phase paint; ticker ownership belongs to its Widget State.
-- `timeline.lua` — media Slider specialization; chapter/cache paint and seek-mode
-  phases reuse RenderSlider's capture lifecycle. Progress changes only dirty paint.
 - `offstage.lua` — lifecycle-preserving layout boundary that suppresses paint,
   hit testing and pointer regions while hidden.
 - `opacity.lua` — paint-only subtree alpha; layout, hit testing and pointer regions remain
@@ -80,4 +78,4 @@ implementations.
 See [rendering](../../../dev/design/RENDERING.md) and [architecture](../../../dev/design/ARCHITECTURE.md).
 
 Owner naming migration and alias removal conditions are recorded in
-[widget migration aliases](../widget/README.md#migration-aliases).
+[widget ownership](../widget/README.md).

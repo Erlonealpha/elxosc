@@ -18,8 +18,8 @@ local record = require('src.backends.record')
 local binding_mod = require('src.widget.binding')
 local basic_widgets = require('src.widget.widgets.basic')
 local icon_mod = require('src.widget.widgets.icon')
-local player_mod = require('src.widget.player')
-local icon_map = require('src.widget.player.icon_map')
+local player_mod = require('player')
+local icon_map = require('player.src.icon_map')
 
 local Color = color.Color
 local Offset = geometry.Offset
@@ -76,7 +76,7 @@ F.test('ModernX semantic icons map to bundled Material Symbols glyphs', function
     F.eq(mapped.grade, 0, 'Material Symbols grade axis')
     F.eq(mapped.optical_size, 24, 'Material Symbols optical size axis')
     F.eq(icon_map.spec('minimize').size, 18, 'window control size')
-    F.eq(player_mod.glyph_name, icon_map.glyph_name, 'player aggregate preserves identity')
+    F.eq(player_mod.PlayerIcons.glyph_name, icon_map.glyph_name, 'player icons preserve identity')
 end)
 
 F.test('defaults match the bundled icon font', function()

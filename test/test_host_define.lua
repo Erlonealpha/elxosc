@@ -14,8 +14,8 @@ local text_layout = require('src.text.text_layout')
 local constraints_mod = require('src.layout.constraints')
 local render_owner = require('src.render.render_owner')
 local binding_mod = require('src.widget.binding')
-local slot_mod = require('src.widget.slot')
-local player_context = require('src.widget.player_context')
+local slot_mod = require('define.src.slot')
+local player_context = require('player.src.context')
 local layout_widgets = require('src.widget.widgets.layout')
 local basic_widgets = require('src.widget.widgets.basic')
 
@@ -177,7 +177,7 @@ F.test('player import exposes explicit component identities and constructs Defin
     end
     F.eq(env.geometry_for, nil, 'internal geometry is excluded')
     F.eq(env.default_controller, nil, 'internal assembly helper is excluded')
-    F.eq(env.PlayerStore, nil, 'host store mutation is not exported')
+    F.eq(env.PlayerStore, PlayerStore, 'player package exposes the canonical store class')
     F.raises(function()
         define.session.modules:publish('player', {})
     end, 'protected', 'player module remains protected')
@@ -201,7 +201,7 @@ end)
 F.test('host collects standard packages and keeps builtins independent of registry additions', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })
-    for _, package in ipairs(require('extension.exports').collect()) do
+    for _, package in ipairs(require('host.package_catalog').collect()) do
         F.ok(define.session.modules:is_protected(package.name), 'protected package: ' .. package.name)
         if package.name ~= 'player' then
             F.eq(define.session.modules:get(package.name), package.exports,
@@ -368,4 +368,21 @@ F.test('failed payloads dispose host subscriptions created during staging', func
     F.eq(#fake.unobserved, 1, 'staged property observer is rolled back')
     F.ok(define.session:env_for('scope_a').subscription == nil,
         'failed payload does not publish the subscription')
+end)
+
+F.test('Define shutdown finishes remaining cleanup when a disposer throws', function()
+    reset_fake()
+    local define = MpDefine()
+    local env = {}
+    define.session.modules:import_into('mp', env, 'cleanup')
+    local subscription = env.on_prop('pause', function() end)
+    define._disposers[#define._disposers + 1] = function()
+        error('extension cleanup failed')
+    end
+    F.raises(function()
+        define:shutdown()
+    end, 'extension cleanup failed', 'original disposer error surfaced')
+    F.ok(not subscription:is_active(), 'other observer still released')
+    F.eq(#define._disposers, 0, 'disposer references cleared')
+    F.ok(not define:shutdown(), 'failed cleanup cannot rerun disposers')
 end)

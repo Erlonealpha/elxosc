@@ -51,7 +51,7 @@ require neither PlayerProvider nor HostActions.
 
 Slider and LinearProgressIndicator follow Flutter's behavioral separation, not
 its full Material, focus, accessibility or shape-theme APIs. Media Timeline is
-owned by `widget/player/timeline.lua`; the mixed ProgressBar/SeekBar API is removed.
+owned by `player/src/timeline.lua`; the mixed ProgressBar/SeekBar API is removed.
 
 Player state is not a Widget option. Use `PlayerProvider.of(context)` or
 `PlayerProvider.maybe_of(context)` from a build method and let `PlayerScope` deliver

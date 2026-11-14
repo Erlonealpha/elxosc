@@ -133,10 +133,16 @@ function MpInput:__init(options)
     self._buttons = {}
     self._mouse_callback = nil
     self._shutdown = false
-    self:_clear_owned_sections()
-    self:_bind_mouse()
-    self:_bind_keys()
-    self:_clear_mouse_areas()
+    local ok, err = pcall(function()
+        self:_clear_owned_sections()
+        self:_bind_mouse()
+        self:_bind_keys()
+        self:_clear_mouse_areas()
+    end)
+    if not ok then
+        pcall(self.shutdown, self)
+        error(err, 0)
+    end
 end
 
 ---@return Offset

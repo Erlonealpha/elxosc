@@ -27,10 +27,8 @@ local text_layout = require 'src.text.text_layout'
 local binding_mod = require 'src.widget.widgets_binding'
 local app_widgets = require 'src.widget.app'
 local ambient_mod = require 'src.widget.ambient'
-local mpv_actions = require 'host.mpv_actions'
 local mpv_input = require 'host.mpv_input'
 local mpv_primitives = require 'host.mpv_primitives'
-local player_context = require 'src.widget.player_context'
 
 local Constraints = constraints_mod.Constraints
 local Rect = geometry.Rect
@@ -41,13 +39,10 @@ local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetsBinding = binding_mod.WidgetsBinding
 local WidgetsApp = app_widgets.WidgetsApp
-local ThemeData = ambient_mod.ThemeData
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
-local PlayerThemeData = require('src.widget.player.theme').PlayerThemeData
 local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
-local PlayerScope = player_context.PlayerScope
 local Navigator = require('src.widget.navigation').Navigator
 
 ---@class elxosc.host.mpv_app
@@ -57,6 +52,14 @@ local M = {}
 ---@field width number
 ---@field height number
 ---@field initialized boolean
+
+---@class _AppOptions
+---@field z number?
+---@field delay number?
+---@field default_text_style TextStyle?
+---@field root_wrapper (fun(root: Widget, display: DisplaySnapshot): Widget)?
+---@field on_activity (fun(app: App, x: number?, y: number?, viewport: Rect?))?
+---@field on_dispose fun()?
 
 --== app ===================================================================
 
@@ -70,45 +73,36 @@ local M = {}
 ---@field binding WidgetTree
 ---@field root_widget Widget
 ---@field display_snapshot DisplaySnapshot
----@field theme ThemeData
----@field player_theme PlayerThemeData
----@field actions HostActions
 ---@field canvas AssCanvas
 ---@field presenter AssPresenter
 ---@field input MpInput
----@field player_store PlayerStore?
----@field player_context MpPlayerContext?
 ---@field _shutdown boolean
 ---@field _property_callbacks fun(name: string, value: any)[]
 ---@field _render_callback fun(dt: number, time: number)
 ---@field _shutdown_callback fun()
----@overload fun(root_widget: Widget, options: { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext?, theme: ThemeData?, player_theme: PlayerThemeData?, actions: HostActions?, default_text_style: TextStyle? }?): self
+---@field _root_wrapper (fun(root: Widget, display: DisplaySnapshot): Widget)?
+---@field _activity_callback (fun(app: App, x: number?, y: number?, viewport: Rect?))?
+---@field _dispose_callback fun()?
+---@overload fun(root_widget: Widget, options?: _AppOptions): self
 local App = std.class.new('App')
 
 function App:__init(root_widget, options)
+    self._shutdown = false
+    self._property_callbacks = {}
+    self._dispose_callback = options and options.on_dispose
+    local ok, err = pcall(self._initialize, self, root_widget, options)
+    if not ok then
+        pcall(self.shutdown, self)
+        error(err, 0)
+    end
+end
+
+function App:_initialize(root_widget, options)
     options = options or {}
     self.root_widget = root_widget
-    self.player_store = options.player_store
-    self.player_context = options.player_context
-    if self.player_context
-        and type(self.player_context.observe_default_properties) == 'function' then
-        self.player_context:observe_default_properties({ batch = true })
-    end
-    if self.player_context
-        and type(self.player_context.observe_thumbfast) == 'function' then
-        self.player_context:observe_thumbfast()
-    end
-    if self.player_context
-        and type(self.player_context.observe_yt_dlp) == 'function' then
-        self.player_context:observe_yt_dlp()
-    end
-    if self.player_context
-        and type(self.player_context.observe_sponsorblock) == 'function' then
-        self.player_context:observe_sponsorblock()
-    end
-    self.theme = options.theme or ThemeData()
-    self.player_theme = options.player_theme or PlayerThemeData()
-    self.actions = options.actions or mpv_actions.default({ player_context = self.player_context })
+    self._root_wrapper = options.root_wrapper
+    self._activity_callback = options.on_activity
+    self._dispose_callback = options.on_dispose
     self.default_text_style = options.default_text_style
     self._shutdown = false
     self._property_callbacks = {}
@@ -242,22 +236,13 @@ end
 ---@param root_widget Widget
 ---@return Widget
 function App:_wrap_root(root_widget)
-    local content = root_widget
-    if self.player_store == nil then
-        content = root_widget
-    else
-        content = PlayerScope({
-            store = self.player_store,
-            child = root_widget,
-        })
+    if self._root_wrapper then
+        return self._root_wrapper(root_widget, self.display_snapshot)
     end
     return WidgetsApp({
-        theme = self.theme,
-        player_theme = self.player_theme,
         display = self.display_snapshot,
         default_text_style = self.default_text_style,
-        actions = self.actions,
-        child = content,
+        child = root_widget,
     })
 end
 
@@ -276,16 +261,9 @@ function App:notify_activity(x, y, viewport)
     if self._shutdown or not self.binding or not self.binding.root_element then
         return
     end
-    local function visit(element)
-        local state = element.state
-        if state and type(state.notify_activity) == 'function' then
-            state:notify_activity(x, y, viewport)
-        end
-        for _, child in ipairs(element:element_children()) do
-            visit(child)
-        end
+    if self._activity_callback then
+        self._activity_callback(self, x, y, viewport)
     end
-    visit(self.binding.root_element)
 end
 
 --- Swap the root widget (the define phase finished, or a script re-declared).
@@ -312,14 +290,12 @@ function App:_observe()
     local estimated_fps_callback = function()
         self:_update_delay()
     end
-    mp.observe_property('osd-dimensions', 'native', dimensions_callback)
-    mp.observe_property('display-fps', 'native', display_fps_callback)
-    mp.observe_property('estimated-display-fps', 'native', estimated_fps_callback)
-    self._property_callbacks = {
-        dimensions_callback,
-        display_fps_callback,
-        estimated_fps_callback,
-    }
+    local names = { 'osd-dimensions', 'display-fps', 'estimated-display-fps' }
+    local callbacks = { dimensions_callback, display_fps_callback, estimated_fps_callback }
+    for index, callback in ipairs(callbacks) do
+        self._property_callbacks[#self._property_callbacks + 1] = callback
+        mp.observe_property(assert(names[index]), 'native', callback)
+    end
     self._shutdown_callback = function()
         self:shutdown()
     end
@@ -340,11 +316,15 @@ function App:shutdown()
         end
     end
     for _, callback in ipairs(self._property_callbacks) do
-        mp.unobserve_property(callback)
+        release(function()
+            mp.unobserve_property(callback)
+        end)
     end
     self._property_callbacks = {}
     if self._shutdown_callback and mp.unregister_event then
-        mp.unregister_event(self._shutdown_callback)
+        release(function()
+            mp.unregister_event(self._shutdown_callback)
+        end)
     end
     if self.input then
         release(function()
@@ -355,8 +335,10 @@ function App:shutdown()
         self.owner.on_dirty = nil
     end
     if self.scheduler then
-        self.scheduler:remove_persistent(self._render_callback)
-        self.scheduler:dispose()
+        release(function()
+            self.scheduler:remove_persistent(self._render_callback)
+            self.scheduler:dispose()
+        end)
     end
     if self.binding then
         release(function()
@@ -373,10 +355,9 @@ function App:shutdown()
             self.clock:dispose()
         end)
     end
-    if self.player_context then
-        release(function()
-            self.player_context:dispose()
-        end)
+    if self._dispose_callback then
+        release(self._dispose_callback)
+        self._dispose_callback = nil
     end
     if self.presenter then
         release(function()
@@ -448,11 +429,22 @@ end
 
 --- Build a root widget and start rendering it.
 ---@param build fun(): Widget
----@param options { z: number?, delay: number?, player_store: PlayerStore?, player_context: MpPlayerContext? }?
+---@param options _AppOptions?
 ---@return App
 function M.start(build, options)
-    local app = App(build(), options)
-    app:request_frame()
+    local ok, root = pcall(build)
+    if not ok then
+        if options and options.on_dispose then
+            pcall(options.on_dispose)
+        end
+        error(root, 0)
+    end
+    local app = App(root, options)
+    local started, err = pcall(app.request_frame, app)
+    if not started then
+        pcall(app.shutdown, app)
+        error(err, 0)
+    end
     return app
 end
 

@@ -5,7 +5,7 @@ package.path = package.path .. ';' .. scripts .. '/?.lua;' .. scripts .. '/?/ini
     .. ';' .. scripts .. '/elxosc/?.lua;' .. scripts .. '/elxosc/?/init.lua'
 assert(loadfile(scripts .. '/elxosc/lib/module_loader.lua'))().install(scripts .. '/elxosc')
 package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib')
-local player_mod = require 'src.widget.player_context'
+local player_mod = require 'player.src.context'
 local refs = setmetatable({}, { __mode = 'v' })
 local store = player_mod.PlayerStore({ time_pos = 0 })
 

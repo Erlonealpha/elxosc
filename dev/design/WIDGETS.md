@@ -2,7 +2,13 @@
 
 本文负责声明式 Widget 树、Element 生命周期、State rebuild、绑定和控件 API。
 
-## 已确认的组件归属（2026-11-14，代码待迁移）
+## FPK-1 实施状态（2026-11-14）
+
+player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
+新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
+[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+
+## 已确认的组件归属（2026-11-14，FPK-1 已实施，后续分层待实施）
 
 当前源码仍位于 `lib/src/widget/`。后续 runtime 与基础组件在 `lib/src/widgets/` 扁平
 组织，Widget 基类对应 framework.lua；Element/State/Binding/Builder 等各保留功能文件。
@@ -11,7 +17,7 @@ Tooltip/HoverText/Icon 属基础 widgets。设计 Theme 和整个按钮 family�
 Slider/LinearProgressIndicator 属 `lib/src/material/`，Material 重导出 widgets。
 widgets 不反向 require Material/player/Define。
 
-WidgetsApp 将只提供 display/default_text_style/child/key；默认文字保持 14px TextStyle。
+WidgetsApp 已只提供 display/default_text_style/child/key；默认文字保持 14px TextStyle。
 Theme/PlayerTheme/HostActionsScope/PlayerScope 由 Material/player 的上层 assembly 明确包装。
 PlayerContext、HostActions、Timeline 与 AutoHide 归 player；bind/DSL/Slot/SlotBuilder 归
 define。ContextBuilder/call_context 与通用 callback/result 校验仍归框架，define.builder
@@ -19,7 +25,7 @@ define。ContextBuilder/call_context 与通用 callback/result 校验仍归框�
 
 RenderSlider/RenderLinearProgressIndicator 的数值、输入、layout/dirty 与配置校验留 render；
 设计颜色/尺寸默认移到 Material wrapper，render 接收明确 config，不引用 Material Options。
-Timeline 迁到 player 继续继承同一 RenderSlider。HoverText 改用基础 gesture/text visual
+Timeline 已迁到 player，继续继承同一 RenderSlider。HoverText 改用基础 gesture/text visual
 机制解除 ButtonBase 依赖，保持 hover/点击效果。Icon 当前字体/variation API 与默认视觉
 保持，生成的字体声明仍为框架资源；本次不新增 RawIcon 或完整图标主题 API。
 
@@ -27,7 +33,7 @@ Tooltip 不再识别 AutoHide 类/私有 State hook。它提供通用取消/可�
 适配在 fade 开始立即释放 thumbfast，并维持淡出期间的现有 pointer capture。Opacity/
 Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变。
 
-新模块名和类型规则见 [架构](ARCHITECTURE.md)；以上为待实施合同，下文继续描述当前行为。
+新模块名和类型规则见 [架构](ARCHITECTURE.md)；widgets/Material 和全量类型迁移仍为后续合同。
 
 ## Widget 不可变
 
@@ -135,8 +141,8 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 生产模块表使用 `elxosc.<模块路径>` 类型；直接模块和聚合入口仍保持对象 identity。
 `widget.exports` 的 `{ name = 'widget', exports = widgets }` 描述使用模块交叉类型，
 保留 canonical 构造器、context 和 Slot 接口，排除会覆盖 Define `bind` 的 registry helper；
-player 的描述复用显式 `elxosc.widget.player.components`。包收集和默认 builtins
-选择分别属于 `extension.exports` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
+player 的描述复用显式 `elxosc.player.components`。包收集和默认 builtins
+选择分别属于 `host.package_catalog` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
 完整包。类型名前缀不改变运行时 require 或 import 包名。
 
 `Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds

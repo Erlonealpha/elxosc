@@ -13,15 +13,15 @@ local color_mod = require 'src.foundation.color'
 local pointer_event = require 'src.foundation.pointer_event'
 local constraints_mod = require 'src.layout.constraints'
 local render_owner_mod = require 'src.render.render_owner'
-local progress_mod = require 'src.render.timeline'
+local progress_mod = require 'player.src.render.timeline'
 local record_mod = require 'src.backends.record'
-local actions_mod = require 'src.widget.actions'
-local player_context = require 'src.widget.player_context'
+local actions_mod = require 'player.src.actions'
+local player_context = require 'player.src.context'
 local mpv_player_context = require 'host.mpv_player_context'
 local mpv_actions = require 'host.mpv_actions'
 local widget_api = require 'src.widget'
-local player_api = require 'src.widget.player'
-local progress_widget = require 'src.widget.player.timeline'
+local player_api = require 'player'
+local progress_widget = require 'player.src.timeline'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
@@ -48,8 +48,8 @@ F.section('modernx player: progress and input')
 F.test('player aggregate preserves direct Timeline identity', function()
     F.eq(player_api.Timeline, progress_widget.Timeline,
         'player aggregate/direct Timeline identity')
-    F.eq(widget_api.Timeline, progress_widget.Timeline,
-        'widget aggregate/player Timeline identity')
+    F.eq(widget_api.Timeline, nil,
+        'framework does not export player Timeline')
 end)
 
 F.test('progress bar paints track, buffer, progress and handle', function()

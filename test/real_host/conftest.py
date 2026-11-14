@@ -16,10 +16,10 @@ import pytest
 from lifecycle import OwnedProcess
 
 
-ELXOSC_SOURCE_DIRS = ('lib', 'host', 'extension')
+ELXOSC_SOURCE_DIRS = ('lib', 'host', 'player', 'define')
 
 # Top-level runtime modules `main.lua` requires next to the package dirs.
-ELXOSC_ROOT_MODULES = ("main_layout.lua", "demo.lua")
+ELXOSC_ROOT_MODULES = ('demo.lua',)
 
 
 def _stage_lua_tree(source, destination):

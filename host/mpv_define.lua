@@ -13,12 +13,12 @@
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
-local define_mod = require 'extension.define'
-local modules_mod = require 'extension.modules'
-local slot_mod = require 'src.widget.slot'
-local player_context = require 'src.widget.player_context'
+local define_mod = require 'define.src.session'
+local modules_mod = require 'define.src.modules'
+local slot_mod = require 'define.src.slot'
+local player_context = require 'player.src.context'
 local player_exports = require 'player'
-local exports_mod = require 'extension.exports'
+local exports_mod = require 'host.package_catalog'
 
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
@@ -36,14 +36,14 @@ local M = {}
 ---@alias elxosc.host.mpv_define.mp MpFacadeExports & MpScopeExports
 
 ---@class PlayerRuntimeExports
----@field get_snapshot fun(): PlayerSnapshot
----@field on_update fun(callback: fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)): PlayerSubscription
+---@field get_snapshot fun(): elxosc.player.PlayerSnapshot
+---@field on_update fun(callback: fun(snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)): elxosc.player.PlayerSubscription
 
----@alias elxosc.host.mpv_define.player elxosc.src.widget.player.components & PlayerRuntimeExports
+---@alias elxosc.host.mpv_define.player elxosc.mod.player.src.components & PlayerRuntimeExports
 
----@return elxosc.material
+---@return elxosc.mod.host.builtins
 function M.builtins()
-    return require 'material'
+    return require 'host.builtins'
 end
 
 --== the `mp` module =======================================================
@@ -55,7 +55,7 @@ end
 --- learns what `mp` is, and `on_message` is scope-specific because the loader
 --- receives the scope id.
 ---@param register_disposer fun(dispose: fun())?
----@return DefinePackage<MpFacadeExports>
+---@return elxosc.define.DefinePackage<MpFacadeExports>
 local function mp_package(register_disposer)
     ---@class MpFacadeExports
     local exports = {
@@ -173,9 +173,9 @@ local function mp_package(register_disposer)
     return { name = 'mp', exports = exports, loader = loader }
 end
 
----@param store PlayerStore
+---@param store elxosc.player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
----@return DefinePackage<elxosc.host.mpv_define.player>
+---@return elxosc.define.DefinePackage<elxosc.host.mpv_define.player>
 local function player_package(store, register_disposer)
     ---@type elxosc.host.mpv_define.player
     local exports = {}
@@ -198,11 +198,11 @@ local function player_package(store, register_disposer)
 end
 
 --- Every extension package is registered here; runtime packages add owned APIs.
----@param modules ModuleRegistry
----@param store PlayerStore
+---@param modules elxosc.define.ModuleRegistry
+---@param store elxosc.player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 function M.install_modules(modules, store, register_disposer)
-    ---@type DefinePackageDescriptor[]
+    ---@type elxosc.define.DefinePackageDescriptor[]
     local packages = exports_mod.collect()
     packages[#packages + 1] = mp_package(register_disposer)
     for i, package in ipairs(packages) do
@@ -219,16 +219,16 @@ end
 
 ---@class MpDefineOptions
 ---@field builtins table<string, any>? replaces the host-selected defaults
----@field contributions ContributionRegistry? shared contribution registry
----@field modules ModuleRegistry? shared module registry (gets the `mp` module)
----@field player_store PlayerStore? host-independent player snapshot store
+---@field contributions elxosc.define.ContributionRegistry? shared contribution registry
+---@field modules elxosc.define.ModuleRegistry? shared module registry (gets the `mp` module)
+---@field player_store elxosc.player.PlayerStore? host-independent player snapshot store
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
 ---@class MpDefine : std.object
----@field session DefineSession
+---@field session elxosc.define.DefineSession
 ---@field on_sealed fun()? called when the last `define_end` arrives
----@field player_store PlayerStore
+---@field player_store elxosc.player.PlayerStore
 ---@field protected _listening boolean
 ---@field protected _allow_start boolean
 ---@field protected _disposers fun()[]
@@ -350,11 +350,24 @@ function MpDefine:shutdown()
     end
     self._shutdown = true
     self._allow_start = false
-    self:unlisten()
-    for index = #self._disposers, 1, -1 do
-        self._disposers[index]()
+    local failure
+    local function release(callback)
+        local ok, err = pcall(callback)
+        if not ok then
+            failure = failure or err
+        end
     end
+    release(function()
+        self:unlisten()
+    end)
+    local disposers = self._disposers
     self._disposers = {}
+    for index = #disposers, 1, -1 do
+        release(disposers[index])
+    end
+    if failure then
+        error(failure, 0)
+    end
     return true
 end
 

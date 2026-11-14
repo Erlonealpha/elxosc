@@ -9,13 +9,14 @@ local text_layout = require 'src.text.text_layout'
 
 local widget_api = require 'src.widget'
 local builder_mod = require 'src.widget.builder'
+local slot_builder_mod = require 'define.src.builder'
 local widget_mod = require 'src.widget.widget'
 local state_mod = require 'src.widget.state'
 local key_mod = require 'src.widget.key'
 local basic_widgets = require 'src.widget.widgets.basic'
 local overlay_mod = require 'src.widget.overlay'
 local navigation_mod = require 'src.widget.navigation'
-local slot_mod = require 'src.widget.slot'
+local slot_mod = require 'define.src.slot'
 
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
@@ -42,7 +43,7 @@ F.section('builder: public contract')
 
 F.test('builder helpers preserve direct and aggregate module identity', function()
     F.eq(widget_api.call_context, builder_mod.call_context, 'context helper identity')
-    F.eq(widget_api.call_slot, builder_mod.call_slot, 'slot helper identity')
+    F.eq(require('define').call_slot, slot_builder_mod.call_slot, 'slot helper identity')
     F.eq(widget_api.validate_context, builder_mod.validate_context, 'context validator identity')
     F.eq(widget_api.validate_result, builder_mod.validate_result, 'result validator identity')
 end)

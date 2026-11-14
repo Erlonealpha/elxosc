@@ -7,7 +7,7 @@ local F = require('framework')
 local mp_stub = require('mp_stub')
 mp_stub.install()
 
-local player_context = require('src.widget.player_context')
+local player_context = require('player.src.context')
 local mpv_player_context = require('host.mpv_player_context')
 
 local PlayerStore = player_context.PlayerStore
@@ -116,7 +116,7 @@ F.test('host capability updates use explicit loading/error states', function()
     context:set_capability('thumbfast', 'available')
     F.eq(store:get():capability('thumbfast').status, 'available', 'available capability state')
     F.raises(function()
-        context:set_capability('thumbfast', 'invalid' --[[@as CapabilityStatus]])
+        context:set_capability('thumbfast', 'invalid' --[[@as elxosc.player.CapabilityStatus]])
     end, 'status is invalid', 'invalid capability status')
     context:dispose()
 end)

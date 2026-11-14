@@ -8,7 +8,7 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local dsl = require('src.widget.dsl')
+local dsl = require('define.src.dsl')
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 local host_define = require 'host.mpv_define'
@@ -104,12 +104,12 @@ end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()
     local b = host_define.builtins()
-    local slot = require('src.widget.slot')
-    local widget_api = require('src.widget')
+    local slot = require('define.src.slot')
+    local define_api = require('define')
     F.eq(b.SlotSpec, slot.SlotSpec, 'DSL SlotSpec')
-    F.eq(widget_api.SlotSpec, slot.SlotSpec, 'widget SlotSpec')
-    F.eq(widget_api.CompositionAssembler, slot.CompositionAssembler,
-        'widget CompositionAssembler')
+    F.eq(define_api.SlotSpec, slot.SlotSpec, 'Define SlotSpec')
+    F.eq(define_api.CompositionAssembler, slot.CompositionAssembler,
+        'Define CompositionAssembler')
 end)
 
 F.test('basic widget module remains a compatibility aggregate', function()

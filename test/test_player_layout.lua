@@ -10,14 +10,14 @@ local constraints_mod = require('src.layout.constraints')
 local text_layout = require('src.text.text_layout')
 local render_owner = require('src.render.render_owner')
 local binding_mod = require('src.widget.binding')
-local app_mod = require('src.widget.app')
+local app_mod = require('player.src.ambients')
 local ambient_mod = require('src.widget.ambient')
-local actions_mod = require('src.widget.actions')
-local player_context = require('src.widget.player_context')
-local player_layout_mod = require('src.widget.player.layout')
-local player_theme_mod = require('src.widget.player.theme')
-local progress_mod = require('src.widget.player.timeline')
-local tooltip_mod = require('src.widget.player.tooltip')
+local actions_mod = require('player.src.actions')
+local player_context = require('player.src.context')
+local player_layout_mod = require('player.src.layout')
+local player_theme_mod = require('player.src.theme')
+local progress_mod = require('player.src.timeline')
+local tooltip_mod = require('player.src.tooltip')
 local record_mod = require('src.backends.record')
 local ass_mod = require('src.backends.ass_canvas')
 
@@ -26,10 +26,10 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
-local WidgetsApp = app_mod.WidgetsApp
+local WidgetsApp = app_mod.PlayerApp
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local HostActions = actions_mod.HostActions
-local Main = require('src.widget.player.app').Main
+local Main = require('player.src.app').Main
 local PlayerStore = player_context.PlayerStore
 local PlayerScope = player_context.PlayerScope
 local PlayerLayout = player_layout_mod.PlayerLayout
@@ -89,11 +89,11 @@ end
 F.section('player layout: theme and geometry')
 
 F.test('player component extraction preserves public module identity', function()
-    F.eq(require('src.widget.player.geometry').geometry_for, player_layout_mod.geometry_for,
+    F.eq(require('player.src.geometry').geometry_for, player_layout_mod.geometry_for,
         'geometry remains the same function through the compatibility entry')
-    F.eq(require('src.widget.player.description').PlayerDescriptionLayer, PlayerDescriptionLayer,
+    F.eq(require('player.src.description').PlayerDescriptionLayer, PlayerDescriptionLayer,
         'description class remains the same object through layout')
-    F.eq(require('src.widget.player').PlayerDescriptionLayer, PlayerDescriptionLayer,
+    F.eq(require('player').PlayerDescriptionLayer, PlayerDescriptionLayer,
         'player aggregate exports the direct description class')
 end)
 
@@ -105,7 +105,7 @@ F.test('window controls and title use the top-edge ModernX placement', function(
 end)
 
 F.test('blurred backgrounds cross viewport edges without an internal edge line', function()
-    local visuals = require('src.widget.player.visuals')
+    local visuals = require('player.src.visuals')
     local theme = PlayerThemeData()
     for _, top in ipairs({ true, false }) do
         local canvas = RecordCanvas()
@@ -740,7 +740,7 @@ F.test('thumbnail frame can be disabled without changing the preview request', f
 end)
 
 F.test('AutoHide clears a retained thumbnail at fade start and suppresses fading requests', function()
-    local visibility = require('src.widget.visibility')
+    local visibility = require('player.src.auto_hide')
     local controller = visibility.AutoHideController()
     local cleared, requested = 0, 0
     local store = PlayerStore({

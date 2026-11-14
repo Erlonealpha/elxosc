@@ -19,22 +19,23 @@ local geometry = require('src.foundation.geometry')
 local key_event = require('src.foundation.key_event')
 local text_style = require('src.text.text_style')
 local mpv_app = require('host.mpv_app')
+local player_app = require 'host.mpv_player_app'
 local mpv_input = require('host.mpv_input')
 local mpv_primitives = require('host.mpv_primitives')
 local mpv_player_context = require('host.mpv_player_context')
-local main_layout = require('main_layout')
+local main_layout = require('player.src.composition')
 local app_widgets = require('src.widget.app')
 local mpv_define = require('host.mpv_define')
 local navigation_mod = require('src.widget.navigation')
 local demo_mod = require('demo')
 local layout_widgets = require('src.widget.widgets.layout')
 local basic_widgets = require('src.widget.widgets.basic')
-local slot_mod = require('src.widget.slot')
+local slot_mod = require('define.src.slot')
 local state_mod = require('src.widget.state')
 local widget_mod = require('src.widget.widget')
-local player_context = require('src.widget.player_context')
-local actions_mod = require('src.widget.actions')
-local player_layout_mod = require('src.widget.player.layout')
+local player_context = require('player.src.context')
+local actions_mod = require('player.src.actions')
+local player_layout_mod = require('player.src.layout')
 
 local Color = color.Color
 local Offset = geometry.Offset
@@ -51,7 +52,7 @@ local Column = layout_widgets.Column
 local Text = basic_widgets.Text
 local Button = basic_widgets.Button
 local Demo = demo_mod.Demo
-local DefaultApp = app_widgets.DefaultApp
+local DefaultApp = require('player.src.app').DefaultApp
 local PlayerStore = player_context.PlayerStore
 local PlayerProvider = player_context.PlayerProvider
 local MpInput = mpv_input.MpInput
@@ -322,7 +323,7 @@ end)
 
 F.test('the demo exposes anchors, nominal icons and static animation output', function()
     mp_stub.reset()
-    local app = mpv_app.App(Demo(), {
+    local app = player_app.PlayerHostApp(Demo(), {
         player_store = PlayerStore({ demo_count = 7, demo_event = 'context' }),
     })
     app:render()
@@ -337,7 +338,7 @@ end)
 F.test('the demo updates its PlayerContext panel on the next frame', function()
     mp_stub.reset()
     local store = PlayerStore({ demo_count = 1, demo_event = 'initial' })
-    local app = mpv_app.App(Demo(), { player_store = store })
+    local app = player_app.PlayerHostApp(Demo(), { player_store = store })
     app:render()
     F.contains(fake.overlay.data, 'PlayerContext count=1 event=initial',
         'initial PlayerContext output')
@@ -350,7 +351,7 @@ end)
 
 F.test('the demo exposes finite scale box and clip output', function()
     mp_stub.reset()
-    local app = mpv_app.App(Demo())
+    local app = player_app.PlayerHostApp(Demo())
     app:render()
     F.contains(fake.overlay.data, 'Scale boxes', 'scale box demo label')
     F.contains(fake.overlay.data, '\\fscx', 'finite text scale output')
@@ -455,7 +456,7 @@ end)
 
 F.test('host ESC section is enabled only when Navigator can pop', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Text('extension'), {
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension'), {
         Page({ key = 'home', builder = function() return Text('home') end }),
         Page({ key = 'child', builder = function() return Text('child') end }),
     }))
@@ -476,7 +477,7 @@ end)
 F.test('DefaultApp extension controls remain clickable above Main activity surface', function()
     mp_stub.reset()
     local clicks = 0
-    local app = mpv_app.App(build_test_app(Button({
+    local app = player_app.PlayerHostApp(build_test_app(Button({
         label = 'Demo',
         on_click = function() clicks = clicks + 1 end,
     })))
@@ -488,7 +489,7 @@ end)
 
 F.test('host mouse activity restores a hidden Main without intercepting clicks', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Text('extension')))
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -511,7 +512,7 @@ F.test('host keyboard routing reaches the open description panel', function()
             opened = url
         end,
     })
-    local app = mpv_app.App(build_test_app(), {
+    local app = player_app.PlayerHostApp(build_test_app(), {
         player_store = store,
         actions = actions,
     })
@@ -541,7 +542,7 @@ end)
 
 F.test('ModernX bottom hover policy reveals Main only in the hover zone', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Text('extension')))
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -563,13 +564,13 @@ end)
 F.test('Main wake zones follow live scale changes and viewport resize', function()
     mp_stub.reset()
     local function root(scale)
-        return app_widgets.DefaultApp({
-            main = app_widgets.Main({ scale = scale, window_top_bar = 'yes' }),
+        return require('player.src.app').DefaultApp({
+            main = require('player.src.app').Main({ scale = scale, window_top_bar = 'yes' }),
             auto_hide_bottom_hover = true,
             auto_hide_top_hover = true,
         })
     end
-    local app = mpv_app.App(root(2))
+    local app = player_app.PlayerHostApp(root(2))
     app:render()
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     local state = default_element.state
@@ -596,7 +597,7 @@ end)
 
 F.test('ModernX top hover policy reveals Main only in the top zone', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Text('extension')))
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension')))
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(default_element ~= nil, 'DefaultApp is mounted')
     if default_element == nil then
@@ -635,7 +636,7 @@ end)
 F.test('window snapshot gates top hover and updates the live Main policy', function()
     mp_stub.reset()
     local store = PlayerStore({ fullscreen = false, border = true, title_bar = true })
-    local app = mpv_app.App(build_test_app(Text('extension')), {
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension')), {
         player_store = store,
     })
     local default_element = find_widget_element(app.binding.root_element, DefaultApp)
@@ -667,7 +668,7 @@ end)
 
 F.test('activity and resize do not cancel an active pointer capture', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Button({
+    local app = player_app.PlayerHostApp(build_test_app(Button({
         label = 'extension',
         on_click = function() end,
     })))
@@ -691,7 +692,7 @@ end)
 
 F.test('root replacement removes stale Main activity listeners', function()
     mp_stub.reset()
-    local app = mpv_app.App(build_test_app(Text('extension')))
+    local app = player_app.PlayerHostApp(build_test_app(Text('extension')))
     local old_default = find_widget_element(app.binding.root_element, DefaultApp)
     F.ok(old_default ~= nil, 'old DefaultApp is mounted')
     if old_default == nil then
@@ -753,7 +754,7 @@ F.test('a PlayerStore update rebuilds the app through PlayerScope', function()
     end
 
     local store = PlayerStore({ value = 1 })
-    local app = mpv_app.App(Reader(), { player_store = store })
+    local app = player_app.PlayerHostApp(Reader(), { player_store = store })
     app:render()
     F.eq(app.owner.root.paragraph.text, 'v1', 'initial snapshot reaches the root')
 
@@ -767,7 +768,7 @@ F.test('App attaches and disposes the default player property observers', functi
     mp_stub.reset()
     local store = PlayerStore()
     local context = MpPlayerContext(store)
-    local app = mpv_app.App(Text('player'), {
+    local app = player_app.PlayerHostApp(Text('player'), {
         player_store = store,
         player_context = context,
     })
@@ -802,7 +803,7 @@ F.test('shutdown unmounts PlayerScope subscriptions', function()
     end
 
     local store = PlayerStore({ value = 1 })
-    local app = mpv_app.App(Reader(), { player_store = store })
+    local app = player_app.PlayerHostApp(Reader(), { player_store = store })
     app:render()
     local scope_element = find_widget_element(app.binding.root_element, player_context.PlayerScope)
     F.ok(scope_element ~= nil, 'PlayerScope is mounted below WidgetsApp')

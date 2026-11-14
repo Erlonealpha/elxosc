@@ -2,7 +2,7 @@
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
 local support = require 'runtime_support'
-local slot_mod = require 'src.widget.slot'
+local slot_mod = require 'define.src.slot'
 local key_mod = require 'src.widget.key'
 local layout_mod = require 'src.widget.widgets.layout'
 

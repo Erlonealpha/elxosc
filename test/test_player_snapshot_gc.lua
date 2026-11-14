@@ -1,6 +1,6 @@
 -- Regression for LuaJIT's weak-key (non-ephemeron) collection semantics.
 local F = require 'framework'
-local player_mod = require 'src.widget.player_context'
+local player_mod = require 'player.src.context'
 local PlayerSnapshot = player_mod.PlayerSnapshot
 local PlayerStore = player_mod.PlayerStore
 

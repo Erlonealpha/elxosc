@@ -5,13 +5,13 @@ local F = require 'framework'
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 
-local app_mod = require 'host.mpv_app'
-local main_layout = require 'main_layout'
+local app_mod = require 'host.mpv_player_app'
+local main_layout = require 'player.src.composition'
 local demo_mod = require 'demo'
 local define_mod = require 'host.mpv_define'
 local geometry = require 'src.foundation.geometry'
 
-local App = app_mod.App
+local App = app_mod.PlayerHostApp
 local Demo = demo_mod.Demo
 local Offset = geometry.Offset
 local fake = mp_stub.fake
@@ -37,7 +37,7 @@ local function mount_demo()
     define:close()
     local root = define:assemble(main_layout.build_app_description())
     local app = App(root, {
-        player_store = require('src.widget.player_context').PlayerStore({ duration = 100, idle_active = false }),
+        player_store = require('player.src.context').PlayerStore({ duration = 100, idle_active = false }),
     })
     app:render()
     assert(fake.log['elxosc-demo'] == nil, 'Demo is constructed only after opening')

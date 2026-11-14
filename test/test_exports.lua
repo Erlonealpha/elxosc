@@ -1,6 +1,6 @@
 -- Typed extension consumers exercise module tables without flattening imports.
 local F = require 'framework'
-local modules_mod = require 'extension.modules'
+local modules_mod = require 'define.src.modules'
 local foundation_package = require 'foundation'
 local painting_package = require 'painting'
 local text_package = require 'text'
@@ -13,8 +13,8 @@ F.section('exports: typed module consumers')
 ---@param painting elxosc.painting
 ---@param text elxosc.text
 ---@param widgets elxosc.widget
----@param player elxosc.src.widget.player.components
----@return Slider, PlayerControlButton, TextStyle, Paint
+---@param player elxosc.mod.player.src.components
+---@return Slider, elxosc.player.PlayerControlButton, TextStyle, Paint
 local function make_controls(values, painting, text, widgets, player)
     local size = values.Size(120, 24)
     local style = text.TextStyle({ font_size = size.height / 2 })
@@ -28,7 +28,7 @@ F.test('typed descriptors retain canonical constructors and module intersections
         painting_package, text_package, widget_package,
         player_package)
     F.eq(slider.__class, require('src.widget.widgets.slider').Slider, 'Slider class identity')
-    F.eq(button.__class, require('src.widget.player.extension_controls').PlayerControlButton,
+    F.eq(button.__class, require('player.src.extension_controls').PlayerControlButton,
         'player control identity')
     F.eq(style.font_size, 12, 'text module constructor')
     F.eq(brush.color.r, 255, 'foundation and painting module constructors')
@@ -45,7 +45,7 @@ end
 F.test('typed package intersections preserve named and array members', function()
     ---@type TestArrayExports
     local exports = { Slider = require('src.widget.widgets.slider').Slider, n = 0.25, 'item' }
-    ---@type DefinePackage<TestArrayExports>
+    ---@type elxosc.define.DefinePackage<TestArrayExports>
     local package = { name = 'array-controls', exports = exports }
     local registry = modules_mod.ModuleRegistry()
     modules_mod.register_package(registry, package)

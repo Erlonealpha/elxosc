@@ -4,18 +4,18 @@
 ---@class elxosc.painting : elxosc.src.painting.canvas, elxosc.src.painting.paint, elxosc.src.painting.painting_binding, elxosc.src.painting.path, elxosc.src.painting.text_paint
 local M = {}
 
-M.canvas = require 'src.painting.canvas'
-M.paint = require 'src.painting.paint'
-M.painting_binding = require 'src.painting.painting_binding'
-M.path = require 'src.painting.path'
-M.text_paint = require 'src.painting.text_paint'
+local canvas = require 'src.painting.canvas'
+local paint = require 'src.painting.paint'
+local painting_binding = require 'src.painting.painting_binding'
+local path = require 'src.painting.path'
+local text_paint = require 'src.painting.text_paint'
 
 for _, source in ipairs({
-    M.canvas,
-    M.paint,
-    M.painting_binding,
-    M.path,
-    M.text_paint,
+    canvas,
+    paint,
+    painting_binding,
+    path,
+    text_paint,
 }) do
     for name, value in pairs(source) do
         if M[name] == nil then

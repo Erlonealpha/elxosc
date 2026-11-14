@@ -4,15 +4,15 @@
 ---@class elxosc.animation : elxosc.src.animation, elxosc.src.animation.controller, elxosc.src.animation.curve, elxosc.src.animation.tween
 local M = {}
 
-M.controller = require 'src.animation.controller'
-M.curve = require 'src.animation.curve'
-M.tween = require 'src.animation.tween'
+local controller = require 'src.animation.controller'
+local curve = require 'src.animation.curve'
+local tween = require 'src.animation.tween'
 
 for _, source in ipairs({
     require 'src.animation',
-    M.controller,
-    M.curve,
-    M.tween,
+    controller,
+    curve,
+    tween,
 }) do
     for name, value in pairs(source) do
         if M[name] == nil then

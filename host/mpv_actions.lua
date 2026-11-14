@@ -5,7 +5,7 @@
 
 local mp = require 'mp'
 
-local actions_mod = require 'src.widget.actions'
+local actions_mod = require 'player.src.actions'
 
 local HostActions = actions_mod.HostActions
 
@@ -20,7 +20,7 @@ local function open_url_command(url)
     return { 'xdg-open', url }
 end
 
----@return HostActions
+---@return elxosc.player.HostActions
 ---@param options? { player_context: MpPlayerContext? }
 function M.default(options)
     options = options or {}

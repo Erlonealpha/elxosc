@@ -70,7 +70,7 @@ def run_case(directory, media, name, seconds, warmup, interval, legacy_ref, coll
         content = content.replace('local demo_enabled = true', 'local demo_enabled = false')
         content = content.replace('local debug_enabled = true', 'local debug_enabled = false')
         entry.write_text(content, encoding='utf-8')
-        layout = destination / 'main_layout.lua'
+        layout = destination / 'player/src/composition.lua'
         layout_content = layout.read_text(encoding='utf-8')
         layout_marker = "title = 'elxosc',\n        auto_hide_bottom_hover"
         if layout_marker not in layout_content:
@@ -205,7 +205,7 @@ def main():
               'dependency_class_sha256': hashlib.sha256((dependency / 'elxlibs/std/class.lua').read_bytes()).hexdigest(),
               'probe_sha256': {name: hashlib.sha256((ROOT / 'tools' / name).read_bytes()).hexdigest()
                                for name in ('investigate_memory.py', 'memory_host_probe.lua')},
-              'player_context_sha256': hashlib.sha256((ROOT / 'lib/src/widget/player_context.lua').read_bytes()).hexdigest(),
+              'player_context_sha256': hashlib.sha256((ROOT / 'player/src/context.lua').read_bytes()).hexdigest(),
               'media': 'generated 1280x720 H.264 testsrc2, 60 fps, no audio; software decode, gpu VO',
               'limits': 'short isolated Windows probe, demo/debug off, no external thumbfast; process memory includes player/native; legacy differs only in player_context.lua; hidden controller hide with OS activity suppressed, visible AutoHide disabled in staging',
               'cases': []}

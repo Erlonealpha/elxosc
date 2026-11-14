@@ -2,7 +2,7 @@
 local mp = require 'mp'
 local utils = require 'mp.utils'
 local ffi = require 'ffi'
-local app_mod = require 'host.mpv_app'
+local app_mod = require 'host.mpv_player_app'
 local input_mod = require 'host.mpv_input'
 
 local now = mp.get_time

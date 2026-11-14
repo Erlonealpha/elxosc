@@ -8,10 +8,10 @@ support.bootstrap('test')
 local mp_stub = require 'mp_stub'
 mp_stub.install()
 mp_stub.reset()
-local app_mod = require 'host.mpv_app'
-local main_mod = require 'main_layout'
-local player_mod = require 'src.widget.player_context'
-local actions_mod = require 'src.widget.actions'
+local app_mod = require 'host.mpv_player_app'
+local main_mod = require 'player.src.composition'
+local player_mod = require 'player.src.context'
+local actions_mod = require 'player.src.actions'
 local element_mod = require 'src.widget.element'
 local ffi = require 'ffi'
 local geometry_mod = require 'src.foundation.geometry'
@@ -60,7 +60,7 @@ local actions = actions_mod.HostActions({
     toggle_ontop = noop, set_track = noop, minimize = noop, close = noop,
     thumbfast_request = noop, thumbfast_clear = noop,
 })
-local app = app_mod.App(main_mod.build_app(), {
+local app = app_mod.PlayerHostApp(main_mod.build_app(), {
     actions = actions,
     player_store = player_mod.PlayerStore({
         duration = 600, time_pos = 100, percent_pos = 100 / 6, volume = 72,

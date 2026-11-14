@@ -149,7 +149,7 @@ uv run --group test python tools/investigate_memory.py --host /path/to/mpvnet.co
 uv run --group test python tools/investigate_memory.py --host /path/to/mpvnet.com --seconds 60 --cases current_visible_no_present,ass_static,ass_dynamic,current_visible --output tmp/memory-controls.json
 ```
 
-The optional Lua input is a saved `lib/src/widget/player_context.lua` revision, loaded
+The optional Lua input is a saved `player/src/context.lua` revision, loaded
 only in the fresh probe process. Five batches track weak references after two
 full collections for snapshots/views, ordinary instances, dynamic classes, live
 store replacement, Main reconciliation and mount/dispose. Windows also records

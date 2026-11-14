@@ -4,6 +4,12 @@
 如何连接。更高层不能绕过契约
 直接操作低层实现；需要新能力时应在拥有该语义的层增加接口。
 
+## FPK-1 实施状态（2026-11-14）
+
+player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
+新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
+[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+
 ## 分区
 
 | 分区 | 所有权 | 主要入口 |
@@ -15,9 +21,10 @@
 | `lib/src/render/` | 持久化渲染树 | `RenderObject`, `PipelineOwner`/`RenderOwner` 及 RenderBox |
 | `lib/src/animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
 | `lib/src/scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
-| `lib/src/widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `PlayerStore` |
+| `lib/src/widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `Provider` |
 | `lib/src/backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
-| `extension/` | 受限 DSL 和模块共享 | `sandbox`, `ModuleRegistry`, `DefineSession` |
+| `define/` | 初始化协议、DSL 和 Slot | `DefineSession`, `ModuleRegistry`, `CompositionAssembler` |
+| `player/` | 媒体状态、动作、默认 shell、Timeline、AutoHide | `PlayerStore`, `PlayerApp`, `DefaultApp`, `Main` |
 | `host/` | mpv 接线 | `App`, `MpFrameClock`, `MpInput`, `MpDefine` |
 
 ## 依赖规则
@@ -26,7 +33,9 @@
 foundation → painting/text → layout → render → widget → host → main.lua
                          scheduler ────────────────┘
 backends → painting/text contracts
-extension → widget/slot and host assembly
+define → framework widget primitives
+player → framework + define Slot for initialization composition
+host → framework + explicit player/Define adapters
 ```
 
 `render` 不认识 Widget，`widget` 不认识 mpv，`backends` 不读取 mpv 状态。宿主只
@@ -34,8 +43,13 @@ extension → widget/slot and host assembly
 模块名并避免 require cycle；聚合入口必须返回直接模块导出的同一对象。
 
 框架源码统一位于 `lib/src/`。`lib/foundation.lua`、`lib/render.lua` 等每层入口
-收集普通导出表及子模块 namespace；这项职责独立于扩展系统。`lib/material.lua`
-收集默认构造器、值类型和类工厂，代替 host 内的 builtins 清单。
+收集来源中的成员，不把子模块表挂到整合表；这项职责独立于扩展系统。`lib/material.lua`
+收集框架控件和值类型；host/builtins.lua 手动选择默认 Define surface。
+
+例如 `require('render').RenderStack` 与 `require('src.render.stack').RenderStack`
+保持身份；`render.stack` 本身通过独立 require/import_as 入口获取，整合表没有 stack 字段。
+Anchor、Curves 等来源定义的具名值表保持原对象。点分包名表达注册名称，不表示整合表
+中的嵌套模块；show/hide 仍只组织来源成员，不影响独立子包可导入性。
 
 `elxlib_load.lua` 与离线入口共享 `lib/module_loader.lua`：`require 'foundation'`
 加载公开 collector，`require 'src.foundation.geometry'` 加载源码。
@@ -44,16 +58,16 @@ extension → widget/slot and host assembly
 源码类型为 `elxosc.src.foundation.geometry`，collector 为 `elxosc.foundation`；
 `init.lua` 使用源码包名，类型名前缀不进入运行时路径。
 
-`extension/` 是原 `libs/` 的 sandbox、Define 和 ModuleRegistry 所有者。
-`extension.exports.collect()` 将库表和源码子模块包装成 `{ name, exports, loader? }`，
+`define/` 是原 extension 的 sandbox、Define、ModuleRegistry、DSL 和 Slot 所有者。
+`host.package_catalog.collect()` 将库表和源码子模块包装成 `{ name, exports, loader? }`，
 host 增加 runtime facade 后统一注册。`import('render.stack')`、
 `import_as('widget.widgets.slider')` 解析明确登记的多级包，不遍历任意对象字段。
-受保护父包同时保护未登记的子名称；新增包不扩大 `material` 默认 surface。
+受保护父包同时保护未登记的子名称；新增包不扩大 host 默认 builtins。
 
-## 已确认的重组合同（2026-11-14，代码待迁移）
+## 已确认的重组合同（2026-11-14，FPK-1 已实施，后续分层待实施）
 
-上述分区和路径记录当前实现。下一轮迁移采用以下所有权；新名字在实现完成前不能
-当作现有 require/import 入口。
+上述分区和路径记录当前实现。下列最终所有权中 player/define 已实施；
+widgets/material 扁平、export 与 meta 在后续阶段实施。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |

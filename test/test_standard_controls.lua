@@ -78,14 +78,14 @@ F.test('standard aggregates and player adapters share the owning classes', funct
         F.eq(basic[name], class, 'basic identity: ' .. name)
         F.eq(widgets[name], class, 'widget identity: ' .. name)
     end
-    local Timeline = require('src.widget.player.timeline').Timeline
-    F.eq(widgets.Timeline, Timeline, 'timeline aggregate identity')
+    local Timeline = require('player.src.timeline').Timeline
+    F.eq(require('player').Timeline, Timeline, 'player timeline aggregate identity')
     F.ok(std.isinstance(Timeline(), Slider), 'timeline specializes the slider widget')
     F.eq(widgets.ProgressBar, nil, 'mixed progress/seek API removed')
     F.ok(not std.isinstance(Slider(), Timeline), 'standard slider is independent of timeline')
-    F.eq(require('src.widget.player.text_controls').PlayerHoverText, HoverText, 'text alias')
+    F.eq(require('player.src.text_controls').PlayerHoverText, HoverText, 'text alias')
     local options = { text = 'tip' }
-    local player_tip = require('src.widget.player.tooltip').PlayerTooltip(options)
+    local player_tip = require('player.src.tooltip').PlayerTooltip(options)
     F.ok(std.isinstance(player_tip, Tooltip), 'player inherits standard tooltip lifecycle')
     F.eq(options.style, nil, 'player default does not modify caller options')
     F.eq(player_tip.style.font_size, 18, 'player visual default is preserved')
@@ -145,6 +145,53 @@ F.test('tooltip fits bounded labels, flips below a top edge and preserves disabl
     tree:dispose()
     F.raises(function() Tooltip({ bounds_width = math.huge }) end, 'finite', 'finite bounds')
     F.raises(function() Tooltip({ margin = -1 }) end, 'non-negative', 'non-negative margin')
+end)
+
+F.test('generic tooltip accepts a policy and cancels previews without changing input', function()
+    text_layout.set_default(ControlTextLayout())
+    local enabled = true
+    local requests, leaves, clicks = 0, 0, 0
+    local owner, tree = mount(Tooltip({
+        text = 'policy',
+        hover_enabled = function(context)
+            F.ok(context:is_active(), 'policy receives an active non-listening context')
+            return enabled
+        end,
+        on_hover_point = function()
+            requests = requests + 1
+        end,
+        on_hover_leave = function()
+            leaves = leaves + 1
+        end,
+        child = basic.GestureDetector(require('src.widget.widgets.sized_box').SizedBox({ width = 200, height = 20 }), {
+            on_tap = function()
+                clicks = clicks + 1
+            end,
+        }),
+    }))
+    owner:dispatch_pointer('move', Offset(100, 10))
+    F.eq(requests, 1, 'visible hover requests a preview')
+    owner:dispatch_pointer('down', Offset(100, 10), 'left')
+    local state = tree.root_element.state
+    enabled = false
+    state:refresh_hover_visibility()
+    state:refresh_hover_visibility()
+    F.eq(leaves, 1, 'policy change clears the active preview once')
+    owner:dispatch_pointer('move', Offset(120, 10))
+    F.eq(requests, 1, 'disabled policy suppresses new previews')
+    F.ok(owner:has_pointer_capture(), 'child capture remains active')
+    owner:dispatch_pointer('up', Offset(120, 10), 'left')
+    F.eq(clicks, 1, 'policy does not consume the child click')
+    enabled = true
+    state:refresh_hover_visibility()
+    owner:dispatch_pointer('move', Offset(100, 10))
+    F.eq(requests, 2, 'visible policy resumes on real pointer movement')
+    tree:dispose()
+    F.eq(leaves, 2, 'resumed preview releases on disposal')
+    F.raises(function()
+        ---@diagnostic disable-next-line: param-type-mismatch
+        Tooltip({ hover_enabled = true })
+    end, 'must be a function', 'policy callback validated')
 end)
 
 F.test('slider separates start, change and end callbacks and quantizes numeric selection', function()

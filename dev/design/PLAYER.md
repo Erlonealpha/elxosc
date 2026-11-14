@@ -4,16 +4,22 @@
 和 Define 的核心不变量，而是记录 `WidgetsApp`、`DefaultApp`、播放器 Main、Extension、
 WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
-## 已确认的播放器所有权（2026-11-14，代码待迁移）
+## FPK-1 实施状态（2026-11-14）
 
-当前散落在 lib/widget/render 的播放器内容将统一归 player/：PlayerSnapshot/Store/
+player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
+新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
+[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+
+## 已确认的播放器所有权（2026-11-14，FPK-1 已实施，后续分层待实施）
+
+原 lib/widget/render 的播放器内容已统一归 player/：PlayerSnapshot/Store/
 Provider/Scope/Capability、HostActions/Scope、Main/DefaultApp/WindowLayer、Timeline/
 RenderTimeline、AutoHide/Controller/State、PlayerTheme、布局与语义图标映射。
 player 领域代码不加载 mp，属性/actions/preview/消息适配继续归 host。基础 framework
 widgets/material 不导出这些领域内容，player 公共根补齐迁出前已可使用的 state/actions
 类型，Main/PlayerMain 保持同一对象；内部 State 不默认展平。
 
-main_layout 的构造与当前四个 Slot ID/规则迁到 player.src.composition；Slot/Contribution/
+原 main_layout 的构造与当前四个 Slot ID/规则已迁到 player.src.composition；Slot/Contribution/
 Assembler primitive 归 define，只有这部分播放器初始化 composition 需要协议依赖。
 通用 WidgetsApp 只负责 display/默认文字/child，上层 player assembly 明确包装设计
 Theme、PlayerTheme、PlayerScope 与 HostActionsScope。host player assembly 拥有默认
@@ -27,15 +33,15 @@ controller replacement、dispose 和下一次真实 move 恢复预览继续保�
 Timeline 继续复用框架 RenderSlider 的 numeric/dirty/输入机制，其媒体 cache/chapter/seek
 语义归 player。Material 分层只调整现有样式/default 的 owner，不改变播放器外观、
 uniform scale、tooltip 跟随/布局或底部左右追加按钮的行为。新入口规则见
-[架构](ARCHITECTURE.md)，实现前下文继续描述当前生产路径。
+[架构](ARCHITECTURE.md)，下文描述当前生产行为。
 
 ## 应用构成
 
 当前结构如下：
 
 ```text
-WidgetsApp
-├── Theme / PlayerTheme / DisplayScope / DefaultTextStyle / HostActionsScope
+PlayerApp
+├── Theme / PlayerTheme / HostActionsScope / WidgetsApp（DisplayScope / DefaultTextStyle）
 └── DefaultApp
     └── Theatre（单一逻辑 owner）
         ├── ExtensionEntry
@@ -92,7 +98,7 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默�
   seekbar/title/time/chapter/window-control 尺寸、颜色、blur/border intent 和宽度阈值；
   `PlayerLayout` 通过 `Positioned` 共享同一 root-space offset，使绘制、命中和 pointer
   regions 保持一致。
-- 生产 `main_layout.lua` 使用 ModernX 默认 `1.5` uniform scale；`LayoutScaleBox` 负责将
+- 生产 `player/src/composition.lua` 使用 ModernX 默认 `1.5` uniform scale；`LayoutScaleBox` 负责将
   display-space 输入逆映射到 PlayerLayout 的逻辑坐标。
 
 进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
@@ -111,7 +117,7 @@ P2 的当前默认播放器范围已完成，用户确认外观基本无问题�
 host overlay、focus/IME 和非批准第三方脚本 UI 仍未实现。240 Hz 下的播放更新失效成本
 由后续性能工作负责，测量见 [TESTING.md](TESTING.md)。静态 ASS 不使用 `\move` 或 `\t`。
 
-旧 `main_layout.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
+旧 `player/src/composition.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
 Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。
 
 2026-11-05 外观复核修复：Main 的唤醒区按 uniform scale 换算；顶部控件移回 0～30px
@@ -213,7 +219,7 @@ mpv property / host API event
     → PlayerProvider dependents rebuild
 ```
 
-核心入口位于 `lib/src/widget/player_context.lua`，不依赖 mpv；宿主桥位于
+核心入口位于 `player/src/context.lua`，不依赖 mpv；宿主桥位于
 `host/mpv_player_context.lua`。`App` 接受可选 `player_store` 并把 root 放入
 `PlayerScope`。`MpDefine` 可以把同一个 Store 暴露为受控的 `player` module。
 
@@ -264,7 +270,7 @@ nested Navigator 状态恢复或复杂 transition 协商。
 入口发布受保护的 `development-demo` 模块，再执行单次 Define payload：
 `app.window_layer` 贡献 `DemoLauncher`，`player.controls.right` 追加按钮。
 两个 Widget 共享一个 runtime controller，内容和按钮都由 Define 构造；
-`main_layout.build_app()` / `build_app_description()` 不接受 extension/pages 形参。
+`player.src.composition.build_app()` / `build_app_description()` 不接受 extension/pages 形参。
 开发 scope 保留一个 starter，直到初始化窗口关闭再 seal，允许其他脚本先登记贡献。
 
 点击置顶按钮左侧的 Demo 图标打开演示；**Close Demo** 移除页面、释放 Demo State 和消息，
@@ -344,7 +350,7 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 
 ### 6.4 N1 DefaultApp/Main（已实现）
 
-- `WidgetsApp` 提供 Theme、DisplayScope、DefaultTextStyle 和 HostActionsScope；
+- `PlayerApp` 明确提供 Theme/PlayerTheme/HostActionsScope，复用 WidgetsApp 的 DisplayScope/DefaultTextStyle；
 - `DefaultApp` 通过单一 Theatre 组装 Main、Extension 和 WindowLayer；
 - Main 使用统一 scale、流式顶部/底部骨架和受控 window/playback actions；
 - AutoHide 的 fade/hidden 只隐藏 Main，不卸载 Extension State；

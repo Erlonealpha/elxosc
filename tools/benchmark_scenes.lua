@@ -3,11 +3,11 @@ local basic_mod = require 'src.widget.widgets.basic'
 local layout_mod = require 'src.widget.widgets.layout'
 local style_mod = require 'src.text.text_style'
 local geometry_mod = require 'src.foundation.geometry'
-local app_mod = require 'src.widget.app'
+local app_mod = require 'player.src.ambients'
 local ambient_mod = require 'src.widget.ambient'
-local player_mod = require 'src.widget.player_context'
-local actions_mod = require 'src.widget.actions'
-local main_mod = require 'src.widget.player.app'
+local player_mod = require 'player.src.context'
+local actions_mod = require 'player.src.actions'
+local main_mod = require 'player.src.app'
 
 local Text = basic_mod.Text
 local Button = basic_mod.Button
@@ -58,7 +58,7 @@ function M.build(name, tick)
             media_title = 'Benchmark player', chapter = 1,
             chapter_list = { { time = 0, title = 'Opening' }, { time = 90, title = 'Chapter' } },
             track_list = { { type = 'audio', id = 1 }, { type = 'sub', id = 1 } } })
-        return app_mod.WidgetsApp({ display = display, actions = actions,
+        return app_mod.PlayerApp({ display = display, actions = actions,
             child = player_mod.PlayerProvider({ snapshot = snapshot,
                 child = main_mod.Main({ scale = 1.5 }) }) })
     end

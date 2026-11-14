@@ -2,9 +2,8 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Semantic builder contracts and the small runtime validation boundary shared
--- by Widget builds, mounted context builders and initialization Slot builders.
--- The callbacks intentionally remain separate: a Slot builder is allowed to
--- run before mounting, while a context builder requires an active Element.
+-- by Widget builds and mounted context builders. Define's initialization builders
+-- reuse callback/result validation without requiring a mounted Element.
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widget.widget'
@@ -23,7 +22,6 @@ local function operation_name(name, fallback)
 end
 
 ---@alias ContextBuilder fun(context: BuildContext): Widget?
----@alias SlotBuilder fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
 ---@alias WidgetBuildCallback fun(context: BuildContext): Widget?
 
 ---@param callback any
@@ -69,17 +67,6 @@ function M.call_context(callback, context, name)
     M.validate_callback(callback, name)
     M.validate_context(context, name)
     return M.validate_result(callback(context), name)
-end
-
----@param callback SlotBuilder
----@param value Widget|Widget[]|nil
----@param opts table<string, any>?
----@param name string
----@return Widget?
-function M.call_slot(callback, value, opts, name)
-    name = operation_name(name, 'SlotBuilder')
-    M.validate_callback(callback, name)
-    return M.validate_result(callback(value, opts), name)
 end
 
 return M

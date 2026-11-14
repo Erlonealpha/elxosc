@@ -6,7 +6,11 @@ outside the reusable layers.
 
 ## Public entry points
 
-- `mpv_app.lua` — the single `App` owner and frame loop.
+- `mpv_app.lua` — generic App lifecycle and frame loop; display/text root wrapper,
+  explicit root/activity/dispose hooks.
+- `mpv_player_app.lua` — PlayerHostApp observer/action/scope/activity assembly.
+- `package_catalog.lua`, `builtins.lua` — registered package selection and explicit
+  default Define construction surface.
 - `mpv_primitives.lua` — `MpFrameClock` and `AssPresenter`, the mpv-backed
   framework adapters owned by `App`.
 - `mpv_input.lua` — mouse/keyboard binding and pointer event forwarding.
@@ -39,20 +43,17 @@ application stage adds config/API hot updates and multiple named OSD overlay lay
 Overlay z-order is a presentation policy, not Widget or Define priority. Define remains
 the sole extension-content ingress.
 
-`App` is the sole lifecycle owner for the clock, scheduler, display observers,
-input, canvas, presenter and shutdown. It accepts an optional `player_store` and wraps its root in `PlayerScope`. The
-`player` Define module exposes `get_snapshot()`/`on_update()` and the explicit
-component list in `lib/src/widget/player/components.lua`, collected by `lib/player.lua`
-and wrapped by `extension/exports.lua`.
-`import('player')` copies those names into the extension scope;
-`import_as('player')` returns the package without injecting names. Standard packages
-are collected by `extension/exports.lua`; adding one does not expand default builtins.
-Canonical player controls, themes and context accessors
-are shared with framework consumers. Updates do not re-run Define source.
-Define contributions are assembled once after seal, before the
-WidgetTree is mounted; `WidgetTree` has no bind/assembler responsibility. Property,
-event and scope-message subscriptions return idempotent disposable handles and
-`MpDefine:shutdown()` releases the host-owned handles.
+`App` owns the clock, scheduler, display observers, input, canvas, presenter and
+its tree. WidgetsApp supplies display/default text only. PlayerHostApp wraps the
+player/theme/action ambients, observes media/capabilities and passes one idempotent
+context disposer to App. Root-building, partial mount, observer/input installation
+and user teardown failures release acquired resources while preserving the first
+error. No player or Define modules are loaded by generic App.
+
+The player package comes from `player/init.lua`; the host adds get_snapshot/on_update.
+Define transaction and exact package registration are implemented by `define/src/`.
+MpDefine owns its facade subscriptions and main owns the initialization window timer.
+`import_as` returns local packages; new packages do not expand default builtins.
 
 App teardown preserves the shared Binding and other owner trees. A user State.dispose
 error is rethrown after the App releases its render root, clock and presenter.

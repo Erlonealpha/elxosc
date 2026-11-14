@@ -12,11 +12,12 @@ function M.install(root)
     end
     local function source_searcher(name)
         local canonical = name:gsub('%.lua$', ''):gsub('/', '.')
-        if not canonical:match('^src%.') then
+        local application_source = canonical:match('^player%.src%.') or canonical:match('^define%.src%.')
+        if not canonical:match('^src%.') and not application_source then
             return
         end
         canonical = canonical:gsub('%.init$', '')
-        if not canonical:match('^src%.[%w_]+[%.%w_]*$') or canonical:find('%.%.') then
+        if not canonical:match('^[%w_]+%.[%w_]+[%.%w_]*$') or canonical:find('%.%.') then
             return '\n\tinvalid elxosc source module name'
         end
         if canonical ~= name then
@@ -24,9 +25,9 @@ function M.install(root)
                 return require(canonical)
             end
         end
-        local relative = canonical:gsub('%.', '/')
-        local chunk = loadfile(root .. '/lib/' .. relative .. '.lua')
-            or loadfile(root .. '/lib/' .. relative .. '/init.lua')
+        local relative = (application_source and '' or 'lib/') .. canonical:gsub('%.', '/')
+        local chunk = loadfile(root .. '/' .. relative .. '.lua')
+            or loadfile(root .. '/' .. relative .. '/init.lua')
         if chunk then
             return chunk
         end

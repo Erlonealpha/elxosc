@@ -10,15 +10,15 @@
 local F = require('framework')
 local std = require('elxlibs.std')
 
-local sandbox = require('extension.sandbox')
-local modules_mod = require('extension.modules')
-local define_mod = require('extension.define')
+local sandbox = require('define.src.sandbox')
+local modules_mod = require('define.src.modules')
+local define_mod = require('define.src.session')
 
 local text_layout = require('src.text.text_layout')
 local constraints_mod = require('src.layout.constraints')
 local render_owner = require('src.render.render_owner')
 local binding_mod = require('src.widget.binding')
-local slot_mod = require('src.widget.slot')
+local slot_mod = require('define.src.slot')
 local layout_widgets = require('src.widget.widgets.layout')
 local basic_widgets = require('src.widget.widgets.basic')
 
