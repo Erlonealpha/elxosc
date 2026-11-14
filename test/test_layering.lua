@@ -117,6 +117,22 @@ F.test('lib cannot require player, Define or host modules', function()
     F.eq(#offenders, 0, 'framework application imports: ' .. table.concat(offenders, '; '))
 end)
 
+F.test('basic widgets never require Material sources or collectors', function()
+    local offenders = {}
+    for _, path in ipairs(files) do
+        if path:match('/lib/src/widgets/') then
+            for line in ((read_file(path) or '') .. '\n'):gmatch('([^\n]*)\n') do
+                local code = line:gsub('%-%-.*$', '')
+                local target = code:match("require%s*%(?%s*['\"]([^'\"]+)['\"]")
+                if target and (target == 'material' or target:match('^src%.material')) then
+                    offenders[#offenders + 1] = path .. ' -> ' .. target
+                end
+            end
+        end
+    end
+    F.eq(#offenders, 0, 'widgets Material imports: ' .. table.concat(offenders, '; '))
+end)
+
 F.test('explicit ASS measurement is not loaded by production runtime modules', function()
     local offenders = {}
     for _, path in ipairs(files) do

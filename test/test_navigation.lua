@@ -8,17 +8,17 @@ local std = require('elxlibs.std')
 local constraints_mod = require('src.layout.constraints')
 local text_layout = require('src.text.text_layout')
 local render_owner = require('src.render.render_owner')
-local binding_mod = require('src.widget.binding')
-local widget_mod = require('src.widget.widget')
-local basic_widgets = require('src.widget.widgets.basic')
-local navigation_mod = require('src.widget.navigation')
+local binding_mod = require('src.widgets.binding')
+local widget_mod = require('src.widgets.framework')
+local basic_widgets = require('material')
+local navigation_mod = require('src.widgets.navigation')
 
 local Constraints = constraints_mod.Constraints
 local TextLayout = text_layout.TextLayout
 local RenderOwner = render_owner.RenderOwner
 local WidgetBinding = binding_mod.WidgetBinding
 local StatefulWidget = widget_mod.StatefulWidget
-local State = require('src.widget.state').State
+local State = require('src.widgets.state').State
 local Text = basic_widgets.Text
 local Page = navigation_mod.Page
 local PopupPage = navigation_mod.PopupPage
@@ -236,7 +236,7 @@ F.test('PopupPage creates barrier/content entries and dismisses through barrier'
 end)
 
 F.test('Navigator aggregate exports preserve direct class identity', function()
-    local widgets = require 'src.widget'
+    local widgets = require 'src.widgets'
     F.eq(widgets.Navigator, Navigator, 'Navigator identity')
     F.eq(widgets.Page, Page, 'Page identity')
     F.eq(widgets.PopupRoute, navigation_mod.PopupRoute, 'PopupRoute identity')

@@ -13,12 +13,12 @@ local M = {}
 local SchedulerBinding = {}
 
 function SchedulerBinding.ensure_initialized()
-    local widgets_binding = require 'src.widget.binding'
+    local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.ensure_initialized()
 end
 
 function SchedulerBinding.instance()
-    local widgets_binding = require 'src.widget.binding'
+    local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.instance()
 end
 

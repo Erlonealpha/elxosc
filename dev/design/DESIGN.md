@@ -5,6 +5,20 @@
 
 ## FPK-1 实施状态（2026-11-14）
 
+### FPK-2 组织完成（2026-11-15）
+
+公共 widgets collector 和 src.widgets.* 已扁平化；Widget 基类位于 framework.lua，
+Element/State/Binding 等保持独立功能文件。src.material.* 拥有 Theme、按钮系列、
+Slider/LinearProgressIndicator 和图标字体集合入口；material 重导出全部基础 widgets
+成员，整合表不附加子模块。旧 widget/widget.widgets/basic/layout 入口已删除。
+通用 Display/DefaultTextStyle、Tooltip/Icon/HoverText/导航仍归 widgets；HoverText
+通过 RenderText setter 更新颜色/glow，不依赖 ButtonBase。数值 render 接收明确视觉
+config，Material 保留原 palette/尺寸，Player RenderTimeline 明确提供其自绘初始字段。
+字体资源在 lib/fonts/material_symbols.lua，Material 与基础 Icon 共享具名资源；
+Icon 保留 bundled 默认，自定义字体不携带 Material variation intent。
+完整 Lua 3144、严格 EmmyLua、7 项定向 Python 检查通过，范围见 TESTING。
+本切片未实现 FPK-3 export 或 FPK-4 全量 namespace/meta；人工外观确认仍待用户审阅。
+
 框架与 player/Define 的边界已迁移。`lib/` source/collector 不加载 player/define/mp；
 `WidgetsApp` 仅提供 display/default_text_style/child/key。`player.src.ambients.PlayerApp`
 明确组装 Theme/PlayerTheme/HostActionsScope 和 WidgetsApp；`host.mpv_player_app.PlayerHostApp`
@@ -19,8 +33,8 @@ host/package_catalog.lua 收集包，host/builtins.lua 手选原 115 字段；ma
 旧 extension、lib/player、widget/player 和 main_layout 入口已删除；调用者使用 player.src.*、
 define.src.*。迁出模块表与类型已同步 owning namespace，不改变运行时类名和对象身份。
 
-FPK-2 的 widgets 扁平、Material 样式归属，FPK-3 的 export 组合/完整 catalog 与 FPK-4
-的全量 namespace/meta 仍待实施。下列目标章节中这些后续项目不能视为现有 API。
+FPK-2 已完成；FPK-3 的 export 组合/完整 catalog 与 FPK-4 的全量 namespace/meta
+仍待实施。下列目标章节中这些后续项目不能视为现有 API。
 验证与实际范围见 [TESTING.md](TESTING.md)。
 
 用户随后明确整合模块不直接导出子模块。lib collectors 已统一为来源成员导出，
@@ -72,7 +86,7 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 ```
 
 框架核心按 `lib/src/foundation/`、`lib/src/painting/`、`lib/src/text/`、`lib/src/layout/`、`lib/src/render/`、
-`lib/src/animation/`、`lib/src/scheduler/`、`lib/src/widget/`、`lib/src/backends/` 分区；
+`lib/src/animation/`、`lib/src/scheduler/`、`lib/src/widgets/`、`lib/src/material/`、`lib/src/backends/` 分区；
 应用层 `define/` 与 `player/` 使用框架，`host/`、
 `main.lua` 和 `elxlib_load.lua` 是唯一的 mpv 边界。聚合模块必须转出独立模块的
 同一个类对象，不能重新定义兼容副本。
@@ -82,7 +96,7 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
 2026-11-14 的阶段 0 固定完整迁移映射和导出合同，FPK-1 已完成框架与应用边界；
-widgets/Material/export/meta 按后续阶段实施，见各方向文档的目标章节。
+widgets/Material 已完成，export/meta 按后续阶段实施，见各方向文档的目标章节。
 
 ## 三棵运行时树
 
@@ -147,6 +161,11 @@ Define/Slot 提供内容。Theatre 的 entry paint/input eligibility 与 host-le
 reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
+
+2026-11-15 FPK-2 后完整 **3144 Lua checks**、严格 EmmyLua **No issues found**、
+定向 Python **7 passed**，无 skip。基础 widgets 的独立加载、Material 默认视觉、
+HoverText persistent paint/input、显式 render config 和相关 host 接线通过。
+人工外观/手感仍待用户审阅；当前及历史命令与范围见 [TESTING.md](TESTING.md)。
 
 2026-11-14 FPK-1 后完整 **2976 Lua checks**、EmmyLua（warnings-as-errors）
 **No issues found**；定向 Python 曾 **9 passed**，最终复验 **8 passed, 1 Demo 点击失败**，

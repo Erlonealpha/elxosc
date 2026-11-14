@@ -3,8 +3,8 @@
 local F = require 'framework'
 local support = require 'runtime_support'
 local slot_mod = require 'define.src.slot'
-local key_mod = require 'src.widget.key'
-local layout_mod = require 'src.widget.widgets.layout'
+local key_mod = require 'src.widgets.key'
+local layout_mod = require 'widgets'
 
 F.section('runtime: Key identity through composition and reorder')
 

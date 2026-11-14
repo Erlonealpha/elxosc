@@ -12,9 +12,9 @@ local geometry = require 'src.foundation.geometry'
 local color = require 'src.foundation.color'
 local text_style = require 'src.text.text_style'
 local constraints_mod = require 'src.layout.constraints'
----@type elxosc.src.widget.widgets.layout
-local lay = require 'src.widget.widgets.layout'
-local basic = require 'src.widget.widgets.basic'
+---@type elxosc.mod.widgets
+local lay = require 'widgets'
+local basic = require 'material'
 
 local Offset, EdgeInsets = geometry.Offset, geometry.EdgeInsets
 local Color = color.Color

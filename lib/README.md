@@ -11,9 +11,9 @@ is loaded through `require 'src.render.stack'` or the independent Define package
 their table identity. Package names and collectors do not form an object hierarchy.
 
 Public layers are `foundation`, `painting`, `text`, `layout`, `render`, `animation`,
-`scheduler`, `widget`, `backends` and `material`. Source names remain `src.<layer>.*`
-during FPK-1; widgets flattening and Material ownership are the next phase.
-`material` currently collects framework controls and value constructors;
+`scheduler`, `widgets`, `backends` and `material`. Basic widgets and runtime live
+flat in `src.widgets.*`; Theme and styled controls live in `src.material.*`.
+`material` reexports basic widgets and collects styled controls/value constructors;
 `host/builtins.lua` owns the explicit default Define construction surface.
 
 `module_loader.install(root)` supports public collectors and canonical sources,
@@ -21,7 +21,9 @@ including dot/slash paths, `.lua` suffixes and explicit `init` aliases. Applicat
 sources use `player.src.*` and `define.src.*` under the repository root; they do not
 add another bare `src` search root. Prefer canonical dot paths in project code.
 
-`fonts/` owns bundled font metadata. EmmyLua consumers add `lib` and the repository
+`fonts/` owns bundled font metadata and the shared MaterialSymbols resource.
+The old widget/widget.widgets/basic/layout collectors have been removed.
+EmmyLua consumers add `lib` and the repository
 root to their workspace packages. Tests also supply the independent sibling elxlib.
 
 See [architecture](../dev/design/ARCHITECTURE.md),

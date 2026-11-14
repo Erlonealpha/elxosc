@@ -15,7 +15,7 @@ function M.collect()
     packages[#packages + 1] = { name = 'render', exports = require 'render' }
     packages[#packages + 1] = { name = 'animation', exports = require 'animation' }
     packages[#packages + 1] = { name = 'scheduler', exports = require 'scheduler' }
-    packages[#packages + 1] = { name = 'widget', exports = require 'widget' }
+    packages[#packages + 1] = { name = 'widgets', exports = require 'widgets' }
     packages[#packages + 1] = { name = 'backends', exports = require 'backends' }
     packages[#packages + 1] = { name = 'material', exports = require 'material' }
     packages[#packages + 1] = { name = 'player', exports = require 'player' }
@@ -70,18 +70,18 @@ function M.collect()
     packages[#packages + 1] = { name = 'scheduler.scheduler_binding', exports = require 'src.scheduler.scheduler_binding' }
     packages[#packages + 1] = { name = 'scheduler.ticker', exports = require 'src.scheduler.ticker' }
     packages[#packages + 1] = { name = 'player.actions', exports = require 'player.src.actions' }
-    packages[#packages + 1] = { name = 'widget.ambient', exports = require 'src.widget.ambient' }
-    packages[#packages + 1] = { name = 'widget.app', exports = require 'src.widget.app' }
+    packages[#packages + 1] = { name = 'widgets.ambient', exports = require 'src.widgets.ambient' }
+    packages[#packages + 1] = { name = 'widgets.app', exports = require 'src.widgets.app' }
     packages[#packages + 1] = { name = 'define.bind', exports = require 'define.src.bind' }
-    packages[#packages + 1] = { name = 'widget.binding', exports = require 'src.widget.binding' }
-    packages[#packages + 1] = { name = 'widget.build_owner', exports = require 'src.widget.build_owner' }
-    packages[#packages + 1] = { name = 'widget.build_scope', exports = require 'src.widget.build_scope' }
-    packages[#packages + 1] = { name = 'widget.builder', exports = require 'src.widget.builder' }
+    packages[#packages + 1] = { name = 'widgets.binding', exports = require 'src.widgets.binding' }
+    packages[#packages + 1] = { name = 'widgets.build_owner', exports = require 'src.widgets.build_owner' }
+    packages[#packages + 1] = { name = 'widgets.build_scope', exports = require 'src.widgets.build_scope' }
+    packages[#packages + 1] = { name = 'widgets.builder', exports = require 'src.widgets.builder' }
     packages[#packages + 1] = { name = 'define.dsl', exports = require 'define.src.dsl' }
-    packages[#packages + 1] = { name = 'widget.element', exports = require 'src.widget.element' }
-    packages[#packages + 1] = { name = 'widget.key', exports = require 'src.widget.key' }
-    packages[#packages + 1] = { name = 'widget.navigation', exports = require 'src.widget.navigation' }
-    packages[#packages + 1] = { name = 'widget.overlay', exports = require 'src.widget.overlay' }
+    packages[#packages + 1] = { name = 'widgets.element', exports = require 'src.widgets.element' }
+    packages[#packages + 1] = { name = 'widgets.key', exports = require 'src.widgets.key' }
+    packages[#packages + 1] = { name = 'widgets.navigation', exports = require 'src.widgets.navigation' }
+    packages[#packages + 1] = { name = 'widgets.overlay', exports = require 'src.widgets.overlay' }
     packages[#packages + 1] = { name = 'player.app', exports = require 'player.src.app' }
     packages[#packages + 1] = { name = 'player.components', exports = require 'player.src.components' }
     packages[#packages + 1] = { name = 'player.controls', exports = require 'player.src.controls' }
@@ -98,42 +98,39 @@ function M.collect()
     packages[#packages + 1] = { name = 'player.tooltip', exports = require 'player.src.tooltip' }
     packages[#packages + 1] = { name = 'player.visuals', exports = require 'player.src.visuals' }
     packages[#packages + 1] = { name = 'player_context', exports = require 'player.src.context' }
-    packages[#packages + 1] = { name = 'widget.provider', exports = require 'src.widget.provider' }
+    packages[#packages + 1] = { name = 'widgets.provider', exports = require 'src.widgets.provider' }
     packages[#packages + 1] = { name = 'define.slot', exports = require 'define.src.slot' }
-    packages[#packages + 1] = { name = 'widget.state', exports = require 'src.widget.state' }
-    packages[#packages + 1] = { name = 'widget.visibility', exports = require 'src.widget.visibility' }
-    packages[#packages + 1] = { name = 'widget.widget', exports = require 'src.widget.widget' }
-    packages[#packages + 1] = { name = 'widget.widgets.align', exports = require 'src.widget.widgets.align' }
-    packages[#packages + 1] = { name = 'widget.widgets.basic', exports = require 'src.widget.widgets.basic' }
-    packages[#packages + 1] = { name = 'widget.widgets.button', exports = require 'src.widget.widgets.button' }
-    packages[#packages + 1] = { name = 'widget.widgets.button_base', exports = require 'src.widget.widgets.button_base' }
-    packages[#packages + 1] = { name = 'widget.widgets.button_style', exports = require 'src.widget.widgets.button_style' }
-    packages[#packages + 1] = { name = 'widget.widgets.constraints', exports = require 'src.widget.widgets.constraints' }
-    packages[#packages + 1] = { name = 'widget.widgets.container', exports = require 'src.widget.widgets.container' }
-    packages[#packages + 1] = { name = 'widget.widgets.custom_paint', exports = require 'src.widget.widgets.custom_paint' }
-    packages[#packages + 1] = { name = 'widget.widgets.decorated_box', exports = require 'src.widget.widgets.decorated_box' }
-    packages[#packages + 1] = { name = 'widget.widgets.elevated_button', exports = require 'src.widget.widgets.elevated_button' }
-    packages[#packages + 1] = { name = 'widget.widgets.flex', exports = require 'src.widget.widgets.flex' }
-    packages[#packages + 1] = { name = 'widget.widgets.gesture_detector', exports = require 'src.widget.widgets.gesture_detector' }
-    packages[#packages + 1] = { name = 'widget.widgets.hover_text', exports = require 'src.widget.widgets.hover_text' }
-    packages[#packages + 1] = { name = 'widget.widgets.icon', exports = require 'src.widget.widgets.icon' }
-    packages[#packages + 1] = { name = 'widget.widgets.icon_button', exports = require 'src.widget.widgets.icon_button' }
-    packages[#packages + 1] = { name = 'widget.widgets.layout', exports = require 'src.widget.widgets.layout' }
-    packages[#packages + 1] = { name = 'widget.widgets.offset_box', exports = require 'src.widget.widgets.offset_box' }
-    packages[#packages + 1] = { name = 'widget.widgets.outlined_button', exports = require 'src.widget.widgets.outlined_button' }
-    packages[#packages + 1] = { name = 'widget.widgets.overflow', exports = require 'src.widget.widgets.overflow' }
-    packages[#packages + 1] = { name = 'widget.widgets.padding', exports = require 'src.widget.widgets.padding' }
-    packages[#packages + 1] = { name = 'widget.widgets.positioned', exports = require 'src.widget.widgets.positioned' }
-    packages[#packages + 1] = { name = 'widget.widgets.progress_indicator', exports = require 'src.widget.widgets.progress_indicator' }
-    packages[#packages + 1] = { name = 'widget.widgets.sized_box', exports = require 'src.widget.widgets.sized_box' }
-    packages[#packages + 1] = { name = 'widget.widgets.slider', exports = require 'src.widget.widgets.slider' }
-    packages[#packages + 1] = { name = 'widget.widgets.stack', exports = require 'src.widget.widgets.stack' }
-    packages[#packages + 1] = { name = 'widget.widgets.text', exports = require 'src.widget.widgets.text' }
-    packages[#packages + 1] = { name = 'widget.widgets.text_button', exports = require 'src.widget.widgets.text_button' }
-    packages[#packages + 1] = { name = 'widget.widgets.tooltip', exports = require 'src.widget.widgets.tooltip' }
-    packages[#packages + 1] = { name = 'widget.widgets.transform_box', exports = require 'src.widget.widgets.transform_box' }
-    packages[#packages + 1] = { name = 'widget.widgets_binding', exports = require 'src.widget.widgets_binding' }
-    packages[#packages + 1] = { name = 'widget.widgets', exports = require 'widget.widgets' }
+    packages[#packages + 1] = { name = 'widgets.state', exports = require 'src.widgets.state' }
+    packages[#packages + 1] = { name = 'widgets.visibility', exports = require 'src.widgets.visibility' }
+    packages[#packages + 1] = { name = 'widgets.framework', exports = require 'src.widgets.framework' }
+    packages[#packages + 1] = { name = 'widgets.align', exports = require 'src.widgets.align' }
+    packages[#packages + 1] = { name = 'material.button', exports = require 'src.material.button' }
+    packages[#packages + 1] = { name = 'material.button_base', exports = require 'src.material.button_base' }
+    packages[#packages + 1] = { name = 'material.button_style', exports = require 'src.material.button_style' }
+    packages[#packages + 1] = { name = 'widgets.constraints', exports = require 'src.widgets.constraints' }
+    packages[#packages + 1] = { name = 'widgets.container', exports = require 'src.widgets.container' }
+    packages[#packages + 1] = { name = 'widgets.custom_paint', exports = require 'src.widgets.custom_paint' }
+    packages[#packages + 1] = { name = 'widgets.decorated_box', exports = require 'src.widgets.decorated_box' }
+    packages[#packages + 1] = { name = 'material.elevated_button', exports = require 'src.material.elevated_button' }
+    packages[#packages + 1] = { name = 'widgets.flex', exports = require 'src.widgets.flex' }
+    packages[#packages + 1] = { name = 'widgets.gesture_detector', exports = require 'src.widgets.gesture_detector' }
+    packages[#packages + 1] = { name = 'widgets.hover_text', exports = require 'src.widgets.hover_text' }
+    packages[#packages + 1] = { name = 'widgets.icon', exports = require 'src.widgets.icon' }
+    packages[#packages + 1] = { name = 'material.icon_button', exports = require 'src.material.icon_button' }
+    packages[#packages + 1] = { name = 'widgets.offset_box', exports = require 'src.widgets.offset_box' }
+    packages[#packages + 1] = { name = 'material.outlined_button', exports = require 'src.material.outlined_button' }
+    packages[#packages + 1] = { name = 'widgets.overflow', exports = require 'src.widgets.overflow' }
+    packages[#packages + 1] = { name = 'widgets.padding', exports = require 'src.widgets.padding' }
+    packages[#packages + 1] = { name = 'widgets.positioned', exports = require 'src.widgets.positioned' }
+    packages[#packages + 1] = { name = 'material.progress_indicator', exports = require 'src.material.progress_indicator' }
+    packages[#packages + 1] = { name = 'widgets.sized_box', exports = require 'src.widgets.sized_box' }
+    packages[#packages + 1] = { name = 'material.slider', exports = require 'src.material.slider' }
+    packages[#packages + 1] = { name = 'widgets.stack', exports = require 'src.widgets.stack' }
+    packages[#packages + 1] = { name = 'widgets.text', exports = require 'src.widgets.text' }
+    packages[#packages + 1] = { name = 'material.text_button', exports = require 'src.material.text_button' }
+    packages[#packages + 1] = { name = 'widgets.tooltip', exports = require 'src.widgets.tooltip' }
+    packages[#packages + 1] = { name = 'widgets.transform_box', exports = require 'src.widgets.transform_box' }
+    packages[#packages + 1] = { name = 'widgets.widgets_binding', exports = require 'src.widgets.widgets_binding' }
     packages[#packages + 1] = { name = 'backends.ass_canvas', exports = require 'src.backends.ass_canvas' }
     packages[#packages + 1] = { name = 'backends.ass_text_layout', exports = require 'src.backends.ass_text_layout' }
     packages[#packages + 1] = { name = 'backends.record', exports = require 'src.backends.record' }
@@ -145,6 +142,8 @@ function M.collect()
     packages[#packages + 1] = { name = 'define.modules', exports = require 'define.src.modules' }
     packages[#packages + 1] = { name = 'define.sandbox', exports = require 'define.src.sandbox' }
     packages[#packages + 1] = { name = 'player.ambients', exports = require 'player.src.ambients' }
+    packages[#packages + 1] = { name = 'material.theme', exports = require 'src.material.theme' }
+    packages[#packages + 1] = { name = 'material.icons', exports = require 'src.material.icons' }
     return packages
 end
 

@@ -4,7 +4,7 @@
 -- Host-independent, explicitly injected player/window actions.
 
 local std = require 'elxlibs.std'
-local widget_mod = require 'src.widget.widget'
+local widget_mod = require 'src.widgets.framework'
 
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget

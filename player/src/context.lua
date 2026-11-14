@@ -5,10 +5,10 @@
 -- scope that exposes the current snapshot to descendants.
 
 local std = require 'elxlibs.std'
-local builder_mod = require 'src.widget.builder'
-local provider_mod = require 'src.widget.provider'
-local state_mod = require 'src.widget.state'
-local widget_mod = require 'src.widget.widget'
+local builder_mod = require 'src.widgets.builder'
+local provider_mod = require 'src.widgets.provider'
+local state_mod = require 'src.widgets.state'
+local widget_mod = require 'src.widgets.framework'
 
 local raise = std.raise
 local Provider = provider_mod.Provider

@@ -1,10 +1,10 @@
 -- Player inactivity policy; framework visibility and animation stay reusable.
 local std = require 'elxlibs.std'
-local widget_mod = require 'src.widget.widget'
-local State = require('src.widget.state').State
+local widget_mod = require 'src.widgets.framework'
+local State = require('src.widgets.state').State
 local StatefulWidget = widget_mod.StatefulWidget
 local RenderOpacity = require('src.render.opacity').RenderOpacity
-local Opacity = require('src.widget.visibility').Opacity
+local Opacity = require('src.widgets.visibility').Opacity
 
 ---@class elxosc.mod.player.src.auto_hide
 local M = {}

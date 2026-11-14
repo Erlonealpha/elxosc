@@ -19,7 +19,7 @@ local actions_mod = require 'player.src.actions'
 local player_context = require 'player.src.context'
 local mpv_player_context = require 'host.mpv_player_context'
 local mpv_actions = require 'host.mpv_actions'
-local widget_api = require 'src.widget'
+local widget_api = require 'src.widgets'
 local player_api = require 'player'
 local progress_widget = require 'player.src.timeline'
 

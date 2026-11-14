@@ -8,7 +8,7 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已扁平 widgets 并拆分 Material，export 与 meta 尚未实施。
 
 ## 分区
 
@@ -21,7 +21,8 @@ player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加�
 | `lib/src/render/` | 持久化渲染树 | `RenderObject`, `PipelineOwner`/`RenderOwner` 及 RenderBox |
 | `lib/src/animation/` | 值插值和控制器 | `Curve`, `Tween`, `AnimationController` |
 | `lib/src/scheduler/` | 帧阶段和时钟契约 | `FrameClock`, `Scheduler`, `Ticker` |
-| `lib/src/widget/` | 声明式 UI、生命周期和 Provider 状态 | `Widget`, `Element`, `State`, `WidgetsBinding`, `Provider` |
+| `lib/src/widgets/` | 声明式 UI、生命周期和无设计默认的基础组件 | `Widget`, `Element`, `State`, `WidgetsBinding`, `Provider` |
+| `lib/src/material/` | Theme 和有样式控件 | `Theme`, `ButtonBase`, `Slider`, `LinearProgressIndicator` |
 | `lib/src/backends/` | 契约的具体输出 | `AssCanvas`, `AssTextLayout`, `RecordCanvas` |
 | `define/` | 初始化协议、DSL 和 Slot | `DefineSession`, `ModuleRegistry`, `CompositionAssembler` |
 | `player/` | 媒体状态、动作、默认 shell、Timeline、AutoHide | `PlayerStore`, `PlayerApp`, `DefaultApp`, `Main` |
@@ -53,21 +54,22 @@ Anchor、Curves 等来源定义的具名值表保持原对象。点分包名表�
 
 `elxlib_load.lua` 与离线入口共享 `lib/module_loader.lua`：`require 'foundation'`
 加载公开 collector，`require 'src.foundation.geometry'` 加载源码。
-`require 'src/foundation/geometry.lua'` 和显式 `src/widget/init.lua` 也支持，并映射到
+`require 'src/foundation/geometry.lua'` 和显式 `src/widgets/init.lua` 也支持，并映射到
 同一 canonical 模块，避免 class 和 Binding singleton 重复。项目代码优先使用点路径。
-源码类型为 `elxosc.src.foundation.geometry`，collector 为 `elxosc.foundation`；
-`init.lua` 使用源码包名，类型名前缀不进入运行时路径。
+未迁基础源码类型仍如 `elxosc.src.foundation.geometry`，collector 如 `elxosc.foundation`；
+本轮 widgets/material 使用 `elxosc.mod.<canonical require>`，全量类型在 FPK-4 统一。
+`init.lua` 单向转出 collector，不重复类型或 classes；类型名前缀不进入运行时路径。
 
 `define/` 是原 extension 的 sandbox、Define、ModuleRegistry、DSL 和 Slot 所有者。
 `host.package_catalog.collect()` 将库表和源码子模块包装成 `{ name, exports, loader? }`，
 host 增加 runtime facade 后统一注册。`import('render.stack')`、
-`import_as('widget.widgets.slider')` 解析明确登记的多级包，不遍历任意对象字段。
+`import_as('material.slider')` 解析明确登记的多级包，不遍历任意对象字段。
 受保护父包同时保护未登记的子名称；新增包不扩大 host 默认 builtins。
 
 ## 已确认的重组合同（2026-11-14，FPK-1 已实施，后续分层待实施）
 
 上述分区和路径记录当前实现。下列最终所有权中 player/define 已实施；
-widgets/material 扁平、export 与 meta 在后续阶段实施。
+widgets/material 扁平已实施；export 与 meta 在后续阶段实施。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |

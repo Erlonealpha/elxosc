@@ -10,13 +10,13 @@ local TextStyle = require('src.text.text_style').TextStyle
 local Color = require('src.foundation.color').Color
 local Constraints = require('src.layout.constraints').Constraints
 local RenderOwner = require('src.render.render_owner').RenderOwner
-local WidgetBinding = require('src.widget.binding').WidgetBinding
+local WidgetBinding = require('src.widgets.binding').WidgetBinding
 local RecordCanvas = require('src.backends.record').RecordCanvas
-local basic = require 'src.widget.widgets.basic'
-local Tooltip = require('src.widget.widgets.tooltip').Tooltip
-local LinearProgressIndicator = require('src.widget.widgets.progress_indicator').LinearProgressIndicator
-local Slider = require('src.widget.widgets.slider').Slider
-local HoverText = require('src.widget.widgets.hover_text').HoverText
+local basic = require 'material'
+local Tooltip = require('src.widgets.tooltip').Tooltip
+local LinearProgressIndicator = require('src.material.progress_indicator').LinearProgressIndicator
+local Slider = require('src.material.slider').Slider
+local HoverText = require('src.widgets.hover_text').HoverText
 local Offset = geometry.Offset
 local FrameClock = require('src.scheduler.frame_clock').FrameClock
 
@@ -72,12 +72,13 @@ end
 F.section('standard controls')
 
 F.test('standard aggregates and player adapters share the owning classes', function()
-    local widgets = require 'src.widget'
+    local widgets = require 'src.widgets'
     for name, class in pairs({ Tooltip = Tooltip, LinearProgressIndicator = LinearProgressIndicator, Slider = Slider,
         HoverText = HoverText }) do
-        F.eq(basic[name], class, 'basic identity: ' .. name)
-        F.eq(widgets[name], class, 'widget identity: ' .. name)
+        F.eq(basic[name], class, 'material identity: ' .. name)
     end
+    F.eq(widgets.Tooltip, Tooltip, 'base tooltip identity')
+    F.eq(widgets.HoverText, HoverText, 'base hover text identity')
     local Timeline = require('player.src.timeline').Timeline
     F.eq(require('player').Timeline, Timeline, 'player timeline aggregate identity')
     F.ok(std.isinstance(Timeline(), Slider), 'timeline specializes the slider widget')
@@ -163,7 +164,7 @@ F.test('generic tooltip accepts a policy and cancels previews without changing i
         on_hover_leave = function()
             leaves = leaves + 1
         end,
-        child = basic.GestureDetector(require('src.widget.widgets.sized_box').SizedBox({ width = 200, height = 20 }), {
+        child = basic.GestureDetector(require('src.widgets.sized_box').SizedBox({ width = 200, height = 20 }), {
             on_tap = function()
                 clicks = clicks + 1
             end,
@@ -358,4 +359,78 @@ F.test('standalone HoverText retains paint-only hover and click behavior', funct
     owner:dispatch_pointer('up', Offset(100, 10), 'left')
     F.eq(clicks, 1, 'standard text click')
     tree:dispose()
+end)
+
+F.test('HoverText restores color and glow after press, rebuild and leave', function()
+    text_layout.set_default(ControlTextLayout())
+    local normal = Color.rgba255(100, 110, 120)
+    local hover = Color.rgba255(0, 255, 0)
+    local glow = Color.rgba255(255, 255, 255)
+    local options = { text = 'action', style = TextStyle({ color = normal, wrap = false }),
+        on_tap = function() end, hover_color = hover, hover_shadow_color = glow, hover_shadow_radius = 2 }
+    local owner, tree = mount(HoverText(options))
+    local snapshot = owner:region_snapshot()
+    local function render_text(node)
+        if std.isinstance(node, require('src.render.text').RenderText) then
+            return node
+        end
+        for _, child in ipairs(node:children()) do
+            local found = render_text(child)
+            if found then
+                return found
+            end
+        end
+    end
+    local text = render_text(owner.root)
+    owner:dispatch_pointer('move', Offset(100, 10))
+    F.eq(text.color_override, hover, 'hover foreground')
+    F.eq(text.glow_color_override, glow, 'hover glow')
+    F.eq(owner:region_snapshot(), snapshot, 'visual changes keep input region')
+    owner:dispatch_pointer('down', Offset(100, 10), 'left')
+    F.eq(text.color_override, hover, 'pressed foreground')
+    F.eq(text.glow_color_override, nil, 'pressed suppresses glow')
+    tree:set_root_widget(HoverText(options))
+    tree:flush_build()
+    F.eq(render_text(owner.root), text, 'rebuild retains render text')
+    F.eq(text.glow_color_override, nil, 'rebuild retains pressed visual')
+    owner:layout()
+    owner:paint(RecordCanvas())
+    owner:dispatch_pointer('up', Offset(100, 10), 'left')
+    F.eq(text.glow_color_override, glow, 'release restores hover glow')
+    owner:dispatch_pointer('leave', Offset(100, 10))
+    F.eq(text.color_override, normal, 'leave restores foreground')
+    F.eq(text.glow_color_override, nil, 'leave clears glow')
+    F.ok(not owner:needs_layout() and not tree.build_owner:has_dirty(), 'feedback remains paint-only')
+    F.eq(options.hover_color, hover, 'caller options retained')
+    tree:dispose()
+end)
+
+F.test('Material retains visual defaults and render requires explicit visual config', function()
+    local slider = Slider()
+    F.eq(slider.height, 48, 'Material slider layout height')
+    F.eq(slider.track_height, 4, 'Material track height')
+    F.eq(slider.track_inset, 20, 'Material track inset')
+    F.eq(slider.thumb_radius, 10, 'Material thumb size')
+    F.eq(slider.overlay_radius, 20, 'Material overlay size')
+    F.eq(slider.active_color, Color.rgba255(70, 150, 240), 'Material active color')
+    local options = { value = 0.25, active_color = Color.rgba255(10, 20, 30) }
+    local customized = Slider(options)
+    F.eq(customized.secondary_active_color, options.active_color:with_alpha(0.4), 'derived secondary color')
+    F.eq(customized.overlay_color, options.active_color:with_alpha(0.15), 'derived overlay color')
+    F.eq(options.height, nil, 'visual defaults do not mutate caller')
+    local indicator = LinearProgressIndicator()
+    F.eq(indicator.min_height, 4, 'Material progress height')
+    F.eq(indicator.border_radius, 2, 'Material progress radius')
+    F.eq(indicator.color, slider.active_color, 'Material progress foreground')
+    local render_slider = require 'src.render.slider'
+    local render_progress = require 'src.render.progress_indicator'
+    -- Deliberately incomplete runtime input tests the validation boundary.
+    ---@type any
+    local incomplete = { value = 0.5 }
+    F.raises(function() render_slider.normalize(incomplete) end,
+        'active_color', 'render excludes visual palette')
+    F.raises(function() render_progress.normalize(incomplete) end,
+        'min_height', 'render excludes visual sizing')
+    F.eq(render_slider.RenderSlider(customized).value, 0.25, 'explicit render config uses controlled value')
+    F.eq(render_progress.RenderLinearProgressIndicator(indicator).min_height, 4, 'explicit progress config')
 end)

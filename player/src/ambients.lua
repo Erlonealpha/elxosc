@@ -1,17 +1,18 @@
 -- Explicit player, theme and action ambients above the generic framework.
 local std = require 'elxlibs.std'
 local text_style_mod = require 'src.text.text_style'
-local widget_mod = require 'src.widget.widget'
-local ambient_mod = require 'src.widget.ambient'
-local WidgetsApp = require('src.widget.app').WidgetsApp
+local widget_mod = require 'src.widgets.framework'
+local ambient_mod = require 'src.widgets.ambient'
+local theme_mod = require 'src.material.theme'
+local WidgetsApp = require('src.widgets.app').WidgetsApp
 local player_theme_mod = require 'player.src.theme'
 local actions_mod = require 'player.src.actions'
-local layout_widgets = require 'src.widget.widgets.layout'
+local layout_widgets = require 'widgets'
 
 local TextStyle = text_style_mod.TextStyle
 local StatelessWidget = widget_mod.StatelessWidget
-local ThemeData = ambient_mod.ThemeData
-local Theme = ambient_mod.Theme
+local ThemeData = theme_mod.ThemeData
+local Theme = theme_mod.Theme
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local PlayerThemeData = player_theme_mod.PlayerThemeData
 local PlayerTheme = player_theme_mod.PlayerTheme

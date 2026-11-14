@@ -6,11 +6,18 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已完成 widgets/Material 分层，export 与 meta 尚未实施。
 
-## 已确认的组件归属（2026-11-14，FPK-1 已实施，后续分层待实施）
+## 组件归属（2026-11-15，FPK-1/2 已实施）
 
-当前源码仍位于 `lib/src/widget/`。后续 runtime 与基础组件在 `lib/src/widgets/` 扁平
+FPK-2 已实施：公共 collector 使用 widgets/material，基础源采用 src.widgets.*，
+样式源采用 src.material.*。删除旧 widget、widget.widgets 和 basic/layout 二次整合入口，
+所有调用者迁到 owning source 或新 collector。整合表仍仅导出成员，不附加子模块。
+RenderSlider/RenderLinearProgressIndicator 的视觉字段由上层显式提供；Material wrapper
+保留当前默认值。Icon 的 bundled font 默认作为资源兼容约定保留，字体/variation
+约定独立于 glyph/layout 实现，Material 提供命名字体集合入口；自定义字体不携带该约定。
+
+当前 runtime 与基础组件在 `lib/src/widgets/` 扁平
 组织，Widget 基类对应 framework.lua；Element/State/Binding/Builder 等各保留功能文件。
 布局、文字、CustomPaint、gesture、Provider、Visibility、Overlay/Navigator、通用
 Tooltip/HoverText/Icon 属基础 widgets。设计 Theme 和整个按钮 family、现有有样式
@@ -33,7 +40,7 @@ Tooltip 不再识别 AutoHide 类/私有 State hook。它提供通用取消/可�
 适配在 fade 开始立即释放 thumbfast，并维持淡出期间的现有 pointer capture。Opacity/
 Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变。
 
-新模块名和类型规则见 [架构](ARCHITECTURE.md)；widgets/Material 和全量类型迁移仍为后续合同。
+新模块名和类型规则见 [架构](ARCHITECTURE.md)；全量类型迁移仍为后续合同。
 
 ## Widget 不可变
 
@@ -99,8 +106,8 @@ Builder 回调按语义分为三类，不提供接受任意参数的统一回调
 3. `StatelessWidget:build` / `State:build`：由 Element rebuild 管线调用，使用同一个
    `Widget|nil` 返回值边界。
 
-`lib/src/widget/builder.lua` 提供 `call_context`、`call_slot`、`validate_context` 和
-`validate_result`。它们只负责 callback/context/result 的边界验证，不持有 Widget tree 或
+`lib/src/widgets/builder.lua` 提供 `call_context`、`validate_context` 和 `validate_result`；
+`define/src/builder.lua` 复用校验并提供 `call_slot`。它们只负责 callback/context/result 的边界验证，不持有 Widget tree 或
 host 状态。nil 表示空子树；其他返回值在所属边界报 `TypeError`。Builder 抛出的原始错误
 保持不变；失败 mount/rebuild 由 Element 的既有部分树清理和后续恢复语义处理。BuildScope
 对重复 dirty 通知去重，因此同一 Entry 的多次 invalidation 在一次 flush 中只执行一次
@@ -111,12 +118,12 @@ Overlay/Route 的完成通知通过 `BuildOwner:after_finalize()` 在子树 disp
 执行，顺序为内容 State 清理 → Page.on_pop → result listeners → Page.on_dispose。
 结果监听器可更新仍存活的 State；WidgetTree 在 layout 前处理这轮新增 dirty。
 
-迁移期 alias 的调用方和删除门槛见 `lib/src/widget/README.md`；相等名称只导出同一 class。
+现有 class identity alias 见 `lib/src/widgets/README.md`；不保留旧模块路径 fallback。
 
 ## Key identity
 
 Key 层级位于 `lib/src/foundation/key.lua`：`Key → LocalKey → ValueKey/UniqueKey`；
-`ObjectKey` 和 `GlobalKey` 由 `lib/src/widget/key.lua` 扩展。LocalKey 只要求同一父 Element
+`ObjectKey` 和 `GlobalKey` 由 `lib/src/widgets/key.lua` 扩展。LocalKey 只要求同一父 Element
 的直接 children 唯一；重复 LocalKey 产生 BuildOwner diagnostic。GlobalKey 在一个
 BuildOwner 内注册、查找和检测重复，unmount/finalize 后清理 stale entry。
 
@@ -125,24 +132,23 @@ Key 只用于 Widget/Element reconciliation。Define Slot 的 contribution ident
 
 ## 控件层
 
-`lib/src/widget/widgets/` 按职责拆成：
+`lib/src/widgets/` 与 `lib/src/material/` 按职责拆成：
 
 - 布局：Padding、Align、SizedBox、Container、Flex/Row/Column、Stack、
   ConstrainedBox、LimitedBox、OverflowBox、UnconstrainedBox、FittedBox、
   OffsetBox、TransformBox、LayoutScaleBox；
 - 内容：Text、Icon、CustomPaint；
-- 输入：GestureDetector、Button 及其样式/变体、IconButton、HoverText、Tooltip 和 Slider；
-- 进度显示：LinearProgressIndicator。
+- 通用输入：GestureDetector、HoverText、Tooltip；
+- Material 样式：Theme、Button 及其样式/变体、IconButton、Slider、LinearProgressIndicator。
 
-兼容聚合入口 `widget.widgets.basic` 和 `widget.widgets.layout` 只重导出独立模块
-的同一对象。新增控件应优先创建独立模块，再补聚合入口、模块 README 和加载/行为
+widgets 和 material collectors 只重导出独立模块成员；旧 basic/layout 聚合已删除。
+新增控件应优先创建所属层独立模块，再补 collector、模块 README 和加载/行为
 测试。
 
-生产模块表使用 `elxosc.<模块路径>` 类型；直接模块和聚合入口仍保持对象 identity。
-`widget.exports` 的 `{ name = 'widget', exports = widgets }` 描述使用模块交叉类型，
-保留 canonical 构造器、context 和 Slot 接口，排除会覆盖 Define `bind` 的 registry helper；
-player 的描述复用显式 `elxosc.player.components`。包收集和默认 builtins
-选择分别属于 `host.package_catalog` 和 `host.mpv_define`；扩展可通过 `import_as` 局部引用
+本轮 widgets/material 模块表使用 `elxosc.mod.<canonical require>`；全量 namespace 在 FPK-4
+统一。直接模块和 collector 保持对象 identity。`{ name, exports }` 描述保留类型化成员，
+基础 widgets 不包含 Slot/bind/DSL/player 内容；这些从 owning 包获取。
+包收集和默认 builtins 选择分别属于 `host.package_catalog` 和 `host.builtins`；扩展可通过 `import_as` 局部引用
 完整包。类型名前缀不改变运行时 require 或 import 包名。
 
 `Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds
@@ -251,7 +257,7 @@ pop/ESC；Popup 的 barrier/content 是同一 Route 的成对 entries。
 
 当前 `BuildContext` 是 `Element` 的类型别名，并支持基于精确运行时 class identity 的
 InheritedWidget 查询：监听式 `depend_on_inherited_widget_of_exact_type()` 和非监听式
-`get_inherited_widget_of_exact_type()`。`lib/src/widget/provider.lua` 在此基础上提供稳定的
+`get_inherited_widget_of_exact_type()`。`lib/src/widgets/provider.lua` 在此基础上提供稳定的
 `Provider.of(context)` / `Provider.maybe_of(context)` 入口；具体 Provider 可以通过
 `SomeProvider.of(context)` 和 `SomeProvider.maybe_of(context)` 查询最近的同类祖先。
 

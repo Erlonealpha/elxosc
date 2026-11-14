@@ -6,7 +6,7 @@
 
 local app_mod = require 'player.src.app'
 local slot_mod = require 'define.src.slot'
-local layout_widgets = require 'src.widget.widgets.layout'
+local layout_widgets = require 'widgets'
 local extension_controls_mod = require 'player.src.extension_controls'
 
 local DefaultApp = app_mod.DefaultApp

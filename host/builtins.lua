@@ -15,7 +15,7 @@ local text_paint = require 'src.painting.text_paint'
 --- Explicit default scope surface; adding a package does not expand builtins.
 ---@return elxosc.mod.host.builtins
 local function collect()
-    local widgets = require 'widget'
+    local widgets = require 'material'
     ---@class elxosc.mod.host.builtins
     local out = {
         Widget = widgets.Widget,

@@ -2,7 +2,7 @@
 
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
-local widget_mod = require 'src.widget.widget'
+local widget_mod = require 'src.widgets.framework'
 
 local Color = color_mod.Color
 local InheritedWidget = widget_mod.InheritedWidget

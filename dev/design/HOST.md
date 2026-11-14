@@ -6,7 +6,7 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已迁到 widgets/material 包名，export 与 meta 尚未实施。
 
 ## 已确认的接线重组（2026-11-14，FPK-1 已实施，后续分层待实施）
 
@@ -22,7 +22,7 @@ Theme/PlayerScope/HostActions 和 activity 路由已归 host.mpv_player_app。
 登记，不按任意对象字段/文件路径查找。source alias 的 slash/init 解析仍归 module_loader。
 
 默认 builtins 从所属 collector 手动选择，保持迁移前 material 表的 115 个公开字段。
-Material 将只拥有框架样式控件和基础 widgets 的重导出；player/Slot/DSL 字段由其 owning
+Material 只拥有框架样式控件和基础 widgets 的重导出；player/Slot/DSL 字段由其 owning
 包提供。新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
 DefineSession 仍生成和恢复 scope-aware import/import_as/require/mod/bind；print 由 host 提供。
 导出 API 的数组原 key/false/同名冲突与发布规则见 ARCHITECTURE，仍保持 class identity。
@@ -131,7 +131,7 @@ material/player 与源码子模块，`mpv_define` 为 player
 `loader(package, scope_id)`；数组成员保留，嵌套值和 class 对象仍共享 identity。
 `import_as('mp')` 的 `on_message`/`emit` 因此仍绑定当前 scope。
 
-多级 `import('render.stack')` 和 `import_as('widget.widgets.slider')` 使用相同解析
+多级 `import('render.stack')` 和 `import_as('material.slider')` 使用相同解析
 规则：只读取 registry 明确登记的模块，不把任意类字段当成模块或加载文件。
 整合包与子包分别登记；`import_as('render').RenderStack` 是成员，
 `import_as('render.stack')` 返回独立子包，前者没有 stack 子模块字段。
@@ -213,9 +213,10 @@ batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unob
 `spec`/`glyph_name`/`icon` 语义图标入口，不扁平注入短名称。
 内部 State、geometry 和 controller assembly helper 不属于此导出清单。
 标准 `Tooltip`、`Slider`、`LinearProgressIndicator`、`HoverText` 通过显式选择的 builtins
-或 `import_as('widget')` 可用；播放器适配复用标准实现。
-`widget` collector 保留完整 framework helper；扁平 import 后由 DefineSession 恢复
-scope-aware `bind`。局部包可注解为 `elxosc.widget`、`elxosc.host.mpv_define.player` 或
+或 owning 包可用：Tooltip/HoverText 从 `import_as('widgets')`，Slider/LinearProgressIndicator
+从 `import_as('material')` 或 material 子包获取；播放器适配复用标准实现。
+`widgets` collector 保留基础 framework helper；扁平 import 后由 DefineSession 恢复
+scope-aware `bind`。局部包可注解为 `elxosc.mod.widgets`、`elxosc.mod.material`、`elxosc.host.mpv_define.player` 或
 `elxosc.host.mpv_define.mp`。该模块仍无内容热注入或 mounted tree 管理能力。
 
 框架内消费者可以使用 `PlayerStore:subscribe_selector(selector, callback)` 只监听相关

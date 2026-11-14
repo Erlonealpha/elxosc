@@ -18,29 +18,31 @@ local function finite(value, name)
     return value
 end
 
----@class _LinearProgressIndicatorOptions
+---@class _ProgressValueOptions
 ---@field value number? nil means indeterminate; finite values are clamped to 0..1
----@field color Color?
----@field background_color Color?
----@field min_height number? default 4
----@field border_radius number? default 2
 ---@field key any?
 
----@param options _LinearProgressIndicatorOptions?
----@return _LinearProgressIndicatorOptions
+---@class _RenderLinearProgressIndicatorOptions : _ProgressValueOptions
+---@field color Color
+---@field background_color Color
+---@field min_height number
+---@field border_radius number
+
+---@param options _RenderLinearProgressIndicatorOptions
+---@return _RenderLinearProgressIndicatorOptions
 function M.normalize(options)
     options = options or {}
     local value = options.value
     if value ~= nil then
         value = math.max(0, math.min(1, finite(value, 'value')))
     end
-    local height = finite(options.min_height == nil and 4 or options.min_height, 'min_height')
-    local radius = finite(options.border_radius == nil and 2 or options.border_radius, 'border_radius')
+    local height = finite(options.min_height, 'min_height')
+    local radius = finite(options.border_radius, 'border_radius')
     if height <= 0 or radius < 0 then
         raise(std.ValueError('LinearProgressIndicator height/radius is invalid'))
     end
-    local foreground = options.color or Color.rgba255(70, 150, 240)
-    local background = options.background_color or Color.rgba255(255, 255, 255, 45)
+    local foreground = options.color
+    local background = options.background_color
     if not std.isinstance(foreground, Color) or not std.isinstance(background, Color) then
         raise(std.TypeError('LinearProgressIndicator colors must be Color values'))
     end
@@ -48,11 +50,11 @@ function M.normalize(options)
         min_height = height, border_radius = radius }
 end
 
----@class RenderLinearProgressIndicator : RenderObject, _LinearProgressIndicatorOptions
+---@class RenderLinearProgressIndicator : RenderObject, _RenderLinearProgressIndicatorOptions
 ---@field min_height number
 ---@field border_radius number
 ---@field phase number
----@overload fun(options?: _LinearProgressIndicatorOptions): self
+---@overload fun(options: _RenderLinearProgressIndicatorOptions): self
 local RenderLinearProgressIndicator = std.class.new('RenderLinearProgressIndicator', RenderObject)
 
 function RenderLinearProgressIndicator:__init(options)
@@ -61,7 +63,7 @@ function RenderLinearProgressIndicator:__init(options)
     self:configure(options)
 end
 
----@param options _LinearProgressIndicatorOptions?
+---@param options _RenderLinearProgressIndicatorOptions
 function RenderLinearProgressIndicator:configure(options)
     local config = M.normalize(options)
     local layout_changed = self.min_height ~= config.min_height

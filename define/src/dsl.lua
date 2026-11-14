@@ -10,8 +10,8 @@
 -- The default construction surface is collected by lib/material.lua.
 
 local std = require 'elxlibs.std'
-local widget_mod = require 'src.widget.widget'
-local state_mod = require 'src.widget.state'
+local widget_mod = require 'src.widgets.framework'
+local state_mod = require 'src.widgets.state'
 
 ---@class elxosc.mod.define.src.dsl
 local M = {}

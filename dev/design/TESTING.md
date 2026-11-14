@@ -17,7 +17,37 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：整合模块成员导出（2026-11-14）
+## 当前检查：FPK-2 Widgets/Material（2026-11-15）
+
+widgets runtime/基础组件扁平到 src.widgets.*，Theme/按钮系列/有样式 Slider/进度
+指示器迁到 src.material.*。旧 widget/widget.widgets/basic/layout 入口删除；更新
+生产、测试、工具和包清单。基础 widgets 的静态依赖守护与独立进程加载检查禁止
+Material/player/Define/mp 反向依赖；Material 重导出全部基础成员且保持 identity。
+新增 HoverText press/rebuild/leave 的颜色与 glow、输入 snapshot/paint-only 检查，
+Material palette/尺寸及 caller options、显式 render config 和自定义 icon 字体检查。
+
+完整 Lua **3144 checks passed**；严格 EmmyLua **No issues found**。
+定向 Python **7 passed in 15.46s**，无 skip：独立框架 1 项，real-host 6 项；
+范围限于按钮输入/外部释放与 section、图标 ASS 输出、左右扩展导入/原生点击、
+生产入口/Demo 消息和 AutoHide thumbfast 清理。未运行全量 real-host，未重跑前阶段
+用户要求忽略的 Demo 点击用例。后续仅调整注解、增加静态守护与同步文档，未重复宿主检查。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors
+uv run --group test python -m pytest -q test/test_framework_packages.py test/real_host/test_button_input.py test/real_host/test_text_anchor.py test/real_host/test_player_extensions.py test/real_host/test_elxosc.py::test_elxosc_script_loads_and_accepts_demo_message test/real_host/test_elxosc.py::test_autohide_clears_thumbfast_without_a_pointer_leave --tb=short
+```
+
+工具迁移后另跑离线 benchmark CLI：**3 passed in 3.10s**，验证真实 core runner、
+Record/ASS 输出对照、动画与比较边界；不作性能改善结论。
+
+当前分支 feat/framework-packages，FPK-1 提交 d2266a9；FPK-2 工作区待审阅。
+审阅后删除 material 表中重复的 widgets 逐项声明，仅通过遍历收集一次；导出成员
+与身份保持。完整 Lua 3144、严格 EmmyLua 和 diff --check 再检通过，无宿主行为变化。
+本切片没有实现 export runtime 或全量 namespace/meta；人工外观/手感仍待用户确认。
+LuaJIT/mpv/uv 使用 project.conf 的本地可执行文件；uv 默认缓存被沙箱拒绝后授权运行。
+
+## 历史检查：整合模块成员导出（2026-11-14）
 
 用户手改 lib/material、lib/widget、lib/render 后确认整合模块不直接导出子模块。
 其余 lib collectors 同步移除附加的 source 表，保留原 class/function/具名值表。

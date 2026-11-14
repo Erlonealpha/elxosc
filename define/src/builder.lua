@@ -1,5 +1,5 @@
 -- Initialization-only builders reuse the framework result boundary.
-local builder_mod = require 'src.widget.builder'
+local builder_mod = require 'src.widgets.builder'
 
 ---@class elxosc.mod.define.src.builder
 local M = {}

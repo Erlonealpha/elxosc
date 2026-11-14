@@ -12,12 +12,12 @@ local M = {}
 local RendererBinding = {}
 
 function RendererBinding.ensure_initialized()
-    local widgets_binding = require 'src.widget.binding'
+    local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.ensure_initialized()
 end
 
 function RendererBinding.instance()
-    local widgets_binding = require 'src.widget.binding'
+    local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.instance()
 end
 

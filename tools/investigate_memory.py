@@ -85,8 +85,9 @@ def run_case(directory, media, name, seconds, warmup, interval, legacy_ref, coll
             # One-file causal comparison, not a full historical application.
             old = git('show', f'{legacy_ref}:widget/player_context.lua')
             old = old.replace("require 'foundation.", "require 'src.foundation.")
-            old = old.replace("require 'widget.", "require 'src.widget.")
-            (destination / 'lib' / 'src' / 'widget' / 'player_context.lua').write_text(
+            old = old.replace("require 'widget.widget'", "require 'src.widgets.framework'")
+            old = old.replace("require 'widget.", "require 'src.widgets.")
+            (destination / 'player' / 'src' / 'context.lua').write_text(
                 old + '\n', encoding='utf-8')
 
     host_helpers._stage_elxosc = stage

@@ -9,9 +9,9 @@
 -- runtime tree in the production Define path.
 
 local std = require 'elxlibs.std'
-local widget_mod = require 'src.widget.widget'
+local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'define.src.builder'
-local framework_builder_mod = require 'src.widget.builder'
+local framework_builder_mod = require 'src.widgets.builder'
 
 local Widget = widget_mod.Widget
 local StatelessWidget = widget_mod.StatelessWidget

@@ -4,9 +4,9 @@ local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
 local actions_mod = require 'player.src.actions'
-local basic_widgets = require 'src.widget.widgets.basic'
-local layout_widgets = require 'src.widget.widgets.layout'
-local widget_mod = require 'src.widget.widget'
+local basic_widgets = require 'material'
+local layout_widgets = require 'widgets'
+local widget_mod = require 'src.widgets.framework'
 local icon_map = require 'player.src.icon_map'
 
 local Offset = geometry.Offset
@@ -23,7 +23,7 @@ local Text = basic_widgets.Text
 local GestureDetector = basic_widgets.GestureDetector
 local Icon = icon_map.icon
 local StatefulWidget = widget_mod.StatefulWidget
-local widget_state_mod = require 'src.widget.state'
+local widget_state_mod = require 'src.widgets.state'
 local State = widget_state_mod.State
 
 local max = math.max

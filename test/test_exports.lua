@@ -4,7 +4,7 @@ local modules_mod = require 'define.src.modules'
 local foundation_package = require 'foundation'
 local painting_package = require 'painting'
 local text_package = require 'text'
-local widget_package = require 'widget'
+local material_package = require 'material'
 local player_package = require 'player'
 
 F.section('exports: typed module consumers')
@@ -12,7 +12,7 @@ F.section('exports: typed module consumers')
 ---@param values elxosc.foundation
 ---@param painting elxosc.painting
 ---@param text elxosc.text
----@param widgets elxosc.widget
+---@param widgets elxosc.mod.material
 ---@param player elxosc.mod.player.src.components
 ---@return Slider, elxosc.player.PlayerControlButton, TextStyle, Paint
 local function make_controls(values, painting, text, widgets, player)
@@ -25,16 +25,16 @@ end
 
 F.test('typed descriptors retain canonical constructors and module intersections', function()
     local slider, button, style, brush = make_controls(foundation_package,
-        painting_package, text_package, widget_package,
+        painting_package, text_package, material_package,
         player_package)
-    F.eq(slider.__class, require('src.widget.widgets.slider').Slider, 'Slider class identity')
+    F.eq(slider.__class, require('src.material.slider').Slider, 'Slider class identity')
     F.eq(button.__class, require('player.src.extension_controls').PlayerControlButton,
         'player control identity')
     F.eq(style.font_size, 12, 'text module constructor')
     F.eq(brush.color.r, 255, 'foundation and painting module constructors')
 end)
 
----@alias TestArrayExports elxosc.src.widget.widgets.slider & {n: number} & string[]
+---@alias TestArrayExports elxosc.mod.src.material.slider & {n: number} & string[]
 
 ---@param exports TestArrayExports
 ---@return Slider, string?
@@ -44,7 +44,7 @@ end
 
 F.test('typed package intersections preserve named and array members', function()
     ---@type TestArrayExports
-    local exports = { Slider = require('src.widget.widgets.slider').Slider, n = 0.25, 'item' }
+    local exports = { Slider = require('src.material.slider').Slider, n = 0.25, 'item' }
     ---@type elxosc.define.DefinePackage<TestArrayExports>
     local package = { name = 'array-controls', exports = exports }
     local registry = modules_mod.ModuleRegistry()

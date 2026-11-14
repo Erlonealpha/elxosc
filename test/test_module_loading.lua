@@ -14,12 +14,12 @@ F.test('source path spellings reuse modules and canonical classes', function()
     F.eq(require('src/foundation/key.lua'), keys, 'slash and suffix share module table')
     ---@diagnostic disable-next-line: unresolved-require
     F.eq(require('src.foundation.key.lua'), keys, 'dot suffix shares module table')
-    local widget = require 'src.widget'
+    local widget = require 'src.widgets'
     ---@diagnostic disable-next-line: unresolved-require
-    F.eq(require('src/widget/init.lua'), widget, 'explicit init shares aggregate')
+    F.eq(require('src/widgets/init.lua'), widget, 'explicit init shares aggregate')
     ---@diagnostic disable-next-line: unresolved-require
-    F.eq(require('src.widget.init'), widget, 'dot init shares aggregate')
-    F.eq(require('src.widget.key').Key, keys.Key, 'local key class identity')
+    F.eq(require('src.widgets.init'), widget, 'dot init shares aggregate')
+    F.eq(require('src.widgets.key').Key, keys.Key, 'local key class identity')
     F.eq(require('foundation').Key, keys.Key, 'library collector shares source class')
     ---@diagnostic disable-next-line: unresolved-require
     F.eq(require('src/foundation/init.lua'), require('foundation'), 'foundation init uses collector')
@@ -28,14 +28,14 @@ end)
 
 F.test('every library layer exposes canonical members without mp', function()
     for _, name in ipairs({ 'foundation', 'painting', 'text', 'layout', 'render',
-        'animation', 'scheduler', 'widget', 'backends', 'material', 'player' }) do
+        'animation', 'scheduler', 'widgets', 'backends', 'material', 'player' }) do
         F.eq(type(require(name)), 'table', 'library entry: ' .. name)
     end
     F.eq(require('render').RenderStack, require('src.render.stack').RenderStack,
         'render member identity')
-    F.eq(require('widget').Slider, require('src.widget.widgets.slider').Slider,
+    F.eq(require('widgets').Text, require('src.widgets.text').Text,
         'widget member identity')
-    F.eq(require('material').Slider, require('src.widget.widgets.slider').Slider,
+    F.eq(require('material').Slider, require('src.material.slider').Slider,
         'material uses canonical control')
     F.eq(rawget(require('material'), 'bind'), nil, 'material excludes registry helper')
 end)
@@ -43,7 +43,7 @@ end)
 F.test('framework collectors do not attach registered source modules', function()
     local packages = require('host.package_catalog').collect()
     for _, name in ipairs({ 'foundation', 'painting', 'text', 'layout', 'render',
-        'animation', 'scheduler', 'widget', 'backends', 'material', 'widget.widgets' }) do
+        'animation', 'scheduler', 'widgets', 'backends', 'material' }) do
         local exports = require(name)
         local attached = {}
         for _, package in ipairs(packages) do
@@ -70,9 +70,10 @@ F.test('multi-level imports preserve protocol names and namespace protection', f
     session:define_start()
     session:define('nested', [[
         stack = import_as('render.stack')
-        slider = import_as('widget.widgets.slider')
+        slider = import_as('material.slider')
         render = import_as('render')
-        widgets = import_as('widget')
+        widgets = import_as('widgets')
+        material = import_as('material')
         import('render.stack')
         import('define.bind')
         same_stack = stack.RenderStack == RenderStack
@@ -81,10 +82,11 @@ F.test('multi-level imports preserve protocol names and namespace protection', f
     local env = session:env_for('nested')
     F.ok(env.same_stack, 'flat and local imports share classes')
     F.eq(env.render.RenderStack, env.stack.RenderStack, 'integrated and source import member identity')
-    F.eq(env.widgets.Slider, env.slider.Slider, 'integrated widget import member identity')
+    F.eq(env.material.Slider, env.slider.Slider, 'integrated material import member identity')
+    F.eq(env.material.Text, env.widgets.Text, 'material reexports basic widgets')
     F.eq(env.render.stack, nil, 'render import does not attach the stack module')
     F.eq(env.widgets.widgets, nil, 'widget import does not attach the controls module')
-    F.eq(env.control.__class, require('src.widget.widgets.slider').Slider,
+    F.eq(env.control.__class, require('src.material.slider').Slider,
         'deep package constructs canonical widget')
     F.eq(env.bind, session.api.bind, 'deep import retains Define bind')
     F.raises(function() registry:publish('render.stack', {}) end, 'protected', 'registered child')
@@ -94,10 +96,39 @@ F.test('multi-level imports preserve protocol names and namespace protection', f
         'ImportError', 'module resolution does not traverse arbitrary export fields')
 end)
 
+F.test('flat widget and material collectors preserve owning members and boundaries', function()
+    local widgets = require 'widgets'
+    local material = require 'material'
+    F.eq(require('src.widgets'), widgets, 'widget source alias uses collector')
+    F.eq(require('src.material'), material, 'material source alias uses collector')
+    for name, member in pairs(widgets) do
+        F.eq(material[name], member, 'material reexport: ' .. name)
+    end
+    for _, name in ipairs({ 'Theme', 'ThemeData', 'Button', 'ButtonBase', 'ButtonStyle',
+        'ElevatedButton', 'OutlinedButton', 'TextButton', 'IconButton', 'Slider', 'LinearProgressIndicator' }) do
+        F.eq(rawget(widgets, name), nil, 'base widgets exclude ' .. name)
+        F.ok(rawget(material, name) ~= nil, 'material owns ' .. name)
+    end
+    local registry = modules_mod.ModuleRegistry()
+    host_define.install_modules(registry, require('player.src.context').PlayerStore())
+    ---@type elxosc.mod.src.widgets.framework
+    local framework = registry:import_as('widgets.framework', 'consumer')
+    ---@type elxosc.mod.src.material.theme
+    local theme = registry:import_as('material.theme', 'consumer')
+    ---@type elxosc.mod.src.material.icons
+    local icons = registry:import_as('material.icons', 'consumer')
+    F.eq(framework.Widget, widgets.Widget, 'runtime subpackage')
+    F.eq(theme.Theme, material.Theme, 'theme subpackage')
+    F.eq(icons.MaterialSymbols, material.MaterialSymbols, 'font resource identity')
+    for _, name in ipairs({ 'widget', 'widget.widgets', 'widget.widgets.slider' }) do
+        F.raises(function() registry:import_as(name, 'consumer') end, 'ImportError', 'removed package ' .. name)
+    end
+end)
+
 F.test('application packages share canonical classes and stay outside framework collectors', function()
     local player = require 'player'
     local define = require 'define'
-    local widget = require 'widget'
+    local widget = require 'widgets'
     F.eq(player.Main, require('player.src.app').Main, 'player root Main identity')
     F.eq(player.PlayerMain, player.Main, 'player naming alias identity')
     F.eq(player.PlayerStore, require('player.src.context').PlayerStore, 'player Store identity')

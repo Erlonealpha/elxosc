@@ -3,7 +3,7 @@ local std = require 'elxlibs.std'
 local App = require('host.mpv_app').App
 local PlayerApp = require('player.src.ambients').PlayerApp
 local PlayerScope = require('player.src.context').PlayerScope
-local ThemeData = require('src.widget.ambient').ThemeData
+local ThemeData = require('src.material.theme').ThemeData
 local PlayerThemeData = require('player.src.theme').PlayerThemeData
 local mpv_actions = require 'host.mpv_actions'
 

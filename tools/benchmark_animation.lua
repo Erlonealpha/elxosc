@@ -1,8 +1,8 @@
 -- Paint isolation experiment using existing RecordCanvas, never a production cache.
 local stats_mod = require 'tools.benchmark_support'
 local scenes_mod = require 'tools.benchmark_scenes'
-local binding_mod = require 'src.widget.widgets_binding'
-local layout_mod = require 'src.widget.widgets.layout'
+local binding_mod = require 'src.widgets.widgets_binding'
+local layout_mod = require 'widgets'
 local constraints_mod = require 'src.layout.constraints'
 local record_mod = require 'src.backends.record'
 local ass_mod = require 'src.backends.ass_canvas'

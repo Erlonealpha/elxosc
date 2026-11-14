@@ -1,7 +1,7 @@
 -- Player visual defaults over the standard in-tree Tooltip.
 
 local std = require 'elxlibs.std'
-local tooltip_mod = require 'src.widget.widgets.tooltip'
+local tooltip_mod = require 'src.widgets.tooltip'
 local text_style_mod = require 'src.text.text_style'
 local color_mod = require 'src.foundation.color'
 local AutoHide = require('player.src.auto_hide').AutoHide

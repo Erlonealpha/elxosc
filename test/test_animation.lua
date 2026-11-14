@@ -25,10 +25,10 @@ local frame_clock_mod = require 'src.scheduler.frame_clock'
 local controller_mod = require 'src.animation.controller'
 local curve_mod = require 'src.animation.curve'
 local tween_mod = require 'src.animation.tween'
-local binding_mod = require 'src.widget.binding'
-local widget_mod = require 'src.widget.widget'
-local state_mod = require 'src.widget.state'
-local layout_widgets = require 'src.widget.widgets.layout'
+local binding_mod = require 'src.widgets.binding'
+local widget_mod = require 'src.widgets.framework'
+local state_mod = require 'src.widgets.state'
+local layout_widgets = require 'widgets'
 
 local Offset = geometry.Offset
 local Size = geometry.Size
@@ -438,5 +438,5 @@ F.test('OffsetBox and animation aggregate exports are stable', function()
     F.eq(animation.AnimationController, AnimationController, 'controller aggregate')
     F.eq(animation.Tween, Tween, 'tween aggregate')
     F.eq(layout_widgets.OffsetBox, OffsetBox, 'offset widget aggregate')
-    F.eq(require('src.widget').OffsetBox, OffsetBox, 'widget aggregate')
+    F.eq(require('src.widgets').OffsetBox, OffsetBox, 'widget aggregate')
 end)

@@ -9,9 +9,9 @@ local geometry = require('src.foundation.geometry')
 local constraints_mod = require('src.layout.constraints')
 local text_layout = require('src.text.text_layout')
 local render_owner = require('src.render.render_owner')
-local binding_mod = require('src.widget.binding')
+local binding_mod = require('src.widgets.binding')
 local app_mod = require('player.src.ambients')
-local ambient_mod = require('src.widget.ambient')
+local ambient_mod = require('src.widgets.ambient')
 local actions_mod = require('player.src.actions')
 local player_context = require('player.src.context')
 local player_layout_mod = require('player.src.layout')
@@ -120,7 +120,7 @@ F.test('blurred backgrounds cross viewport edges without an internal edge line',
 end)
 
 F.test('volume icons distinguish zero volume from mute', function()
-    local icon_class = require('src.widget.widgets.icon').Icon
+    local icon_class = require('src.widgets.icon').Icon
     for _, fixture in ipairs({
         { volume = 100, mute = false, icon = 'volume_up' },
         { volume = 50, mute = false, icon = 'volume_down' },
@@ -145,7 +145,7 @@ F.test('volume icons distinguish zero volume from mute', function()
 end)
 
 F.test('disabled player controls are translucent and do not claim click input', function()
-    local icon_buttons = require('src.widget.widgets.icon_button').IconButton
+    local icon_buttons = require('src.material.icon_button').IconButton
     local render_text_class = require('src.render.text').RenderText
     local owner, binding = mount(WidgetsApp({
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),

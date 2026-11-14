@@ -6,7 +6,7 @@
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 local timeline_mod = require 'player.src.render.timeline'
-local slider_mod = require 'src.widget.widgets.slider'
+local slider_mod = require 'src.material.slider'
 
 local RenderTimeline = timeline_mod.RenderTimeline
 local Slider = slider_mod.Slider

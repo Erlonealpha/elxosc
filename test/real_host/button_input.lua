@@ -14,8 +14,8 @@ package.loaded.elxlib = assert(loadfile(scripts .. '/elxlib/init.lua'))('elxlib'
 local geometry = require 'src.foundation.geometry'
 local Constraints = require('src.layout.constraints').Constraints
 local app_mod = require 'host.mpv_app'
-local layout = require 'src.widget.widgets.layout'
-local basic = require 'src.widget.widgets.basic'
+local layout = require 'widgets'
+local basic = require 'material'
 
 local count, dispatched = 0, 0
 mp.set_property('user-data/elxosc-test-clicks', '0')

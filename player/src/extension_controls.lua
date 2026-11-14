@@ -1,8 +1,8 @@
 -- Fixed button cells and themed buttons for the player extension slots.
 local std = require 'elxlibs.std'
-local widget_mod = require 'src.widget.widget'
-local layout_mod = require 'src.widget.widgets.layout'
-local basic_mod = require 'src.widget.widgets.basic'
+local widget_mod = require 'src.widgets.framework'
+local layout_mod = require 'widgets'
+local basic_mod = require 'material'
 local geometry = require 'src.foundation.geometry'
 local theme_mod = require 'player.src.theme'
 local visuals_mod = require 'player.src.visuals'

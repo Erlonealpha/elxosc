@@ -33,7 +33,8 @@ document disagree, use the current code and current design documents.
 | `lib/src/render/` | Mutable render tree, layout, paint, hit testing, dirty state | None |
 | `lib/src/animation/` | Curves, tweens, frame-clock controllers | None |
 | `lib/src/scheduler/` | Frame clock, scheduler phases, tickers | None |
-| `lib/src/widget/` | Immutable widgets, elements, state, bindings, controls | None |
+| `lib/src/widgets/` | Immutable widgets, elements, state, bindings, basic controls | None |
+| `lib/src/material/` | Design themes, button family, styled numeric controls | None |
 | `lib/src/backends/` | ASS and recording implementations of framework contracts | None |
 | `define/` | Sandbox, module registry, Define/DSL/Slot support | None |
 | `player/` | Media state/actions, shell, Timeline and AutoHide | None |
@@ -72,9 +73,9 @@ player provides media components and policies consumed by host/entry assembly
 The framework must remain usable without mpv. Only `host/`, `main.lua`, and
 `elxlib_load.lua` may require `mp`. In particular, do not add `mp` imports to
 `lib/src/foundation/`, `lib/src/painting/`, `lib/src/text/`, `lib/src/layout/`, `lib/src/render/`, `lib/src/animation/`,
-`lib/src/scheduler/`, `lib/src/widget/`, `lib/src/backends/`, or `define/` or `player/`.
+`lib/src/scheduler/`, `lib/src/widgets/`, `lib/src/material/`, `lib/src/backends/`, or `define/` or `player/`.
 
-Use bare module names such as `require 'src.widget.widget'`; do not add an
+Use bare module names such as `require 'src.widgets.framework'`; do not add an
 `elxosc.` prefix and do not introduce require cycles. Aggregate modules must
 return the same class objects as their direct modules.
 `lib/module_loader.lua` configures both public collectors (`require 'foundation'`)
@@ -87,6 +88,9 @@ modules use `player.src.*` and `define.src.*`; lib must not import those package
 Framework collectors export source members, without attaching child module tables.
 Load source modules or exact registered subpackages separately. Named exported values
 such as Anchor and Curves may remain tables; module names do not imply nested fields.
+Basic widgets must not require Material. Material reexports basic widget members;
+visual defaults belong to its wrappers, while numeric render controls receive explicit
+configuration. Old widget/widget.widgets/basic/layout module paths are removed.
 
 ## 4. Non-negotiable framework contracts
 
@@ -142,7 +146,7 @@ Widget construction protocol, not a runtime tree manager:
 ## 5. Coding style and type contracts
 
 - Use four spaces, single-quoted project strings, expanded function bodies, and
-  readable module aliases (`local widget_mod = require 'src.widget.widget'`).
+  readable module aliases (`local widget_mod = require 'src.widgets.framework'`).
 - Every `std.class.new` has explicit inheritance, instance fields, an Options
   type when it accepts options, and a constructor `---@overload` returning
   `self`.

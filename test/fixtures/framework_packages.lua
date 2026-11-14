@@ -11,12 +11,18 @@ function require(name)
     return original_require(name)
 end
 
+-- Load the base collector first, before any Material imports can mask dependencies.
+local widgets = require 'widgets'
+assert(package.loaded.material == nil, 'widgets loaded Material collector')
+for name in pairs(package.loaded) do
+    assert(not name:match('^src%.material'), 'widgets loaded Material source: ' .. name)
+end
 for _, name in ipairs({ 'foundation', 'painting', 'text', 'layout', 'render',
-    'animation', 'scheduler', 'widget', 'material', 'backends' }) do
+    'animation', 'scheduler', 'material', 'backends' }) do
     assert(type(require(name)) == 'table', 'framework collector ' .. name)
 end
 
-local widget = require 'widget'
+local widget = widgets
 local geometry = require 'foundation'
 local Constraints = require('layout').Constraints
 local canvas = require('backends').RecordCanvas()

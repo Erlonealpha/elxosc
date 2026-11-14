@@ -1,10 +1,10 @@
 -- Fixed framework scenarios: no host dependency, timers or external integrations.
-local basic_mod = require 'src.widget.widgets.basic'
-local layout_mod = require 'src.widget.widgets.layout'
+local basic_mod = require 'material'
+local layout_mod = require 'widgets'
 local style_mod = require 'src.text.text_style'
 local geometry_mod = require 'src.foundation.geometry'
 local app_mod = require 'player.src.ambients'
-local ambient_mod = require 'src.widget.ambient'
+local ambient_mod = require 'src.widgets.ambient'
 local player_mod = require 'player.src.context'
 local actions_mod = require 'player.src.actions'
 local main_mod = require 'player.src.app'

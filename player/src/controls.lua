@@ -2,8 +2,8 @@
 
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
-local basic_widgets = require 'src.widget.widgets.basic'
-local layout_widgets = require 'src.widget.widgets.layout'
+local basic_widgets = require 'material'
+local layout_widgets = require 'widgets'
 local timeline_mod = require 'player.src.timeline'
 local tooltip_mod = require 'player.src.tooltip'
 local metadata_mod = require 'player.src.metadata'

@@ -14,8 +14,8 @@ local geometry = require 'src.foundation.geometry'
 local text_style = require 'src.text.text_style'
 local app_mod = require 'host.mpv_app'
 local constraints_mod = require 'src.layout.constraints'
-local layout = require 'src.widget.widgets.layout'
-local basic = require 'src.widget.widgets.basic'
+local layout = require 'widgets'
+local basic = require 'material'
 
 local Size = geometry.Size
 local TextStyle = text_style.TextStyle

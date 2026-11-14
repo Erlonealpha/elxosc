@@ -15,9 +15,9 @@ local constraints_mod = require('src.layout.constraints')
 local render_owner = require('src.render.render_owner')
 local ass_canvas = require('src.backends.ass_canvas')
 local record = require('src.backends.record')
-local binding_mod = require('src.widget.binding')
-local basic_widgets = require('src.widget.widgets.basic')
-local icon_mod = require('src.widget.widgets.icon')
+local binding_mod = require('src.widgets.binding')
+local basic_widgets = require('material')
+local icon_mod = require('src.widgets.icon')
 local player_mod = require('player')
 local icon_map = require('player.src.icon_map')
 
@@ -128,7 +128,19 @@ end)
 F.test('the class is shared across module and aggregate entry points', function()
     F.eq(icon_mod.Icon, Icon, 'direct module')
     F.eq(basic_widgets.Icon, Icon, 'basic aggregate')
-    F.eq(require('src.widget').Icon, Icon, 'widget aggregate')
+    F.eq(require('src.widgets').Icon, Icon, 'widget aggregate')
+end)
+
+F.test('custom icon fonts remain independent of the Material Symbols resource', function()
+    local options = { size = 20, font_family = 'Custom Icons' }
+    local owner = mount(Icon('custom-glyph', options))
+    local paragraph = owner.root:children()[1]:children()[1].paragraph
+    F.eq(paragraph.text, 'custom-glyph', 'custom glyph')
+    F.eq(paragraph.style.font_family, 'Custom Icons', 'custom family')
+    F.eq(paragraph.style.extra, nil, 'custom family has no Material variation intent')
+    F.eq(options.fill, nil, 'resource defaults do not modify caller')
+    F.eq(require('material').MaterialSymbols,
+        require('fonts.material_symbols').MaterialSymbols, 'shared named font resource')
 end)
 
 F.section('icon: rendering')

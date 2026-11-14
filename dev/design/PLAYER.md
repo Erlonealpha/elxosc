@@ -8,7 +8,7 @@ WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。后续 widgets 扁平、Material 分层、export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已更新 owning imports 和 Material Theme 接线；export 与 meta 尚未实施。
 
 ## 已确认的播放器所有权（2026-11-14，FPK-1 已实施，后续分层待实施）
 

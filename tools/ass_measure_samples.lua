@@ -1,14 +1,14 @@
 -- Backend output and RecordCanvas logical evidence for offline host calibration.
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
-local binding_mod = require 'src.widget.widgets_binding'
+local binding_mod = require 'src.widgets.widgets_binding'
 local text_layout_mod = require 'src.text.text_layout'
 local text_style_mod = require 'src.text.text_style'
 local ass_layout_mod = require 'src.backends.ass_text_layout'
 local ass_canvas_mod = require 'src.backends.ass_canvas'
 local record_mod = require 'src.backends.record'
-local basic_mod = require 'src.widget.widgets.basic'
-local layout_mod = require 'src.widget.widgets.layout'
+local basic_mod = require 'material'
+local layout_mod = require 'widgets'
 
 local M = {}
 local Size = geometry.Size

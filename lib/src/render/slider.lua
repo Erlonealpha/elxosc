@@ -45,7 +45,7 @@ local function callback(value, name)
     return value
 end
 
----@class _SliderOptions
+---@class _SliderInputOptions
 ---@field value number? controlled value; default min
 ---@field min number? inclusive lower bound; default 0
 ---@field max number? inclusive upper bound; default 1; equal bounds disable input
@@ -54,26 +54,28 @@ end
 ---@field on_changed fun(value: number)? nil disables selection
 ---@field on_change_start fun(value: number)? previous controlled value
 ---@field on_change_end fun(value: number)? final drag value; also called on cancellation
----@field active_color Color?
----@field inactive_color Color?
----@field secondary_active_color Color?
----@field thumb_color Color?
----@field disabled_active_color Color?
----@field disabled_inactive_color Color?
----@field disabled_thumb_color Color?
----@field overlay_color Color?
----@field height number? logical layout height; default 48
----@field track_height number? default 4
----@field track_inset number? horizontal padding; default 20
----@field thumb_radius number? default 10
----@field overlay_radius number? default 20
 ---@field hit_expand number? extra input bounds; default 0
 ---@field enabled boolean? optional explicit disable
 ---@field key any?
 
+---@class _RenderSliderOptions : _SliderInputOptions
+---@field active_color Color
+---@field inactive_color Color
+---@field secondary_active_color Color
+---@field thumb_color Color
+---@field disabled_active_color Color
+---@field disabled_inactive_color Color
+---@field disabled_thumb_color Color
+---@field overlay_color Color
+---@field height number
+---@field track_height number
+---@field track_inset number
+---@field thumb_radius number
+---@field overlay_radius number
+
 --- Normalize once at construction/update boundaries, keeping caller data untouched.
----@param options _SliderOptions?
----@return _SliderOptions
+---@param options _RenderSliderOptions
+---@return _RenderSliderOptions
 function M.normalize(options)
     options = options or {}
     local lower = finite(options.min == nil and 0 or options.min, 'min')
@@ -93,7 +95,7 @@ function M.normalize(options)
     if divisions ~= nil and (positive(divisions, 'divisions', false) ~= math.floor(divisions)) then
         raise(std.ValueError('Slider.divisions must be a positive integer'))
     end
-    local active = color(options.active_color or Color.rgba255(70, 150, 240), 'active_color')
+    local active = color(options.active_color, 'active_color')
     return {
         key = options.key, min = lower, max = upper, value = value, divisions = divisions,
         secondary_track_value = secondary,
@@ -102,22 +104,22 @@ function M.normalize(options)
         on_change_end = callback(options.on_change_end, 'on_change_end'),
         enabled = options.enabled ~= false,
         active_color = active,
-        inactive_color = color(options.inactive_color or Color.rgba255(255, 255, 255, 60), 'inactive_color'),
-        secondary_active_color = color(options.secondary_active_color or active:with_alpha(0.4),
+        inactive_color = color(options.inactive_color, 'inactive_color'),
+        secondary_active_color = color(options.secondary_active_color,
             'secondary_active_color'),
-        thumb_color = color(options.thumb_color or active, 'thumb_color'),
-        disabled_active_color = color(options.disabled_active_color or Color.rgba255(255, 255, 255, 80),
+        thumb_color = color(options.thumb_color, 'thumb_color'),
+        disabled_active_color = color(options.disabled_active_color,
             'disabled_active_color'),
-        disabled_inactive_color = color(options.disabled_inactive_color or Color.rgba255(255, 255, 255, 30),
+        disabled_inactive_color = color(options.disabled_inactive_color,
             'disabled_inactive_color'),
-        disabled_thumb_color = color(options.disabled_thumb_color or Color.rgba255(255, 255, 255, 100),
+        disabled_thumb_color = color(options.disabled_thumb_color,
             'disabled_thumb_color'),
-        overlay_color = color(options.overlay_color or active:with_alpha(0.15), 'overlay_color'),
-        height = positive(options.height == nil and 48 or options.height, 'height', false),
-        track_height = positive(options.track_height == nil and 4 or options.track_height, 'track_height', false),
-        track_inset = positive(options.track_inset == nil and 20 or options.track_inset, 'track_inset', true),
-        thumb_radius = positive(options.thumb_radius == nil and 10 or options.thumb_radius, 'thumb_radius', true),
-        overlay_radius = positive(options.overlay_radius == nil and 20 or options.overlay_radius, 'overlay_radius', true),
+        overlay_color = color(options.overlay_color, 'overlay_color'),
+        height = positive(options.height, 'height', false),
+        track_height = positive(options.track_height, 'track_height', false),
+        track_inset = positive(options.track_inset, 'track_inset', true),
+        thumb_radius = positive(options.thumb_radius, 'thumb_radius', true),
+        overlay_radius = positive(options.overlay_radius, 'overlay_radius', true),
         hit_expand = positive(options.hit_expand or 0, 'hit_expand', true),
     }
 end
@@ -129,12 +131,12 @@ local fields = {
     'overlay_color', 'height', 'track_height', 'track_inset', 'thumb_radius', 'overlay_radius', 'hit_expand',
 }
 
----@class RenderSlider : RenderObject, _SliderOptions
+---@class RenderSlider : RenderObject, _RenderSliderOptions
 ---@field hovered boolean
 ---@field dragging boolean
 ---@field _last_fraction number?
 ---@field _last_sent_value number?
----@overload fun(options?: _SliderOptions): self
+---@overload fun(options: _RenderSliderOptions): self
 local RenderSlider = std.class.new('RenderSlider', RenderObject)
 
 function RenderSlider:__init(options)
@@ -149,7 +151,7 @@ function RenderSlider:is_interactive()
     return self.enabled == true and self.on_changed ~= nil and self.min < self.max
 end
 
----@param options _SliderOptions?
+---@param options _RenderSliderOptions
 function RenderSlider:configure(options)
     local config = M.normalize(options)
     local was_interactive = self:is_interactive()

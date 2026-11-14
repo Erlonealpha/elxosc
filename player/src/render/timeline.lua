@@ -219,7 +219,12 @@ end
 local RenderTimeline = std.class.new('RenderTimeline' --[[@as 'elxosc.player.RenderTimeline']], RenderSlider)
 
 function RenderTimeline:__init(options)
-    RenderSlider.__init(self, { value = 0, min = 0, max = 1, track_inset = 0 })
+    local transparent = Color.rgba255(0, 0, 0, 0)
+    RenderSlider.__init(self, { value = 0, min = 0, max = 1, track_inset = 0,
+        active_color = transparent, inactive_color = transparent, secondary_active_color = transparent,
+        thumb_color = transparent, disabled_active_color = transparent, disabled_inactive_color = transparent,
+        disabled_thumb_color = transparent, overlay_color = transparent,
+        height = 20, track_height = 4, thumb_radius = 0, overlay_radius = 0 })
     options = options or {}
     self.progress = validate_fraction(options.progress or 0, 'RenderTimeline.progress')
     self.buffered = validate_fraction(options.buffered or 0, 'RenderTimeline.buffered')

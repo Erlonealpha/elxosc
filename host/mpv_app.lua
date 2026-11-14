@@ -24,9 +24,9 @@ local pipeline_owner = require 'src.render.pipeline_owner'
 local ass_canvas = require 'src.backends.ass_canvas'
 local ass_text_layout = require 'src.backends.ass_text_layout'
 local text_layout = require 'src.text.text_layout'
-local binding_mod = require 'src.widget.widgets_binding'
-local app_widgets = require 'src.widget.app'
-local ambient_mod = require 'src.widget.ambient'
+local binding_mod = require 'src.widgets.widgets_binding'
+local app_widgets = require 'src.widgets.app'
+local ambient_mod = require 'src.widgets.ambient'
 local mpv_input = require 'host.mpv_input'
 local mpv_primitives = require 'host.mpv_primitives'
 
@@ -43,7 +43,7 @@ local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
-local Navigator = require('src.widget.navigation').Navigator
+local Navigator = require('src.widgets.navigation').Navigator
 
 ---@class elxosc.host.mpv_app
 local M = {}

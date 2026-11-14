@@ -10,87 +10,33 @@ local anchor = require 'src.foundation.anchor'
 local text_paint = require 'src.painting.text_paint'
 
 --- Framework construction surface; host owns the default Define builtins.
-local widgets = require 'widget'
+local widgets = require 'widgets'
+local theme = require 'src.material.theme'
+local button = require 'src.material.button'
+local button_base = require 'src.material.button_base'
+local button_style = require 'src.material.button_style'
+local elevated_button = require 'src.material.elevated_button'
+local outlined_button = require 'src.material.outlined_button'
+local text_button = require 'src.material.text_button'
+local icon_button = require 'src.material.icon_button'
+local slider = require 'src.material.slider'
+local progress_indicator = require 'src.material.progress_indicator'
+local icons = require 'src.material.icons'
 
----@class elxosc.material
+---@class elxosc.mod.material : elxosc.mod.widgets
 local M = {
-    Widget = widgets.Widget,
-    StatelessWidget = widgets.StatelessWidget,
-    StatefulWidget = widgets.StatefulWidget,
-    ProxyWidget = widgets.ProxyWidget,
-    ParentDataWidget = widgets.ParentDataWidget,
-    InheritedWidget = widgets.InheritedWidget,
-    RenderObjectWidget = widgets.RenderObjectWidget,
-    LeafRenderObjectWidget = widgets.LeafRenderObjectWidget,
-    SingleChildRenderObjectWidget = widgets.SingleChildRenderObjectWidget,
-    MultiChildRenderObjectWidget = widgets.MultiChildRenderObjectWidget,
-    State = widgets.State,
-    Key = widgets.Key,
-    LocalKey = widgets.LocalKey,
-    UniqueKey = widgets.UniqueKey,
-    ValueKey = widgets.ValueKey,
-    ObjectKey = widgets.ObjectKey,
-    GlobalKey = widgets.GlobalKey,
-    Provider = widgets.Provider,
-    Theme = widgets.Theme,
-    ThemeData = widgets.ThemeData,
-    DefaultTextStyle = widgets.DefaultTextStyle,
-    DisplaySnapshot = widgets.DisplaySnapshot,
-    DisplayScope = widgets.DisplayScope,
-    Opacity = widgets.Opacity,
-    Offstage = widgets.Offstage,
-    Visibility = widgets.Visibility,
-    Overlay = widgets.Overlay,
-    OverlayEntry = widgets.OverlayEntry,
-    OverlayEntryWidget = widgets.OverlayEntryWidget,
-    OverlayScope = widgets.OverlayScope,
-    Theatre = widgets.Theatre,
-    Navigator = widgets.Navigator,
-    NavigatorScope = widgets.NavigatorScope,
-    Page = widgets.Page,
-    PopupPage = widgets.PopupPage,
-    Route = widgets.Route,
-    PopupRoute = widgets.PopupRoute,
-    RouteResult = widgets.RouteResult,
-    ModalBarrier = widgets.ModalBarrier,
-    WidgetsApp = widgets.WidgetsApp,
-    Text = widgets.Text,
-    Icon = widgets.Icon,
-    CustomPaint = widgets.CustomPaint,
-    GestureDetector = widgets.GestureDetector,
-    Button = widgets.Button,
-    ButtonBase = widgets.ButtonBase,
-    ButtonStyle = widgets.ButtonStyle,
-    ElevatedButton = widgets.ElevatedButton,
-    OutlinedButton = widgets.OutlinedButton,
-    TextButton = widgets.TextButton,
-    IconButton = widgets.IconButton,
-    Tooltip = widgets.Tooltip,
-    LinearProgressIndicator = widgets.LinearProgressIndicator,
-    Slider = widgets.Slider,
-    HoverText = widgets.HoverText,
-    Padding = widgets.Padding,
-    Align = widgets.Align,
-    Center = widgets.Center,
-    SizedBox = widgets.SizedBox,
-    DecoratedBox = widgets.DecoratedBox,
-    Flexible = widgets.Flexible,
-    Expanded = widgets.Expanded,
-    Spacer = widgets.Spacer,
-    Flex = widgets.Flex,
-    Row = widgets.Row,
-    Column = widgets.Column,
-    Stack = widgets.Stack,
-    Positioned = widgets.Positioned,
-    ConstrainedBox = widgets.ConstrainedBox,
-    LimitedBox = widgets.LimitedBox,
-    UnconstrainedBox = widgets.UnconstrainedBox,
-    OverflowBox = widgets.OverflowBox,
-    FittedBox = widgets.FittedBox,
-    Container = widgets.Container,
-    OffsetBox = widgets.OffsetBox,
-    TransformBox = widgets.TransformBox,
-    LayoutScaleBox = widgets.LayoutScaleBox,
+    Theme = theme.Theme,
+    ThemeData = theme.ThemeData,
+    Button = button.Button,
+    ButtonBase = button_base.ButtonBase,
+    ButtonStyle = button_style.ButtonStyle,
+    ElevatedButton = elevated_button.ElevatedButton,
+    OutlinedButton = outlined_button.OutlinedButton,
+    TextButton = text_button.TextButton,
+    IconButton = icon_button.IconButton,
+    LinearProgressIndicator = progress_indicator.LinearProgressIndicator,
+    Slider = slider.Slider,
+    MaterialSymbols = icons.MaterialSymbols,
     Offset = geometry.Offset,
     Point = geometry.Point,
     Size = geometry.Size,
@@ -103,5 +49,11 @@ local M = {
     Anchor = anchor.Anchor,
     TextPaint = text_paint.TextPaint,
 }
+
+for name, value in pairs(widgets) do
+    if M[name] == nil then
+        M[name] = value
+    end
+end
 
 return M

@@ -2,15 +2,15 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
-local widget_mod = require 'src.widget.widget'
+local widget_mod = require 'src.widgets.framework'
 
 local Offset = geometry.Offset
 local StatefulWidget = widget_mod.StatefulWidget
-local widget_state_mod = require 'src.widget.state'
+local widget_state_mod = require 'src.widgets.state'
 local State = widget_state_mod.State
 
 local raise = std.raise
-local HoverText = require('src.widget.widgets.hover_text').HoverText
+local HoverText = require('src.widgets.hover_text').HoverText
 local data_mod = require 'player.src.data'
 local format_time = data_mod.format_time
 

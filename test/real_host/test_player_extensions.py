@@ -20,7 +20,7 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
         "local host = import_as('mp')\n"
         "local player = import_as('player')\n"
         "local stack = import_as('render.stack')\n"
-        "local widgets = import_as('widget.widgets.slider')\n"
+        "local widgets = import_as('material.slider')\n"
         "import('render.stack')\n"
         "host.set_prop('user-data/extensions-modules', "
         "(stack.RenderStack == RenderStack and widgets.Slider ~= nil) and 'true' or 'false')\n"

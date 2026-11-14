@@ -2,10 +2,10 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
-local ambient_mod = require 'src.widget.ambient'
+local ambient_mod = require 'src.widgets.ambient'
 local actions_mod = require 'player.src.actions'
-local layout_widgets = require 'src.widget.widgets.layout'
-local widget_mod = require 'src.widget.widget'
+local layout_widgets = require 'widgets'
+local widget_mod = require 'src.widgets.framework'
 local theme_mod = require 'player.src.theme'
 local metadata_mod = require 'player.src.metadata'
 local extension_controls_mod = require 'player.src.extension_controls'

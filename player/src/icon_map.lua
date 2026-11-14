@@ -1,7 +1,7 @@
 -- ModernX semantic icon names mapped to the bundled Material Symbols glyphs.
 -- The map is intentionally private so callers cannot mutate the public contract.
 
-local icon_widgets = require 'src.widget.widgets.icon'
+local icon_widgets = require 'src.widgets.icon'
 local geometry = require 'src.foundation.geometry'
 
 local Icon = icon_widgets.Icon

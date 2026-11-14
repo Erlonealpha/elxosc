@@ -13,11 +13,11 @@ local std = require('elxlibs.std')
 local text_layout = require('src.text.text_layout')
 local constraints_mod = require('src.layout.constraints')
 local render_owner = require('src.render.render_owner')
-local binding_mod = require('src.widget.binding')
+local binding_mod = require('src.widgets.binding')
 local slot_mod = require('define.src.slot')
 local player_context = require('player.src.context')
-local layout_widgets = require('src.widget.widgets.layout')
-local basic_widgets = require('src.widget.widgets.basic')
+local layout_widgets = require('widgets')
+local basic_widgets = require('material')
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -219,7 +219,7 @@ F.test('flattened standard widget import preserves the Define bind protocol', fu
     local define = MpDefine({ builtins = {} })
     define.session:define_start()
     define.session:define('widgets', [[
-        import('widget')
+        import('widgets')
         bind('slot', Text('standard package'))
     ]])
     local env = define.session:env_for('widgets')
