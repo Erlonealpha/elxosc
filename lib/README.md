@@ -16,6 +16,33 @@ flat in `src.widgets.*`; Theme and styled controls live in `src.material.*`.
 `material` reexports basic widgets and collects styled controls/value constructors;
 `host/builtins.lua` owns the explicit default Define construction surface.
 
+`export` organizes static declarations independently of extensions. Its module-level
+API and `export.new()` contexts provide `export(name, source, append?)`, `get(name)`
+and `collect()`. Collectors use separate contexts, so load order cannot mix their
+declarations. For example:
+
+```lua
+local exports = require('export').new()
+exports.export('controls', require 'src.widgets.text')
+exports.export('controls', require 'src.material.slider', true).show('Slider')
+local controls = exports.get('controls')
+```
+
+Each declaration snapshots the source's own fields. One show/hide selection affects
+only that source; nested values/classes retain identity and sparse integer keys keep
+their positions. Equal raw values deduplicate; different values under the same key
+raise ValueError. Source metatables are neither consulted nor copied. `get` publishes
+one package; `collect` validates all pending packages before publishing them in first
+declaration order. Repeated reads share exports, but collection returns fresh
+descriptors. Published packages reject further declarations/selections. This is
+initialization organization; Define still owns scope loaders and payload transactions.
+
+`package_catalog.collect()` lists every framework runtime source, collector, tool
+and font resource using explicit declarations. It performs no directory scanning;
+source `init` files alias collectors and annotation-only metadata is excluded.
+Player and Define maintain their own catalogs; host joins the inventories and adds
+scoped facades. Complete registration does not expand default builtins.
+
 `module_loader.install(root)` supports public collectors and canonical sources,
 including dot/slash paths, `.lua` suffixes and explicit `init` aliases. Application
 sources use `player.src.*` and `define.src.*` under the repository root; they do not

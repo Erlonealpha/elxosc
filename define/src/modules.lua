@@ -20,9 +20,7 @@ local raise = std.raise
 ---@class elxosc.mod.define.src.modules
 local M = {}
 
----@class elxosc.define.DefinePackageDescriptor
----@field name string runtime import name
----@field exports table
+---@class elxosc.define.DefinePackageDescriptor : elxosc.export.Package<table>
 ---@field loader fun(exports: table, scope_id: string)? scope-specific additions
 
 ---@class elxosc.define.DefinePackage<T> : elxosc.define.DefinePackageDescriptor

@@ -8,7 +8,8 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已扁平 widgets 并拆分 Material，export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已扁平 widgets 并拆分 Material，FPK-3 export 与完整静态
+catalog 已实施；全量 namespace/meta 留 FPK-4。
 
 ## 分区
 
@@ -61,7 +62,10 @@ Anchor、Curves 等来源定义的具名值表保持原对象。点分包名表�
 `init.lua` 单向转出 collector，不重复类型或 classes；类型名前缀不进入运行时路径。
 
 `define/` 是原 extension 的 sandbox、Define、ModuleRegistry、DSL 和 Slot 所有者。
-`host.package_catalog.collect()` 将库表和源码子模块包装成 `{ name, exports, loader? }`，
+`lib/package_catalog.lua`、`player/package_catalog.lua` 和 `define/package_catalog.lua`
+分别枚举所属全部 runtime source、collector 和工具，使用 framework export 输出
+`{ name, exports }`。清单是显式声明，不扫描文件，也不依赖偶然 require 顺序。
+`host.package_catalog.collect()` 合并三个清单，host 加入 facade 和 `loader?`，
 host 增加 runtime facade 后统一注册。`import('render.stack')`、
 `import_as('material.slider')` 解析明确登记的多级包，不遍历任意对象字段。
 受保护父包同时保护未登记的子名称；新增包不扩大 host 默认 builtins。
@@ -69,7 +73,7 @@ host 增加 runtime facade 后统一注册。`import('render.stack')`、
 ## 已确认的重组合同（2026-11-14，FPK-1 已实施，后续分层待实施）
 
 上述分区和路径记录当前实现。下列最终所有权中 player/define 已实施；
-widgets/material 扁平已实施；export 与 meta 在后续阶段实施。
+widgets/material 扁平、export 和完整清单已实施；全量 namespace/meta 在 FPK-4 实施。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |
@@ -107,6 +111,15 @@ show/hide 只对当前来源执行一次；不存在或重复筛选 key 报错�
 collect 验证全部待发布包后按首次声明顺序发布；失败不发布半成品。重复读取共享 exports
 身份，已发布包不可追加或重新筛选。source/metatable 不修改，pairs 次序不保证，包枚举
 次序稳定。export 不管理 scope、事务或运行时树。
+
+FPK-3 的 `require('export')` 提供默认声明上下文；`export.new()` 返回独立上下文，
+供每个 collector 和扩展显式使用。上下文的 export/get/collect 是点调用函数；每条
+export 返回一次性 show/hide handle，声明其他包不使 handle 失效，替换自身来源后旧
+handle 报 RuntimeError。成功发布后释放来源快照，保留普通 exports；collect 每次返回
+新 descriptor 容器。render 的同名 normalize helpers 通过显式来源表重命名；Material
+只选 Slider/LinearProgressIndicator，完整 helpers 仍可从独立子包导入。
+animation init 已改成单向 collector alias。Define collector 输出 sandbox 自身成员
+load_chunk/new_env，不再附加 sandbox 子模块；player.PlayerIcons 保留原具名 API。
 
 PaintingBinding/SchedulerBinding/RendererBinding 当前在函数内引用具体 WidgetsBinding，
 这是既有 role 接线；迁移只更新其路径/type，不同时重构 Binding topology。

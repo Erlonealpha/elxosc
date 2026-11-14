@@ -3,6 +3,23 @@
 本文是 elxosc 的当前设计主文档和决策索引。它描述已经实现的架构、不可破坏的
 契约以及下一步方向；代码和测试是最终事实来源，旧设计记录只用于追溯历史。
 
+## FPK-3 Export 与完整注册（2026-11-15）
+
+`lib/export.lua` 已提供声明、来源级 show/hide、get/collect 和独立 new() 上下文。
+所有框架 collector 和 player/Define 根入口使用同一组织合同，整合表只含选取的成员。
+来源浅快照、raw identity 去重、false/稀疏整数键和冲突检查保持；collect 先验证全部
+待发布包，成功后一起发布，已发布包禁止追加/替换/筛选。它不参与 Define scope 生命周期。
+
+framework/player/Define 各自 package_catalog 显式枚举全部 runtime source、collector、
+初始化工具和字体资源；host 合并清单，加入 mp/player facade，仍手选原 115 builtins。
+扩展可精确导入 player.context、export、module_loader 等包。旧 player_context 删除，
+Define 根包的 sandbox 子模块改为 load_chunk/new_env 成员；独立 define.sandbox 保留。
+animation init 已单向返回 collector。全量 namespace/meta 仍由 FPK-4 处理。
+
+完整 Lua **3266 checks passed**、严格 EmmyLua **No issues found**、定向 Python
+**4 passed**，无 skip。Python 为独立框架/全清单审计两项与扩展/入口 real-host 两项，
+未运行全量 real-host、benchmark 或前阶段已忽略的 Demo 原生点击。命令见 TESTING。
+
 ## FPK-1 实施状态（2026-11-14）
 
 ### FPK-2 组织完成（2026-11-15）
@@ -33,8 +50,8 @@ host/package_catalog.lua 收集包，host/builtins.lua 手选原 115 字段；ma
 旧 extension、lib/player、widget/player 和 main_layout 入口已删除；调用者使用 player.src.*、
 define.src.*。迁出模块表与类型已同步 owning namespace，不改变运行时类名和对象身份。
 
-FPK-2 已完成；FPK-3 的 export 组合/完整 catalog 与 FPK-4 的全量 namespace/meta
-仍待实施。下列目标章节中这些后续项目不能视为现有 API。
+FPK-2/3 已完成；FPK-4 的全量 namespace/meta 仍待实施。下列目标章节中的类型开发
+后续项目不能视为现有 API。
 验证与实际范围见 [TESTING.md](TESTING.md)。
 
 用户随后明确整合模块不直接导出子模块。lib collectors 已统一为来源成员导出，
@@ -96,7 +113,7 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
 2026-11-14 的阶段 0 固定完整迁移映射和导出合同，FPK-1 已完成框架与应用边界；
-widgets/Material 已完成，export/meta 按后续阶段实施，见各方向文档的目标章节。
+widgets/Material 与 export 已完成，namespace/meta 按后续阶段实施，见各方向文档。
 
 ## 三棵运行时树
 
@@ -161,6 +178,10 @@ Define/Slot 提供内容。Theatre 的 entry paint/input eligibility 与 host-le
 reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
 
 ## 当前验证基线
+
+2026-11-15 FPK-3 后完整 **3266 Lua checks**、严格 EmmyLua **No issues found**、
+定向 Python **4 passed**，无 skip；静态组织/完整清单、四种 require 顺序、Define
+组织导出后的 transaction 回滚/重试与扩展接线通过，详细范围见 [TESTING.md](TESTING.md)。
 
 2026-11-15 FPK-2 后完整 **3144 Lua checks**、严格 EmmyLua **No issues found**、
 定向 Python **7 passed**，无 skip。基础 widgets 的独立加载、Material 默认视觉、

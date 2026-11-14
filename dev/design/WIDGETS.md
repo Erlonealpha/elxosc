@@ -6,7 +6,8 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已完成 widgets/Material 分层，export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已完成 widgets/Material 分层，FPK-3 export 与完整
+静态 catalog 已实施，全量 namespace/meta 留 FPK-4。
 
 ## 组件归属（2026-11-15，FPK-1/2 已实施）
 
@@ -148,7 +149,8 @@ widgets 和 material collectors 只重导出独立模块成员；旧 basic/layou
 本轮 widgets/material 模块表使用 `elxosc.mod.<canonical require>`；全量 namespace 在 FPK-4
 统一。直接模块和 collector 保持对象 identity。`{ name, exports }` 描述保留类型化成员，
 基础 widgets 不包含 Slot/bind/DSL/player 内容；这些从 owning 包获取。
-包收集和默认 builtins 选择分别属于 `host.package_catalog` 和 `host.builtins`；扩展可通过 `import_as` 局部引用
+静态包由 framework/player/Define 各自 catalog 收集，host.package_catalog 合并注册；
+默认 builtins 由 host.builtins 手选。扩展可通过 `import_as` 局部引用
 完整包。类型名前缀不改变运行时 require 或 import 包名。
 
 `Tooltip` 在原树中绘制 hover 标签，默认按实际 child 尺寸居中；显式 anchor/bounds

@@ -9,7 +9,7 @@ outside the reusable layers.
 - `mpv_app.lua` — generic App lifecycle and frame loop; display/text root wrapper,
   explicit root/activity/dispose hooks.
 - `mpv_player_app.lua` — PlayerHostApp observer/action/scope/activity assembly.
-- `package_catalog.lua`, `builtins.lua` — registered package selection and explicit
+- `package_catalog.lua`, `builtins.lua` — joins complete owning catalogs and selects the explicit
   default Define construction surface.
 - `mpv_primitives.lua` — `MpFrameClock` and `AssPresenter`, the mpv-backed
   framework adapters owned by `App`.
@@ -51,6 +51,10 @@ and user teardown failures release acquired resources while preserving the first
 error. No player or Define modules are loaded by generic App.
 
 The player package comes from `player/init.lua`; the host adds get_snapshot/on_update.
+Framework, player and Define catalogs use static export descriptors. Host registers
+all exact package names, including low-level sources and export/module_loader tools,
+then adds the mp facade and player runtime functions. Named packages are independent
+of collector fields; new registrations do not add builtins automatically.
 Define transaction and exact package registration are implemented by `define/src/`.
 MpDefine owns its facade subscriptions and main owns the initialization window timer.
 `import_as` returns local packages; new packages do not expand default builtins.

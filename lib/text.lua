@@ -1,23 +1,16 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+-- Public layer members retain their direct-source identity.
+local exports = require('export').new()
+
+local export = exports.export
+
+export('text', require 'src.text.paragraph', true)
+export('text', require 'src.text.text_layout', true)
+export('text', require 'src.text.text_style', true)
+
 ---@class elxosc.text : elxosc.src.text.paragraph, elxosc.src.text.text_layout, elxosc.src.text.text_style
-local M = {}
-
-local paragraph = require 'src.text.paragraph'
-local text_layout = require 'src.text.text_layout'
-local text_style = require 'src.text.text_style'
-
-for _, source in ipairs({
-    paragraph,
-    text_layout,
-    text_style,
-}) do
-    for name, value in pairs(source) do
-        if M[name] == nil then
-            M[name] = value
-        end
-    end
-end
+local M = exports.get('text')
 
 return M

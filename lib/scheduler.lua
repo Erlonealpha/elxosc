@@ -1,25 +1,20 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
----@class elxosc.scheduler : elxosc.src.scheduler.frame_clock, elxosc.src.scheduler.scheduler, elxosc.src.scheduler.scheduler_binding, elxosc.src.scheduler.ticker
-local M = {}
+-- Public layer members retain their direct-source identity.
+local exports = require('export').new()
 
-local frame_clock = require 'src.scheduler.frame_clock'
-local scheduler = require 'src.scheduler.scheduler'
-local scheduler_binding = require 'src.scheduler.scheduler_binding'
-local ticker = require 'src.scheduler.ticker'
+local export = exports.export
 
-for _, source in ipairs({
-    frame_clock,
-    scheduler,
-    scheduler_binding,
-    ticker,
-}) do
-    for name, value in pairs(source) do
-        if M[name] == nil then
-            M[name] = value
-        end
-    end
-end
+export('scheduler', require 'src.scheduler.frame_clock', true)
+export('scheduler', require 'src.scheduler.scheduler', true)
+export('scheduler', require 'src.scheduler.scheduler_binding', true)
+export('scheduler', require 'src.scheduler.ticker', true)
+
+---@class elxosc.scheduler :
+--- elxosc.src.scheduler.frame_clock,
+--- elxosc.src.scheduler.scheduler,
+--- elxosc.src.scheduler.scheduler_binding, elxosc.src.scheduler.ticker
+local M = exports.get('scheduler')
 
 return M

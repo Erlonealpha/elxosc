@@ -12,6 +12,9 @@ function require(name)
 end
 
 -- Load the base collector first, before any Material imports can mask dependencies.
+local initial = os.getenv('ELXOSC_TEST_PACKAGE_FIRST') or 'widgets'
+local first = require(initial)
+assert(type(first) == 'table', 'initial collector')
 local widgets = require 'widgets'
 assert(package.loaded.material == nil, 'widgets loaded Material collector')
 for name in pairs(package.loaded) do
@@ -21,6 +24,30 @@ for _, name in ipairs({ 'foundation', 'painting', 'text', 'layout', 'render',
     'animation', 'scheduler', 'material', 'backends' }) do
     assert(type(require(name)) == 'table', 'framework collector ' .. name)
 end
+
+local catalog = require 'package_catalog'
+local packages, repeated = catalog.collect(), catalog.collect()
+local names = {}
+for index, descriptor in ipairs(packages) do
+    assert(names[descriptor.name] == nil, 'duplicate package ' .. descriptor.name)
+    names[descriptor.name] = descriptor.exports
+    local other = assert(repeated[index])
+    assert(other.name == descriptor.name, 'catalog order depends on initial imports')
+    assert(other.exports == descriptor.exports, 'catalog changed exports identity')
+    assert(getmetatable(descriptor.exports) == nil, 'package exports must be plain tables')
+end
+assert(names['widgets.framework'].Widget == widgets.Widget, 'source identity')
+assert(names['material'].Text == widgets.Text, 'integrated identity')
+assert(names['export'].new ~= nil and names['module_loader'].install ~= nil, 'independent tools')
+assert(names['fonts.material_symbols'].MaterialSymbols == require('material').MaterialSymbols, 'font resource')
+assert(names['player'] == nil and names['define'] == nil, 'framework catalog contains applications')
+print('framework catalog: ' .. table.concat((function()
+    local ordered = {}
+    for _, descriptor in ipairs(packages) do
+        ordered[#ordered + 1] = descriptor.name
+    end
+    return ordered
+end)(), ','))
 
 local widget = widgets
 local geometry = require 'foundation'

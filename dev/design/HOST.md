@@ -6,7 +6,8 @@
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已迁到 widgets/material 包名，export 与 meta 尚未实施。
+[TESTING.md](TESTING.md)。FPK-2 已迁到 widgets/material 包名，FPK-3 已实现 export 与
+完整静态 catalog；全量 namespace/meta 留 FPK-4。
 
 ## 已确认的接线重组（2026-11-14，FPK-1 已实施，后续分层待实施）
 
@@ -34,7 +35,7 @@ scope builtins/facade、import_as 字面包名重载和类工厂提示；允许�
 import 不返回包、import_as 返回浅包且不注入环境的区别必须在提示中准确表达。
 扩展自有类型可以自己的 namespace；meta 不管理 mounted tree、源码热重载或 scope shutdown。
 
-上述接线边界已实施；export 与 meta 为后续合同。下文描述当前代码。首次 payload/transaction、
+上述接线边界与 export 已实施；meta 为后续合同。下文描述当前代码。首次 payload/transaction、
 protected names、loader scope、fresh description before mount 和资源清理语义不改变。
 
 ## 宿主边界
@@ -116,8 +117,10 @@ State、消息和页面逻辑，也可以使用播放器预先提供的配置/AP
 
 模块使用统一描述 `DefinePackage<T> = { name, exports, loader? }`；`exports` 是类型化的
 导出表，合并表通过 `&` 复用来源模块类型。框架 `lib/*.lua` 无条件收集每层的普通
-成员导出表，独立于 Define，不附加子模块表。`host.package_catalog.collect()` 包装所有层 collector、
-material/player 与源码子模块，`mpv_define` 为 player
+成员导出表，独立于 Define，不附加子模块表。`lib/package_catalog.lua`、player/Define 的
+package_catalog 用 export 显式登记所属全部 runtime source、collector、工具和字体资源；
+init 别名使用所属 collector，annotation-only metadata 不注册。
+`host.package_catalog.collect()` 合并三份清单，不扫描文件；`mpv_define` 为 player
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
 `elxosc.*` 只用于生产模块返回表的 EmmyLua 类型。
 
@@ -138,6 +141,12 @@ material/player 与源码子模块，`mpv_define` 为 player
 受保护父包阻止 `mod('render.*', ...)`；未知子包仍为 ImportError。扁平导入后恢复
 Define 自有的 `import`/`import_as`/`require`/`mod`/`bind`，避免框架 helper 覆盖协议。
 mp facade 保留 `commandv(...)` 和 `logger`（`mp.msg`）的当前接口。
+
+`player.context` 精确登记 player.src.context，旧 player_context 包名删除；export、
+module_loader 和 painting.canvas 等低层包可独立导入，不进入默认 builtins。扩展使用
+`import_as('export').new()` 创建自己的静态组织上下文，声明不自动向 ModuleRegistry
+发布，仍通过现有 mod 协议提交。Define 根包输出 sandbox 的 load_chunk/new_env 成员，
+独立 define.sandbox 包继续可用；import('define') 后仍恢复 scope-aware 协议函数。
 
 代码在 `define_end` 前登记声明；每个 payload 先在 transaction 中执行，成功后才提交
 Contribution 和 module publish。seal 后由一个 `CompositionAssembler` 按 `SlotSpec` 生成

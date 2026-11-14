@@ -1,21 +1,23 @@
--- Static Define API. Scope-bound imports and binds belong to DefineSession.
-local session_mod = require 'define.src.session'
-local modules_mod = require 'define.src.modules'
-local slot_mod = require 'define.src.slot'
-local bind_mod = require 'define.src.bind'
-local dsl_mod = require 'define.src.dsl'
-local builder_mod = require 'define.src.builder'
+-- Static construction and protocol members; scoped APIs belong to DefineSession.
+local exports = require('export').new()
 
----@class elxosc.mod.define : elxosc.mod.define.src.slot, elxosc.mod.define.src.bind, elxosc.mod.define.src.dsl
-local M = {
-    DefineSession = session_mod.DefineSession,
-    ModuleRegistry = modules_mod.ModuleRegistry,
-    call_slot = builder_mod.call_slot,
-    sandbox = require 'define.src.sandbox',
-}
-for _, source in ipairs({ slot_mod, bind_mod, dsl_mod }) do
-    for name, value in pairs(source) do
-        M[name] = value
-    end
-end
+local export = exports.export
+
+export('define', require 'define.src.slot')
+export('define', require 'define.src.bind', true)
+export('define', require 'define.src.dsl', true)
+export('define', require 'define.src.session', true).show('DefineSession')
+export('define', require 'define.src.modules', true).show('ModuleRegistry')
+export('define', require 'define.src.builder', true).show('call_slot')
+export('define', require 'define.src.sandbox', true)
+
+---@class elxosc.mod.define :
+--- elxosc.mod.define.src.slot,
+--- elxosc.mod.define.src.bind,
+--- elxosc.mod.define.src.dsl,
+--- elxosc.mod.define.src.sandbox
+---@field DefineSession elxosc.define.DefineSession
+---@field ModuleRegistry elxosc.define.ModuleRegistry
+---@field call_slot fun(callback: elxosc.define.SlotBuilder, value: Widget|Widget[]|nil, opts: table<string, any>?, name: string): Widget?
+local M = exports.get('define')
 return M

@@ -203,7 +203,10 @@ end
 ---@param register_disposer fun(dispose: fun())?
 function M.install_modules(modules, store, register_disposer)
     ---@type elxosc.define.DefinePackageDescriptor[]
-    local packages = exports_mod.collect()
+    local packages = {}
+    for _, package in ipairs(exports_mod.collect()) do
+        packages[#packages + 1] = package
+    end
     packages[#packages + 1] = mp_package(register_disposer)
     for i, package in ipairs(packages) do
         if package.name == 'player' then

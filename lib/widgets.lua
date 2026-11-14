@@ -1,4 +1,41 @@
--- Foundation widgets and runtime; Material controls are collected separately.
+-- Public layer members retain their direct-source identity.
+local exports = require('export').new()
+
+local export = exports.export
+
+export('widgets', require 'src.widgets.align', true)
+export('widgets', require 'src.widgets.ambient', true)
+export('widgets', require 'src.widgets.app', true)
+export('widgets', require 'src.widgets.binding', true)
+export('widgets', require 'src.widgets.build_owner', true)
+export('widgets', require 'src.widgets.build_scope', true)
+export('widgets', require 'src.widgets.builder', true)
+export('widgets', require 'src.widgets.constraints', true)
+export('widgets', require 'src.widgets.container', true)
+export('widgets', require 'src.widgets.custom_paint', true)
+export('widgets', require 'src.widgets.decorated_box', true)
+export('widgets', require 'src.widgets.element', true)
+export('widgets', require 'src.widgets.flex', true)
+export('widgets', require 'src.widgets.framework', true)
+export('widgets', require 'src.widgets.gesture_detector', true)
+export('widgets', require 'src.widgets.hover_text', true)
+export('widgets', require 'src.widgets.icon', true)
+export('widgets', require 'src.widgets.key', true)
+export('widgets', require 'src.widgets.navigation', true)
+export('widgets', require 'src.widgets.offset_box', true)
+export('widgets', require 'src.widgets.overflow', true)
+export('widgets', require 'src.widgets.overlay', true)
+export('widgets', require 'src.widgets.padding', true)
+export('widgets', require 'src.widgets.positioned', true)
+export('widgets', require 'src.widgets.provider', true)
+export('widgets', require 'src.widgets.sized_box', true)
+export('widgets', require 'src.widgets.stack', true)
+export('widgets', require 'src.widgets.state', true)
+export('widgets', require 'src.widgets.text', true)
+export('widgets', require 'src.widgets.tooltip', true)
+export('widgets', require 'src.widgets.transform_box', true)
+export('widgets', require 'src.widgets.visibility', true)
+export('widgets', require 'src.widgets.widgets_binding', true)
 
 ---@class elxosc.mod.widgets :
 --- elxosc.mod.src.widgets.align,
@@ -34,46 +71,6 @@
 --- elxosc.mod.src.widgets.transform_box,
 --- elxosc.mod.src.widgets.visibility,
 --- elxosc.mod.src.widgets.widgets_binding
-local M = {}
-
-for _, source in ipairs({
-    require 'src.widgets.align',
-    require 'src.widgets.ambient',
-    require 'src.widgets.app',
-    require 'src.widgets.binding',
-    require 'src.widgets.build_owner',
-    require 'src.widgets.build_scope',
-    require 'src.widgets.builder',
-    require 'src.widgets.constraints',
-    require 'src.widgets.container',
-    require 'src.widgets.custom_paint',
-    require 'src.widgets.decorated_box',
-    require 'src.widgets.element',
-    require 'src.widgets.flex',
-    require 'src.widgets.framework',
-    require 'src.widgets.gesture_detector',
-    require 'src.widgets.hover_text',
-    require 'src.widgets.icon',
-    require 'src.widgets.key',
-    require 'src.widgets.navigation',
-    require 'src.widgets.offset_box',
-    require 'src.widgets.overflow',
-    require 'src.widgets.overlay',
-    require 'src.widgets.padding',
-    require 'src.widgets.positioned',
-    require 'src.widgets.provider',
-    require 'src.widgets.sized_box',
-    require 'src.widgets.stack',
-    require 'src.widgets.state',
-    require 'src.widgets.text',
-    require 'src.widgets.tooltip',
-    require 'src.widgets.transform_box',
-    require 'src.widgets.visibility',
-    require 'src.widgets.widgets_binding',
-}) do
-    for name, value in pairs(source) do
-        M[name] = value
-    end
-end
+local M = exports.get('widgets')
 
 return M

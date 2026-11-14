@@ -188,6 +188,8 @@ submission endpoint are documented in
 | `test_bind.lua` | Inherited widgets and immutable SlotSpec/Contribution assembly |
 | `test_player_context.lua` | Provider lookup, immutable snapshot views, Store subscriptions and State lifecycle |
 | `test_define.lua` | Sandbox env primitives, transactional module/contribution publish and the define protocol |
+| `test_export.lua` | Source snapshots/selection, raw identity, sparse arrays, conflicts, atomic publication and repeated collection |
+| `test_module_loading.lua` | Canonical aliases, owning collectors, exact multi-level imports, protocol rollback and stable builtins |
 | `test_dsl.lua` | The define DSL factories: `new_widget` / `new_state` / `builtins` |
 | `test_host_define.lua` | `MpDefine`: the `mp` module, message routing, the window (`mp` stubbed) |
 | `test_host_player_context.lua` | mpv property bridge, observer disposal and Define player updates (`mp` stubbed) |

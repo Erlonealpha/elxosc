@@ -17,7 +17,32 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：FPK-2 Widgets/Material（2026-11-15）
+## 当前检查：FPK-3 Export 与完整 catalog（2026-11-15）
+
+新增 test_export.lua 检查来源浅快照/元表不变、class/function/table raw identity、
+false/空来源/稀疏整数键、show/hide 来源隔离、空/重复/未知参数、NaN/无效 key、
+同值去重/不同值冲突、显式替换/别名、失败不部分发布、不 seal、重复 get/collect、
+声明顺序和独立上下文。collector 统一使用 export，Material 仅收集一次 widgets。
+
+完整 Lua **3266 checks passed**；严格 EmmyLua **No issues found**。
+定向 Python **4 passed in 10.71s**，无 skip：两项离线检查覆盖完整静态 source 映射，
+及只复制 lib 的独立框架四种首次 require 顺序、身份、mount/paint/input/dispose。
+两项 real-host 限于 player_extensions 和入口/Demo 消息，覆盖全新导入名/export 工具、
+左右扩展原生按钮点击与生产启动。没有全量 real-host，没有重跑前阶段已忽略的
+Demo 原生点击。后续仅增补 Lua transaction/无效边界测试、类型和文档，未重复宿主检查。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors
+uv run --group test python -m pytest -q test/test_framework_packages.py test/real_host/test_player_extensions.py test/real_host/test_elxosc.py::test_elxosc_script_loads_and_accepts_demo_message --tb=short
+```
+
+ELXOSC_LUAJIT/ELXOSC_MPV_BINARY 使用 project.conf 所列本地 executable。
+uv 默认缓存被沙箱拒绝后授权运行。默认 builtins 保持 115；framework/player/Define
+catalog 全量静态注册，未修改协议 publication、source loader、用户配置或 submodule。
+目录/组织变化不作性能提升结论，未运行 benchmark/内存调查；FPK-4/5 尚未实施。
+
+## 已完成检查：FPK-2 Widgets/Material（2026-11-15）
 
 widgets runtime/基础组件扁平到 src.widgets.*，Theme/按钮系列/有样式 Slider/进度
 指示器迁到 src.material.*。旧 widget/widget.widgets/basic/layout 入口删除；更新

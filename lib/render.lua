@@ -1,65 +1,71 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
----@class elxosc.render
-local M = {}
+-- Render primitives; colliding helpers receive explicit public aliases.
+local exports = require 'export'.new()
 
-local align = require 'src.render.align'
-local constrained_box = require 'src.render.constrained_box'
-local custom_paint = require 'src.render.custom_paint'
-local decorated_box = require 'src.render.decorated_box'
-local fitted_box = require 'src.render.fitted_box'
-local flex = require 'src.render.flex'
-local gesture = require 'src.render.gesture'
-local layout_scale_box = require 'src.render.layout_scale_box'
-local offset_box = require 'src.render.offset_box'
-local offstage = require 'src.render.offstage'
-local opacity = require 'src.render.opacity'
-local overflow_box = require 'src.render.overflow_box'
-local padding = require 'src.render.padding'
-local painting_context = require 'src.render.painting_context'
-local pipeline_owner = require 'src.render.pipeline_owner'
-local progress_indicator = require 'src.render.progress_indicator'
-local region_snapshot = require 'src.render.region_snapshot'
-local render_object = require 'src.render.render_object'
-local render_owner = require 'src.render.render_owner'
-local renderer_binding = require 'src.render.renderer_binding'
-local sized_box = require 'src.render.sized_box'
-local slider = require 'src.render.slider'
-local stack = require 'src.render.stack'
-local text = require 'src.render.text'
-local transform_box = require 'src.render.transform_box'
+local export = exports.export
+local get = exports.get
 
-M.RenderAlign = align.RenderAlign
-M.RenderConstrainedBox = constrained_box.RenderConstrainedBox
-M.RenderLimitedBox = constrained_box.RenderLimitedBox
-M.RenderCustomPaint = custom_paint.RenderCustomPaint
-M.Decoration = decorated_box.Decoration
-M.RenderDecoratedBox = decorated_box.RenderDecoratedBox
-M.RenderFittedBox = fitted_box.RenderFittedBox
-M.RenderFlex = flex.RenderFlex
-M.RenderGesture = gesture.RenderGesture
-M.RenderLayoutScaleBox = layout_scale_box.RenderLayoutScaleBox
-M.RenderOffsetBox = offset_box.RenderOffsetBox
-M.RenderOffstage = offstage.RenderOffstage
-M.RenderOpacity = opacity.RenderOpacity
-M.RenderUnconstrainedBox = overflow_box.RenderUnconstrainedBox
-M.RenderOverflowBox = overflow_box.RenderOverflowBox
-M.RenderPadding = padding.RenderPadding
-M.PaintingContext = painting_context.PaintingContext
-M.PipelineOwner = pipeline_owner.PipelineOwner
-M.RenderLinearProgressIndicator = progress_indicator.RenderLinearProgressIndicator
-M.RegionSnapshot = region_snapshot.RegionSnapshot
-M.RenderObject = render_object.RenderObject
-M.RenderOwner = render_owner.RenderOwner
-M.RendererBinding = renderer_binding.RendererBinding
-M.RenderSizedBox = sized_box.RenderSizedBox
-M.RenderSlider = slider.RenderSlider
-M.RenderStack = stack.RenderStack
-M.RenderText = text.RenderText
-M.RenderTransformBox = transform_box.RenderTransformBox
+export('render', require 'src.render.align', true)
+export('render', require 'src.render.constrained_box', true)
+export('render', require 'src.render.custom_paint', true)
+export('render', require 'src.render.decorated_box', true)
+export('render', require 'src.render.fitted_box', true)
+export('render', require 'src.render.flex', true)
+export('render', require 'src.render.gesture', true)
+export('render', require 'src.render.layout_scale_box', true)
+export('render', require 'src.render.offset_box', true)
+export('render', require 'src.render.offstage', true)
+export('render', require 'src.render.opacity', true)
+export('render', require 'src.render.overflow_box', true)
+export('render', require 'src.render.padding', true)
+export('render', require 'src.render.painting_context', true)
+export('render', require 'src.render.pipeline_owner', true)
+export('render', require 'src.render.progress_indicator', true).hide('normalize')
+export('render', require 'src.render.region_snapshot', true)
+export('render', require 'src.render.render_object', true)
+export('render', require 'src.render.render_owner', true)
+export('render', require 'src.render.renderer_binding', true)
+export('render', require 'src.render.sized_box', true)
+export('render', require 'src.render.slider', true).hide('normalize')
+export('render', require 'src.render.stack', true)
+export('render', require 'src.render.text', true)
+export('render', require 'src.render.transform_box', true)
 
-M.normalize_slider = slider.normalize
-M.normalize_progress_indicator = progress_indicator.normalize
+export('render', {
+    normalize_slider = require 'src.render.slider'.normalize,
+    normalize_progress_indicator = require 'src.render.progress_indicator'.normalize,
+}, true)
+
+---@class elxosc.render :
+--- elxosc.src.render.align,
+--- elxosc.src.render.constrained_box,
+--- elxosc.src.render.custom_paint,
+--- elxosc.src.render.decorated_box,
+--- elxosc.src.render.fitted_box,
+--- elxosc.src.render.flex,
+--- elxosc.src.render.gesture,
+--- elxosc.src.render.layout_scale_box,
+--- elxosc.src.render.offset_box,
+--- elxosc.src.render.offstage,
+--- elxosc.src.render.opacity,
+--- elxosc.src.render.overflow_box,
+--- elxosc.src.render.padding,
+--- elxosc.src.render.painting_context,
+--- elxosc.src.render.pipeline_owner,
+--- elxosc.src.render.region_snapshot,
+--- elxosc.src.render.render_object,
+--- elxosc.src.render.render_owner,
+--- elxosc.src.render.renderer_binding,
+--- elxosc.src.render.sized_box,
+--- elxosc.src.render.stack,
+--- elxosc.src.render.text,
+--- elxosc.src.render.transform_box
+---@field RenderSlider RenderSlider
+---@field RenderLinearProgressIndicator RenderLinearProgressIndicator
+---@field normalize_slider fun(options: _RenderSliderOptions): _RenderSliderOptions
+---@field normalize_progress_indicator fun(options: _RenderLinearProgressIndicatorOptions): _RenderLinearProgressIndicatorOptions
+local M = get('render')
 
 return M

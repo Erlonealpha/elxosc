@@ -37,4 +37,9 @@ pixel coordinates and the existing white border/black outline.
 generic App one context cleanup hook. App still owns frame/tree/input/presenter resources.
 Host Define adds `get_snapshot`/`on_update` to the player package without changing classes.
 
+`package_catalog.collect()` explicitly lists the root and all runtime sources.
+Extensions use `import_as('player.context')` for snapshot/store primitives; the old
+`player_context` package name has been removed. The root uses framework export to
+collect selected public components; `PlayerIcons` remains the existing named API.
+
 See [player design](../dev/design/PLAYER.md) and [host lifecycle](../dev/design/HOST.md).

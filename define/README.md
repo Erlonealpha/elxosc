@@ -23,7 +23,14 @@ injection. Both preserve nested/class/array identity and run loaders within the
 active transaction. Multi-level names resolve exact registered packages, not fields.
 Protecting a parent also protects unpublished descendant names.
 
-`host/package_catalog.lua` selects package descriptors; `host/builtins.lua` explicitly
+`package_catalog.collect()` lists Define's root and all runtime sources. The root
+uses framework export to collect members, including sandbox `load_chunk`/`new_env`;
+it does not attach the sandbox source table. Use `import_as('define.sandbox')` or
+`require 'define.src.sandbox'` for that independent module. Framework export creates
+static package descriptors; ModuleRegistry adds scoped loaders and owns transactional
+publication, protection and payload visibility.
+
+`host/package_catalog.lua` joins the three owning catalogs; `host/builtins.lua` explicitly
 selects 115 default fields. Host mp/player facades provide owned disposable subscriptions.
 Static source modules and collectors remain usable without registration.
 

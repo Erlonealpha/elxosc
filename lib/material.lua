@@ -1,6 +1,8 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+-- Styled construction surface, including every basic widget member.
+local exports = require('export').new()
 local geometry = require 'src.foundation.geometry'
 local color = require 'src.foundation.color'
 local paint = require 'src.painting.paint'
@@ -9,34 +11,23 @@ local transform = require 'src.foundation.transform'
 local anchor = require 'src.foundation.anchor'
 local text_paint = require 'src.painting.text_paint'
 
---- Framework construction surface; host owns the default Define builtins.
-local widgets = require 'widgets'
-local theme = require 'src.material.theme'
-local button = require 'src.material.button'
-local button_base = require 'src.material.button_base'
-local button_style = require 'src.material.button_style'
-local elevated_button = require 'src.material.elevated_button'
-local outlined_button = require 'src.material.outlined_button'
-local text_button = require 'src.material.text_button'
-local icon_button = require 'src.material.icon_button'
-local slider = require 'src.material.slider'
-local progress_indicator = require 'src.material.progress_indicator'
-local icons = require 'src.material.icons'
+local export = exports.export
 
----@class elxosc.mod.material : elxosc.mod.widgets
-local M = {
-    Theme = theme.Theme,
-    ThemeData = theme.ThemeData,
-    Button = button.Button,
-    ButtonBase = button_base.ButtonBase,
-    ButtonStyle = button_style.ButtonStyle,
-    ElevatedButton = elevated_button.ElevatedButton,
-    OutlinedButton = outlined_button.OutlinedButton,
-    TextButton = text_button.TextButton,
-    IconButton = icon_button.IconButton,
-    LinearProgressIndicator = progress_indicator.LinearProgressIndicator,
-    Slider = slider.Slider,
-    MaterialSymbols = icons.MaterialSymbols,
+export('material', require 'widgets')
+export('material', require 'src.material.button', true)
+export('material', require 'src.material.button_base', true)
+export('material', require 'src.material.button_style', true)
+export('material', require 'src.material.elevated_button', true)
+export('material', require 'src.material.icon_button', true)
+export('material', require 'src.material.icons', true)
+export('material', require 'src.material.outlined_button', true)
+export('material', require 'src.material.progress_indicator', true).show('LinearProgressIndicator')
+export('material', require 'src.material.slider', true).show('Slider')
+export('material', require 'src.material.text_button', true)
+export('material', require 'src.material.theme', true)
+
+---@class elxosc.material.ValueExports
+local values = {
     Offset = geometry.Offset,
     Point = geometry.Point,
     Size = geometry.Size,
@@ -49,11 +40,16 @@ local M = {
     Anchor = anchor.Anchor,
     TextPaint = text_paint.TextPaint,
 }
+export('material', values, true)
 
-for name, value in pairs(widgets) do
-    if M[name] == nil then
-        M[name] = value
-    end
-end
+---@class elxosc.mod.material : elxosc.mod.widgets, elxosc.material.ValueExports,
+--- elxosc.mod.src.material.button, elxosc.mod.src.material.button_base,
+--- elxosc.mod.src.material.button_style, elxosc.mod.src.material.elevated_button,
+--- elxosc.mod.src.material.icon_button, elxosc.mod.src.material.icons,
+--- elxosc.mod.src.material.outlined_button, elxosc.mod.src.material.text_button,
+--- elxosc.mod.src.material.theme
+---@field Slider Slider
+---@field LinearProgressIndicator LinearProgressIndicator
+local M = exports.get('material')
 
 return M
