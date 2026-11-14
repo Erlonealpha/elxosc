@@ -1,5 +1,9 @@
 -- ModernX-oriented player layout and visual intent.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 local widget_mod = require 'src.widgets.framework'
@@ -8,27 +12,27 @@ local Color = color_mod.Color
 local InheritedWidget = widget_mod.InheritedWidget
 local raise = std.raise
 
----@class elxosc.mod.player.src.theme
+---@class mod.player.src.theme
 local M = {}
 
----@alias elxosc.player.PlayerLayoutOption
+---@alias player.PlayerLayoutOption
 ---| 'original'
 ---| 'reduced'
 
----@alias elxosc.player.PlayerWindowTopBarMode
+---@alias player.PlayerWindowTopBarMode
 ---| 'auto'
 ---| 'yes'
 ---| 'no'
 
----@alias elxosc.player.PlayerJumpMode
+---@alias player.PlayerJumpMode
 ---| 'relative'
 ---| 'absolute'
 
----@alias elxosc.player.PlayerVolumeControlType
+---@alias player.PlayerVolumeControlType
 ---| 'linear'
 ---| 'logarithmic'
 
----@alias elxosc.player.PlayerChapterMarkerStyle
+---@alias player.PlayerChapterMarkerStyle
 ---| 'triangle'
 ---| 'bar'
 ---| 'single-bar'
@@ -87,9 +91,9 @@ local function pick(value, default)
     return value
 end
 
----@class elxosc.player._PlayerThemeDataOptions
----@field layout_option elxosc.player.PlayerLayoutOption?
----@field window_top_bar elxosc.player.PlayerWindowTopBarMode?
+---@class player._PlayerThemeDataOptions
+---@field layout_option PlayerLayoutOption?
+---@field window_top_bar PlayerWindowTopBarMode?
 ---@field controller_height number?
 ---@field window_bar_height number?
 ---@field window_control_box_width number?
@@ -162,15 +166,15 @@ end
 ---@field jump_icon_number boolean?
 ---@field jump_softrepeat boolean?
 ---@field chapter_softrepeat boolean?
----@field jump_mode elxosc.player.PlayerJumpMode?
+---@field jump_mode PlayerJumpMode?
 ---@field seekbar_keyframes boolean?
 ---@field mouse_seek_pause boolean?
 ---@field show_chapter_markers boolean?
----@field chapter_marker_style elxosc.player.PlayerChapterMarkerStyle?
+---@field chapter_marker_style PlayerChapterMarkerStyle?
 ---@field chapter_marker_color Color?
 ---@field chapter_marker_current_color Color?
 ---@field seek_range_color Color?
----@field volume_control_type elxosc.player.PlayerVolumeControlType?
+---@field volume_control_type PlayerVolumeControlType?
 ---@field loop_in_pause boolean?
 ---@field screenshot_flag string?
 ---@field chapter_hover_title boolean?
@@ -180,9 +184,9 @@ end
 ---@field time_total boolean?
 ---@field unicode_minus boolean?
 
----@class elxosc.player.PlayerThemeData : std.object
----@field layout_option elxosc.player.PlayerLayoutOption
----@field window_top_bar elxosc.player.PlayerWindowTopBarMode
+---@class player.PlayerThemeData : std.object
+---@field layout_option PlayerLayoutOption
+---@field window_top_bar PlayerWindowTopBarMode
 ---@field controller_height number
 ---@field window_bar_height number
 ---@field window_control_box_width number
@@ -255,15 +259,15 @@ end
 ---@field jump_icon_number boolean
 ---@field jump_softrepeat boolean
 ---@field chapter_softrepeat boolean
----@field jump_mode elxosc.player.PlayerJumpMode
+---@field jump_mode PlayerJumpMode
 ---@field seekbar_keyframes boolean
 ---@field mouse_seek_pause boolean
 ---@field show_chapter_markers boolean
----@field chapter_marker_style elxosc.player.PlayerChapterMarkerStyle
+---@field chapter_marker_style PlayerChapterMarkerStyle
 ---@field chapter_marker_color Color
 ---@field chapter_marker_current_color Color
 ---@field seek_range_color Color
----@field volume_control_type elxosc.player.PlayerVolumeControlType
+---@field volume_control_type PlayerVolumeControlType
 ---@field loop_in_pause boolean
 ---@field screenshot_flag string
 ---@field chapter_hover_title boolean
@@ -272,8 +276,8 @@ end
 ---@field time_ms boolean
 ---@field time_total boolean
 ---@field unicode_minus boolean
----@overload fun(options?: elxosc.player._PlayerThemeDataOptions): self
-local PlayerThemeData = std.class.new('PlayerThemeData' --[[@as 'elxosc.player.PlayerThemeData']])
+---@overload fun(options?: _PlayerThemeDataOptions): self
+local PlayerThemeData = std.class.new('PlayerThemeData')
 
 function PlayerThemeData:__init(options)
     options = options or {}
@@ -460,8 +464,8 @@ function PlayerThemeData:__init(options)
     self.hover_scale = positive('hover_scale', pick(options.hover_scale, 1.15))
 end
 
----@param options elxosc.player._PlayerThemeDataOptions?
----@return elxosc.player.PlayerThemeData
+---@param options _PlayerThemeDataOptions?
+---@return PlayerThemeData
 function PlayerThemeData:copy_with(options)
     local values = {}
     for key, value in pairs(self) do
@@ -473,16 +477,16 @@ function PlayerThemeData:copy_with(options)
     return PlayerThemeData(values)
 end
 
----@class elxosc.player._PlayerThemeOptions
----@field data elxosc.player.PlayerThemeData
+---@class player._PlayerThemeOptions
+---@field data PlayerThemeData
 ---@field child Widget?
 ---@field key any?
 
----@class elxosc.player.PlayerTheme : InheritedWidget
----@field data elxosc.player.PlayerThemeData
+---@class player.PlayerTheme : InheritedWidget
+---@field data PlayerThemeData
 ---@field child Widget?
----@overload fun(options: elxosc.player._PlayerThemeOptions): self
-local PlayerTheme = std.class.new('PlayerTheme' --[[@as 'elxosc.player.PlayerTheme']], InheritedWidget)
+---@overload fun(options: _PlayerThemeOptions): self
+local PlayerTheme = std.class.new('PlayerTheme', InheritedWidget)
 local PlayerThemeClass = PlayerTheme --[[@as std.class]]
 
 function PlayerTheme:__init(options)
@@ -502,19 +506,19 @@ function PlayerTheme:update_should_notify(old_widget)
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerTheme
+---@return PlayerTheme
 function PlayerTheme.of(context)
     local value = context:depend_on_inherited_widget_of_exact_type(PlayerThemeClass)
     if value == nil then
         raise(std.RuntimeError('no PlayerTheme ancestor was found'))
     end
-    return value --[[@as elxosc.player.PlayerTheme]]
+    return value --[[@as PlayerTheme]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerTheme?
+---@return PlayerTheme?
 function PlayerTheme.maybe_of(context)
-    return context:depend_on_inherited_widget_of_exact_type(PlayerThemeClass) --[[@as elxosc.player.PlayerTheme?]]
+    return context:depend_on_inherited_widget_of_exact_type(PlayerThemeClass) --[[@as PlayerTheme?]]
 end
 
 M.PlayerThemeData = PlayerThemeData

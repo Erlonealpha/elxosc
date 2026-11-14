@@ -9,6 +9,9 @@
 --   * `RenderOverflowBox` (Flutter's `OverflowBox`): the caller overrides
 --     individual min/max values; the box itself is as big as the parent allows.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -19,7 +22,7 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.overflow_box
+---@class mod.src.render.overflow_box
 local M = {}
 
 ---@class RenderUnconstrainedBox : RenderObject

@@ -14,6 +14,9 @@
 -- covered -- the defaults raise `NotImplementedError` to make that explicit
 -- instead of silently drawing nothing.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
@@ -21,7 +24,7 @@ local raise = std.raise
 -- Every method below declares the backend contract; the base implementation
 -- intentionally ignores its parameters (it just raises).
 
----@class elxosc.src.painting.canvas
+---@class mod.src.painting.canvas
 local M = {}
 
 --- An opaque, backend provided image handle (Flutter's `ui.Image`).

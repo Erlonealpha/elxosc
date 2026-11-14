@@ -10,13 +10,16 @@
 -- convenience shapes. This mirrors Flutter, where every shape bottoms out in
 -- `Canvas.drawPath`.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local math = math
 local string = string
 local min = math.min
 
----@class elxosc.src.painting.path
+---@class mod.src.painting.path
 local M = {}
 
 --- The drawing verbs a backend must understand.

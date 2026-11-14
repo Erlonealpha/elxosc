@@ -3,6 +3,10 @@
 
 -- Media timeline with chapters, cache ranges and seek-phase callbacks.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 local timeline_mod = require 'player.src.render.timeline'
@@ -12,7 +16,7 @@ local RenderTimeline = timeline_mod.RenderTimeline
 local Slider = slider_mod.Slider
 local Color = color_mod.Color
 
----@class elxosc.player._TimelineAppearanceOptions
+---@class player._TimelineAppearanceOptions
 ---@field track_color Color?
 ---@field buffered_color Color?
 ---@field progress_color Color?
@@ -27,23 +31,23 @@ local Color = color_mod.Color
 ---@field hover_expand number?
 ---@field range_expand number?
 
----@class elxosc.player._TimelineOptions : elxosc.player._TimelineAppearanceOptions
+---@class player._TimelineOptions : player._TimelineAppearanceOptions
 ---@field progress number?
 ---@field buffered number?
----@field seek_mode elxosc.player.SeekMode?
+---@field seek_mode SeekMode?
 ---@field markers table?
 ---@field ranges table?
 ---@field marker_color Color?
 ---@field current_marker_color Color?
 ---@field range_color Color?
----@field marker_style elxosc.player.TimelineMarkerStyle?
----@field on_seek fun(fraction: number, phase: elxosc.player.TimelinePhase, mode: elxosc.player.SeekMode)?
+---@field marker_style TimelineMarkerStyle?
+---@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@field on_context_seek fun(fraction: number)?
 ---@field on_wheel fun(delta: number)?
 ---@field enabled boolean?
 ---@field key any?
 
----@class elxosc.player.Timeline : Slider
+---@class player.Timeline : material.Slider
 ---@field progress number
 ---@field buffered number
 ---@field track_color Color
@@ -59,19 +63,19 @@ local Color = color_mod.Color
 ---@field hover_handle_size number
 ---@field hover_expand number
 ---@field range_expand number
----@field seek_mode elxosc.player.SeekMode
+---@field seek_mode SeekMode
 ---@field markers table[]
 ---@field ranges table[]
 ---@field marker_color Color
 ---@field current_marker_color Color
 ---@field range_color Color
----@field marker_style elxosc.player.TimelineMarkerStyle
----@field on_seek fun(fraction: number, phase: elxosc.player.TimelinePhase, mode: elxosc.player.SeekMode)?
+---@field marker_style TimelineMarkerStyle
+---@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@field on_context_seek fun(fraction: number)?
 ---@field on_wheel fun(delta: number)?
 ---@field enabled boolean
----@overload fun(options?: elxosc.player._TimelineOptions): self
-local Timeline = std.class.new('Timeline' --[[@as 'elxosc.player.Timeline']], Slider)
+---@overload fun(options?: _TimelineOptions): self
+local Timeline = std.class.new('Timeline', Slider)
 
 function Timeline:__init(options)
     options = options or {}
@@ -139,7 +143,7 @@ function Timeline:create_render_object()
     })
 end
 
----@param render_object elxosc.player.RenderTimeline
+---@param render_object RenderTimeline
 function Timeline:update_render_object(render_object)
     render_object:set_progress(self.progress)
     render_object:set_buffered(self.buffered)
@@ -169,7 +173,7 @@ function Timeline:update_render_object(render_object)
     render_object:set_enabled(self.enabled)
 end
 
----@class elxosc.mod.player.src.timeline
+---@class mod.player.src.timeline
 local M = { Timeline = Timeline }
 
 return M

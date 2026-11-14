@@ -7,6 +7,9 @@
 -- state, then the owning element is marked dirty and the subtree is rebuilt on
 -- the next frame. That is exactly Flutter's `setState`.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local ticker_mod = require 'src.scheduler.ticker'
 local controller_mod = require 'src.animation.controller'
@@ -15,7 +18,7 @@ local raise = std.raise
 local Ticker = ticker_mod.Ticker
 local AnimationController = controller_mod.AnimationController
 
----@class elxosc.mod.src.widgets.state
+---@class mod.src.widgets.state
 local M = {}
 
 ---@class State : std.object

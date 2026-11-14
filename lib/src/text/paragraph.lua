@@ -7,9 +7,12 @@
 -- objects only deal with its `size`/`lines`, and `Canvas:draw_text` consumes
 -- it without ever seeing a raw string.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.src.text.paragraph
+---@class mod.src.text.paragraph
 local M = {}
 
 ---@class Paragraph : std.object

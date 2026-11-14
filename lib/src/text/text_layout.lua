@@ -8,6 +8,9 @@
 -- Everything else -- hard line breaks, greedy word wrapping, the paragraph
 -- box -- is generic and therefore implemented once, here.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local paragraph = require 'src.text.paragraph'
@@ -18,7 +21,7 @@ local raise = std.raise
 local math = math
 local max = math.max
 
----@class elxosc.src.text.text_layout
+---@class mod.src.text.text_layout
 local M = {}
 
 -- The engine stand-in: a single ambient measurer, like the engine's paragraph

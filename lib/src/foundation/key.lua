@@ -5,9 +5,12 @@
 -- host-free: BuildOwner owns the scope in which a key is registered, while
 -- the key only describes identity.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.src.foundation.key
+---@class mod.src.foundation.key
 local M = {}
 local rawequal = rawequal
 local kindof = std.kindof

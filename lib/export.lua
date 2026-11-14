@@ -1,32 +1,35 @@
 -- Static package organization, independent of Define and runtime tree lifecycle.
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local raise = std.raise
 
----@alias elxosc.export.Key string | integer
----@alias elxosc.export.Exports table<elxosc.export.Key, any>
+---@alias export.Key string | integer
+---@alias export.Exports table<export.Key, any>
 
----@class elxosc.export.Package<T>
+---@class export.Package<T>
 ---@field name string
 ---@field exports T
 
----@class elxosc.export.Selection
----@field show fun(...: elxosc.export.Key): elxosc.export.Selection
----@field hide fun(...: elxosc.export.Key): elxosc.export.Selection
+---@class export.Selection
+---@field show fun(...: export.Key): export.Selection
+---@field hide fun(...: export.Key): export.Selection
 
----@class elxosc.export.Context
----@field export fun(name: string, source: table, append: boolean?): elxosc.export.Selection
----@field get fun(name: string): elxosc.export.Exports
----@field collect fun(): elxosc.export.Package<elxosc.export.Exports>[]
+---@class export.Context
+---@field export fun(name: string, source: table, append: boolean?): export.Selection
+---@field get fun(name: string): export.Exports
+---@field collect fun(): export.Package<export.Exports>[]
 
----@class elxosc.export.Source
----@field values elxosc.export.Exports
----@field keys table<elxosc.export.Key, true>?
+---@class export.Source
+---@field values export.Exports
+---@field keys table<export.Key, true>?
 ---@field show boolean?
 
----@class elxosc.export.Declaration
+---@class export.Declaration
 ---@field name string
----@field sources elxosc.export.Source[]
----@field exports elxosc.export.Exports?
+---@field sources export.Source[]
+---@field exports export.Exports?
 
 local function validate_name(name)
     if type(name) ~= 'string' then
@@ -54,8 +57,8 @@ local function validate_key(key)
     raise(std.ValueError('export keys must be strings or finite integers'))
 end
 
----@param package elxosc.export.Declaration
----@return elxosc.export.Exports
+---@param package export.Declaration
+---@return export.Exports
 local function resolve(package)
     local values, owners = {}, {}
     for index, source in ipairs(package.sources) do
@@ -78,11 +81,11 @@ local function resolve(package)
 end
 
 --- Each library can organize its own declarations without require-order coupling.
----@return elxosc.export.Context
+---@return export.Context
 local function new_context()
-    ---@type table<string, elxosc.export.Declaration>
+    ---@type table<string, export.Declaration>
     local by_name = {}
-    ---@type elxosc.export.Declaration[]
+    ---@type export.Declaration[]
     local ordered = {}
     local context = {}
 
@@ -98,7 +101,7 @@ local function new_context()
         if package and package.exports ~= nil then
             raise(std.RuntimeError("package '" .. name .. "' is already published"))
         end
-        ---@type elxosc.export.Source
+        ---@type export.Source
         local declaration = { values = {} }
         for key, value in next, source do
             validate_key(key)
@@ -184,7 +187,7 @@ local function new_context()
     return context
 end
 
----@class elxosc.mod.export : elxosc.export.Context
+---@class mod.export : export.Context
 local M = new_context()
 M.new = new_context
 

@@ -1,5 +1,9 @@
 -- Default playback, timeline, track, volume and optional controls.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
 local basic_widgets = require 'material'
@@ -55,12 +59,12 @@ local panel = visuals_mod.panel
 local icon_control = visuals_mod.icon_control
 local positioned = visuals_mod.positioned
 
----@class elxosc.mod.player.src.controls
+---@class mod.player.src.controls
 local M = {}
 
----@param theme elxosc.player.PlayerThemeData
----@param actions elxosc.player.HostActions
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param theme PlayerThemeData
+---@param actions HostActions
+---@param snapshot PlayerSnapshot?
 ---@param title string
 ---@param layout_geometry table<string, any>
 ---@return Widget[]

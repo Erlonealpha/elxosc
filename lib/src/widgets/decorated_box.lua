@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local decorated_box_mod = require 'src.render.decorated_box'
 local widget_mod = require 'src.widgets.framework'
@@ -37,7 +40,7 @@ function DecoratedBox:update_render_object(render_object)
     render_object:mark_needs_paint()
 end
 
----@class elxosc.mod.src.widgets.decorated_box
+---@class mod.src.widgets.decorated_box
 local M = { Decoration = Decoration, DecoratedBox = DecoratedBox }
 
 return M

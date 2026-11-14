@@ -2,6 +2,10 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- The host registers each owning library's complete static inventory.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local exports = require('export').new()
 
 local export = exports.export
@@ -16,10 +20,10 @@ for _, catalog in ipairs({
     end
 end
 
----@class elxosc.mod.host.package_catalog
+---@class mod.host.package_catalog
 local M = {}
 
----@return elxosc.export.Package<elxosc.export.Exports>[]
+---@return export.Package<export.Exports>[]
 function M.collect()
     return exports.collect()
 end

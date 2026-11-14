@@ -1,5 +1,6 @@
 -- N2 logical Overlay runtime: entry lifecycle, occlusion and plan updates.
 ---@namespace test.overlay
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')

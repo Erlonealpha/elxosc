@@ -1,4 +1,5 @@
 -- The former manual lifecycle checklist, exercised on mounted State/Elements.
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, param-type-mismatch
 local F = require 'framework'
 local support = require 'runtime_support'

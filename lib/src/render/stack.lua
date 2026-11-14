@@ -7,6 +7,9 @@
 -- The default alignment is the top-left corner, matching `Stack`'s
 -- `AlignmentDirectional.topStart`, not the centre.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -21,7 +24,7 @@ local max = math.max
 local ipairs = ipairs
 local huge = math.huge
 
----@class elxosc.src.render.stack
+---@class mod.src.render.stack
 local M = {}
 
 ---@class StackOpts

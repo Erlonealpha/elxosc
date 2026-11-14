@@ -8,6 +8,9 @@
 -- ratio. Painting applies the resulting scale/translate to the canvas, so the
 -- ASS backend only needs one extra tag pair (`\fscx`/`\fscy`) for text.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -25,7 +28,7 @@ local math = math
 local min = math.min
 local max = math.max
 
----@class elxosc.src.render.fitted_box
+---@class mod.src.render.fitted_box
 local M = {}
 
 ---@alias FittedBoxFit

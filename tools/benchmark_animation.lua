@@ -1,4 +1,5 @@
 -- Paint isolation experiment using existing RecordCanvas, never a production cache.
+---@using elxosc
 local stats_mod = require 'tools.benchmark_support'
 local scenes_mod = require 'tools.benchmark_scenes'
 local binding_mod = require 'src.widgets.widgets_binding'

@@ -6,9 +6,12 @@
 -- additional Widget trees through `ensure_initialized():attach(...)` so each
 -- tree receives its own BuildOwner without creating another Binding.
 
+---@namespace elxosc
+---@using elxosc
+
 local binding = require 'src.widgets.binding'
 
----@class elxosc.mod.src.widgets.widgets_binding
+---@class mod.src.widgets.widgets_binding
 local M = {
     WidgetsBinding = binding.WidgetsBinding,
     WidgetBinding = binding.WidgetBinding,

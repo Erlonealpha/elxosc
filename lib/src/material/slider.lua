@@ -1,4 +1,8 @@
 -- Public controlled numeric Slider; media behavior belongs to Timeline.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local slider_mod = require 'src.render.slider'
@@ -7,7 +11,7 @@ local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local RenderSlider = slider_mod.RenderSlider
 local Color = require('src.foundation.color').Color
 
----@class _SliderOptions : _SliderInputOptions
+---@class material._SliderOptions : _SliderInputOptions
 ---@field active_color Color?
 ---@field inactive_color Color?
 ---@field secondary_active_color Color?
@@ -54,7 +58,7 @@ local function normalize(options)
     return slider_mod.normalize(config --[[@as _RenderSliderOptions]])
 end
 
----@class Slider : LeafRenderObjectWidget, _RenderSliderOptions
+---@class material.Slider : LeafRenderObjectWidget, _RenderSliderOptions
 ---@overload fun(options?: _SliderOptions): self
 local Slider = std.class.new('Slider', LeafRenderObjectWidget)
 
@@ -74,7 +78,7 @@ function Slider:update_render_object(render_object)
     render_object:configure(self)
 end
 
----@class elxosc.mod.src.material.slider
+---@class mod.src.material.slider
 local M = { Slider = Slider, normalize = normalize }
 
 return M

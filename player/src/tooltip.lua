@@ -1,5 +1,9 @@
 -- Player visual defaults over the standard in-tree Tooltip.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local tooltip_mod = require 'src.widgets.tooltip'
 local text_style_mod = require 'src.text.text_style'
@@ -19,11 +23,11 @@ local default_style = TextStyle({
     wrap = false,
 })
 
----@class elxosc.player._PlayerTooltipOptions : _TooltipOptions
+---@class player._PlayerTooltipOptions : _TooltipOptions
 
----@class elxosc.player.PlayerTooltip : Tooltip
----@overload fun(options?: elxosc.player._PlayerTooltipOptions): self
-local PlayerTooltip = std.class.new('PlayerTooltip' --[[@as 'elxosc.player.PlayerTooltip']], Tooltip)
+---@class player.PlayerTooltip : Tooltip
+---@overload fun(options?: _PlayerTooltipOptions): self
+local PlayerTooltip = std.class.new('PlayerTooltip', Tooltip)
 
 function PlayerTooltip:__init(options)
     local config = {}
@@ -45,7 +49,7 @@ function PlayerTooltip:__init(options)
     Tooltip.__init(self, config)
 end
 
----@class elxosc.mod.player.src.tooltip
+---@class mod.player.src.tooltip
 local M = { PlayerTooltip = PlayerTooltip }
 
 return M

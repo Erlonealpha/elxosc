@@ -24,6 +24,9 @@
 -- exactly like Flutter's debug assertion. `main_axis_size == 'min'` with loose
 -- fits is the supported way to shrink-wrap such a box.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -39,7 +42,7 @@ local huge = math.huge
 local ipairs = ipairs
 local raise = std.raise
 
----@class elxosc.src.render.flex
+---@class mod.src.render.flex
 local M = {}
 
 ---@alias MainAlignment

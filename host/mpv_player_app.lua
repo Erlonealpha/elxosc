@@ -1,4 +1,8 @@
 -- Explicit player assembly; generic App owns the runtime and its cleanup hook.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local std = require 'elxlibs.std'
 local App = require('host.mpv_app').App
 local PlayerApp = require('player.src.ambients').PlayerApp
@@ -7,24 +11,24 @@ local ThemeData = require('src.material.theme').ThemeData
 local PlayerThemeData = require('player.src.theme').PlayerThemeData
 local mpv_actions = require 'host.mpv_actions'
 
----@class elxosc.host._PlayerHostAppOptions
+---@class host._PlayerHostAppOptions
 ---@field z number?
 ---@field delay number?
----@field player_store elxosc.player.PlayerStore?
+---@field player_store player.PlayerStore?
 ---@field player_context MpPlayerContext?
----@field theme ThemeData?
----@field player_theme elxosc.player.PlayerThemeData?
----@field actions elxosc.player.HostActions?
+---@field theme material.ThemeData?
+---@field player_theme player.PlayerThemeData?
+---@field actions player.HostActions?
 ---@field default_text_style TextStyle?
 
----@class elxosc.host.PlayerHostApp : App
----@field player_store elxosc.player.PlayerStore?
+---@class host.PlayerHostApp : host.App
+---@field player_store player.PlayerStore?
 ---@field player_context MpPlayerContext?
----@field theme ThemeData
----@field player_theme elxosc.player.PlayerThemeData
----@field actions elxosc.player.HostActions
----@overload fun(root_widget: Widget, options?: elxosc.host._PlayerHostAppOptions): self
-local PlayerHostApp = std.class.new('PlayerHostApp' --[[@as 'elxosc.host.PlayerHostApp']], App)
+---@field theme material.ThemeData
+---@field player_theme player.PlayerThemeData
+---@field actions player.HostActions
+---@overload fun(root_widget: Widget, options?: _PlayerHostAppOptions): self
+local PlayerHostApp = std.class.new('PlayerHostApp', App)
 
 -- Input activity is a player policy, kept outside the generic frame owner.
 local function notify_activity(app, x, y, viewport)
@@ -91,12 +95,12 @@ function PlayerHostApp:__init(root_widget, options)
     end
 end
 
----@class elxosc.mod.host.mpv_player_app
+---@class mod.host.mpv_player_app
 local M = { PlayerHostApp = PlayerHostApp }
 
 ---@param build fun(): Widget
----@param options elxosc.host._PlayerHostAppOptions?
----@return elxosc.host.PlayerHostApp
+---@param options _PlayerHostAppOptions?
+---@return PlayerHostApp
 function M.start(build, options)
     local ok, root = pcall(build)
     if not ok then

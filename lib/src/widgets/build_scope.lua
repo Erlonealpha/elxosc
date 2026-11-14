@@ -3,9 +3,12 @@
 
 -- A BuildScope groups dirty Elements that may be flushed by one BuildOwner pass.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.mod.src.widgets.build_scope
+---@class mod.src.widgets.build_scope
 local M = {}
 
 ---@class BuildScope : std.object

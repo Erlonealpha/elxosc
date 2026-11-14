@@ -4,12 +4,15 @@
 -- Minimal Flutter-like PaintingContext for the single Canvas backend.  Layer
 -- trees and compositing are deliberately not part of this contract.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
 local Offset = geometry.Offset
 
----@class elxosc.src.render.painting_context
+---@class mod.src.render.painting_context
 local M = {}
 
 ---@class PaintingContext : std.object

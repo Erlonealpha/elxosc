@@ -1,12 +1,16 @@
 -- Reusable button visual state and style values.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 
 local Color = color_mod.Color
 local raise = std.raise
 
----@class _ButtonStyleOptions
+---@class material._ButtonStyleOptions
 ---@field background_color Color?
 ---@field color Color?
 ---@field foreground_color Color?
@@ -25,7 +29,7 @@ local raise = std.raise
 ---@field hover_shadow_color Color?
 ---@field hover_shadow_radius number?
 
----@class ButtonStyle : std.object
+---@class material.ButtonStyle : std.object
 ---@field background_color Color?
 ---@field foreground_color Color
 ---@field hover_foreground_color Color?
@@ -125,7 +129,7 @@ function ButtonStyle:shadow_for(elevation)
     return Color.rgba255(0, 0, 0, math.min(100, 18 + elevation * 8))
 end
 
----@class elxosc.mod.src.material.button_style
+---@class mod.src.material.button_style
 local M = { ButtonStyle = ButtonStyle }
 
 return M

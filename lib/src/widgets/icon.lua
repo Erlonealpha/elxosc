@@ -9,6 +9,9 @@
 -- family is only an intent here -- the host resolves it against the fonts it
 -- loads, so this module stays backend agnostic.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local color = require 'src.foundation.color'
 local geometry = require 'src.foundation.geometry'
@@ -111,7 +114,7 @@ function Icon:build()
     })
 end
 
----@class elxosc.mod.src.widgets.icon
+---@class mod.src.widgets.icon
 local M = { Icon = Icon }
 
 return M

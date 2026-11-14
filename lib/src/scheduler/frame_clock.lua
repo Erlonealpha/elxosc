@@ -8,11 +8,14 @@
 -- them from a real render/vsync callback, and tests drive them from a manual
 -- clock. Only `now` and `request_frame` are backend specific.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxosc.src.scheduler.frame_clock
+---@class mod.src.scheduler.frame_clock
 local M = {}
 
 ---@class FrameClock : std.object

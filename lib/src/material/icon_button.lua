@@ -1,3 +1,7 @@
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local base = require 'src.material.button_base'
 local color = require 'src.foundation.color'
@@ -9,11 +13,11 @@ local copy_options = base.copy_options
 local Color = color.Color
 local EdgeInsets = geometry.EdgeInsets
 
----@class _IconButtonOptions : _ButtonBaseOptions
+---@class material._IconButtonOptions : material._ButtonBaseOptions
 ---@field icon Widget?
 ---@field radius number?
 
----@class IconButton : ButtonBase
+---@class material.IconButton : material.ButtonBase
 ---@overload fun(options: _IconButtonOptions?): self
 local IconButton = std.class.new('IconButton', ButtonBase)
 ---@param options _IconButtonOptions?
@@ -31,7 +35,7 @@ function IconButton:__init(options)
     ButtonBase.__init(self, config)
 end
 
----@class elxosc.mod.src.material.icon_button
+---@class mod.src.material.icon_button
 local M = {
     IconButton = IconButton
 }

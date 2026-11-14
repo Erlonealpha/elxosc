@@ -1,5 +1,6 @@
 -- Append-only player control slots: assembly, scaled input and public buttons.
 ---@namespace test.playerextensions
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require 'framework'

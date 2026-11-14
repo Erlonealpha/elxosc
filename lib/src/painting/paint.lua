@@ -7,12 +7,15 @@
 -- `Canvas:draw_*`. It carries no backend specific state, so the same Paint is
 -- valid for the ASS backend, a mpv.net surface or an offline recording canvas.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local color = require 'src.foundation.color'
 
 local Color = color.Color
 
----@class elxosc.src.painting.paint
+---@class mod.src.painting.paint
 local M = {}
 
 ---@alias PaintStyle

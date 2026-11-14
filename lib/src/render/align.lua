@@ -4,6 +4,9 @@
 -- Single-child box that positions its child by an alignment fraction
 -- (Flutter's `RenderPositionedBox`: `Center`, `Align`).
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local render_object = require 'src.render.render_object'
@@ -12,7 +15,7 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.align
+---@class mod.src.render.align
 local M = {}
 
 ---@class RenderAlign : RenderObject

@@ -2,6 +2,9 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- A value snapshot of one root's effective input regions, in paint order.
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local Rect = geometry.Rect
@@ -62,7 +65,7 @@ function RegionSnapshot:same_regions(other)
     return true
 end
 
----@class elxosc.src.render.region_snapshot
+---@class mod.src.render.region_snapshot
 local M = { RegionSnapshot = RegionSnapshot }
 
 return M

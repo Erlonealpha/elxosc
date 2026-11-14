@@ -8,6 +8,9 @@
 -- The callback receives absolute canvas coordinates:
 --   draw(canvas, offset, size)
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local render_object = require 'src.render.render_object'
@@ -16,7 +19,7 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.custom_paint
+---@class mod.src.render.custom_paint
 local M = {}
 
 ---@class CustomPaintOpts

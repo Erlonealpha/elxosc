@@ -3,11 +3,17 @@
 
 ## 本次更新后的约定
 
-- 本轮迁移的生产模块表使用 `---@class elxosc.mod.<canonical require>`，路径以 `.`
+- 生产文件使用 `---@namespace elxosc` 限定声明、`---@using elxosc` 简写类型引用；
+  Material/player/Define/host 可追加对应的 `---@using elxosc.<owner>`。
+  例如声明 `---@class mod.src.material.slider` 对应完整类型
+  `elxosc.mod.src.material.slider`，声明 `material.Slider` 对应 `elxosc.material.Slider`；
+  引用时可写 `Widget`、`Slider` 等明确可解析的短名，有冲突时保留 owner 前缀。
+  不添加可由 namespace/using 解析的类名字符串强转；不更改运行时类名。
+- 生产模块表解析为 `elxosc.mod.<canonical require>`，路径以 `.`
   连接。例如 `lib/src/material/slider.lua` 声明 `elxosc.mod.src.material.slider`，
   `lib/widgets.lua` collector 声明 `elxosc.mod.widgets`，`define/src/modules.lua`
   声明 `elxosc.mod.define.src.modules`。`src/widgets/init.lua` 是 collector 单向 alias，
-  不重复声明类型。未迁基础层现有类型在 FPK-4 统一；运行时路径不添加 elxosc。
+  不重复声明类型。生产实例/Options/alias 已统一 owning namespace；运行时路径不添加 elxosc。
   模块表与 Widget 等实例类型分别命名；显式导出字段保留构造器和函数签名。
 - 聚合表只重导出同一对象。完整重导出可继承来源模块类型；选取部分字段时只声明
   实际字段，不能通过继承虚报未导出的 API。扩展包使用 `DefinePackage<T>` 描述
@@ -701,7 +707,7 @@ function MyClass:some(options)
     self.some_b = options.b
     self.some_c = options.c
     -- Condition 不要过长
-    if (self.some_a and self.some_b) or 
+    if (self.some_a and self.some_b) or
         self.some_c then
         -- ok
     end
@@ -711,7 +717,7 @@ end
 --- 而不是 `name = function() end`
 local function build()
     local rex = require 'elxlibs.rex'
-    --- 使用 `call[[]]` 简化调用以及去除转义 
+    --- 使用 `call[[]]` 简化调用以及去除转义
     rex.safe_new[[\d+]]
 
     --- 使用 `call{}` 简化单options构造参类型的调用
@@ -724,7 +730,7 @@ end
 function MyClass:copy() return MyClass({prop = self.prop}) end
 --- 展开
 function MyClass:copy()
-    return MyClass({prop = self.prop}) 
+    return MyClass({prop = self.prop})
 end
 
 --- 每个函数声明，只要不是 override 应该声明参数类型

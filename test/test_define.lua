@@ -2,6 +2,7 @@
 -- protocol. The framework owns none of the host services here — the `mp` module
 -- below is built exactly the way a real host would build it.
 ---@namespace test.define
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.

@@ -9,11 +9,15 @@
 -- to `extension/define.lua` / `extension/modules.lua`. Keeping this file stateless is what
 -- stops the define layer from turning into one object that owns everything.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxosc.mod.define.src.sandbox
+---@class mod.define.src.sandbox
 local M = {}
 
 --== load shim =============================================================

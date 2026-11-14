@@ -5,6 +5,9 @@
 -- GestureDetector owns only hover state while the wrapped control keeps its
 -- normal click/capture behavior.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
@@ -30,7 +33,7 @@ local State = state_mod.State
 local max = math.max
 local raise = std.raise
 
----@class elxosc.mod.src.widgets.tooltip
+---@class mod.src.widgets.tooltip
 local M = {}
 local default_style = TextStyle({ wrap = false })
 

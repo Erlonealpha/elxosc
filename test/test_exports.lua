@@ -1,4 +1,5 @@
 -- Typed extension consumers exercise module tables without flattening imports.
+---@using elxosc
 local F = require 'framework'
 local modules_mod = require 'define.src.modules'
 local foundation_package = require 'foundation'
@@ -9,12 +10,12 @@ local player_package = require 'player'
 
 F.section('exports: typed module consumers')
 
----@param values elxosc.foundation
----@param painting elxosc.painting
----@param text elxosc.text
----@param widgets elxosc.mod.material
----@param player elxosc.mod.player.src.components
----@return Slider, elxosc.player.PlayerControlButton, TextStyle, Paint
+---@param values mod.foundation
+---@param painting mod.painting
+---@param text mod.text
+---@param widgets mod.material
+---@param player mod.player.src.components
+---@return material.Slider, player.PlayerControlButton, TextStyle, Paint
 local function make_controls(values, painting, text, widgets, player)
     local size = values.Size(120, 24)
     local style = text.TextStyle({ font_size = size.height / 2 })
@@ -34,10 +35,10 @@ F.test('typed descriptors retain canonical constructors and module intersections
     F.eq(brush.color.r, 255, 'foundation and painting module constructors')
 end)
 
----@alias TestArrayExports elxosc.mod.src.material.slider & {n: number} & string[]
+---@alias TestArrayExports mod.src.material.slider & {n: number} & string[]
 
 ---@param exports TestArrayExports
----@return Slider, string?
+---@return material.Slider, string?
 local function read_array_package(exports)
     return exports.Slider({ value = exports.n }), exports[1]
 end
@@ -45,7 +46,7 @@ end
 F.test('typed package intersections preserve named and array members', function()
     ---@type TestArrayExports
     local exports = { Slider = require('src.material.slider').Slider, n = 0.25, 'item' }
-    ---@type elxosc.define.DefinePackage<TestArrayExports>
+    ---@type define.DefinePackage<TestArrayExports>
     local package = { name = 'array-controls', exports = exports }
     local registry = modules_mod.ModuleRegistry()
     modules_mod.register_package(registry, package)

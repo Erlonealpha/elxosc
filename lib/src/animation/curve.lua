@@ -3,7 +3,10 @@
 
 -- Small, pure progress curves. Curves accept and return a normalized value.
 
----@class elxosc.src.animation.curve
+---@namespace elxosc
+---@using elxosc
+
+---@class mod.src.animation.curve
 local M = {}
 
 ---@param t number

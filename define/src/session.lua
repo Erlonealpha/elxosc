@@ -14,6 +14,10 @@
 -- the host's own services are just modules the host publishes — mpv properties
 -- and script messages are the `mp` module's business, not the framework's.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local std = require 'elxlibs.std'
 local sandbox = require 'define.src.sandbox'
 local modules_mod = require 'define.src.modules'
@@ -23,28 +27,28 @@ local raise = std.raise
 local ModuleRegistry = modules_mod.ModuleRegistry
 local ContributionRegistry = bind_mod.ContributionRegistry
 
----@class elxosc.mod.define.src.session
+---@class mod.define.src.session
 local M = {}
 
----@class elxosc.define.DefineOptions
+---@class define.DefineOptions
 ---@field builtins table<string, any>? names every scope can read as-is
----@field modules elxosc.define.ModuleRegistry? shared module registry
----@field contributions elxosc.define.ContributionRegistry? shared contribution registry
+---@field modules ModuleRegistry? shared module registry
+---@field contributions ContributionRegistry? shared contribution registry
 ---@field protected_names table<string, true>? names a chunk may not overwrite
 
----@alias elxosc.define.DefineSessionPhase
+---@alias define.DefineSessionPhase
 --- |>'idle'
 --- | 'defining'
 --- | 'sealed'
 
 --- One define phase: the scopes it declared, plus the DSL builtins that need to
 --- know which scope is currently running.
----@class elxosc.define.DefineSession : std.object
----@field modules elxosc.define.ModuleRegistry
----@field contributions elxosc.define.ContributionRegistry
+---@class define.DefineSession : std.object
+---@field modules ModuleRegistry
+---@field contributions ContributionRegistry
 ---@field api table<string, any>
 ---@field protected_names table<string, true>
----@field phase elxosc.define.DefineSessionPhase
+---@field phase DefineSessionPhase
 ---@field current_define string?
 ---@field current_env table?
 ---@field on_error fun(scope_id: string, err: any)? called instead of raising when set
@@ -53,9 +57,9 @@ local M = {}
 ---@field on_payload_rollback fun(scope_id: string)?
 ---@field _scopes table<string, table>
 ---@field _defined_scopes table<string, true> scopes with an accepted initial payload
----@field _sealed_contributions elxosc.define.Contribution[]?
----@overload fun(options: elxosc.define.DefineOptions?): self
-local DefineSession = std.class.new('DefineSession' --[[@as 'elxosc.define.DefineSession']])
+---@field _sealed_contributions Contribution[]?
+---@overload fun(options: DefineOptions?): self
+local DefineSession = std.class.new('DefineSession')
 
 function DefineSession:__init(options)
     options = options or {}
@@ -256,7 +260,7 @@ function DefineSession:define_end()
     end
 end
 
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function DefineSession:contribution_snapshot()
     if self._sealed_contributions ~= nil then
         return self.contributions:snapshot()

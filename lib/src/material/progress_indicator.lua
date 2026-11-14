@@ -1,4 +1,8 @@
 -- LinearProgressIndicator reports progress; it never accepts pointer input.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local State = require('src.widgets.state').State
@@ -8,7 +12,7 @@ local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local StatefulWidget = widget_mod.StatefulWidget
 local Color = require('src.foundation.color').Color
 
----@class _LinearProgressIndicatorOptions : _ProgressValueOptions
+---@class material._LinearProgressIndicatorOptions : _ProgressValueOptions
 ---@field color Color?
 ---@field background_color Color?
 ---@field min_height number? default 4
@@ -25,7 +29,7 @@ local function normalize(options)
         border_radius = options.border_radius == nil and 2 or options.border_radius })
 end
 
----@class LinearProgressIndicator : StatefulWidget, _RenderLinearProgressIndicatorOptions
+---@class material.LinearProgressIndicator : StatefulWidget, _RenderLinearProgressIndicatorOptions
 ---@overload fun(options?: _LinearProgressIndicatorOptions): self
 local LinearProgressIndicator = std.class.new('LinearProgressIndicator', StatefulWidget)
 
@@ -36,10 +40,10 @@ function LinearProgressIndicator:__init(options)
     end
 end
 
----@class _ProgressIndicatorOptions : _RenderLinearProgressIndicatorOptions
+---@class material._ProgressIndicatorOptions : _RenderLinearProgressIndicatorOptions
 ---@field phase number
 
----@class _ProgressIndicator : LeafRenderObjectWidget, _ProgressIndicatorOptions
+---@class material._ProgressIndicator : LeafRenderObjectWidget, material._ProgressIndicatorOptions
 ---@overload fun(options: _ProgressIndicatorOptions): self
 local ProgressIndicator = std.class.new('_ProgressIndicator', LeafRenderObjectWidget)
 
@@ -61,7 +65,7 @@ function ProgressIndicator:update_render_object(render)
     render:set_phase(self.phase)
 end
 
----@class LinearProgressIndicatorState : State
+---@class material.LinearProgressIndicatorState : State
 ---@field _ticker Ticker?
 ---@field _phase number
 ---@overload fun(): self
@@ -112,7 +116,7 @@ function LinearProgressIndicator:create_state()
     return LinearProgressIndicatorState()
 end
 
----@class elxosc.mod.src.material.progress_indicator
+---@class mod.src.material.progress_indicator
 local M = { LinearProgressIndicator = LinearProgressIndicator, normalize = normalize }
 
 return M

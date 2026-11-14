@@ -2,6 +2,9 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Public layer members retain their direct-source identity.
+---@namespace elxosc
+---@using elxosc
+
 local exports = require('export').new()
 
 local export = exports.export
@@ -15,7 +18,7 @@ export('foundation', require 'src.foundation.key_event', true)
 export('foundation', require 'src.foundation.pointer_event', true)
 export('foundation', require 'src.foundation.transform', true)
 
----@class elxosc.foundation : elxosc.src.foundation.anchor, elxosc.src.foundation.binding_base, elxosc.src.foundation.color, elxosc.src.foundation.geometry, elxosc.src.foundation.key, elxosc.src.foundation.key_event, elxosc.src.foundation.pointer_event, elxosc.src.foundation.transform
+---@class mod.foundation : mod.src.foundation.anchor, mod.src.foundation.binding_base, mod.src.foundation.color, mod.src.foundation.geometry, mod.src.foundation.key, mod.src.foundation.key_event, mod.src.foundation.pointer_event, mod.src.foundation.transform
 local M = exports.get('foundation')
 
 return M

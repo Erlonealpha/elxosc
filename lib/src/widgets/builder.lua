@@ -5,13 +5,16 @@
 -- by Widget builds and mounted context builders. Define's initialization builders
 -- reuse callback/result validation without requiring a mounted Element.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
 local Widget = widget_mod.Widget
 local raise = std.raise
 
----@class elxosc.mod.src.widgets.builder
+---@class mod.src.widgets.builder
 local M = {}
 
 ---@param name any

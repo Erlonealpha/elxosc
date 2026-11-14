@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local flex_mod = require 'src.render.flex'
 local sized_box_mod = require 'src.widgets.sized_box'
@@ -128,7 +131,7 @@ local function Column(options)
     return Flex('column', options)
 end
 
----@class elxosc.mod.src.widgets.flex
+---@class mod.src.widgets.flex
 ---@field Row fun(options?: _FlexOptions): Flex
 ---@field Column fun(options?: _FlexOptions): Flex
 ---@field Expanded fun(child: Widget?, options?: _ExpandedOptions): Flexible

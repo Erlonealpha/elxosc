@@ -13,22 +13,26 @@
 -- The registry deals in plain tables only: no sessions, no sandboxes, no
 -- widgets. That narrow interface is the point.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxosc.mod.define.src.modules
+---@class mod.define.src.modules
 local M = {}
 
----@class elxosc.define.DefinePackageDescriptor : elxosc.export.Package<table>
+---@class define.DefinePackageDescriptor : export.Package<table>
 ---@field loader fun(exports: table, scope_id: string)? scope-specific additions
 
----@class elxosc.define.DefinePackage<T> : elxosc.define.DefinePackageDescriptor
+---@class define.DefinePackage<T> : define.DefinePackageDescriptor
 ---@field exports T
 
 --- Register a standard export descriptor as a protected host package.
----@param registry elxosc.define.ModuleRegistry
----@param package elxosc.define.DefinePackageDescriptor
+---@param registry ModuleRegistry
+---@param package DefinePackageDescriptor
 function M.register_package(registry, package)
     if type(package) ~= 'table' then
         raise(std.TypeError('Define package must be a table'))
@@ -46,12 +50,12 @@ function M.register_package(registry, package)
     registry:protect(package.name)
 end
 
----@class elxosc.define.ModuleRegistry : std.object
+---@class define.ModuleRegistry : std.object
 ---@field mods table<string, table>
 ---@field loaders table<string, fun(env: table, scope_id: string)>
 ---@field protected_names table<string, true>
 ---@overload fun(): self
-local ModuleRegistry = std.class.new('ModuleRegistry' --[[@as 'elxosc.define.ModuleRegistry']])
+local ModuleRegistry = std.class.new('ModuleRegistry')
 
 function ModuleRegistry:__init()
     self.mods = {}
@@ -60,7 +64,7 @@ function ModuleRegistry:__init()
 end
 
 --- Create a transaction-local registry with the same visible modules.
----@return elxosc.define.ModuleRegistry
+---@return ModuleRegistry
 function ModuleRegistry:fork()
     local child = ModuleRegistry()
     for name, data in pairs(self.mods) do
@@ -76,7 +80,7 @@ function ModuleRegistry:fork()
 end
 
 --- Publish only modules that were added or replaced in a successful payload.
----@param transaction elxosc.define.ModuleRegistry
+---@param transaction ModuleRegistry
 function ModuleRegistry:commit_from(transaction)
     for name, data in pairs(transaction.mods) do
         if self.mods[name] ~= data then

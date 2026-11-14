@@ -1,5 +1,8 @@
 -- Parent-data widget for root-relative Stack placement.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
@@ -7,7 +10,7 @@ local ParentDataWidget = widget_mod.ParentDataWidget
 local raise = std.raise
 local huge = math.huge
 
----@class elxosc.mod.src.widgets.positioned
+---@class mod.src.widgets.positioned
 local M = {}
 
 ---@class _PositionedOptions

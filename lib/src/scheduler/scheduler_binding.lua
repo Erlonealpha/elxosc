@@ -6,7 +6,10 @@
 -- instance.  Per-tree Scheduler objects may still be injected by a host/test
 -- owner scope when an isolated clock is required.
 
----@class elxosc.src.scheduler.scheduler_binding
+---@namespace elxosc
+---@using elxosc
+
+---@class mod.src.scheduler.scheduler_binding
 local M = {}
 
 ---@class SchedulerBindingRole

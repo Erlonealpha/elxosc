@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local constraints_mod = require 'src.layout.constraints'
 local render_mod = require 'src.render.constrained_box'
@@ -71,7 +74,7 @@ function LimitedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
----@class elxosc.mod.src.widgets.constraints
+---@class mod.src.widgets.constraints
 local M = { ConstrainedBox = ConstrainedBox, LimitedBox = LimitedBox }
 
 return M

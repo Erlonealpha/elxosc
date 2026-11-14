@@ -11,11 +11,14 @@
 -- `src.widgets.element` (Lua's `require` has no cycles), so this file only
 -- declares the widget side.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
 
----@class elxosc.mod.src.widgets.framework
+---@class mod.src.widgets.framework
 local M = {}
 
 ---@class Widget : std.object

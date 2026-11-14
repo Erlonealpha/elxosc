@@ -59,6 +59,11 @@ Define transaction and exact package registration are implemented by `define/src
 MpDefine owns its facade subscriptions and main owns the initialization window timer.
 `import_as` returns local packages; new packages do not expand default builtins.
 
+Host module types use `elxosc.mod.host.*`; instances/options/facades use
+`elxosc.host.*`. `MpPackage` and `PlayerPackage` describe the exact scoped additions.
+The development-only [meta entry](../meta/README.md) reuses those types and the
+explicit builtin table; host code does not load metadata.
+
 App teardown preserves the shared Binding and other owner trees. A user State.dispose
 error is rethrown after the App releases its render root, clock and presenter.
 

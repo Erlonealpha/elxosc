@@ -9,6 +9,9 @@
 -- the tree is rebuilt, so their element (and therefore their render object,
 -- state, animation progress, ...) is reused instead of recreated.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local foundation_key = require 'src.foundation.key'
 
@@ -19,7 +22,7 @@ local kindof = std.kindof
 local LocalKey = foundation_key.LocalKey
 local Key = foundation_key.Key
 
----@class elxosc.mod.src.widgets.key : elxosc.src.foundation.key
+---@class mod.src.widgets.key : mod.src.foundation.key
 local M = {}
 
 ---@class ObjectKey : LocalKey

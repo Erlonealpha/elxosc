@@ -3,6 +3,7 @@
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')

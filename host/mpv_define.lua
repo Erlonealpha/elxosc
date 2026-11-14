@@ -10,6 +10,10 @@
 --   * the define window policy — when it opens, when it stops accepting new
 --     starters, and what happens to a script that never sends its `define_end`.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -26,22 +30,22 @@ local CompositionAssembler = slot_mod.CompositionAssembler
 local PlayerStore = player_context.PlayerStore
 local raise = std.raise
 
----@class elxosc.host.mpv_define
+---@class mod.host.mpv_define
 local M = {}
 
----@class MpFacadeSubscription
+---@class host.MpFacadeSubscription
 ---@field is_active fun(): boolean
 ---@field dispose fun(): boolean
 
----@alias elxosc.host.mpv_define.mp MpFacadeExports & MpScopeExports
+---@alias host.MpPackage host.MpFacadeExports & host.MpScopeExports
 
----@class PlayerRuntimeExports
----@field get_snapshot fun(): elxosc.player.PlayerSnapshot
----@field on_update fun(callback: fun(snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)): elxosc.player.PlayerSubscription
+---@class host.PlayerRuntimeExports
+---@field get_snapshot fun(): player.PlayerSnapshot
+---@field on_update fun(callback: fun(snapshot: player.PlayerSnapshot, previous: player.PlayerSnapshot)): player.PlayerSubscription
 
----@alias elxosc.host.mpv_define.player elxosc.mod.player.src.components & PlayerRuntimeExports
+---@alias host.PlayerPackage mod.player.src.components & host.PlayerRuntimeExports
 
----@return elxosc.mod.host.builtins
+---@return mod.host.builtins
 function M.builtins()
     return require 'host.builtins'
 end
@@ -55,9 +59,9 @@ end
 --- learns what `mp` is, and `on_message` is scope-specific because the loader
 --- receives the scope id.
 ---@param register_disposer fun(dispose: fun())?
----@return elxosc.define.DefinePackage<MpFacadeExports>
+---@return define.DefinePackage<MpFacadeExports>
 local function mp_package(register_disposer)
-    ---@class MpFacadeExports
+    ---@class host.MpFacadeExports
     local exports = {
         get_prop = function(name)
             return mp.get_property_native(name)
@@ -139,7 +143,7 @@ local function mp_package(register_disposer)
         end
     }
 
-    ---@class MpScopeExports
+    ---@class host.MpScopeExports
     local function loader(env, scope_id)
         -- Messages this scope can receive: `script-message-to elxosc <scope> ...`
         env.on_message = function(cb)
@@ -173,11 +177,11 @@ local function mp_package(register_disposer)
     return { name = 'mp', exports = exports, loader = loader }
 end
 
----@param store elxosc.player.PlayerStore
+---@param store player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
----@return elxosc.define.DefinePackage<elxosc.host.mpv_define.player>
+---@return define.DefinePackage<PlayerPackage>
 local function player_package(store, register_disposer)
-    ---@type elxosc.host.mpv_define.player
+    ---@type PlayerPackage
     local exports = {}
     for name, value in pairs(player_exports) do
         exports[name] = value
@@ -198,11 +202,11 @@ local function player_package(store, register_disposer)
 end
 
 --- Every extension package is registered here; runtime packages add owned APIs.
----@param modules elxosc.define.ModuleRegistry
----@param store elxosc.player.PlayerStore
+---@param modules define.ModuleRegistry
+---@param store player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 function M.install_modules(modules, store, register_disposer)
-    ---@type elxosc.define.DefinePackageDescriptor[]
+    ---@type define.DefinePackageDescriptor[]
     local packages = {}
     for _, package in ipairs(exports_mod.collect()) do
         packages[#packages + 1] = package
@@ -220,18 +224,18 @@ end
 
 --== the session ===========================================================
 
----@class MpDefineOptions
+---@class host.MpDefineOptions
 ---@field builtins table<string, any>? replaces the host-selected defaults
----@field contributions elxosc.define.ContributionRegistry? shared contribution registry
----@field modules elxosc.define.ModuleRegistry? shared module registry (gets the `mp` module)
----@field player_store elxosc.player.PlayerStore? host-independent player snapshot store
+---@field contributions define.ContributionRegistry? shared contribution registry
+---@field modules define.ModuleRegistry? shared module registry (gets the `mp` module)
+---@field player_store player.PlayerStore? host-independent player snapshot store
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
----@class MpDefine : std.object
----@field session elxosc.define.DefineSession
+---@class host.MpDefine : std.object
+---@field session define.DefineSession
 ---@field on_sealed fun()? called when the last `define_end` arrives
----@field player_store elxosc.player.PlayerStore
+---@field player_store player.PlayerStore
 ---@field protected _listening boolean
 ---@field protected _allow_start boolean
 ---@field protected _disposers fun()[]

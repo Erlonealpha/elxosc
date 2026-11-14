@@ -1,9 +1,13 @@
 -- Complete static package inventory; no filesystem scan or incidental require order.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local exports = require('export').new()
 
 local export = exports.export
 
----@class elxosc.mod.player.package_catalog
+---@class mod.player.package_catalog
 local M = {}
 
 export('player', require 'player')
@@ -29,7 +33,7 @@ export('player.timeline', require 'player.src.timeline')
 export('player.tooltip', require 'player.src.tooltip')
 export('player.visuals', require 'player.src.visuals')
 
----@return elxosc.export.Package<elxosc.export.Exports>[]
+---@return export.Package<export.Exports>[]
 function M.collect()
     return exports.collect()
 end

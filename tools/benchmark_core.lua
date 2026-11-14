@@ -1,4 +1,5 @@
 -- Framework phase benchmark. Runs in a standalone LuaJIT, without mp/mp stub.
+---@using elxosc
 local support_mod = require 'test.support'
 support_mod.bootstrap('test')
 local stats_mod = require 'tools.benchmark_support'

@@ -8,12 +8,15 @@
 -- (CJK/full width) glyph, plus letter spacing. A mpv.net backend can replace it
 -- with real font metrics without touching anything else.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local text_layout = require 'src.text.text_layout'
 
 local TextLayout = text_layout.TextLayout
 
----@class elxosc.src.backends.ass_text_layout
+---@class mod.src.backends.ass_text_layout
 local M = {}
 
 ---@param codepoint integer

@@ -7,13 +7,16 @@
 -- `read`/`maybe_read` are non-listening lookups. This is deliberately a small
 -- InheritedWidget API, not a compatibility implementation of package:provider.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
----@class elxosc.mod.src.widgets.provider
+---@class mod.src.widgets.provider
 local M = {}
 
 ---@class _ProviderOptions

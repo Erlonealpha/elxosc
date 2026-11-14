@@ -1,4 +1,7 @@
 -- Generic display and text ambients, independent of player and Material.
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local TextStyle = require('src.text.text_style').TextStyle
 local StatelessWidget = require('src.widgets.framework').StatelessWidget
@@ -45,6 +48,6 @@ function WidgetsApp:build()
     })
 end
 
----@class elxosc.mod.src.widgets.app
+---@class mod.src.widgets.app
 local M = { WidgetsApp = WidgetsApp }
 return M

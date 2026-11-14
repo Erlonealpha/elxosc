@@ -14,6 +14,10 @@
 -- Widget, the binding turns it into the render tree, and every frame flushes
 -- pending rebuilds before layout.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -33,7 +37,6 @@ local mpv_primitives = require 'host.mpv_primitives'
 local Constraints = constraints_mod.Constraints
 local Rect = geometry.Rect
 local Scheduler = scheduler_mod.Scheduler
----@alias PipelineOwner RenderOwner
 local PipelineOwner = pipeline_owner.PipelineOwner
 local AssCanvas = ass_canvas.AssCanvas
 local AssTextLayout = ass_text_layout.AssTextLayout
@@ -45,15 +48,15 @@ local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
 local Navigator = require('src.widgets.navigation').Navigator
 
----@class elxosc.host.mpv_app
+---@class mod.host.mpv_app
 local M = {}
 
----@class Display
+---@class host.Display
 ---@field width number
 ---@field height number
 ---@field initialized boolean
 
----@class _AppOptions
+---@class host._AppOptions
 ---@field z number?
 ---@field delay number?
 ---@field default_text_style TextStyle?
@@ -64,11 +67,11 @@ local M = {}
 --== app ===================================================================
 
 --- Wires a render tree to the scheduler, the ASS canvas, the overlay and input.
----@class App : std.object
+---@class host.App : std.object
 ---@field display Display
 ---@field clock MpFrameClock
 ---@field scheduler Scheduler
----@field owner PipelineOwner
+---@field owner RenderOwner
 ---@field widgets_binding WidgetsBinding
 ---@field binding WidgetTree
 ---@field root_widget Widget

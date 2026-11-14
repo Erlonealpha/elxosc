@@ -15,6 +15,7 @@
 --                      SizedBox.expand forces it to the full 400.
 -- ASS drawings are emitted at 8x sub-pixel, so the numbers are px * 8.
 
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')

@@ -1,4 +1,7 @@
 -- Read-only linear progress, including frame-clock driven indeterminate paint.
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local Color = require('src.foundation.color').Color
@@ -8,7 +11,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local raise = std.raise
 
----@class elxosc.src.render.progress_indicator
+---@class mod.src.render.progress_indicator
 local M = {}
 
 local function finite(value, name)

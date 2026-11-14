@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local constraints_mod = require 'src.layout.constraints'
 local decorated_render_mod = require 'src.render.decorated_box'
@@ -106,7 +109,7 @@ function Container:child_widgets()
     return self.child and { self.child } or {}
 end
 
----@class elxosc.mod.src.widgets.container
+---@class mod.src.widgets.container
 local M = { Container = Container }
 
 return M

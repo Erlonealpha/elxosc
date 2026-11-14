@@ -8,6 +8,9 @@
 -- trees therefore copy owners through `attach()` instead of constructing a
 -- second binding.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local binding_base = require 'src.foundation.binding_base'
 local build_owner_mod = require 'src.widgets.build_owner'
@@ -20,7 +23,7 @@ local BindingBase = binding_base.BindingBase
 local BuildOwner = build_owner_mod.BuildOwner
 local can_update = widget_mod.can_update
 
----@class elxosc.mod.src.widgets.binding
+---@class mod.src.widgets.binding
 local M = {}
 
 ---@class WidgetTree : std.object

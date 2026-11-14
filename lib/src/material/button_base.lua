@@ -1,5 +1,9 @@
 -- Shared implementation for all button variants.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'
@@ -30,7 +34,7 @@ local RenderDecoratedBox = require('src.render.decorated_box').RenderDecoratedBo
 local RenderGesture = require('src.render.gesture').RenderGesture
 local RenderText = require('src.render.text').RenderText
 
----@class _ButtonBaseOptions : _ButtonStyleOptions
+---@class material._ButtonBaseOptions : material._ButtonStyleOptions
 ---@field key any?
 ---@field label string|number?
 ---@field child Widget?
@@ -45,7 +49,7 @@ local RenderText = require('src.render.text').RenderText
 ---@field font_size number?
 ---@field padding EdgeInsets?
 
----@class ButtonState : State
+---@class material.ButtonState : State
 ---@field widget ButtonBase
 ---@field hovered boolean
 ---@field pressed boolean
@@ -238,7 +242,7 @@ function ButtonState:build()
     })
 end
 
----@class ButtonBase : StatefulWidget
+---@class material.ButtonBase : StatefulWidget
 ---@field label string|number?
 ---@field child Widget?
 ---@field on_click fun()?
@@ -292,7 +296,7 @@ function ButtonBase:child_widgets()
     return {}
 end
 
----@class elxosc.mod.src.material.button_base
+---@class mod.src.material.button_base
 local M = { ButtonBase = ButtonBase, ButtonStyle = ButtonStyle, copy_options = copy_options }
 
 return M

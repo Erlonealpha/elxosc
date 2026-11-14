@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local overflow_mod = require 'src.render.overflow_box'
@@ -143,7 +146,7 @@ function FittedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
----@class elxosc.mod.src.widgets.overflow
+---@class mod.src.widgets.overflow
 local M = {
     UnconstrainedBox = UnconstrainedBox,
     OverflowBox = OverflowBox,

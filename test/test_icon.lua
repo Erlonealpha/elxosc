@@ -1,5 +1,6 @@
 -- Icon widget: a single glyph from the bundled icon font.
 ---@namespace test.icon
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.generic-constraint-mismatch

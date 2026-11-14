@@ -7,6 +7,10 @@
 -- inherited widget, which lets listening descendants rebuild through the
 -- existing InheritedWidget dependency mechanism.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 local text_style_mod = require 'src.text.text_style'
@@ -17,7 +21,7 @@ local Color = color_mod.Color
 local TextStyle = text_style_mod.TextStyle
 local InheritedWidget = widget_mod.InheritedWidget
 
----@class elxosc.mod.src.material.theme
+---@class mod.src.material.theme
 local M = {}
 
 local function is_finite(value)
@@ -35,14 +39,14 @@ end
 
 --== Theme ==================================================================
 
----@class _ThemeDataOptions
+---@class material._ThemeDataOptions
 ---@field scale number? positive finite uniform layout scale
 ---@field background_color Color?
 ---@field surface_color Color?
 ---@field accent_color Color?
 ---@field text_style TextStyle?
 
----@class ThemeData : std.object
+---@class material.ThemeData : std.object
 ---@field scale number
 ---@field background_color Color
 ---@field surface_color Color
@@ -75,12 +79,12 @@ function ThemeData:__init(options)
     end
 end
 
----@class _ThemeOptions
+---@class material._ThemeOptions
 ---@field data ThemeData
 ---@field child Widget?
 ---@field key any?
 
----@class Theme : InheritedWidget
+---@class material.Theme : InheritedWidget
 ---@field data ThemeData
 ---@field child Widget?
 ---@overload fun(options: _ThemeOptions): self

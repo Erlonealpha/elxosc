@@ -1,4 +1,8 @@
 -- Explicit extension API; internal geometry/build helpers stay in their modules.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local app_mod = require 'player.src.app'
 local layout_mod = require 'player.src.layout'
 local theme_mod = require 'player.src.theme'
@@ -12,7 +16,7 @@ local icon_mod = require 'player.src.icon_map'
 local auto_hide_mod = require 'player.src.auto_hide'
 local ambients_mod = require 'player.src.ambients'
 
----@class elxosc.mod.player.src.components : elxosc.mod.player.src.theme, elxosc.mod.player.src.extension_controls, elxosc.mod.player.src.text_controls, elxosc.mod.player.src.tooltip, elxosc.mod.player.src.timeline
+---@class mod.player.src.components : mod.player.src.theme, mod.player.src.extension_controls, mod.player.src.text_controls, mod.player.src.tooltip, mod.player.src.timeline
 local M = {
     Main = app_mod.Main,
     PlayerApp = ambients_mod.PlayerApp,

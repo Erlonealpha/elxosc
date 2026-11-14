@@ -8,6 +8,9 @@
 -- any other parent's layout. Painting uses Canvas:translate; hit testing uses
 -- the inverse offset and remains clipped to this box's logical bounds.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
@@ -18,7 +21,7 @@ local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.offset_box
+---@class mod.src.render.offset_box
 local M = {}
 
 ---@class RenderOffsetBox : RenderObject

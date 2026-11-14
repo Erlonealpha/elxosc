@@ -1,4 +1,5 @@
 -- Diagnostic conversion for offline reports, separate from the hot host utility.
+---@using elxosc
 local M = {}
 
 ---@alias AssMeasureStatus
@@ -38,9 +39,9 @@ local function finite(value)
 end
 
 ---@param request AssMeasureRequest
----@param raw AssMeasureRawBounds?
+---@param raw host.AssMeasureRawBounds?
 ---@param err string?
----@param kind AssMeasureErrorKind?
+---@param kind host.AssMeasureErrorKind?
 ---@return AssMeasureResult
 function M.result(request, raw, err, kind)
     ---@type AssMeasureResult
@@ -55,7 +56,7 @@ function M.result(request, raw, err, kind)
         result.status = 'empty'
         return result
     end
-    ---@cast raw AssMeasureBounds
+    ---@cast raw host.AssMeasureBounds
     if not finite(raw.x0) or not finite(raw.y0) or not finite(raw.x1) or not finite(raw.y1)
         or raw.x1 < raw.x0 or raw.y1 < raw.y0 then
         result.status = 'error'

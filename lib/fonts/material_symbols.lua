@@ -1,4 +1,7 @@
 -- Bundled font resource contract shared by Icon and the Material collection.
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local raise = std.raise
 
@@ -41,6 +44,6 @@ function MaterialSymbols.text_extra(options)
         grade = options.grade, optical_size = options.optical_size }
 end
 
----@class elxosc.mod.fonts.material_symbols
+---@class mod.fonts.material_symbols
 local M = { MaterialSymbols = MaterialSymbols }
 return M

@@ -19,6 +19,9 @@
 -- infinite constructor `BoxConstraints.expand()` and is *not* the same as an
 -- unbounded (0..infinity) box, which is spelled `unbounded()` here.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
@@ -28,7 +31,7 @@ local min = math.min
 local max = math.max
 local huge = math.huge
 
----@class elxosc.src.layout.constraints
+---@class mod.src.layout.constraints
 local M = {}
 
 ---@param value number

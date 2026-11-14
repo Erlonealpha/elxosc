@@ -3,6 +3,9 @@
 
 -- Declarative front end for RenderOffsetBox.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local offset_box_mod = require 'src.render.offset_box'
@@ -39,7 +42,7 @@ function OffsetBox:update_render_object(render_object)
     render_object:set_offset(self.offset)
 end
 
----@class elxosc.mod.src.widgets.offset_box
+---@class mod.src.widgets.offset_box
 local M = { OffsetBox = OffsetBox }
 
 return M

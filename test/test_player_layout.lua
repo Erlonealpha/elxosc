@@ -1,5 +1,6 @@
 -- ModernX original/reduced root-relative player geometry and theme profiles.
 ---@namespace test.playerlayout
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')

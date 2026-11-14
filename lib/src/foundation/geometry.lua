@@ -11,6 +11,9 @@
 -- Value semantics (__eq / __add / __sub / __mul) are provided so layout math
 -- reads like the Flutter render layer, e.g. `rect.size() + padding`.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local math = math
@@ -20,7 +23,7 @@ local min = math.min
 local max = math.max
 local format = string.format
 
----@class elxosc.src.foundation.geometry
+---@class mod.src.foundation.geometry
 local M = {}
 
 --==========================================================================

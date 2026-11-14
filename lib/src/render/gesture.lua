@@ -9,6 +9,9 @@
 -- area beyond the child's bounds, which is how small controls get a forgiving
 -- target without changing what is drawn.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local render_object = require 'src.render.render_object'
@@ -18,7 +21,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.gesture
+---@class mod.src.render.gesture
 local M = {}
 
 ---@class GestureHandlers

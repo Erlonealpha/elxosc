@@ -1,5 +1,8 @@
 -- Canonical source-module loading shared by mpv and standalone consumers.
----@class elxosc.module_loader
+---@namespace elxosc
+---@using elxosc
+
+---@class mod.module_loader
 local M = {}
 
 ---@param root string repository root

@@ -1,4 +1,8 @@
 -- Explicit player, theme and action ambients above the generic framework.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
@@ -22,7 +26,7 @@ local SizedBox = layout_widgets.SizedBox
 
 local raise = std.raise
 
----@class elxosc.mod.player.src.ambients
+---@class mod.player.src.ambients
 local M = {}
 
 local function child_or_empty(child)
@@ -31,24 +35,24 @@ end
 
 --== PlayerApp =============================================================
 
----@class elxosc.player._PlayerAppOptions
+---@class player._PlayerAppOptions
 ---@field child Widget?
----@field theme ThemeData?
----@field player_theme elxosc.player.PlayerThemeData?
+---@field theme material.ThemeData?
+---@field player_theme PlayerThemeData?
 ---@field display DisplaySnapshot?
 ---@field default_text_style TextStyle?
----@field actions elxosc.player.HostActions?
+---@field actions HostActions?
 ---@field key any?
 
----@class elxosc.player.PlayerApp : StatelessWidget
+---@class player.PlayerApp : StatelessWidget
 ---@field child Widget?
----@field theme ThemeData
----@field player_theme elxosc.player.PlayerThemeData
+---@field theme material.ThemeData
+---@field player_theme PlayerThemeData
 ---@field display DisplaySnapshot
 ---@field default_text_style TextStyle
----@field actions elxosc.player.HostActions
----@overload fun(options?: elxosc.player._PlayerAppOptions): self
-local PlayerApp = std.class.new('PlayerApp' --[[@as 'elxosc.player.PlayerApp']], StatelessWidget)
+---@field actions HostActions
+---@overload fun(options?: _PlayerAppOptions): self
+local PlayerApp = std.class.new('PlayerApp', StatelessWidget)
 
 function PlayerApp:__init(options)
     options = options or {}

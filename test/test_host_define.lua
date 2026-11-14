@@ -1,5 +1,6 @@
 -- The mpv define host, with `mp` stubbed out.
 ---@namespace test.hostdefine
+---@using elxosc
 
 -- `host/mpv_define.lua` requires `mp`; the suite replaces it with a tiny fake so
 -- the window policy and the routing can be checked without mpv.

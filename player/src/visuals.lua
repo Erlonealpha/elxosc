@@ -1,5 +1,9 @@
 -- Player styling, background edges and individual control composition.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
 local basic_widgets = require 'material'
@@ -33,10 +37,10 @@ local ColorBlack = Color.rgba255(0, 0, 0, 255)
 local text_controls_mod = require 'player.src.text_controls'
 local PlayerHoverText = text_controls_mod.PlayerHoverText
 
----@class elxosc.mod.player.src.visuals
+---@class mod.player.src.visuals
 local M = {}
 
----@param theme elxosc.player.PlayerThemeData
+---@param theme PlayerThemeData
 ---@param title string
 ---@return Widget
 local function idle_view(theme, title)
@@ -176,7 +180,7 @@ local function positioned(item_rect, child)
         child = child,
     })
 end
----@param theme elxosc.player.PlayerThemeData
+---@param theme PlayerThemeData
 ---@param title string
 ---@return Widget
 local function default_title_bar(theme, title)
@@ -200,8 +204,8 @@ local function default_title_bar(theme, title)
     })
 end
 
----@param theme elxosc.player.PlayerThemeData
----@param actions elxosc.player.HostActions
+---@param theme PlayerThemeData
+---@param actions HostActions
 ---@return Widget
 local function default_window_controls(theme, actions, snapshot)
     local function control(name, icon_name, action_name, hover_color)

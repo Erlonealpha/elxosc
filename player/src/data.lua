@@ -1,5 +1,9 @@
 -- Player snapshot selectors, time formatting and timeline/track data.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local max = math.max
 local min = math.min
 local huge = math.huge
@@ -15,7 +19,7 @@ local SPONSOR_COLORS = {
     filler = Color.hex('#8D99AE'),
 }
 
----@class elxosc.mod.player.src.data
+---@class mod.player.src.data
 local M = {}
 
 local function snapshot_text(snapshot, names, fallback)
@@ -38,7 +42,7 @@ local function snapshot_number(snapshot, name)
     return value
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param name string
 ---@return boolean
 local function capability_available(snapshot, name)
@@ -48,9 +52,9 @@ local function capability_available(snapshot, name)
     return snapshot:capability(name).status == 'available'
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param name string
----@return elxosc.player.CapabilityInfo?
+---@return CapabilityInfo?
 local function capability_info(snapshot, name)
     if snapshot == nil then
         return nil
@@ -77,7 +81,7 @@ local function array_items(source)
     return values
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return table[]
 local function chapter_entries(snapshot)
     local source = snapshot and snapshot:get('chapter_list') or nil
@@ -96,7 +100,7 @@ local function chapter_entries(snapshot)
     return entries
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return string
 local function current_chapter_title(snapshot)
     if snapshot and snapshot:get('buffering') == true then
@@ -150,7 +154,7 @@ local function format_time(value, show_milliseconds, fixed)
     return string.format('%02d:%02d', minutes, seconds)
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param fraction number
 ---@param duration number?
 ---@return string?
@@ -189,7 +193,7 @@ local function player_progress(snapshot)
     return 0
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param duration number?
 ---@return table[]
 local function chapter_markers(snapshot, duration)
@@ -214,7 +218,7 @@ local function chapter_markers(snapshot, duration)
     return markers
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param duration number?
 ---@return table[]
 local function seek_ranges(snapshot, duration)
@@ -245,7 +249,7 @@ local function seek_ranges(snapshot, duration)
     return ranges
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param duration number?
 ---@return table[]
 local function sponsor_ranges(snapshot, duration)
@@ -273,7 +277,7 @@ local function sponsor_ranges(snapshot, duration)
     return ranges
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param kind 'audio'|'sub'
 ---@return number[]
 local function track_ids(snapshot, kind)
@@ -294,7 +298,7 @@ local function track_ids(snapshot, kind)
     return ids
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param kind 'audio'|'sub'
 ---@return number
 local function current_track(snapshot, kind)
@@ -309,7 +313,7 @@ local function current_track(snapshot, kind)
     return 0
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param kind 'audio'|'sub'
 ---@return string
 local function track_tooltip(snapshot, kind)
@@ -350,7 +354,7 @@ local function track_tooltip(snapshot, kind)
     return label .. suffix
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param kind 'audio'|'sub'
 ---@return string
 local function track_list_message(snapshot, kind)
@@ -375,7 +379,7 @@ local function track_list_message(snapshot, kind)
     return label .. ': ' .. table.concat(names, ', ')
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param kind 'audio'|'sub'
 ---@param delta number
 ---@return number?
@@ -406,7 +410,7 @@ local function next_track(snapshot, kind, delta)
     return ids[position]
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param fraction number
 ---@param duration number?
 ---@return number?

@@ -1,6 +1,10 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local dsl = require 'define.src.dsl'
 local player = require 'player'
 local define = require 'define'
@@ -13,10 +17,10 @@ local anchor = require 'src.foundation.anchor'
 local text_paint = require 'src.painting.text_paint'
 
 --- Explicit default scope surface; adding a package does not expand builtins.
----@return elxosc.mod.host.builtins
+---@return mod.host.builtins
 local function collect()
     local widgets = require 'material'
-    ---@class elxosc.mod.host.builtins
+    ---@class mod.host.builtins
     local out = {
         Widget = widgets.Widget,
         StatelessWidget = widgets.StatelessWidget,

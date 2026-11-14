@@ -4,6 +4,9 @@
 -- Paint-only subtree opacity. It keeps layout, hit testing and pointer regions
 -- unchanged; input policy belongs to a separate visibility or host decision.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
@@ -16,7 +19,7 @@ local RenderObject = render_object.RenderObject
 local raise = std.raise
 local huge = math.huge
 
----@class elxosc.src.render.opacity
+---@class mod.src.render.opacity
 local M = {}
 
 ---@param value number

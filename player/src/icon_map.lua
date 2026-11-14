@@ -1,16 +1,20 @@
 -- ModernX semantic icon names mapped to the bundled Material Symbols glyphs.
 -- The map is intentionally private so callers cannot mutate the public contract.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local icon_widgets = require 'src.widgets.icon'
 local geometry = require 'src.foundation.geometry'
 
 local Icon = icon_widgets.Icon
 local Offset = geometry.Offset
 
----@class elxosc.mod.player.src.icon_map
+---@class mod.player.src.icon_map
 local M = {}
 
----@alias elxosc.player.ModernXIconName
+---@alias player.ModernXIconName
 --- | 'play'
 --- | 'idle'
 --- | 'pause'
@@ -48,7 +52,7 @@ local M = {}
 --- | 'maximize'
 --- | 'close'
 
----@class elxosc.player.ModernXIconSpec
+---@class player.ModernXIconSpec
 ---@field glyph FluentIconNames
 ---@field size number
 ---@field font_family FluentIconFontName
@@ -58,7 +62,7 @@ local M = {}
 ---@field optical_size number
 ---@field optical_offset Offset
 
----@class elxosc.player._ModernXIconSeed
+---@class player._ModernXIconSeed
 ---@field glyph FluentIconNames
 ---@field size number
 ---@field font_family FluentIconFontName?
@@ -71,7 +75,7 @@ local M = {}
 local ICON_FONT = 'Material Symbols Rounded'
 local ZERO = Offset.zero()
 
----@type table<elxosc.player.ModernXIconName, elxosc.player._ModernXIconSeed>
+---@type table<ModernXIconName, _ModernXIconSeed>
 local specs = {
     play = { glyph = 'play_arrow', size = 30 },
     idle = { glyph = 'play_circle', size = 64 },
@@ -125,11 +129,11 @@ local function get_spec(name)
     if spec == nil then
         error('unknown ModernX icon: ' .. tostring(name), 3)
     end
-    return spec --[[@as elxosc.player.ModernXIconSpec]]
+    return spec --[[@as ModernXIconSpec]]
 end
 
----@param name elxosc.player.ModernXIconName
----@return elxosc.player.ModernXIconSpec
+---@param name ModernXIconName
+---@return ModernXIconSpec
 function M.spec(name)
     local source = get_spec(name)
     return {
@@ -144,13 +148,13 @@ function M.spec(name)
     }
 end
 
----@param name elxosc.player.ModernXIconName
+---@param name ModernXIconName
 ---@return FluentIconNames
 function M.glyph_name(name)
     return get_spec(name).glyph
 end
 
----@param name elxosc.player.ModernXIconName
+---@param name ModernXIconName
 ---@param options _IconOptions?
 ---@return Icon
 function M.icon(name, options)

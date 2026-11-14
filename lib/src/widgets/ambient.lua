@@ -7,6 +7,9 @@
 -- inherited widget, which lets listening descendants rebuild through the
 -- existing InheritedWidget dependency mechanism.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
@@ -15,7 +18,7 @@ local raise = std.raise
 local TextStyle = text_style_mod.TextStyle
 local InheritedWidget = widget_mod.InheritedWidget
 
----@class elxosc.mod.src.widgets.ambient
+---@class mod.src.widgets.ambient
 local M = {}
 
 local function is_finite(value)

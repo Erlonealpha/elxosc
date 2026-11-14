@@ -1,5 +1,6 @@
 -- Initialization-only Slot contributions and immutable assembly.
 ---@namespace test.bind
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused
 
 local F = require('framework')
@@ -59,7 +60,7 @@ F.section('bind: inherited widgets')
 ---@class Theme : InheritedWidget
 ---@field value string
 ---@overload fun(value: string, options: _ThemeOptions?): self
-local Theme = std.class.new('Theme', InheritedWidget)
+local Theme = std.class.new('Theme' --[[@as 'test.bind.Theme']], InheritedWidget)
 function Theme:__init(value, options)
     options = options or {}
     self.key = options.key

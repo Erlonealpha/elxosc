@@ -7,12 +7,15 @@
 -- it is the building block for offline golden/snapshot tests of a whole UI
 -- tree (there is no mpv in either case).
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local canvas = require 'src.painting.canvas'
 
 local Canvas = canvas.Canvas
 
----@class elxosc.src.backends.record
+---@class mod.src.backends.record
 local M = {}
 
 ---@class RecordCanvas : Canvas

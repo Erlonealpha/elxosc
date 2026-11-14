@@ -4,11 +4,14 @@
 -- Backend-independent keyboard input value. Host adapters create these values;
 -- focus ownership and keyboard routing remain outside this value type.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local huge = math.huge
 local raise = std.raise
----@class elxosc.src.foundation.key_event
+---@class mod.src.foundation.key_event
 local M = {}
 
 ---@alias KeyEventType

@@ -8,9 +8,13 @@
 -- CompositionAssembler.  `bind()` is intentionally only a small DSL helper;
 -- it does not know about Element, State, BuildContext or the host.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local slot_mod = require 'define.src.slot'
 
----@class elxosc.mod.define.src.bind
+---@class mod.define.src.bind
 local M = {}
 
 M.SlotSpec = slot_mod.SlotSpec
@@ -19,7 +23,7 @@ M.Contribution = slot_mod.Contribution
 M.ContributionRegistry = slot_mod.ContributionRegistry
 M.CompositionAssembler = slot_mod.CompositionAssembler
 
----@param registry elxosc.define.ContributionRegistry
+---@param registry ContributionRegistry
 ---@param slot_id string
 ---@param widget Widget
 ---@param opts table<string, any>?

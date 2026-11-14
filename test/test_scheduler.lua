@@ -1,5 +1,6 @@
 -- Scheduler: the frame-clock contract, the two-phase pipeline and tickers.
 ---@namespace test.scheduler
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.generic-constraint-mismatch

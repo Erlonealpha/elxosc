@@ -7,11 +7,14 @@
 -- frame in depth order, so a parent rebuild that updates its children clears
 -- their dirty flags and they are not built twice.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local build_scope_mod = require 'src.widgets.build_scope'
 local key_mod = require 'src.widgets.key'
 
----@class elxosc.mod.src.widgets.build_owner
+---@class mod.src.widgets.build_owner
 local M = {}
 local BuildScope = build_scope_mod.BuildScope
 local GlobalKey = key_mod.GlobalKey

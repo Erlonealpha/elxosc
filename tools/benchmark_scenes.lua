@@ -1,4 +1,5 @@
 -- Fixed framework scenarios: no host dependency, timers or external integrations.
+---@using elxosc
 local basic_mod = require 'material'
 local layout_mod = require 'widgets'
 local style_mod = require 'src.text.text_style'

@@ -4,11 +4,16 @@
 -- The Flutter-aligned name for the existing single-root RenderOwner.  The
 -- compatibility export is intentionally the same class object, not a wrapper.
 
+---@namespace elxosc
+---@using elxosc
+
 local render_owner = require 'src.render.render_owner'
 
 local PipelineOwner = render_owner.RenderOwner
 
----@class elxosc.src.render.pipeline_owner
+---@alias PipelineOwner RenderOwner
+
+---@class mod.src.render.pipeline_owner
 local M = {
     PipelineOwner = PipelineOwner,
     RenderOwner = PipelineOwner,

@@ -2,30 +2,34 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Explicit host utility; the application frame loop does not load this module.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 local std = require 'elxlibs.std'
 
----@class elxosc.host.ass_measure
+---@class mod.host.ass_measure
 local M = {}
 local floor = math.floor
 
----@alias AssMeasureErrorKind
+---@alias host.AssMeasureErrorKind
 ---| 'unavailable'
 ---| 'error'
 
----@class _AssMeasureOptions
+---@class host._AssMeasureOptions
 ---@field res_x number fixed ASS coordinate resolution, floored once
 ---@field res_y number
 
----@class AssMeasureBounds
+---@class host.AssMeasureBounds
 ---@field x0 number
 ---@field y0 number
 ---@field x1 number
 ---@field y1 number
 
----@alias AssMeasureRawBounds AssMeasureBounds | table<never, never>
+---@alias host.AssMeasureRawBounds host.AssMeasureBounds | table<never, never>
 
----@class AssMeasureCommand
+---@class host.AssMeasureCommand
 ---@field _name string
 ---@field id integer
 ---@field format string
@@ -45,7 +49,7 @@ local function resolution(value, name)
     return floor(value)
 end
 
----@class AssMeasure : std.object
+---@class host.AssMeasure : std.object
 ---@field res_x integer
 ---@field res_y integer
 ---@field private _command AssMeasureCommand?

@@ -41,5 +41,8 @@ Host Define adds `get_snapshot`/`on_update` to the player package without changi
 Extensions use `import_as('player.context')` for snapshot/store primitives; the old
 `player_context` package name has been removed. The root uses framework export to
 collect selected public components; `PlayerIcons` remains the existing named API.
+Module types use `elxosc.mod.player.*` and instances/options use `elxosc.player.*`.
+The extension [meta entry](../meta/README.md) selects the host-augmented player type
+for `import_as('player')`, including disposable snapshot subscriptions.
 
 See [player design](../dev/design/PLAYER.md) and [host lifecycle](../dev/design/HOST.md).

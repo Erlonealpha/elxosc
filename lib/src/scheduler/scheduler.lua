@@ -10,9 +10,12 @@
 -- something asked for a frame via `schedule_frame`, which is what keeps an
 -- idle UI from re-emitting ASS on every host tick.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.src.scheduler.scheduler
+---@class mod.src.scheduler.scheduler
 local M = {}
 
 ---@param set table

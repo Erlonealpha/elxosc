@@ -3,6 +3,9 @@
 
 -- Value interpolation for animation properties.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'
@@ -14,7 +17,7 @@ local Size = geometry.Size
 local Color = color_mod.Color
 local raise = std.raise
 
----@class elxosc.src.animation.tween
+---@class mod.src.animation.tween
 local M = {}
 
 ---@alias TweenSupportedValue

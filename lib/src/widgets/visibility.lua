@@ -3,6 +3,9 @@
 
 -- Generic visibility render wrappers.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local offstage_mod = require 'src.render.offstage'
 local opacity_mod = require 'src.render.opacity'
@@ -13,7 +16,7 @@ local RenderOpacity = opacity_mod.RenderOpacity
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 
----@class elxosc.mod.src.widgets.visibility
+---@class mod.src.widgets.visibility
 local M = {}
 
 --== Opacity ================================================================

@@ -12,6 +12,9 @@
 -- first and `self` second. The type is backend agnostic: being able to express
 -- a transform does not imply that a concrete backend can render every one.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
@@ -21,7 +24,7 @@ local min = math.min
 local max = math.max
 local format = string.format
 
----@class elxosc.src.foundation.transform
+---@class mod.src.foundation.transform
 local M = {}
 
 ---@class Matrix2D : std.object

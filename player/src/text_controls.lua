@@ -1,5 +1,9 @@
 -- Player text controls with local click state and direct hover visuals.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local widget_mod = require 'src.widgets.framework'
@@ -14,24 +18,24 @@ local HoverText = require('src.widgets.hover_text').HoverText
 local data_mod = require 'player.src.data'
 local format_time = data_mod.format_time
 
----@class elxosc.mod.player.src.text_controls
+---@class mod.player.src.text_controls
 local M = {}
 
----@alias elxosc.player.PlayerTimeToggleMode
+---@alias player.PlayerTimeToggleMode
 --- | 'milliseconds'
 --- | 'remaining'
 
----@alias elxosc.player.PlayerHoverText HoverText
----@alias elxosc.player._PlayerHoverTextOptions _HoverTextOptions
+---@alias player.PlayerHoverText HoverText
+---@alias player._PlayerHoverTextOptions _HoverTextOptions
 
----@class elxosc.player._PlayerTimeDisplayOptions
+---@class player._PlayerTimeDisplayOptions
 ---@field value number?
 ---@field duration number?
 ---@field show_remaining boolean?
 ---@field show_milliseconds boolean?
 ---@field unicode_minus boolean?
 ---@field fixed boolean?
----@field toggle_mode elxosc.player.PlayerTimeToggleMode
+---@field toggle_mode PlayerTimeToggleMode
 ---@field suffix string?
 ---@field style TextStyle
 ---@field alignment Offset
@@ -40,22 +44,22 @@ local M = {}
 ---@field hover_shadow_radius number?
 ---@field key any?
 
----@class elxosc.player.PlayerTimeDisplay : StatefulWidget
+---@class player.PlayerTimeDisplay : StatefulWidget
 ---@field value number?
 ---@field duration number?
 ---@field show_remaining boolean
 ---@field show_milliseconds boolean
 ---@field unicode_minus boolean
 ---@field fixed boolean
----@field toggle_mode elxosc.player.PlayerTimeToggleMode
+---@field toggle_mode PlayerTimeToggleMode
 ---@field suffix string
 ---@field style TextStyle
 ---@field alignment Offset
 ---@field hover_color Color?
 ---@field hover_shadow_color Color?
 ---@field hover_shadow_radius number?
----@overload fun(options: elxosc.player._PlayerTimeDisplayOptions): self
-local PlayerTimeDisplay = std.class.new('PlayerTimeDisplay' --[[@as 'elxosc.player.PlayerTimeDisplay']], StatefulWidget)
+---@overload fun(options: _PlayerTimeDisplayOptions): self
+local PlayerTimeDisplay = std.class.new('PlayerTimeDisplay', StatefulWidget)
 
 function PlayerTimeDisplay:__init(options)
     options = options or {}
@@ -78,20 +82,20 @@ function PlayerTimeDisplay:__init(options)
     self.hover_shadow_radius = options.hover_shadow_radius or 0
 end
 
----@class elxosc.player.PlayerTimeDisplayState : State
+---@class player.PlayerTimeDisplayState : State
 ---@field show_remaining boolean
 ---@field show_milliseconds boolean
 ---@overload fun(): self
-local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState' --[[@as 'elxosc.player.PlayerTimeDisplayState']], State)
+local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', State)
 
 function PlayerTimeDisplayState:init_state()
-    local widget = self.widget --[[@as elxosc.player.PlayerTimeDisplay]]
+    local widget = self.widget --[[@as PlayerTimeDisplay]]
     self.show_remaining = widget.show_remaining
     self.show_milliseconds = widget.show_milliseconds
 end
 
 function PlayerTimeDisplayState:did_update_widget(old_widget)
-    local widget = self.widget --[[@as elxosc.player.PlayerTimeDisplay]]
+    local widget = self.widget --[[@as PlayerTimeDisplay]]
     if old_widget.show_remaining ~= widget.show_remaining then
         self.show_remaining = widget.show_remaining
     end
@@ -101,7 +105,7 @@ function PlayerTimeDisplayState:did_update_widget(old_widget)
 end
 
 function PlayerTimeDisplayState:build()
-    local widget = self.widget --[[@as elxosc.player.PlayerTimeDisplay]]
+    local widget = self.widget --[[@as PlayerTimeDisplay]]
     local value = widget.value
     local prefix = ''
     local label

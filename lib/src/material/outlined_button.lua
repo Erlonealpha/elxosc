@@ -1,3 +1,7 @@
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local base = require 'src.material.button_base'
 local color = require 'src.foundation.color'
@@ -7,9 +11,9 @@ local ButtonStyle = base.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
 
----@class _OutlinedButtonOptions : _ButtonBaseOptions
+---@class material._OutlinedButtonOptions : material._ButtonBaseOptions
 
----@class OutlinedButton : ButtonBase
+---@class material.OutlinedButton : material.ButtonBase
 ---@overload fun(options: _OutlinedButtonOptions?): self
 local OutlinedButton = std.class.new('OutlinedButton', ButtonBase)
 ---@param options _OutlinedButtonOptions?
@@ -26,7 +30,7 @@ function OutlinedButton:__init(options)
     ButtonBase.__init(self, config)
 end
 
----@class elxosc.mod.src.material.outlined_button
+---@class mod.src.material.outlined_button
 local M = { OutlinedButton = OutlinedButton }
 
 return M

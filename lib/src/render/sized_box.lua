@@ -10,6 +10,9 @@
 -- the rule behind the "Why is my SizedBox ignored?" note in the SizedBox docs.
 -- With no child the missing axes are treated as zero, again after `enforce`.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -20,7 +23,7 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.sized_box
+---@class mod.src.render.sized_box
 local M = {}
 
 ---@class RenderSizedBox : RenderObject

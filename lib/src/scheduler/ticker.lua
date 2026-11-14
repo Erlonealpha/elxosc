@@ -8,9 +8,12 @@
 -- is stopped. `on_tick` receives the elapsed seconds since the previous frame
 -- (0 on the very first tick).
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.src.scheduler.ticker
+---@class mod.src.scheduler.ticker
 local M = {}
 
 ---@class Ticker : std.object

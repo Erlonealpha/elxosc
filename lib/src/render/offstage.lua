@@ -5,6 +5,9 @@
 -- while offstage.  It is the small primitive used by Visibility and Overlay
 -- entries that keep State mounted while they are hidden or occluded.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
@@ -15,7 +18,7 @@ local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.offstage
+---@class mod.src.render.offstage
 local M = {}
 
 ---@class RenderOffstage : RenderObject

@@ -9,6 +9,9 @@
 --   * `RenderLimitedBox` (Flutter's `LimitedBox`): the limit is only applied
 --     on an axis whose incoming constraint is unbounded.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -19,7 +22,7 @@ local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.constrained_box
+---@class mod.src.render.constrained_box
 local M = {}
 
 ---@class RenderConstrainedBox : RenderObject

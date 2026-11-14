@@ -1,3 +1,7 @@
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local base = require 'src.material.button_base'
 local color = require 'src.foundation.color'
@@ -5,9 +9,9 @@ local ButtonBase = base.ButtonBase
 local ButtonStyle = base.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
----@class _TextButtonOptions : _ButtonBaseOptions
+---@class material._TextButtonOptions : material._ButtonBaseOptions
 
----@class TextButton : ButtonBase
+---@class material.TextButton : material.ButtonBase
 ---@overload fun(options: _TextButtonOptions?): self
 local TextButton = std.class.new('TextButton', ButtonBase)
 ---@param options _TextButtonOptions?
@@ -22,7 +26,7 @@ function TextButton:__init(options)
     })
     ButtonBase.__init(self, config)
 end
----@class elxosc.mod.src.material.text_button
+---@class mod.src.material.text_button
 local M = { TextButton = TextButton }
 
 return M

@@ -8,6 +8,9 @@
 -- sits (via `child.parent_data.offset`). Nodes are mutable and survive between
 -- frames; they recompute only when marked dirty.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
@@ -25,7 +28,7 @@ local ipairs = ipairs
 local huge = math.huge
 local raise = std.raise
 
----@class elxosc.src.render.render_object
+---@class mod.src.render.render_object
 local M = {}
 
 ---@alias FlexFit

@@ -1,5 +1,6 @@
 -- N3 Page/Route/Navigator: one Theatre, reconciliation, result and popup barrier.
 ---@namespace test.navigation
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')

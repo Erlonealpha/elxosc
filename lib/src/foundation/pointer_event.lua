@@ -6,6 +6,9 @@
 -- structured place to carry pointer metadata without growing that positional
 -- interface.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
@@ -13,7 +16,7 @@ local Offset = geometry.Offset
 local floor = math.floor
 local raise = std.raise
 local huge = math.huge
----@class elxosc.src.foundation.pointer_event
+---@class mod.src.foundation.pointer_event
 local M = {}
 
 ---@alias PointerEventType

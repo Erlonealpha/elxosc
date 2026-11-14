@@ -4,6 +4,10 @@
 -- shell and root replacement targets are intentionally not exposed here.
 -- Development content uses the same Define slot as other extensions.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local app_mod = require 'player.src.app'
 local slot_mod = require 'define.src.slot'
 local layout_widgets = require 'widgets'
@@ -19,15 +23,15 @@ local SlotWrap = slot_mod.SlotWrap
 local CompositionAssembler = slot_mod.CompositionAssembler
 local PlayerControlBar = extension_controls_mod.PlayerControlBar
 
----@class elxosc.mod.player.src.composition
+---@class mod.player.src.composition
 local M = {}
 
----@alias elxosc.player.PlayerControlSide
+---@alias player.PlayerControlSide
 ---| 'left'
 ---| 'right'
 
----@param side elxosc.player.PlayerControlSide
----@return elxosc.define.SlotWrap
+---@param side PlayerControlSide
+---@return define.SlotWrap
 local function control_slot(side)
     return SlotWrap(SlotSpec({
         id = 'player.controls.' .. side,

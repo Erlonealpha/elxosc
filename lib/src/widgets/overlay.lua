@@ -10,6 +10,9 @@
 -- maintain_state is true; otherwise it is removed from the child list and
 -- unmounted on the next build flush.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'src.widgets.builder'
@@ -26,7 +29,7 @@ local Offstage = offstage_mod.Offstage
 
 local raise = std.raise
 
----@class elxosc.mod.src.widgets.overlay
+---@class mod.src.widgets.overlay
 local M = {}
 
 local function copy_array(values)

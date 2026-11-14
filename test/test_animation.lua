@@ -1,5 +1,6 @@
 -- Phase 1: affine values, paint-only offsets and frame-clock animations.
 ---@namespace test.animation
+---@using elxosc
 
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil,
 --- generic-constraint-mismatch, preferred-local-alias, unused, call-non-callable

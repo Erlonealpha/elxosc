@@ -4,6 +4,9 @@
 -- Frame-clock driven animation controller. It deliberately emits no PTS based
 -- ASS tags: every sample invalidates the framework and produces static output.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local ticker_mod = require 'src.scheduler.ticker'
 local curve_mod = require 'src.animation.curve'
@@ -14,7 +17,7 @@ local raise = std.raise
 local min = math.min
 local max = math.max
 
----@class elxosc.src.animation.controller
+---@class mod.src.animation.controller
 local M = {}
 
 ---@alias AnimationStatus

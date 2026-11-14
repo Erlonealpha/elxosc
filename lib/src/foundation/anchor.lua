@@ -4,13 +4,16 @@
 -- Backend-neutral nine-point paint anchors. ASS numbers are deliberately not
 -- part of this module; the ASS backend maps these names to `\an` values.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
 local Offset = geometry.Offset
 local raise = std.raise
 
----@class elxosc.src.foundation.anchor
+---@class mod.src.foundation.anchor
 local M = {}
 
 ---@alias AnchorName

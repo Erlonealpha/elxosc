@@ -8,11 +8,12 @@
 -- *loose* constraints ("it can be any size it wants, but not bigger than the
 -- screen").
 
+---@using elxosc
 local geometry = require 'src.foundation.geometry'
 local color = require 'src.foundation.color'
 local text_style = require 'src.text.text_style'
 local constraints_mod = require 'src.layout.constraints'
----@type elxosc.mod.widgets
+---@type mod.widgets
 local lay = require 'widgets'
 local basic = require 'material'
 

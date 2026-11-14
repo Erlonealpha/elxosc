@@ -34,4 +34,9 @@ publication, protection and payload visibility.
 selects 115 default fields. Host mp/player facades provide owned disposable subscriptions.
 Static source modules and collectors remain usable without registration.
 
+Types belong to `elxosc.mod.define.*` and `elxosc.define.*`. Class factory name
+templates bind declared extension subclasses and keep their constructor signatures;
+the runtime class names remain caller-controlled. The [meta entry](../meta/README.md)
+provides imports, default globals and extension package/type declarations for editors.
+
 See [host protocol](../dev/design/HOST.md) and [player composition](../dev/design/PLAYER.md).

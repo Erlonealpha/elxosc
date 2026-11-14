@@ -1,5 +1,8 @@
 -- elxosc demo widget used by the entry point and real-host smoke tests.
 
+---@namespace elxosc
+---@using elxosc
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -52,7 +55,7 @@ local Page = navigation_mod.Page
 local PopupPage = navigation_mod.PopupPage
 local Navigator = navigation_mod.Navigator
 
----@class elxosc.demo
+---@class mod.demo
 local M = {}
 
 ---@param children Widget[]

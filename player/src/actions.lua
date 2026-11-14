@@ -3,16 +3,20 @@
 
 -- Host-independent, explicitly injected player/window actions.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
----@class elxosc.mod.player.src.actions
+---@class mod.player.src.actions
 local M = {}
 
----@class elxosc.player._HostActionsOptions
+---@class player._HostActionsOptions
 ---@field play_pause fun()?
 ---@field replay fun()?
 ---@field seek fun(seconds: number, mode: 'relative'|'absolute')?
@@ -57,10 +61,10 @@ local M = {}
 ---@field playlist_first fun()?
 ---@field playlist_last fun()?
 
----@class elxosc.player.HostActions : std.object
+---@class player.HostActions : std.object
 ---@field private _callbacks table<string, function>
----@overload fun(options?: elxosc.player._HostActionsOptions): self
-local HostActions = std.class.new('HostActions' --[[@as 'elxosc.player.HostActions']])
+---@overload fun(options?: _HostActionsOptions): self
+local HostActions = std.class.new('HostActions')
 
 local ACTIONS = {
     'play_pause', 'replay', 'seek', 'seek_to', 'set_pause',
@@ -362,16 +366,16 @@ function HostActions:playlist_last()
     return self:call('playlist_last')
 end
 
----@class elxosc.player._HostActionsScopeOptions
----@field actions elxosc.player.HostActions
+---@class player._HostActionsScopeOptions
+---@field actions HostActions
 ---@field child Widget?
 ---@field key any?
 
----@class elxosc.player.HostActionsScope : InheritedWidget
----@field actions elxosc.player.HostActions
+---@class player.HostActionsScope : InheritedWidget
+---@field actions HostActions
 ---@field child Widget?
----@overload fun(options: elxosc.player._HostActionsScopeOptions): self
-local HostActionsScope = std.class.new('HostActionsScope' --[[@as 'elxosc.player.HostActionsScope']], InheritedWidget)
+---@overload fun(options: _HostActionsScopeOptions): self
+local HostActionsScope = std.class.new('HostActionsScope', InheritedWidget)
 local HostActionsScopeClass = HostActionsScope --[[@as std.class]]
 
 function HostActionsScope:__init(options)
@@ -391,7 +395,7 @@ function HostActionsScope:update_should_notify(old_widget)
 end
 
 ---@param context BuildContext
----@return elxosc.player.HostActionsScope
+---@return HostActionsScope
 function HostActionsScope.of(context)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('HostActions lookup expects a BuildContext'))
@@ -400,17 +404,17 @@ function HostActionsScope.of(context)
     if value == nil then
         raise(std.RuntimeError('no HostActionsScope ancestor was found'))
     end
-    return value --[[@as elxosc.player.HostActionsScope]]
+    return value --[[@as HostActionsScope]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.HostActions?
+---@return HostActions?
 function HostActions.maybe_of(context)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('HostActions lookup expects a BuildContext'))
     end
     local scope = context:depend_on_inherited_widget_of_exact_type(HostActionsScopeClass)
-    return scope and scope.actions or nil --[[@as elxosc.player.HostActions?]]
+    return scope and scope.actions or nil --[[@as HostActions?]]
 end
 
 M.HostActions = HostActions

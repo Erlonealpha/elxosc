@@ -1,5 +1,8 @@
 -- Clickable text with paint-only foreground and glow feedback.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local text_mod = require 'src.widgets.text'
@@ -16,7 +19,7 @@ local StatelessWidget = widget_mod.StatelessWidget
 
 local RenderText = require('src.render.text').RenderText
 
----@class elxosc.mod.src.widgets.hover_text
+---@class mod.src.widgets.hover_text
 local M = {}
 local default_style = text_style_mod.TextStyle({ wrap = false })
 

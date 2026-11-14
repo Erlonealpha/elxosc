@@ -1,5 +1,6 @@
 -- P1 Builder contracts: semantic callback boundaries, validation and cleanup.
 ---@namespace test.builder
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused, param-type-mismatch, return-type-mismatch
 
 local F = require 'framework'

@@ -6,6 +6,9 @@
 -- Measurement is delegated to a `TextLayout` (the engine stand-in), so the
 -- render tree stays free of any font/backend assumption.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local anchor_mod = require 'src.foundation.anchor'
@@ -24,7 +27,7 @@ local Paragraph = paragraph_mod.Paragraph
 local Color = color_mod.Color
 local raise = std.raise
 
----@class elxosc.src.render.text
+---@class mod.src.render.text
 local M = {}
 
 ---@class RenderText : RenderObject

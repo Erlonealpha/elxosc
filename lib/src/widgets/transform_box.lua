@@ -3,6 +3,9 @@
 
 -- Declarative front ends for the two finite axis-scale boxes.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_box_mod = require 'src.render.transform_box'
@@ -112,7 +115,7 @@ function LayoutScaleBox:update_render_object(render_object)
     render_object:set_clip(self.clip)
 end
 
----@class elxosc.mod.src.widgets.transform_box
+---@class mod.src.widgets.transform_box
 local M = {
     TransformBox = TransformBox,
     LayoutScaleBox = LayoutScaleBox,

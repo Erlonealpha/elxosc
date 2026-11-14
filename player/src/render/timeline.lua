@@ -5,6 +5,10 @@
 -- changes do not rebuild or relayout the player; pointer handling remains on
 -- the persistent RenderObject so its input region and capture are stable.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'
@@ -21,20 +25,20 @@ local huge = math.huge
 local min = math.min
 local max = math.max
 
----@class elxosc.mod.player.src.render.timeline
+---@class mod.player.src.render.timeline
 local M = {}
 
----@alias elxosc.player.TimelinePhase
+---@alias player.TimelinePhase
 --- | 'start'
 --- | 'update'
 --- | 'end'
 --- | 'cancel'
 
----@alias elxosc.player.SeekMode
+---@alias player.SeekMode
 --- | 'keyframe'
 --- | 'exact'
 
----@alias elxosc.player.TimelineMarkerStyle
+---@alias player.TimelineMarkerStyle
 --- | 'triangle'
 --- | 'bar'
 --- | 'single-bar'
@@ -155,7 +159,7 @@ local function copy_ranges(list)
     return copy
 end
 
----@class elxosc.player._RenderTimelineOptions
+---@class player._RenderTimelineOptions
 ---@field progress number? 0..1
 ---@field buffered number? 0..1
 ---@field track_color Color?
@@ -176,13 +180,13 @@ end
 ---@field marker_color Color?
 ---@field current_marker_color Color?
 ---@field range_color Color?
----@field marker_style elxosc.player.TimelineMarkerStyle?
----@field on_seek fun(fraction: number, phase: elxosc.player.TimelinePhase, mode: elxosc.player.SeekMode)?
+---@field marker_style TimelineMarkerStyle?
+---@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@field on_context_seek fun(fraction: number)? right-click chapter callback
 ---@field on_wheel fun(delta: number)? wheel callback
 ---@field enabled boolean?
 
----@class elxosc.player.RenderTimeline : RenderSlider
+---@class player.RenderTimeline : RenderSlider
 ---@field progress number
 ---@field buffered number
 ---@field track_color Color
@@ -198,14 +202,14 @@ end
 ---@field hover_handle_size number
 ---@field hover_expand number
 ---@field range_expand number
----@field seek_mode elxosc.player.SeekMode
+---@field seek_mode SeekMode
 ---@field markers table[]
 ---@field ranges table[]
 ---@field marker_color Color
 ---@field current_marker_color Color
 ---@field range_color Color
----@field marker_style elxosc.player.TimelineMarkerStyle
----@field on_seek fun(fraction: number, phase: elxosc.player.TimelinePhase, mode: elxosc.player.SeekMode)?
+---@field marker_style TimelineMarkerStyle
+---@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@field on_context_seek fun(fraction: number)?
 ---@field on_wheel fun(delta: number)?
 ---@field enabled boolean
@@ -213,10 +217,10 @@ end
 ---@field dragging boolean
 ---@field _last_fraction number?
 ---@field _last_sent_fraction number?
----@field _seek_mode elxosc.player.SeekMode
----@field _pending_seek_mode elxosc.player.SeekMode?
----@overload fun(options?: elxosc.player._RenderTimelineOptions): self
-local RenderTimeline = std.class.new('RenderTimeline' --[[@as 'elxosc.player.RenderTimeline']], RenderSlider)
+---@field _seek_mode SeekMode
+---@field _pending_seek_mode SeekMode?
+---@overload fun(options?: _RenderTimelineOptions): self
+local RenderTimeline = std.class.new('RenderTimeline', RenderSlider)
 
 function RenderTimeline:__init(options)
     local transparent = Color.rgba255(0, 0, 0, 0)
@@ -287,7 +291,7 @@ function RenderTimeline:__init(options)
     self._pending_seek_mode = nil
 end
 
----@param seek_mode elxosc.player.SeekMode
+---@param seek_mode SeekMode
 function RenderTimeline:set_seek_mode(seek_mode)
     seek_mode = validate_seek_mode(seek_mode)
     if self.seek_mode == seek_mode then
@@ -482,7 +486,7 @@ function RenderTimeline:set_ranges(ranges)
     self:mark_needs_paint()
 end
 
----@param marker_style elxosc.player.TimelineMarkerStyle
+---@param marker_style TimelineMarkerStyle
 function RenderTimeline:set_marker_style(marker_style)
     marker_style = validate_marker_style(marker_style)
     if self.marker_style == marker_style then
@@ -522,7 +526,7 @@ function RenderTimeline:set_range_color(color)
     self:mark_needs_paint()
 end
 
----@param callback fun(fraction: number, phase: elxosc.player.TimelinePhase, mode: elxosc.player.SeekMode)?
+---@param callback fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 function RenderTimeline:set_on_seek(callback)
     callback = validate_callback(callback, 'RenderTimeline.on_seek')
     if callback == nil and self.dragging then

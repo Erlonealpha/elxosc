@@ -1,6 +1,7 @@
 -- N1 application composition: one DefaultApp with stable Main, Extension and
 -- WindowLayer boundaries.  The old nine-region scaffold is intentionally gone.
 ---@namespace test.mainlayout
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, unused
 
 local F = require('framework')

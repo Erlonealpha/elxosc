@@ -1,5 +1,6 @@
 -- Button construction preserves the caller's configuration and public behavior.
 
+---@using elxosc
 local F = require 'framework'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'

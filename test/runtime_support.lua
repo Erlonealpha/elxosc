@@ -1,5 +1,6 @@
 -- Mounted probes shared by runtime behavior tests.
 ---@namespace test.runtime
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'

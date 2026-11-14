@@ -9,7 +9,7 @@
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
 [TESTING.md](TESTING.md)。FPK-2 已扁平 widgets 并拆分 Material，FPK-3 export 与完整静态
-catalog 已实施；全量 namespace/meta 留 FPK-4。
+catalog 与 FPK-4 全量 namespace/meta 已实施。类型提示使用方式见 [meta](../../meta/README.md)。
 
 ## 分区
 
@@ -57,8 +57,11 @@ Anchor、Curves 等来源定义的具名值表保持原对象。点分包名表�
 加载公开 collector，`require 'src.foundation.geometry'` 加载源码。
 `require 'src/foundation/geometry.lua'` 和显式 `src/widgets/init.lua` 也支持，并映射到
 同一 canonical 模块，避免 class 和 Binding singleton 重复。项目代码优先使用点路径。
-未迁基础源码类型仍如 `elxosc.src.foundation.geometry`，collector 如 `elxosc.foundation`；
-本轮 widgets/material 使用 `elxosc.mod.<canonical require>`，全量类型在 FPK-4 统一。
+所有生产模块表使用 `elxosc.mod.<canonical require>`，例如
+`elxosc.mod.src.foundation.geometry` 和 collector `elxosc.mod.foundation`；
+实例/Options/alias 使用对应 owning namespace，FPK-4 已同步全部引用。
+文件使用 `@namespace elxosc` 限定声明、`@using elxosc` 与必要 owner using 简写引用，
+类型身份保持上述完整名称；运行时名称和 class name 字符串不受影响。
 `init.lua` 单向转出 collector，不重复类型或 classes；类型名前缀不进入运行时路径。
 
 `define/` 是原 extension 的 sandbox、Define、ModuleRegistry、DSL 和 Slot 所有者。
@@ -73,7 +76,7 @@ host 增加 runtime facade 后统一注册。`import('render.stack')`、
 ## 已确认的重组合同（2026-11-14，FPK-1 已实施，后续分层待实施）
 
 上述分区和路径记录当前实现。下列最终所有权中 player/define 已实施；
-widgets/material 扁平、export 和完整清单已实施；全量 namespace/meta 在 FPK-4 实施。
+widgets/material 扁平、export、完整清单和 namespace/meta 已实施。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |
@@ -125,6 +128,26 @@ PaintingBinding/SchedulerBinding/RendererBinding 当前在函数内引用具体 
 这是既有 role 接线；迁移只更新其路径/type，不同时重构 Binding topology。
 阶段 0 固定上述合同与完整映射，随后按所有权分离、Widgets/Material、导出、类型顺序实施；
 布局、dirty、Binding singleton、Define 初始化协议和资源清理行为保持。
+
+## 扩展类型提示（2026-11-15，FPK-4）
+
+生产模块表为 elxosc.mod.<canonical require>，框架实例/Options/alias 为 elxosc.*；
+Material/player/Define/host 分别使用 owning namespace。runtime require/类名字字符串
+保持原值，std.class.new 的类型模板通过局部注解绑定 qualified type。PipelineOwner 的
+类型别名由 render owning source 声明，init 仅返回 collector，不重复声明模块类型。
+
+meta/elxosc.lua 不在 runtime catalog 中；扩展编辑器一次加载 owning sources、elxlib
+与该 meta 文件。tools/generate_meta.py 从三个显式 catalog 校验 source module types，
+生成全部 143 包名 literal import_as 重载，默认名从 host/builtins 的 115 字段逐项复用。
+mp/player 的 runtime additions 使用 host.MpPackage/PlayerPackage；筛选后的 collector
+仅提示实际成员。new_widget/new_state 复用 owning factory 的名称模板/父类约束。
+
+扩展 JSON 以 {name,type} 声明包类型，支持 named type/array 交集，按输入顺序组合。
+相同 name/type 去重，不同类型同名失败且保留原输出；与内建包冲突同样失败。该登记
+只生成提示，实际包仍经 Define mod transaction 发布。动态包名返回普通 table 提示；
+missing type 在实际消费时报诊断。import/Define require 不返回包，编辑器不追踪任意
+环境字段注入；超出默认 builtins 的类型提示应使用 import_as。只加载一份完整生成文件，
+避免重复全局声明。配置和可移植示例见 [meta/README.md](../../meta/README.md)。
 
 ## Flutter runtime 对齐
 

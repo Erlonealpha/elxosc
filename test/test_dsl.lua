@@ -1,5 +1,6 @@
 -- Define class factories and the host's explicit builtins surface.
 ---@namespace test.dsl
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.
@@ -38,6 +39,7 @@ local stack_widgets = require('src.widgets.stack')
 local constraints_widgets = require('src.widgets.constraints')
 local overflow_widgets = require('src.widgets.overflow')
 local container_widgets = require('src.widgets.container')
+local slot_mod = require 'define.src.slot'
 
 local Constraints = constraints_mod.Constraints
 local RenderOwner = render_owner.RenderOwner
@@ -70,18 +72,26 @@ end
 F.section('dsl: factories')
 
 F.test('new_widget builds a StatefulWidget subclass', function()
-    local W = dsl.new_widget('test.W')
+    ---@class W : StatefulWidget
+    ---@overload fun(): self
+    local W = dsl.new_widget('test.W' --[[@as 'test.dsl.W']])
     F.eq(std.isinstance(W(), StatefulWidget), true, 'instance of StatefulWidget')
 end)
 
 F.test('new_state builds a State subclass', function()
-    local S = dsl.new_state('test.S')
+    ---@class S : State
+    ---@overload fun(): self
+    local S = dsl.new_state('test.S' --[[@as 'test.dsl.S']])
     F.eq(std.isinstance(S(), State), true, 'instance of State')
 end)
 
 F.test('the parent class can be overridden', function()
-    local Base = dsl.new_state('test.Base')
-    local Child = dsl.new_state('test.Child', Base)
+    ---@class Base : State
+    ---@overload fun(): self
+    local Base = dsl.new_state('test.Base' --[[@as 'test.dsl.Base']])
+    ---@class Child : Base
+    ---@overload fun(): self
+    local Child = dsl.new_state('test.Child' --[[@as 'test.dsl.Child']], Base)
     F.eq(std.isinstance(Child(), Base), true, 'subclass of the given parent')
 end)
 
@@ -104,11 +114,10 @@ end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()
     local b = host_define.builtins()
-    local slot = require('define.src.slot')
     local define_api = require('define')
-    F.eq(b.SlotSpec, slot.SlotSpec, 'DSL SlotSpec')
-    F.eq(define_api.SlotSpec, slot.SlotSpec, 'Define SlotSpec')
-    F.eq(define_api.CompositionAssembler, slot.CompositionAssembler,
+    F.eq(b.SlotSpec, slot_mod.SlotSpec, 'DSL SlotSpec')
+    F.eq(define_api.SlotSpec, slot_mod.SlotSpec, 'Define SlotSpec')
+    F.eq(define_api.CompositionAssembler, slot_mod.CompositionAssembler,
         'Define CompositionAssembler')
 end)
 
@@ -175,7 +184,10 @@ end)
 F.section('dsl: a declared widget runs')
 
 F.test('a new_widget + new_state pair builds and mounts', function()
-    local Counter = dsl.new_state('test.Counter')
+    ---@class Counter : State
+    ---@field value number
+    ---@overload fun(): self
+    local Counter = dsl.new_state('test.Counter' --[[@as 'test.dsl.Counter']])
     function Counter:__init()
         std.super(Counter, self, State).__init(self)
         self.value = 3
@@ -184,7 +196,9 @@ F.test('a new_widget + new_state pair builds and mounts', function()
         return Text('n=' .. self.value)
     end
 
-    local CounterWidget = dsl.new_widget('test.CounterWidget')
+    ---@class CounterWidget : StatefulWidget
+    ---@overload fun(): self
+    local CounterWidget = dsl.new_widget('test.CounterWidget' --[[@as 'test.dsl.CounterWidget']])
     function CounterWidget:create_state()
         return Counter()
     end

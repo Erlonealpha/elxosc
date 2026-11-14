@@ -7,6 +7,9 @@
 -- `on_dirty` is the hook the host backend wires to its frame clock, so a dirty
 -- node schedules a frame -- and an idle tree schedules nothing.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -22,7 +25,7 @@ local RegionSnapshot = region_snapshot.RegionSnapshot
 local raise = std.raise
 local POINTER_BUTTONS = { left = true, middle = true, right = true }
 
----@class elxosc.src.render.render_owner
+---@class mod.src.render.render_owner
 local M = {}
 
 ---@param value boolean?

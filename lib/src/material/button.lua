@@ -1,4 +1,8 @@
 -- Compatibility entry point for the original Button API.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.material
+
 local std = require 'elxlibs.std'
 local base = require 'src.material.button_base'
 local style_mod = require 'src.material.button_style'
@@ -8,9 +12,9 @@ local ButtonBase = base.ButtonBase
 local ButtonStyle = style_mod.ButtonStyle
 local copy_options = base.copy_options
 local Color = color.Color
----@class _ButtonOptions : _ButtonBaseOptions
+---@class material._ButtonOptions : material._ButtonBaseOptions
 
----@class Button : ButtonBase
+---@class material.Button : material.ButtonBase
 ---@overload fun(options: _ButtonOptions?): self
 local Button = std.class.new('Button', ButtonBase)
 ---@param options _ButtonOptions?
@@ -26,7 +30,7 @@ function Button:__init(options)
     })
     ButtonBase.__init(self, config)
 end
----@class elxosc.mod.src.material.button
+---@class mod.src.material.button
 local M = { Button = Button }
 
 return M

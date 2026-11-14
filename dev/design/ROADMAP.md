@@ -14,7 +14,9 @@
   LayoutScaleBox、paint/layout dirty 分类；
 - mpv frame loop、ASS presenter、鼠标输入、Define transport 和真实宿主 fixture。
 - `lib/src/` 框架实现、`lib/*.lua` 独立 collector、`material` 默认构造入口，
-  `extension/` Define 系统和明确登记的多级 import 模块。
+  `define/` 初始化系统、`player/` 应用层、完整静态 catalog 和明确的多级 import 模块。
+- elxosc 生产类型 namespace、扩展 meta 的 143 包映射、scoped facades/默认构造器，
+  及扩展自有类型声明组合/冲突检查；开发入口见 [meta](../../meta/README.md)。
 - 经用户审阅的 ModernX 默认播放器：original/reduced、controls/metadata/capability、
   AutoHide、thumbfast 预览清理与边框、Define 注入的可关闭 Demo；详细范围见
   [PLAYER.md](PLAYER.md)。

@@ -19,6 +19,9 @@
 -- mpv assigns Layer=0 and monotonically increasing ReadOrder to these lines.
 -- Keep each call in one event; neither field is a public Canvas parameter.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local canvas = require 'src.painting.canvas'
 local path_mod = require 'src.painting.path'
@@ -65,7 +68,7 @@ local ASS_TEXT_ALIGN_ANCHORS = {
     [Align.RIGHT] = 6,
 }
 
----@class elxosc.src.backends.ass_canvas
+---@class mod.src.backends.ass_canvas
 local M = {}
 
 ---@param channel number 0..1

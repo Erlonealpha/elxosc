@@ -1,5 +1,9 @@
 -- Player root layout: geometry selection and component assembly.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local ambient_mod = require 'src.widgets.ambient'
@@ -32,39 +36,39 @@ local default_title_bar = visuals_mod.default_title_bar
 local default_window_controls = visuals_mod.default_window_controls
 local default_controller = controls_mod.default_controller
 
----@class elxosc.mod.player.src.layout
+---@class mod.player.src.layout
 local M = {}
 
----@class elxosc.player._PlayerLayoutOptions
----@field theme elxosc.player.PlayerThemeData
----@field actions elxosc.player.HostActions
----@field snapshot elxosc.player.PlayerSnapshot?
+---@class player._PlayerLayoutOptions
+---@field theme PlayerThemeData
+---@field actions HostActions
+---@field snapshot PlayerSnapshot?
 ---@field title string
 ---@field title_bar Widget?
 ---@field window_controls Widget?
 ---@field bottom Widget?
----@field left_controls elxosc.player.PlayerControlBar?
----@field right_controls elxosc.player.PlayerControlBar?
----@field layout_option elxosc.player.PlayerLayoutOption
+---@field left_controls PlayerControlBar?
+---@field right_controls PlayerControlBar?
+---@field layout_option PlayerLayoutOption
 ---@field top_bar_visible boolean
 ---@field scale number
 ---@field key any?
 
----@class elxosc.player.PlayerLayout : StatelessWidget
----@field theme elxosc.player.PlayerThemeData
----@field actions elxosc.player.HostActions
----@field snapshot elxosc.player.PlayerSnapshot?
+---@class player.PlayerLayout : StatelessWidget
+---@field theme PlayerThemeData
+---@field actions HostActions
+---@field snapshot PlayerSnapshot?
 ---@field title string
 ---@field title_bar Widget?
 ---@field window_controls Widget?
 ---@field bottom Widget?
----@field left_controls elxosc.player.PlayerControlBar?
----@field right_controls elxosc.player.PlayerControlBar?
----@field layout_option elxosc.player.PlayerLayoutOption
+---@field left_controls PlayerControlBar?
+---@field right_controls PlayerControlBar?
+---@field layout_option PlayerLayoutOption
 ---@field top_bar_visible boolean
 ---@field scale number
----@overload fun(options: elxosc.player._PlayerLayoutOptions): self
-local PlayerLayout = std.class.new('PlayerLayout' --[[@as 'elxosc.player.PlayerLayout']], StatelessWidget)
+---@overload fun(options: _PlayerLayoutOptions): self
+local PlayerLayout = std.class.new('PlayerLayout', StatelessWidget)
 
 function PlayerLayout:__init(options)
     if type(options) ~= 'table' then

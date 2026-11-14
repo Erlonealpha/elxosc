@@ -3,13 +3,17 @@
 
 -- The default mpv implementation of the small, explicit HostActions contract.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local actions_mod = require 'player.src.actions'
 
 local HostActions = actions_mod.HostActions
 
----@class elxosc.host.mpv_actions
+---@class mod.host.mpv_actions
 local M = {}
 
 local function open_url_command(url)
@@ -20,7 +24,7 @@ local function open_url_command(url)
     return { 'xdg-open', url }
 end
 
----@return elxosc.player.HostActions
+---@return player.HostActions
 ---@param options? { player_context: MpPlayerContext? }
 function M.default(options)
     options = options or {}

@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local sized_box_mod = require 'src.render.sized_box'
 local widget_mod = require 'src.widgets.framework'
@@ -83,7 +86,7 @@ function SizedBox.from_size(size, options)
     })
 end
 
----@class elxosc.mod.src.widgets.sized_box
+---@class mod.src.widgets.sized_box
 local M = { SizedBox = SizedBox }
 
 return M

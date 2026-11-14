@@ -7,7 +7,7 @@
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
 新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
 [TESTING.md](TESTING.md)。FPK-2 已迁到 widgets/material 包名，FPK-3 已实现 export 与
-完整静态 catalog；全量 namespace/meta 留 FPK-4。
+完整静态 catalog 与 FPK-4 namespace/meta。
 
 ## 已确认的接线重组（2026-11-14，FPK-1 已实施，后续分层待实施）
 
@@ -35,7 +35,7 @@ scope builtins/facade、import_as 字面包名重载和类工厂提示；允许�
 import 不返回包、import_as 返回浅包且不注入环境的区别必须在提示中准确表达。
 扩展自有类型可以自己的 namespace；meta 不管理 mounted tree、源码热重载或 scope shutdown。
 
-上述接线边界与 export 已实施；meta 为后续合同。下文描述当前代码。首次 payload/transaction、
+上述接线边界、export 与 meta 已实施。下文描述当前代码。首次 payload/transaction、
 protected names、loader scope、fresh description before mount 和资源清理语义不改变。
 
 ## 宿主边界
@@ -122,7 +122,7 @@ package_catalog 用 export 显式登记所属全部 runtime source、collector�
 init 别名使用所属 collector，annotation-only metadata 不注册。
 `host.package_catalog.collect()` 合并三份清单，不扫描文件；`mpv_define` 为 player
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
-`elxosc.*` 只用于生产模块返回表的 EmmyLua 类型。
+`elxosc.*` 为生产类型 namespace，不加入 runtime 包名；模块表使用 elxosc.mod.*。
 
 `host/builtins.lua` 显式选择框架构造器、值类型、player/Slot 接口和类工厂，
 `mpv_define.builtins()` 返回该表；`lib/material.lua` 仅收集框架。`MpDefineOptions.builtins` 替换默认 surface，host
@@ -155,6 +155,15 @@ caller-owned Widget。BindRegistry/DefaultApp assembly 不再作为运行时路�
 整体丢弃且不消耗 scope。协议明确不提供运行时 unbind、已挂载树回滚、
 priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容入口，不重新执行扩展
 源代码；扩展需要响应更新时，通过自己的 State/Provider 或公开 setter 处理。
+
+## 扩展编辑器入口
+
+加载 [meta](../../meta/README.md) 与 owning sources 可提示全部框架/player/Define 包和
+mp/player scoped facade；运行时不 require meta。tools/generate_meta.py 使用相同静态
+catalog 校验 module type，再按明确包名生成 import_as 重载；默认全局仅来自 115 个
+host-selected builtins 与五个协议函数/print。扩展声明只用于提示生成，同名不同类型
+拒绝，不替代 mod 的 transaction/保护规则。import/require 返回无值，其他环境注入
+不作静态推断；需要可靠字段提示使用 import_as。动态包名仅 table fallback。
 
 ## 宿主变更规则
 

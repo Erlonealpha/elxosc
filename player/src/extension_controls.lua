@@ -1,4 +1,8 @@
 -- Fixed button cells and themed buttons for the player extension slots.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local layout_mod = require 'widgets'
@@ -13,14 +17,14 @@ local Row = layout_mod.Row
 local SizedBox = layout_mod.SizedBox
 local raise = std.raise
 
----@class elxosc.player._PlayerControlBarOptions
+---@class player._PlayerControlBarOptions
 ---@field children Widget[]?
 ---@field key any?
 
----@class elxosc.player.PlayerControlBar : StatelessWidget
+---@class player.PlayerControlBar : StatelessWidget
 ---@field children Widget[]
----@overload fun(options?: elxosc.player._PlayerControlBarOptions): self
-local PlayerControlBar = std.class.new('PlayerControlBar' --[[@as 'elxosc.player.PlayerControlBar']], StatelessWidget)
+---@overload fun(options?: _PlayerControlBarOptions): self
+local PlayerControlBar = std.class.new('PlayerControlBar', StatelessWidget)
 
 function PlayerControlBar:__init(options)
     self.key = options and options.key
@@ -53,18 +57,18 @@ function PlayerControlBar:build()
     return Row({ children = children, spacing = 21, main_axis_size = 'min', cross_alignment = 'center' })
 end
 
----@class elxosc.player._PlayerControlButtonOptions
+---@class player._PlayerControlButtonOptions
 ---@field icon string?
 ---@field on_click fun()?
 ---@field enabled boolean?
 ---@field key any?
 
----@class elxosc.player.PlayerControlButton : StatelessWidget
+---@class player.PlayerControlButton : StatelessWidget
 ---@field icon string
 ---@field on_click fun()?
 ---@field enabled boolean
----@overload fun(options?: elxosc.player._PlayerControlButtonOptions): self
-local PlayerControlButton = std.class.new('PlayerControlButton' --[[@as 'elxosc.player.PlayerControlButton']], StatelessWidget)
+---@overload fun(options?: _PlayerControlButtonOptions): self
+local PlayerControlButton = std.class.new('PlayerControlButton', StatelessWidget)
 
 function PlayerControlButton:__init(options)
     options = options or {}
@@ -89,7 +93,7 @@ function PlayerControlButton:build(context)
     })
 end
 
----@class elxosc.mod.player.src.extension_controls
+---@class mod.player.src.extension_controls
 local M = {
     PlayerControlBar = PlayerControlBar,
     PlayerControlButton = PlayerControlButton

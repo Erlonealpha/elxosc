@@ -8,6 +8,9 @@
 -- `&HAABBGGRR`, a mpv.net surface pixel, ...) -- the framework itself has no
 -- notion of "ass colour" or "bgr".
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
 local raise = std.raise
@@ -16,7 +19,7 @@ local string = string
 local floor = math.floor
 local format = string.format
 
----@class elxosc.src.foundation.color
+---@class mod.src.foundation.color
 local M = {}
 
 ---@param channel number 0..1

@@ -1,5 +1,9 @@
 -- Finite root-relative geometry for ModernX layout profiles.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
@@ -10,7 +14,7 @@ local max = math.max
 local min = math.min
 local huge = math.huge
 
----@class elxosc.mod.player.src.geometry
+---@class mod.player.src.geometry
 local M = {}
 
 local function finite(name, value)
@@ -39,7 +43,7 @@ local function safe_rect(left, top, right, bottom)
     return Rect(left, top, max(left, right), max(top, bottom))
 end
 
----@param layout_option elxosc.player.PlayerLayoutOption
+---@param layout_option PlayerLayoutOption
 ---@param viewport_width number
 ---@param viewport_height number
 ---@param options table

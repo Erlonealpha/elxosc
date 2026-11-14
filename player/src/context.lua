@@ -4,6 +4,10 @@
 -- Host-independent player state values, store notifications, and the widget
 -- scope that exposes the current snapshot to descendants.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local builder_mod = require 'src.widgets.builder'
 local provider_mod = require 'src.widgets.provider'
@@ -16,7 +20,7 @@ local State = state_mod.State
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
 
----@class elxosc.mod.player.src.context
+---@class mod.player.src.context
 local M = {}
 
 -- LuaJIT weak-key tables are not ephemerons: a strong value that reaches its
@@ -66,21 +70,21 @@ local function data_equal(left, right, seen)
     return true
 end
 
----@alias elxosc.player.PlayerSnapshotValue string|number|boolean|table
----@alias elxosc.player.PlayerSnapshotFields table<string, elxosc.player.PlayerSnapshotValue>
----@alias elxosc.player.CapabilityStatus
+---@alias player.PlayerSnapshotValue string|number|boolean|table
+---@alias player.PlayerSnapshotFields table<string, player.PlayerSnapshotValue>
+---@alias player.CapabilityStatus
 --- | 'available'
 --- | 'unavailable'
 --- | 'loading'
 --- | 'error'
 
----@class elxosc.player.CapabilityInfo
----@field status elxosc.player.CapabilityStatus
+---@class player.CapabilityInfo
+---@field status CapabilityStatus
 ---@field detail string?
 ---@field error string?
 
----@class elxosc.player._PlayerSnapshotOptions
----@field [string] elxosc.player.PlayerSnapshotValue
+---@class player._PlayerSnapshotOptions
+---@field [string] PlayerSnapshotValue
 
 local function is_finite(value)
     return value == value and value ~= math.huge and value ~= -math.huge
@@ -134,8 +138,8 @@ local function copy_value(value, copies, active)
     return copy
 end
 
----@param fields elxosc.player._PlayerSnapshotOptions?
----@return elxosc.player.PlayerSnapshotFields
+---@param fields _PlayerSnapshotOptions?
+---@return PlayerSnapshotFields
 local function copy_fields(fields)
     if fields == nil then
         fields = {}
@@ -178,13 +182,13 @@ local function copy_fields(fields)
             end
         end
     end
-    return copy_value(fields, {}, {}) --[[@as elxosc.player.PlayerSnapshotFields]]
+    return copy_value(fields, {}, {}) --[[@as PlayerSnapshotFields]]
 end
 
----@class elxosc.player.PlayerSnapshot : std.object
+---@class player.PlayerSnapshot : std.object
 ---@field private _fields table<string, true>
----@overload fun(fields: elxosc.player._PlayerSnapshotOptions?): self
-local PlayerSnapshot = std.class.new('PlayerSnapshot' --[[@as 'elxosc.player.PlayerSnapshot']])
+---@overload fun(fields: _PlayerSnapshotOptions?): self
+local PlayerSnapshot = std.class.new('PlayerSnapshot')
 
 local function readonly_value(value)
     if type(value) ~= 'table' then
@@ -208,7 +212,7 @@ local function readonly_value(value)
     return view
 end
 
----@return elxosc.player.PlayerSnapshot
+---@return PlayerSnapshot
 local function snapshot_from_view(value)
     return snapshot_view_values[value]
 end
@@ -262,7 +266,7 @@ function PlayerSnapshot:__init(fields)
 end
 
 ---@param name string
----@return elxosc.player.PlayerSnapshotValue?
+---@return PlayerSnapshotValue?
 function PlayerSnapshot:get(name)
     if type(name) ~= 'string' or name == '' then
         raise(std.TypeError('PlayerSnapshot.get expects a non-empty field name'))
@@ -271,7 +275,7 @@ function PlayerSnapshot:get(name)
 end
 
 ---@param name string
----@return elxosc.player.CapabilityInfo
+---@return CapabilityInfo
 function PlayerSnapshot:capability(name)
     if type(name) ~= 'string' or name == '' then
         raise(std.TypeError('PlayerSnapshot.capability expects a non-empty name'))
@@ -281,12 +285,12 @@ function PlayerSnapshot:capability(name)
         return readonly_value({
             status = 'unavailable',
             detail = 'not provided',
-        }) --[[@as elxosc.player.CapabilityInfo]]
+        }) --[[@as CapabilityInfo]]
     end
-    return readonly_value(capabilities[name]) --[[@as elxosc.player.CapabilityInfo]]
+    return readonly_value(capabilities[name]) --[[@as CapabilityInfo]]
 end
 
----@return elxosc.player.PlayerSnapshotFields
+---@return PlayerSnapshotFields
 function PlayerSnapshot:to_table()
     local fields = {}
     for name in pairs(self._fields) do
@@ -295,8 +299,8 @@ function PlayerSnapshot:to_table()
     return fields
 end
 
----@param overrides elxosc.player._PlayerSnapshotOptions?
----@return elxosc.player.PlayerSnapshot
+---@param overrides _PlayerSnapshotOptions?
+---@return PlayerSnapshot
 function PlayerSnapshot:copy(overrides)
     local fields = self:to_table()
     if overrides ~= nil then
@@ -305,25 +309,25 @@ function PlayerSnapshot:copy(overrides)
             fields[key] = value
         end
     end
-    return PlayerSnapshot(fields --[[@as elxosc.player._PlayerSnapshotOptions]])
+    return PlayerSnapshot(fields --[[@as _PlayerSnapshotOptions]])
 end
 
----@class elxosc.player.PlayerSubscription : std.object
+---@class player.PlayerSubscription : std.object
 ---@field private _active boolean
----@field private _listener fun(snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)?
----@field private _selector fun(snapshot: elxosc.player.PlayerSnapshot): any?
----@field private _selector_listener fun(selected: any?, previous_selected: any?, snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)?
+---@field private _listener fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)?
+---@field private _selector fun(snapshot: PlayerSnapshot): any?
+---@field private _selector_listener fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)?
 ---@field private _equals fun(left: any?, right: any?): boolean
 ---@field private _selected any?
----@field private _store elxosc.player.PlayerStore?
----@overload fun(options: elxosc.player._PlayerSubscriptionOptions): self
-local PlayerSubscription = std.class.new('PlayerSubscription' --[[@as 'elxosc.player.PlayerSubscription']])
+---@field private _store PlayerStore?
+---@overload fun(options: _PlayerSubscriptionOptions): self
+local PlayerSubscription = std.class.new('PlayerSubscription')
 
----@class elxosc.player._PlayerSubscriptionOptions
----@field store elxosc.player.PlayerStore
----@field listener? fun(snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)
----@field selector? fun(snapshot: elxosc.player.PlayerSnapshot): any?
----@field selector_listener? fun(selected: any?, previous_selected: any?, snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)
+---@class player._PlayerSubscriptionOptions
+---@field store PlayerStore
+---@field listener? fun(snapshot: PlayerSnapshot, previous: PlayerSnapshot)
+---@field selector? fun(snapshot: PlayerSnapshot): any?
+---@field selector_listener? fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)
 ---@field equals? fun(left: any?, right: any?): boolean
 ---@field selected? any
 
@@ -357,8 +361,8 @@ function PlayerSubscription:is_active()
     return self._active
 end
 
----@param snapshot elxosc.player.PlayerSnapshot
----@param previous elxosc.player.PlayerSnapshot
+---@param snapshot PlayerSnapshot
+---@param previous PlayerSnapshot
 function PlayerSubscription:notify(snapshot, previous)
     if not self._active then
         return
@@ -382,7 +386,7 @@ function PlayerSubscription:notify(snapshot, previous)
     end
 end
 
----@alias elxosc.player.PlayerStoreListener fun(snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)
+---@alias player.PlayerStoreListener fun(snapshot: player.PlayerSnapshot, previous: player.PlayerSnapshot)
 
 local function normalize_snapshot(value)
     if std.isinstance(value, PlayerSnapshot) then
@@ -398,16 +402,16 @@ local function normalize_snapshot(value)
     raise(std.TypeError('PlayerStore expects a PlayerSnapshot or fields table'))
 end
 
----@class elxosc.player.PlayerStore : std.object
----@field private _snapshot elxosc.player.PlayerSnapshot
----@field private _subscriptions elxosc.player.PlayerSubscription[]
+---@class player.PlayerStore : std.object
+---@field private _snapshot PlayerSnapshot
+---@field private _subscriptions PlayerSubscription[]
 ---@field private _notifying boolean
----@field on_error fun(error: any, subscription: elxosc.player.PlayerSubscription?)?
----@overload fun(snapshot: elxosc.player.PlayerSnapshot|elxosc.player._PlayerSnapshotOptions?, options: elxosc.player._PlayerStoreOptions?): self
-local PlayerStore = std.class.new('PlayerStore' --[[@as 'elxosc.player.PlayerStore']])
+---@field on_error fun(error: any, subscription: PlayerSubscription?)?
+---@overload fun(snapshot: PlayerSnapshot|_PlayerSnapshotOptions?, options: _PlayerStoreOptions?): self
+local PlayerStore = std.class.new('PlayerStore')
 
----@class elxosc.player._PlayerStoreOptions
----@field on_error fun(error: any, subscription: elxosc.player.PlayerSubscription?)
+---@class player._PlayerStoreOptions
+---@field on_error fun(error: any, subscription: PlayerSubscription?)
 
 function PlayerStore:__init(snapshot, options)
     if snapshot == nil then
@@ -426,12 +430,12 @@ function PlayerStore:__init(snapshot, options)
     self.on_error = options.on_error
 end
 
----@return elxosc.player.PlayerSnapshot
+---@return PlayerSnapshot
 function PlayerStore:get()
-    return self._snapshot:readonly() --[[@as elxosc.player.PlayerSnapshot]]
+    return self._snapshot:readonly() --[[@as PlayerSnapshot]]
 end
 
----@param subscription elxosc.player.PlayerSubscription
+---@param subscription PlayerSubscription
 function PlayerStore:_remove_subscription(subscription)
     if self._notifying then
         return
@@ -454,13 +458,13 @@ function PlayerStore:_compact_subscriptions()
     self._subscriptions = active
 end
 
----@param snapshot elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields
----@return elxosc.player.PlayerSnapshot
+---@param snapshot PlayerSnapshot|PlayerSnapshotFields
+---@return PlayerSnapshot
 function PlayerStore:replace(snapshot)
     local next_snapshot = normalize_snapshot(snapshot)
     local previous = self._snapshot
     if next_snapshot == previous then
-        return next_snapshot:readonly() --[[@as elxosc.player.PlayerSnapshot]]
+        return next_snapshot:readonly() --[[@as PlayerSnapshot]]
     end
     self._snapshot = next_snapshot
 
@@ -468,7 +472,7 @@ function PlayerStore:replace(snapshot)
     local previous_view = previous:readonly()
     local count = #self._subscriptions
     local first_error = nil
-    ---@type elxosc.player.PlayerSubscription?
+    ---@type PlayerSubscription?
     local first_subscription = nil
     self._notifying = true
     for index = 1, count do
@@ -491,11 +495,11 @@ function PlayerStore:replace(snapshot)
             raise(first_error)
         end
     end
-    return next_view --[[@as elxosc.player.PlayerSnapshot]]
+    return next_view --[[@as PlayerSnapshot]]
 end
 
----@param listener elxosc.player.PlayerStoreListener
----@return elxosc.player.PlayerSubscription
+---@param listener PlayerStoreListener
+---@return PlayerSubscription
 function PlayerStore:subscribe(listener)
     if type(listener) ~= 'function' then
         raise(std.TypeError('PlayerStore.subscribe expects a function'))
@@ -508,10 +512,10 @@ function PlayerStore:subscribe(listener)
     return subscription
 end
 
----@param selector fun(snapshot: elxosc.player.PlayerSnapshot): any?
----@param listener fun(selected: any?, previous_selected: any?, snapshot: elxosc.player.PlayerSnapshot, previous: elxosc.player.PlayerSnapshot)
+---@param selector fun(snapshot: PlayerSnapshot): any?
+---@param listener fun(selected: any?, previous_selected: any?, snapshot: PlayerSnapshot, previous: PlayerSnapshot)
 ---@param equals? fun(left: any?, right: any?): boolean
----@return elxosc.player.PlayerSubscription
+---@return PlayerSubscription
 function PlayerStore:subscribe_selector(selector, listener, equals)
     if type(selector) ~= 'function' then
         raise(std.TypeError('PlayerStore.subscribe_selector expects a selector function'))
@@ -535,17 +539,17 @@ function PlayerStore:subscribe_selector(selector, listener, equals)
     return subscription
 end
 
----@class elxosc.player._PlayerProviderOptions
----@field snapshot elxosc.player.PlayerSnapshot
+---@class player._PlayerProviderOptions
+---@field snapshot PlayerSnapshot
 ---@field child Widget?
 ---@field key any?
 
----@class elxosc.player.PlayerProvider : Provider
----@field snapshot elxosc.player.PlayerSnapshot
+---@class player.PlayerProvider : Provider
+---@field snapshot PlayerSnapshot
 ---@field child Widget?
 ---@field key any?
----@overload fun(options: elxosc.player._PlayerProviderOptions): self
-local PlayerProvider = std.class.new('PlayerProvider' --[[@as 'elxosc.player.PlayerProvider']], Provider)
+---@overload fun(options: _PlayerProviderOptions): self
+local PlayerProvider = std.class.new('PlayerProvider', Provider)
 
 function PlayerProvider:__init(options)
     if type(options) ~= 'table' then
@@ -563,47 +567,47 @@ function PlayerProvider:update_should_notify(old_widget)
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerProvider
+---@return PlayerProvider
 function PlayerProvider.of(context)
-    return Provider.of(context, PlayerProvider --[[@as std.class]]) --[[@as elxosc.player.PlayerProvider]]
+    return Provider.of(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerProvider?
+---@return PlayerProvider?
 function PlayerProvider.maybe_of(context)
-    return Provider.maybe_of(context, PlayerProvider --[[@as std.class]]) --[[@as elxosc.player.PlayerProvider?]]
+    return Provider.maybe_of(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider?]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerProvider
+---@return PlayerProvider
 function PlayerProvider.read(context)
-    return Provider.read(context, PlayerProvider --[[@as std.class]]) --[[@as elxosc.player.PlayerProvider]]
+    return Provider.read(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerProvider?
+---@return PlayerProvider?
 function PlayerProvider.maybe_read(context)
-    return Provider.maybe_read(context, PlayerProvider --[[@as std.class]]) --[[@as elxosc.player.PlayerProvider?]]
+    return Provider.maybe_read(context, PlayerProvider --[[@as std.class]]) --[[@as PlayerProvider?]]
 end
 
 ---@param context BuildContext
----@return elxosc.player.PlayerSnapshot
+---@return PlayerSnapshot
 function PlayerProvider.snapshot_of(context)
     return PlayerProvider.of(context).snapshot
 end
 
----@alias elxosc.player.PlayerCapabilityBuilder fun(info: elxosc.player.CapabilityInfo, snapshot: elxosc.player.PlayerSnapshot, context: BuildContext): Widget?
+---@alias player.PlayerCapabilityBuilder fun(info: player.CapabilityInfo, snapshot: player.PlayerSnapshot, context: BuildContext): Widget?
 
----@class elxosc.player._PlayerCapabilityOptions
+---@class player._PlayerCapabilityOptions
 ---@field name string
----@field builder elxosc.player.PlayerCapabilityBuilder
+---@field builder PlayerCapabilityBuilder
 ---@field key any?
 
----@class elxosc.player.PlayerCapability : StatelessWidget
+---@class player.PlayerCapability : StatelessWidget
 ---@field name string
----@field builder elxosc.player.PlayerCapabilityBuilder
----@overload fun(options: elxosc.player._PlayerCapabilityOptions): self
-local PlayerCapability = std.class.new('PlayerCapability' --[[@as 'elxosc.player.PlayerCapability']], StatelessWidget)
+---@field builder PlayerCapabilityBuilder
+---@overload fun(options: _PlayerCapabilityOptions): self
+local PlayerCapability = std.class.new('PlayerCapability', StatelessWidget)
 
 function PlayerCapability:__init(options)
     if type(options) ~= 'table' then
@@ -628,16 +632,16 @@ function PlayerCapability:build(context)
         self.builder(info, snapshot, context), 'PlayerCapability.builder')
 end
 
----@class elxosc.player._PlayerScopeOptions
----@field store elxosc.player.PlayerStore
+---@class player._PlayerScopeOptions
+---@field store PlayerStore
 ---@field child Widget?
 ---@field key any?
 
----@class elxosc.player.PlayerScopeState : State
----@field snapshot elxosc.player.PlayerSnapshot
----@field subscription elxosc.player.PlayerSubscription?
+---@class player.PlayerScopeState : State
+---@field snapshot PlayerSnapshot
+---@field subscription PlayerSubscription?
 ---@overload fun(): self
-local PlayerScopeState = std.class.new('PlayerScopeState' --[[@as 'elxosc.player.PlayerScopeState']], State)
+local PlayerScopeState = std.class.new('PlayerScopeState', State)
 
 function PlayerScopeState:__init()
     std.super(PlayerScopeState, self, State).__init(self)
@@ -645,7 +649,7 @@ function PlayerScopeState:__init()
     self.subscription = nil
 end
 
----@param store elxosc.player.PlayerStore
+---@param store PlayerStore
 function PlayerScopeState:_attach_store(store)
     if self.subscription then
         self.subscription:dispose()
@@ -661,14 +665,14 @@ function PlayerScopeState:_attach_store(store)
 end
 
 function PlayerScopeState:init_state()
-    local scope = self.widget --[[@as elxosc.player.PlayerScope]]
+    local scope = self.widget --[[@as PlayerScope]]
     self:_attach_store(scope.store)
 end
 
 ---@param old_widget StatefulWidget
 function PlayerScopeState:did_update_widget(old_widget)
-    local old_scope = old_widget --[[@as elxosc.player.PlayerScope]]
-    local scope = self.widget --[[@as elxosc.player.PlayerScope]]
+    local old_scope = old_widget --[[@as PlayerScope]]
+    local scope = self.widget --[[@as PlayerScope]]
     if old_scope.store ~= scope.store then
         self:_attach_store(scope.store)
     end
@@ -684,19 +688,19 @@ end
 ---@param context BuildContext
 ---@return Widget
 function PlayerScopeState:build(context)
-    local scope = self.widget --[[@as elxosc.player.PlayerScope]]
+    local scope = self.widget --[[@as PlayerScope]]
     return PlayerProvider({
         snapshot = self.snapshot,
         child = scope.child,
     })
 end
 
----@class elxosc.player.PlayerScope : StatefulWidget
----@field store elxosc.player.PlayerStore
+---@class player.PlayerScope : StatefulWidget
+---@field store PlayerStore
 ---@field child Widget?
 ---@field key any?
----@overload fun(options: elxosc.player._PlayerScopeOptions): self
-local PlayerScope = std.class.new('PlayerScope' --[[@as 'elxosc.player.PlayerScope']], StatefulWidget)
+---@overload fun(options: _PlayerScopeOptions): self
+local PlayerScope = std.class.new('PlayerScope', StatefulWidget)
 
 function PlayerScope:__init(options)
     if type(options) ~= 'table' then
@@ -710,7 +714,7 @@ function PlayerScope:__init(options)
     self.child = options.child
 end
 
----@return elxosc.player.PlayerScopeState
+---@return PlayerScopeState
 function PlayerScope:create_state()
     return PlayerScopeState()
 end

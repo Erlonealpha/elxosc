@@ -5,6 +5,9 @@
 -- selects the content reference point; the backend positions it at the target
 -- supplied to Canvas:draw_text plus `offset`, before applying Canvas transforms.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local anchor_mod = require 'src.foundation.anchor'
@@ -14,7 +17,7 @@ local Anchor = anchor_mod.Anchor
 local raise = std.raise
 local rawget = rawget
 
----@class elxosc.src.painting.text_paint
+---@class mod.src.painting.text_paint
 local M = {}
 
 ---@class _TextPaintOptions

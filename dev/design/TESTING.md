@@ -17,7 +17,28 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：FPK-3 Export 与完整 catalog（2026-11-15）
+## 当前检查：FPK-4 注解风格与 meta 范围调整（2026-11-15）
+
+生产声明采用 `@namespace elxosc`，引用采用 `@using elxosc` 与 owner using；解析后
+仍为 552 个类型声明/153 module types，init 不另声明类型，runtime 类名保持。
+移除能由 namespace/using 解析的类名模板强转；测试/工具消费者同步简写。
+
+按用户要求，meta 专项测试暂缓。撤下新增 test_meta.py、test_dsl 的 meta 示例运行测试
+和框架 fixture 的 meta 专项 guard；保留元数据、生成器、示例和开发说明。本次未运行
+meta 测试/生成一致性检查/独立扩展分析器验证，也未运行 real-host/benchmark/内存调查。
+生产 EmmyLua 排除 meta 与 ignored tmp；后者含旧草稿、类型探针及隔离源码副本。
+已有框架/Define 行为测试继续保留。当前基线是完整 Lua **3266 checks passed**，
+生产 EmmyLua **No issues found**。此前 3278 Lua/13 Python 为撤下测试前的历史结果。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+```
+
+本次仅注解风格和测试范围调整，无宿主接线变化，不重复已通过的宿主测试。
+meta 专项验证与编辑器提示验收已从本阶段门槛移出；播放器人工审阅仍待 FPK-5。
+
+## 已完成检查：FPK-3 Export 与完整 catalog（2026-11-15）
 
 新增 test_export.lua 检查来源浅快照/元表不变、class/function/table raw identity、
 false/空来源/稀疏整数键、show/hide 来源隔离、空/重复/未知参数、NaN/无效 key、

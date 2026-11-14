@@ -6,9 +6,12 @@
 -- per Lua runtime.  Per-tree BuildOwner/PipelineOwner state belongs to owner
 -- scopes created by that binding, not to another binding instance.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 
----@class elxosc.src.foundation.binding_base
+---@class mod.src.foundation.binding_base
 local M = {}
 local raise = std.raise
 ---@type BindingBase?

@@ -4,6 +4,9 @@
 -- A pure-paint positive axis transform around a child. The child keeps its
 -- normal layout size; only painting and input coordinates are transformed.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
@@ -17,7 +20,7 @@ local RenderObject = render_object.RenderObject
 local raise = std.raise
 local huge = math.huge
 
----@class elxosc.src.render.transform_box
+---@class mod.src.render.transform_box
 local M = {}
 
 ---@param value number

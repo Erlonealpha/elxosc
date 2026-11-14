@@ -1,12 +1,16 @@
 -- Initialization-only builders reuse the framework result boundary.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local builder_mod = require 'src.widgets.builder'
 
----@class elxosc.mod.define.src.builder
+---@class mod.define.src.builder
 local M = {}
 
----@alias elxosc.define.SlotBuilder fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
+---@alias define.SlotBuilder fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
 
----@param callback elxosc.define.SlotBuilder
+---@param callback SlotBuilder
 ---@param value Widget|Widget[]|nil
 ---@param opts table<string, any>?
 ---@param name string

@@ -3,6 +3,9 @@
 
 -- Custom painting widget.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local custom_paint_mod = require 'src.render.custom_paint'
 local widget_mod = require 'src.widgets.framework'
@@ -10,7 +13,7 @@ local widget_mod = require 'src.widgets.framework'
 local RenderCustomPaint = custom_paint_mod.RenderCustomPaint
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
----@class elxosc.mod.src.widgets.custom_paint
+---@class mod.src.widgets.custom_paint
 local M = {}
 
 ---@class _CustomPaintOptions

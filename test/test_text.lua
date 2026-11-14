@@ -1,5 +1,6 @@
 -- Text layer: TextStyle, the TextLayout contract and generic wrapping.
 ---@namespace test.text
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.generic-constraint-mismatch

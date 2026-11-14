@@ -1,5 +1,8 @@
 -- Controlled numeric selection; independent of media seek and progress reporting.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'
@@ -13,7 +16,7 @@ local Rect = geometry.Rect
 local Size = geometry.Size
 local raise = std.raise
 
----@class elxosc.src.render.slider
+---@class mod.src.render.slider
 local M = {}
 
 local function finite(value, name)

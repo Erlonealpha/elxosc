@@ -3,6 +3,25 @@
 本文是 elxosc 的当前设计主文档和决策索引。它描述已经实现的架构、不可破坏的
 契约以及下一步方向；代码和测试是最终事实来源，旧设计记录只用于追溯历史。
 
+## FPK-4 Namespace 与扩展 meta（2026-11-15）
+
+生产 module/instance/Options/alias 已统一 elxosc namespace，166 Lua 文件/552 类型声明
+无未限定或重复类型；模块表 elxosc.mod.<canonical require>，instance 归 owning namespace。
+生产使用 `@namespace elxosc` 限定声明，`@using elxosc` 与 owner using 简写引用；
+模块表写 `mod.*`，领域类型写 `material.*`/`player.*`/`define.*`/`host.*`，解析后的完整
+类型身份不变。runtime require/class 字符串保持，类名模板无需重复的全名 cast；
+source init 单向返回 collector，PipelineOwner 类型 alias 归 render，测试/工具引用同步。
+
+meta/elxosc.lua 复用真实 source、catalog/builtins/facade 类型，生成 143 精确 import_as
+重载和默认构造器/协议提示，不进入 runtime catalog。扩展 JSON named/array intersection
+按顺序合并，冲突失败且保留输出；实际包仍通过 mod transaction 发布。配置、生成工具
+与两个自有包/子类示例见 [meta](../../meta/README.md)。生成器识别 namespace 简写声明。
+
+按用户最新要求，meta 专项测试及编辑器验收暂缓；新增测试文件、示例运行测试与
+meta 专项 guard 已撤下。完整 Lua 3266 与生产 EmmyLua 通过，未运行 meta/real-host/
+benchmark 专项验证。此前 3278/13 项为撤下前结果，不作为当前基线，范围见 TESTING。
+动态包 table fallback、import/require 无返回值及任意环境注入无法静态追踪的限制已说明。
+
 ## FPK-3 Export 与完整注册（2026-11-15）
 
 `lib/export.lua` 已提供声明、来源级 show/hide、get/collect 和独立 new() 上下文。
@@ -14,7 +33,7 @@ framework/player/Define 各自 package_catalog 显式枚举全部 runtime source
 初始化工具和字体资源；host 合并清单，加入 mp/player facade，仍手选原 115 builtins。
 扩展可精确导入 player.context、export、module_loader 等包。旧 player_context 删除，
 Define 根包的 sandbox 子模块改为 load_chunk/new_env 成员；独立 define.sandbox 保留。
-animation init 已单向返回 collector。全量 namespace/meta 仍由 FPK-4 处理。
+animation init 已单向返回 collector。FPK-4 namespace/meta 已完成，见下节。
 
 完整 Lua **3266 checks passed**、严格 EmmyLua **No issues found**、定向 Python
 **4 passed**，无 skip。Python 为独立框架/全清单审计两项与扩展/入口 real-host 两项，
@@ -50,8 +69,7 @@ host/package_catalog.lua 收集包，host/builtins.lua 手选原 115 字段；ma
 旧 extension、lib/player、widget/player 和 main_layout 入口已删除；调用者使用 player.src.*、
 define.src.*。迁出模块表与类型已同步 owning namespace，不改变运行时类名和对象身份。
 
-FPK-2/3 已完成；FPK-4 的全量 namespace/meta 仍待实施。下列目标章节中的类型开发
-后续项目不能视为现有 API。
+FPK-2～4 已完成；FPK-5 整体收口与人工审阅仍待实施，不能提前视为整计划完成。
 验证与实际范围见 [TESTING.md](TESTING.md)。
 
 用户随后明确整合模块不直接导出子模块。lib collectors 已统一为来源成员导出，
@@ -113,7 +131,7 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
 2026-11-14 的阶段 0 固定完整迁移映射和导出合同，FPK-1 已完成框架与应用边界；
-widgets/Material 与 export 已完成，namespace/meta 按后续阶段实施，见各方向文档。
+widgets/Material、export 与 namespace/meta 已完成，整体收口与人工审阅留下一阶段。
 
 ## 三棵运行时树
 

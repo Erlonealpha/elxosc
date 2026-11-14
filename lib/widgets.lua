@@ -1,4 +1,7 @@
 -- Public layer members retain their direct-source identity.
+---@namespace elxosc
+---@using elxosc
+
 local exports = require('export').new()
 
 local export = exports.export
@@ -37,40 +40,40 @@ export('widgets', require 'src.widgets.transform_box', true)
 export('widgets', require 'src.widgets.visibility', true)
 export('widgets', require 'src.widgets.widgets_binding', true)
 
----@class elxosc.mod.widgets :
---- elxosc.mod.src.widgets.align,
---- elxosc.mod.src.widgets.ambient,
---- elxosc.mod.src.widgets.app,
---- elxosc.mod.src.widgets.binding,
---- elxosc.mod.src.widgets.build_owner,
---- elxosc.mod.src.widgets.build_scope,
---- elxosc.mod.src.widgets.builder,
---- elxosc.mod.src.widgets.constraints,
---- elxosc.mod.src.widgets.container,
---- elxosc.mod.src.widgets.custom_paint,
---- elxosc.mod.src.widgets.decorated_box,
---- elxosc.mod.src.widgets.element,
---- elxosc.mod.src.widgets.flex,
---- elxosc.mod.src.widgets.framework,
---- elxosc.mod.src.widgets.gesture_detector,
---- elxosc.mod.src.widgets.hover_text,
---- elxosc.mod.src.widgets.icon,
---- elxosc.mod.src.widgets.key,
---- elxosc.mod.src.widgets.navigation,
---- elxosc.mod.src.widgets.offset_box,
---- elxosc.mod.src.widgets.overflow,
---- elxosc.mod.src.widgets.overlay,
---- elxosc.mod.src.widgets.padding,
---- elxosc.mod.src.widgets.positioned,
---- elxosc.mod.src.widgets.provider,
---- elxosc.mod.src.widgets.sized_box,
---- elxosc.mod.src.widgets.stack,
---- elxosc.mod.src.widgets.state,
---- elxosc.mod.src.widgets.text,
---- elxosc.mod.src.widgets.tooltip,
---- elxosc.mod.src.widgets.transform_box,
---- elxosc.mod.src.widgets.visibility,
---- elxosc.mod.src.widgets.widgets_binding
+---@class mod.widgets :
+--- mod.src.widgets.align,
+--- mod.src.widgets.ambient,
+--- mod.src.widgets.app,
+--- mod.src.widgets.binding,
+--- mod.src.widgets.build_owner,
+--- mod.src.widgets.build_scope,
+--- mod.src.widgets.builder,
+--- mod.src.widgets.constraints,
+--- mod.src.widgets.container,
+--- mod.src.widgets.custom_paint,
+--- mod.src.widgets.decorated_box,
+--- mod.src.widgets.element,
+--- mod.src.widgets.flex,
+--- mod.src.widgets.framework,
+--- mod.src.widgets.gesture_detector,
+--- mod.src.widgets.hover_text,
+--- mod.src.widgets.icon,
+--- mod.src.widgets.key,
+--- mod.src.widgets.navigation,
+--- mod.src.widgets.offset_box,
+--- mod.src.widgets.overflow,
+--- mod.src.widgets.overlay,
+--- mod.src.widgets.padding,
+--- mod.src.widgets.positioned,
+--- mod.src.widgets.provider,
+--- mod.src.widgets.sized_box,
+--- mod.src.widgets.stack,
+--- mod.src.widgets.state,
+--- mod.src.widgets.text,
+--- mod.src.widgets.tooltip,
+--- mod.src.widgets.transform_box,
+--- mod.src.widgets.visibility,
+--- mod.src.widgets.widgets_binding
 local M = exports.get('widgets')
 
 return M

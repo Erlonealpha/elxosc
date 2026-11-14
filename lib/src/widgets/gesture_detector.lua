@@ -3,6 +3,9 @@
 
 -- Pointer gesture detector widget.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local gesture_mod = require 'src.render.gesture'
 local widget_mod = require 'src.widgets.framework'
@@ -10,7 +13,7 @@ local widget_mod = require 'src.widgets.framework'
 local RenderGesture = gesture_mod.RenderGesture
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
----@class elxosc.mod.src.widgets.gesture_detector
+---@class mod.src.widgets.gesture_detector
 local M = {}
 
 ---@class GestureDetector : SingleChildRenderObjectWidget

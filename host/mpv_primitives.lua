@@ -7,6 +7,10 @@
 -- owns their lifecycle; this module only adapts the framework clock and canvas
 -- output contracts to mpv.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -15,14 +19,14 @@ local frame_clock = require 'src.scheduler.frame_clock'
 local FrameClock = frame_clock.FrameClock
 local math = math
 
----@class elxosc.host.mpv_primitives
+---@class mod.host.mpv_primitives
 local M = {}
 
 --== frame clock ===========================================================
 
 --- Drives frames from `mp.add_timeout`, one timer per requested frame, with
 --- the same rate limiting uosc applies via `render_delay`.
----@class MpFrameClock : FrameClock
+---@class host.MpFrameClock : FrameClock
 ---@field delay number minimum seconds between frames
 ---@field _timer table?
 ---@field _last_frame number?
@@ -83,7 +87,7 @@ end
 --== presenter =============================================================
 
 --- Pushes the canvas as an `ass-events` overlay, skipping identical frames.
----@class AssPresenter : std.object
+---@class host.AssPresenter : std.object
 ---@field overlay table
 ---@field _last_data string?
 ---@field _last_w number

@@ -3,6 +3,10 @@
 
 -- mpv property bridge for the host-independent PlayerStore.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -12,7 +16,7 @@ local raise = std.raise
 local PlayerSnapshot = player_context.PlayerSnapshot
 local PlayerStore = player_context.PlayerStore
 
----@class elxosc.host.mpv_player_context
+---@class mod.host.mpv_player_context
 local M = {}
 
 local DEFAULT_PLAYER_PROPERTIES = {
@@ -155,7 +159,7 @@ local function parse_json_table(payload)
     return nil
 end
 
----@class MpPropertySubscription : std.object
+---@class host.MpPropertySubscription : std.object
 ---@field _active boolean
 ---@field _callback fun(name: string, value: any)?
 ---@field _owner MpPlayerContext?
@@ -191,7 +195,7 @@ function MpPropertySubscription:dispose()
     return true
 end
 
----@class MpCapabilitySubscription : std.object
+---@class host.MpCapabilitySubscription : std.object
 ---@field _active boolean
 ---@field _owner MpPlayerContext?
 ---@field name string
@@ -244,18 +248,18 @@ function MpPropertySubscription:is_active()
     return self._active
 end
 
----@class MpPlayerContextOptions
+---@class host.MpPlayerContextOptions
 ---@field on_error fun(name: string, error: any)?
 
----@class MpPlayerContext : std.object
----@field store elxosc.player.PlayerStore
+---@class host.MpPlayerContext : std.object
+---@field store player.PlayerStore
 ---@field on_error fun(name: string, error: any)?
 ---@field _properties table<string, MpPropertySubscription>
 ---@field _batches table<table, true>
 ---@field _capabilities table<string, MpCapabilitySubscription>
 ---@field _async_handles table<function, true>
 ---@field _disposed boolean
----@overload fun(store: elxosc.player.PlayerStore, options: MpPlayerContextOptions?): self
+---@overload fun(store: player.PlayerStore, options: MpPlayerContextOptions?): self
 local MpPlayerContext = std.class.new('MpPlayerContext')
 
 ---@param name string
@@ -323,8 +327,8 @@ function MpPlayerContext:register_async(cancel)
     end
 end
 
----@param snapshot elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields
----@return elxosc.player.PlayerSnapshot
+---@param snapshot player.PlayerSnapshot|player.PlayerSnapshotFields
+---@return player.PlayerSnapshot
 function MpPlayerContext:publish(snapshot)
     if self._disposed then
         raise(std.RuntimeError('MpPlayerContext is disposed'))
@@ -333,7 +337,7 @@ function MpPlayerContext:publish(snapshot)
 end
 
 ---@param name string
----@param transform? fun(value: any, current: elxosc.player.PlayerSnapshot): elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields?
+---@param transform? fun(value: any, current: player.PlayerSnapshot): player.PlayerSnapshot|player.PlayerSnapshotFields?
 ---@return MpPropertySubscription
 function MpPlayerContext:observe(name, transform)
     if self._disposed then
@@ -360,7 +364,7 @@ function MpPlayerContext:observe(name, transform)
             return current:copy({ [property_name] = next_value })
         end
         local ok, transformed = pcall(make_snapshot, value, self.store:get())
-        ---@type elxosc.player.PlayerSnapshot|elxosc.player.PlayerSnapshotFields?
+        ---@type player.PlayerSnapshot|player.PlayerSnapshotFields?
         local next_snapshot = transformed
         if not ok then
             if self.on_error then
@@ -385,9 +389,9 @@ function MpPlayerContext:observe(name, transform)
     return subscription
 end
 
----@class MpBatchPropertyDefinition
+---@class host.MpBatchPropertyDefinition
 ---@field name string mpv property name
----@field field string elxosc.player.PlayerSnapshot field name
+---@field field string player.PlayerSnapshot field name
 ---@field normalize fun(value: any): any?
 
 ---@param definitions MpBatchPropertyDefinition[]
@@ -539,7 +543,7 @@ function MpPlayerContext:observe_default_properties(options)
 end
 
 ---@param name string
----@param status elxosc.player.CapabilityStatus
+---@param status player.CapabilityStatus
 ---@param detail string?
 ---@param error_message string?
 function MpPlayerContext:set_capability(name, status, detail, error_message)
@@ -569,11 +573,11 @@ function MpPlayerContext:set_capability(name, status, detail, error_message)
     return self.store:replace(current:copy({ capabilities = next_capabilities }))
 end
 
----@class MpCapabilityAdapter
----@field start fun(report: fun(status: elxosc.player.CapabilityStatus, detail: string?, error: string?)): any
+---@class host.MpCapabilityAdapter
+---@field start fun(report: fun(status: player.CapabilityStatus, detail: string?, error: string?)): any
 
 ---@param name string
----@param adapter MpCapabilityAdapter|fun(report: fun(status: elxosc.player.CapabilityStatus, detail: string?, error: string?)): any
+---@param adapter MpCapabilityAdapter|fun(report: fun(status: player.CapabilityStatus, detail: string?, error: string?)): any
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_capability(name, adapter)
     if self._disposed then

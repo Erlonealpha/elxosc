@@ -1,6 +1,10 @@
 -- Host-independent metadata normalization for the default player.
 
----@class elxosc.mod.player.src.metadata
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
+---@class mod.player.src.metadata
 local M = {}
 
 local function snapshot_value(snapshot, name)
@@ -34,7 +38,7 @@ local function metadata_value(snapshot, names)
     return nil
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@param direct string[]
 ---@param nested string[]?
 ---@return string?
@@ -48,7 +52,7 @@ local function first_text(snapshot, direct, nested)
     return nested and metadata_value(snapshot, nested) or nil
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return boolean
 function M.is_url(snapshot)
     local explicit = snapshot_value(snapshot, 'is_url')
@@ -59,7 +63,7 @@ function M.is_url(snapshot)
     return source ~= nil and source:match('^[%a][%w+.-]*://') ~= nil
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return boolean
 function M.is_live(snapshot)
     local explicit = snapshot_value(snapshot, 'is_live')
@@ -120,7 +124,7 @@ function M.format_file_size(bytes)
     return string.format('%.1f %s', bytes, units[index])
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return string
 function M.title(snapshot, fallback)
     local value = first_text(snapshot, { 'media_title', 'title', 'filename' }, { 'title' })
@@ -133,7 +137,7 @@ function M.title(snapshot, fallback)
     return fallback or 'elxosc'
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return string
 function M.description(snapshot)
     local explicit = first_text(snapshot, { 'description', 'media_description' }, { 'description' })
@@ -169,7 +173,7 @@ function M.description(snapshot)
     return ''
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return string
 function M.stats(snapshot)
     local values = metadata(snapshot)
@@ -219,7 +223,7 @@ function M.links(value)
     return result
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
+---@param snapshot PlayerSnapshot?
 ---@return string?
 function M.source(snapshot)
     return first_text(snapshot, { 'url', 'path', 'filename' }, { 'url' })

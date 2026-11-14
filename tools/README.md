@@ -4,6 +4,15 @@ These tools are explicitly invoked for development. They are not loaded by the
 production entry, do not change Widget/layout contracts, and do not add a Define
 content entry point.
 
+## Extension metadata
+
+`generate_meta.py` derives package/type hints from the three owning catalogs and
+host-selected builtins. `--check` verifies the committed `meta/elxosc.lua`;
+repeatable `--declarations` composes extension JSON descriptors, checking names,
+named type intersections and same-name conflicts before writing `--output`.
+Generated metadata is editor input only. Setup and a typed payload example are
+documented in [meta/README.md](../meta/README.md).
+
 ## ASS measurement
 
 The general host utility accepts already encoded ASS without report metadata:

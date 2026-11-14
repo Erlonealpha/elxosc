@@ -1,6 +1,9 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local align_mod = require 'src.render.align'
@@ -64,7 +67,7 @@ local function Center(child, options)
     })
 end
 
----@class elxosc.mod.src.widgets.align
+---@class mod.src.widgets.align
 ---@field Center fun(child: Widget?, options?: _CenterOptions): Align
 local M = { Align = Align, Center = Center }
 

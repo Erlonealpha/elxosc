@@ -1,5 +1,6 @@
 -- Standalone controls extracted from the player, without a player/host scope.
 ---@namespace test.standardcontrols
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil
 
 local F = require 'framework'

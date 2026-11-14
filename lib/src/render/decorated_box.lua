@@ -4,6 +4,9 @@
 -- Single-child box that paints a background/border behind its child
 -- (Flutter's `RenderDecoratedBox`, with a small `Decoration` value).
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local paint_mod = require 'src.painting.paint'
@@ -25,7 +28,7 @@ local function validate_blur(value)
     return value
 end
 
----@class elxosc.src.render.decorated_box
+---@class mod.src.render.decorated_box
 local M = {}
 
 ---@class _DecorationOptions

@@ -1,5 +1,6 @@
 -- Provider and host-independent player context values/stores.
 ---@namespace test.player_context
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused, call-non-callable
 
 local F = require('framework')
@@ -365,7 +366,7 @@ end)
 
 F.test('PlayerSnapshot rejects invalid data at its boundary', function()
     F.raises(function()
-        PlayerSnapshot('not a table' --[[@as elxosc.player._PlayerSnapshotOptions]])
+        PlayerSnapshot('not a table' --[[@as player._PlayerSnapshotOptions]])
     end, 'TypeError', 'non-table snapshot')
     F.raises(function()
         PlayerSnapshot({ value = math.huge })
@@ -478,10 +479,10 @@ end)
 
 F.test('PlayerStore rejects invalid non-nil initial values', function()
     F.raises(function()
-        PlayerStore(false --[[@as elxosc.player.PlayerSnapshot]])
+        PlayerStore(false --[[@as player.PlayerSnapshot]])
     end, 'TypeError', 'boolean initial snapshot')
     F.raises(function()
-        PlayerStore(0 --[[@as elxosc.player.PlayerSnapshot]])
+        PlayerStore(0 --[[@as player.PlayerSnapshot]])
     end, 'TypeError', 'number initial snapshot')
 end)
 

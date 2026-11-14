@@ -1,5 +1,6 @@
 -- Flutter runtime foundations: owners, build scopes, paint context and keys.
 
+---@using elxosc
 ---@diagnostic disable: undefined-field, inject-field, need-check-nil, preferred-local-alias, unused, param-type-mismatch, missing-parameter, missing-fields
 
 local F = require 'framework'

@@ -6,6 +6,9 @@
 -- A style carries only intent -- size, colour, weight, alignment, wrapping.
 -- It never encodes a font file or an ASS override tag; backends translate it.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 local geometry = require 'src.foundation.geometry'
@@ -14,7 +17,7 @@ local Color = color_mod.Color
 local Offset = geometry.Offset
 local raise = std.raise
 
----@class elxosc.src.text.text_style
+---@class mod.src.text.text_style
 local M = {}
 
 ---@alias TextAlign

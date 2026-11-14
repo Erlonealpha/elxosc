@@ -8,6 +8,10 @@
 -- tree is mounted.  SlotWrap must therefore never become part of the mounted
 -- runtime tree in the production Define path.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'define.src.builder'
@@ -17,12 +21,12 @@ local Widget = widget_mod.Widget
 local StatelessWidget = widget_mod.StatelessWidget
 local raise = std.raise
 
----@class elxosc.mod.define.src.slot
+---@class mod.define.src.slot
 local M = {}
 
----@alias elxosc.define.SlotOperation 'replace'|'set'|'append'
+---@alias define.SlotOperation 'replace'|'set'|'append'
 
----@alias elxosc.define.SlotPosition 'first'|'last'|table<string, string>
+---@alias define.SlotPosition 'first'|'last'|table<string, string>
 
 local function copy_value(value)
     if type(value) ~= 'table' or std.kindof(value) ~= nil then
@@ -39,29 +43,29 @@ local function is_operation(value)
     return value == 'replace' or value == 'set' or value == 'append'
 end
 
----@class elxosc.define.SlotSpecOptions
+---@class define.SlotSpecOptions
 ---@field id string
----@field allow elxosc.define.SlotOperation[]|table<elxosc.define.SlotOperation, boolean>?
----@field default_op elxosc.define.SlotOperation?
+---@field allow SlotOperation[]|table<SlotOperation, boolean>?
+---@field default_op SlotOperation?
 ---@field default_opts table<string, any>?
 ---@field default_value Widget|Widget[]?
----@field builder? elxosc.define.SlotBuilder
+---@field builder? SlotBuilder
 ---@field append_limit integer?
----@field identity? fun(opts: table<string, any>, contribution: elxosc.define.Contribution): string?
----@field validate? fun(value: Widget, opts: table<string, any>, contribution: elxosc.define.Contribution): boolean|string
+---@field identity? fun(opts: table<string, any>, contribution: Contribution): string?
+---@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
 
----@class elxosc.define.SlotSpec : std.object
+---@class define.SlotSpec : std.object
 ---@field id string
----@field allow table<elxosc.define.SlotOperation, true>
----@field default_op elxosc.define.SlotOperation?
+---@field allow table<SlotOperation, true>
+---@field default_op SlotOperation?
 ---@field default_opts table<string, any>
 ---@field default_value Widget|Widget[]?
----@field builder elxosc.define.SlotBuilder
+---@field builder SlotBuilder
 ---@field append_limit integer?
----@field identity fun(opts: table<string, any>, contribution: elxosc.define.Contribution): string?
----@field validate? fun(value: Widget, opts: table<string, any>, contribution: elxosc.define.Contribution): boolean|string
----@overload fun(options: elxosc.define.SlotSpecOptions): self
-local SlotSpec = std.class.new('SlotSpec' --[[@as 'elxosc.define.SlotSpec']])
+---@field identity fun(opts: table<string, any>, contribution: Contribution): string?
+---@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
+---@overload fun(options: SlotSpecOptions): self
+local SlotSpec = std.class.new('SlotSpec')
 
 local function copy_table(source)
     local result = {}
@@ -150,7 +154,7 @@ function SlotSpec:__init(options)
     self.validate = options.validate
 end
 
----@param operation elxosc.define.SlotOperation
+---@param operation SlotOperation
 ---@return boolean
 function SlotSpec:allows(operation)
     return self.allow[operation] == true
@@ -164,11 +168,11 @@ function SlotSpec:build(value, opts)
         string.format("SlotSpec '%s' builder", self.id))
 end
 
----@class elxosc.define.SlotWrap : StatelessWidget
----@field spec elxosc.define.SlotSpec
+---@class define.SlotWrap : StatelessWidget
+---@field spec SlotSpec
 ---@field default_value Widget|Widget[]?
----@overload fun(spec: elxosc.define.SlotSpec, default_value: Widget|Widget[]?): self
-local SlotWrap = std.class.new('SlotWrap' --[[@as 'elxosc.define.SlotWrap']], StatelessWidget)
+---@overload fun(spec: SlotSpec, default_value: Widget|Widget[]?): self
+local SlotWrap = std.class.new('SlotWrap', StatelessWidget)
 
 function SlotWrap:__init(spec, default_value)
     if not std.isinstance(spec, SlotSpec) then
@@ -204,16 +208,16 @@ function SlotWrap:build()
     return self.spec:build(self.default_value)
 end
 
----@class elxosc.define.Contribution : std.object
+---@class define.Contribution : std.object
 ---@field slot_id string
 ---@field widget Widget
----@field op elxosc.define.SlotOperation?
+---@field op SlotOperation?
 ---@field opts table<string, any>
 ---@field scope_id string
 ---@field sequence integer
 ---@field scope_sequence integer
----@overload fun(slot_id: string, widget: Widget, op: elxosc.define.SlotOperation?, opts: table<string, any>?, scope_id: string, sequence: integer, scope_sequence: integer): self
-local Contribution = std.class.new('Contribution' --[[@as 'elxosc.define.Contribution']])
+---@overload fun(slot_id: string, widget: Widget, op: SlotOperation?, opts: table<string, any>?, scope_id: string, sequence: integer, scope_sequence: integer): self
+local Contribution = std.class.new('Contribution')
 
 function Contribution:__init(slot_id, widget, op, opts, scope_id, sequence, scope_sequence)
     if type(slot_id) ~= 'string' or slot_id == '' then
@@ -234,14 +238,14 @@ function Contribution:__init(slot_id, widget, op, opts, scope_id, sequence, scop
     self.scope_sequence = scope_sequence
 end
 
----@class elxosc.define.ContributionRegistry : std.object
----@field _entries elxosc.define.Contribution[]
+---@class define.ContributionRegistry : std.object
+---@field _entries Contribution[]
 ---@field _scope_sequences table<string, integer>
 ---@field _next_sequence integer
 ---@field _sealed boolean
----@field _snapshot elxosc.define.Contribution[]?
+---@field _snapshot Contribution[]?
 ---@overload fun(): self
-local ContributionRegistry = std.class.new('ContributionRegistry' --[[@as 'elxosc.define.ContributionRegistry']])
+local ContributionRegistry = std.class.new('ContributionRegistry')
 
 function ContributionRegistry:__init()
     self._entries = {}
@@ -251,7 +255,7 @@ function ContributionRegistry:__init()
     self._snapshot = nil
 end
 
----@return elxosc.define.ContributionRegistry
+---@return ContributionRegistry
 function ContributionRegistry:fork()
     local child = ContributionRegistry()
     child._next_sequence = self._next_sequence
@@ -271,7 +275,7 @@ function ContributionRegistry:fork()
     return child
 end
 
----@param transaction elxosc.define.ContributionRegistry
+---@param transaction ContributionRegistry
 function ContributionRegistry:commit_from(transaction)
     if self._sealed then
         raise(std.RuntimeError('contributions are sealed'))
@@ -316,7 +320,7 @@ end
 ---@param widget Widget
 ---@param opts table<string, any>?
 ---@param scope_id string?
----@return elxosc.define.Contribution
+---@return Contribution
 function ContributionRegistry:add(slot_id, widget, opts, scope_id)
     if self._sealed then
         raise(std.RuntimeError('contributions are sealed'))
@@ -330,7 +334,7 @@ function ContributionRegistry:add(slot_id, widget, opts, scope_id)
     if opts ~= nil and type(opts) ~= 'table' then
         raise(std.TypeError('bind opts must be a table'))
     end
-    ---@type elxosc.define.SlotOperation?
+    ---@type SlotOperation?
     local operation = opts and opts.op or nil
     if operation ~= nil and operation ~= 'replace' and operation ~= 'set'
         and operation ~= 'append' then
@@ -352,7 +356,7 @@ function ContributionRegistry:add(slot_id, widget, opts, scope_id)
     return contribution
 end
 
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function ContributionRegistry:snapshot()
     local source = self._snapshot or self._entries
     local result = {}
@@ -369,7 +373,7 @@ function ContributionRegistry:snapshot()
     return result
 end
 
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function ContributionRegistry:seal()
     if not self._sealed then
         self._sealed = true
@@ -383,13 +387,13 @@ function ContributionRegistry:is_sealed()
     return self._sealed
 end
 
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function ContributionRegistry:entries()
     return self:snapshot()
 end
 
 ---@param slot_id string
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function ContributionRegistry:get(slot_id)
     local result = {}
     for _, contribution in ipairs(self._entries) do
@@ -400,7 +404,7 @@ function ContributionRegistry:get(slot_id)
     return result
 end
 
----@return elxosc.define.Contribution[]
+---@return Contribution[]
 function ContributionRegistry:entries_for_scope(scope_id)
     local result = {}
     for _, contribution in ipairs(self._entries) do
@@ -411,13 +415,13 @@ function ContributionRegistry:entries_for_scope(scope_id)
     return result
 end
 
----@class elxosc.define.CompositionAssembler : std.object
----@field contributions elxosc.define.Contribution[]
+---@class define.CompositionAssembler : std.object
+---@field contributions Contribution[]
 ---@field diagnostics table[]
 ---@field on_warning fun(diagnostic: table)?
----@field _used table<elxosc.define.Contribution, true>
----@overload fun(contributions: elxosc.define.Contribution[]?, options: { on_warning: fun(diagnostic: table)? }?): self
-local CompositionAssembler = std.class.new('CompositionAssembler' --[[@as 'elxosc.define.CompositionAssembler']])
+---@field _used table<Contribution, true>
+---@overload fun(contributions: Contribution[]?, options: { on_warning: fun(diagnostic: table)? }?): self
+local CompositionAssembler = std.class.new('CompositionAssembler')
 
 local function widget_copy(widget)
     local clone = widget.__class:__new()
@@ -675,11 +679,11 @@ function CompositionAssembler:_resolve(spec, default_value)
         end
     end
 
-    ---@type { widget: Widget, opts: table<string, any>, operation: elxosc.define.SlotOperation, contribution: elxosc.define.Contribution }[]
+    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
     local replacements = {}
-    ---@type { widget: Widget, opts: table<string, any>, operation: elxosc.define.SlotOperation, contribution: elxosc.define.Contribution }[]
+    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
     local sets = {}
-    ---@type { widget: Widget, opts: table<string, any>, operation: elxosc.define.SlotOperation, contribution: elxosc.define.Contribution }[]
+    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
     local appends = {}
     for _, entry in ipairs(entries) do
         if entry.operation == 'replace' then

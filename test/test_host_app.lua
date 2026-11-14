@@ -1,5 +1,6 @@
 -- The mpv app wiring: frame clock, overlay presenter, widget binding, input.
 ---@namespace test.hostApp
+---@using elxosc
 
 -- `host/*` requires `mp`; the suite installs the stub from `test/mp_stub.lua`.
 -- See the note in test_widget.lua: the `std.class` / optional-ownership

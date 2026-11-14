@@ -3,6 +3,9 @@
 
 -- Text widget.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local text_style = require 'src.text.text_style'
 local text_paint_mod = require 'src.painting.text_paint'
@@ -16,7 +19,7 @@ local DefaultTextStyle = ambient_mod.DefaultTextStyle
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 
----@class elxosc.mod.src.widgets.text
+---@class mod.src.widgets.text
 local M = {}
 
 ---@class _TextOptions

@@ -9,29 +9,38 @@
 --
 -- The default construction surface is collected by lib/material.lua.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local state_mod = require 'src.widgets.state'
 
----@class elxosc.mod.define.src.dsl
+---@class mod.define.src.dsl
 local M = {}
 
---- A `StatefulWidget` subclass a script can complete with `create_state`.
----@generic T
----@param name string
----@param parent std.class? defaults to `StatefulWidget`
----@return T the new class (EmmyLua cannot model a callable class, so `T` is open)
+--- A StatefulWidget subclass a script can complete with create_state.
+---@generic T: StatefulWidget
+---@[constructor('__init', 'object')]
+---@param name `T`
+---@param parent StatefulWidget? defaults to StatefulWidget
+---@return T
 function M.new_widget(name, parent)
-    return std.class.new(name, parent or widget_mod.StatefulWidget)
+    -- The name template belongs to this factory; std receives the runtime string.
+    local runtime_name = name --[[@as string]]
+    return std.class.new(runtime_name, parent or widget_mod.StatefulWidget) --[[@as T]]
 end
 
---- A `State` subclass a script can complete with `__init` / `build`.
----@generic T
----@param name string
----@param parent std.class? defaults to `State`
----@return T the new class (see `new_widget`)
+--- A State subclass a script can complete with __init / build.
+---@generic T: State
+---@[constructor('__init', 'object')]
+---@param name `T`
+---@param parent State? defaults to State
+---@return T
 function M.new_state(name, parent)
-    return std.class.new(name, parent or state_mod.State)
+    local runtime_name = name --[[@as string]]
+    return std.class.new(runtime_name, parent or state_mod.State) --[[@as T]]
 end
 
 return M

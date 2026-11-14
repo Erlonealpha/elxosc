@@ -1,5 +1,6 @@
 -- Widget layer: build -> element -> render object, element reuse and rebuilds.
 ---@namespace test.widget
+---@using elxosc
 
 -- LuaLS cannot model `std.class` field injection, the optional
 -- `RenderOwner.root`, or anonymous test stubs, so the diagnostics that stem

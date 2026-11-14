@@ -53,5 +53,15 @@ The old widget/widget.widgets/basic/layout collectors have been removed.
 EmmyLua consumers add `lib` and the repository
 root to their workspace packages. Tests also supply the independent sibling elxlib.
 
+Module types use `elxosc.mod.<canonical require>`; framework instances/options use
+`elxosc.*`, with styled controls under `elxosc.material.*`. Runtime require names
+and class name strings retain their existing spelling.
+Files use `@namespace elxosc` for declarations and `@using elxosc`
+for short type references; styled controls also use `@using elxosc.material`.
+The namespace resolves class-name templates without inline name casts.
+Source init files return the layer collector without declaring another module type. Extension consumers
+use the development-only [meta entry](../meta/README.md) for scoped imports and
+default construction names.
+
 See [architecture](../dev/design/ARCHITECTURE.md),
 [widgets](../dev/design/WIDGETS.md) and [host](../dev/design/HOST.md).

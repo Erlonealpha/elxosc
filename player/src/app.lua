@@ -4,6 +4,10 @@
 -- Default player shell widgets.  The generic WidgetsApp ambient wrapper stays
 -- in widget/app.lua; this module owns Main, AutoHide and WindowLayer composition.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local widget_mod = require 'src.widgets.framework'
@@ -40,10 +44,10 @@ local SizedBox = layout_widgets.SizedBox
 local LayoutScaleBox = layout_widgets.LayoutScaleBox
 
 local raise = std.raise
----@class elxosc.mod.player.src.app
+---@class mod.player.src.app
 local M = {}
 
----@alias elxosc.player.WindowTopBarMode
+---@alias player.WindowTopBarMode
 ---| 'auto'
 ---| 'yes'
 ---| 'no'
@@ -54,30 +58,30 @@ end
 
 --== Main ===================================================================
 
----@class elxosc.player._MainOptions
+---@class player._MainOptions
 ---@field title string?
 ---@field title_bar Widget?
 ---@field window_controls Widget?
----@field window_top_bar elxosc.player.WindowTopBarMode?
----@field layout_option elxosc.player.PlayerLayoutOption?
+---@field window_top_bar WindowTopBarMode?
+---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
 ---@field left_controls Widget?
 ---@field right_controls Widget?
 ---@field scale number?
 ---@field key any?
 
----@class elxosc.player.Main : StatelessWidget
+---@class player.Main : StatelessWidget
 ---@field title string
 ---@field title_bar Widget?
 ---@field window_controls Widget?
----@field window_top_bar elxosc.player.WindowTopBarMode?
----@field layout_option elxosc.player.PlayerLayoutOption?
+---@field window_top_bar WindowTopBarMode?
+---@field layout_option PlayerLayoutOption?
 ---@field bottom Widget?
 ---@field left_controls Widget?
 ---@field right_controls Widget?
 ---@field scale number?
----@overload fun(options?: elxosc.player._MainOptions): self
-local Main = std.class.new('Main' --[[@as 'elxosc.player.Main']], StatelessWidget)
+---@overload fun(options?: _MainOptions): self
+local Main = std.class.new('Main', StatelessWidget)
 
 function Main:__init(options)
     options = options or {}
@@ -137,8 +141,8 @@ local function top_hover_enabled(snapshot)
     return true
 end
 
----@param snapshot elxosc.player.PlayerSnapshot?
----@param mode elxosc.player.WindowTopBarMode
+---@param snapshot PlayerSnapshot?
+---@param mode WindowTopBarMode
 ---@return boolean
 local function top_bar_visible(snapshot, mode)
     if mode == 'yes' then
@@ -183,14 +187,14 @@ end
 
 --== WindowLayer ============================================================
 
----@class elxosc.player._WindowLayerOptions
+---@class player._WindowLayerOptions
 ---@field child Widget?
 ---@field key any?
 
----@class elxosc.player.WindowLayer : StatelessWidget
+---@class player.WindowLayer : StatelessWidget
 ---@field child Widget?
----@overload fun(options?: elxosc.player._WindowLayerOptions): self
-local WindowLayer = std.class.new('WindowLayer' --[[@as 'elxosc.player.WindowLayer']], StatelessWidget)
+---@overload fun(options?: _WindowLayerOptions): self
+local WindowLayer = std.class.new('WindowLayer', StatelessWidget)
 
 function WindowLayer:__init(options)
     options = options or {}
@@ -208,7 +212,7 @@ end
 
 --== DefaultApp =============================================================
 
----@class elxosc.player._DefaultAppOptions
+---@class player._DefaultAppOptions
 ---@field main Widget?
 ---@field extension Widget?
 ---@field window_layer Widget?
@@ -222,10 +226,10 @@ end
 ---@field auto_hide_top_hover boolean?
 ---@field auto_hide_top_hover_enabled boolean?
 ---@field auto_hide_top_hover_zone number?
----@field auto_hide_controller elxosc.player.AutoHideController?
+---@field auto_hide_controller AutoHideController?
 ---@field key any?
 
----@class elxosc.player.DefaultApp : StatefulWidget
+---@class player.DefaultApp : StatefulWidget
 ---@field main Widget?
 ---@field extension Widget?
 ---@field window_layer Widget?
@@ -239,9 +243,9 @@ end
 ---@field auto_hide_top_hover boolean
 ---@field auto_hide_top_hover_enabled boolean?
 ---@field auto_hide_top_hover_zone number
----@field auto_hide_controller elxosc.player.AutoHideController
----@overload fun(options?: elxosc.player._DefaultAppOptions): self
-local DefaultApp = std.class.new('DefaultApp' --[[@as 'elxosc.player.DefaultApp']], StatefulWidget)
+---@field auto_hide_controller AutoHideController
+---@overload fun(options?: _DefaultAppOptions): self
+local DefaultApp = std.class.new('DefaultApp', StatefulWidget)
 
 function DefaultApp:__init(options)
     options = options or {}
@@ -288,13 +292,13 @@ function DefaultApp:child_widgets()
     return children
 end
 
----@class elxosc.player.DefaultAppState : State
----@field main_controller elxosc.player.AutoHideController
+---@class player.DefaultAppState : State
+---@field main_controller AutoHideController
 ---@field main_entry OverlayEntry
 ---@field extension_entry OverlayEntry
 ---@field window_entry OverlayEntry
 ---@overload fun(): self
-local DefaultAppState = std.class.new('DefaultAppState' --[[@as 'elxosc.player.DefaultAppState']], State)
+local DefaultAppState = std.class.new('DefaultAppState', State)
 
 function DefaultAppState:__init()
     std.super(DefaultAppState, self, State).__init(self)
@@ -305,19 +309,19 @@ function DefaultAppState:__init()
 end
 
 function DefaultAppState:init_state()
-    local app = self.widget --[[@as elxosc.player.DefaultApp]]
+    local app = self.widget --[[@as DefaultApp]]
     self.main_controller = app.auto_hide_controller
     self.extension_entry = OverlayEntry({
         key = 'default-app-extension',
         builder = function()
-            local current_app = self.widget --[[@as elxosc.player.DefaultApp]]
+            local current_app = self.widget --[[@as DefaultApp]]
             return current_app.extension
         end,
     })
     self.main_entry = OverlayEntry({
         key = 'default-app-main',
         builder = function(context)
-            local current_app = self.widget --[[@as elxosc.player.DefaultApp]]
+            local current_app = self.widget --[[@as DefaultApp]]
             local main = current_app.main
                 or Main({ title = current_app.title, scale = current_app.scale })
             local player = PlayerProvider.maybe_of(context)
@@ -351,14 +355,14 @@ function DefaultAppState:init_state()
     self.window_entry = OverlayEntry({
         key = 'default-app-window-layer',
         builder = function()
-            local current_app = self.widget --[[@as elxosc.player.DefaultApp]]
+            local current_app = self.widget --[[@as DefaultApp]]
             return current_app.window_layer or WindowLayer()
         end,
     })
 end
 
 function DefaultAppState:did_update_widget(old_widget)
-    local app = self.widget --[[@as elxosc.player.DefaultApp]]
+    local app = self.widget --[[@as DefaultApp]]
     self.main_controller = app.auto_hide_controller
     if self.main_entry then
         self.main_entry:mark_needs_build()

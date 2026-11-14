@@ -1,4 +1,8 @@
 -- Static construction and protocol members; scoped APIs belong to DefineSession.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.define
+
 local exports = require('export').new()
 
 local export = exports.export
@@ -11,13 +15,13 @@ export('define', require 'define.src.modules', true).show('ModuleRegistry')
 export('define', require 'define.src.builder', true).show('call_slot')
 export('define', require 'define.src.sandbox', true)
 
----@class elxosc.mod.define :
---- elxosc.mod.define.src.slot,
---- elxosc.mod.define.src.bind,
---- elxosc.mod.define.src.dsl,
---- elxosc.mod.define.src.sandbox
----@field DefineSession elxosc.define.DefineSession
----@field ModuleRegistry elxosc.define.ModuleRegistry
----@field call_slot fun(callback: elxosc.define.SlotBuilder, value: Widget|Widget[]|nil, opts: table<string, any>?, name: string): Widget?
+---@class mod.define :
+--- mod.define.src.slot,
+--- mod.define.src.bind,
+--- mod.define.src.dsl,
+--- mod.define.src.sandbox
+---@field DefineSession DefineSession
+---@field ModuleRegistry ModuleRegistry
+---@field call_slot fun(callback: SlotBuilder, value: Widget|Widget[]|nil, opts: table<string, any>?, name: string): Widget?
 local M = exports.get('define')
 return M

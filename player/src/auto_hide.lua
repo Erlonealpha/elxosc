@@ -1,4 +1,8 @@
 -- Player inactivity policy; framework visibility and animation stay reusable.
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local State = require('src.widgets.state').State
@@ -6,15 +10,15 @@ local StatefulWidget = widget_mod.StatefulWidget
 local RenderOpacity = require('src.render.opacity').RenderOpacity
 local Opacity = require('src.widgets.visibility').Opacity
 
----@class elxosc.mod.player.src.auto_hide
+---@class mod.player.src.auto_hide
 local M = {}
 
 --== AutoHide ===============================================================
 
----@class elxosc.player.AutoHideController : std.object
+---@class player.AutoHideController : std.object
 ---@field visible boolean
 ---@overload fun(visible: boolean?): self
-local AutoHideController = std.class.new('AutoHideController' --[[@as 'elxosc.player.AutoHideController']])
+local AutoHideController = std.class.new('AutoHideController')
 
 function AutoHideController:__init(visible)
     if visible ~= nil and type(visible) ~= 'boolean' then
@@ -82,9 +86,9 @@ function AutoHideController:activity(x, y, viewport)
     end
 end
 
----@class elxosc.player._AutoHideOptions
+---@class player._AutoHideOptions
 ---@field child Widget?
----@field controller elxosc.player.AutoHideController?
+---@field controller AutoHideController?
 ---@field timeout number? seconds of inactivity before hiding; zero disables timeout
 ---@field enabled boolean?
 ---@field maintain_state boolean?
@@ -96,9 +100,9 @@ end
 ---@field top_hover_zone number? top hover zone height in logical pixels
 ---@field key any?
 
----@class elxosc.player.AutoHide : StatefulWidget
+---@class player.AutoHide : StatefulWidget
 ---@field child Widget?
----@field controller elxosc.player.AutoHideController
+---@field controller AutoHideController
 ---@field timeout number
 ---@field enabled boolean
 ---@field maintain_state boolean
@@ -108,8 +112,8 @@ end
 ---@field top_hover boolean
 ---@field top_hover_enabled boolean
 ---@field top_hover_zone number
----@overload fun(options?: elxosc.player._AutoHideOptions): self
-local AutoHide = std.class.new('AutoHide' --[[@as 'elxosc.player.AutoHide']], StatefulWidget)
+---@overload fun(options?: _AutoHideOptions): self
+local AutoHide = std.class.new('AutoHide', StatefulWidget)
 
 function AutoHide:__init(options)
     options = options or {}
@@ -150,7 +154,7 @@ function AutoHide:__init(options)
     end
 end
 
----@class elxosc.player.AutoHideState : State
+---@class player.AutoHideState : State
 ---@field elapsed number
 ---@field opacity number
 ---@field hidden boolean
@@ -159,7 +163,7 @@ end
 ---@field _fade_controller AnimationController?
 ---@field _fade_listener fun(controller: AnimationController)?
 ---@overload fun(): self
-local AutoHideState = std.class.new('AutoHideState' --[[@as 'elxosc.player.AutoHideState']], State)
+local AutoHideState = std.class.new('AutoHideState', State)
 
 function AutoHideState:__init()
     std.super(AutoHideState, self, State).__init(self)
@@ -236,14 +240,14 @@ function AutoHideState:_fade_changed(controller)
         render_object:set_opacity(self.opacity)
     end
     if controller.status == 'dismissed' and self.hidden == false
-        and not (self.widget --[[@as elxosc.player.AutoHide]]).controller.visible then
+        and not (self.widget --[[@as AutoHide]]).controller.visible then
         self.hidden = true
         self:_apply_render_state()
         local owner = self.context and self.context.owner
         if owner and owner.render_owner then
             owner.render_owner:cancel_pointer()
         end
-        local widget = self.widget --[[@as elxosc.player.AutoHide]]
+        local widget = self.widget --[[@as AutoHide]]
         if not widget.maintain_state and self:is_mounted() then
             self:set_state()
         end
@@ -268,7 +272,7 @@ function AutoHideState:_dispose_fade_controller()
 end
 
 function AutoHideState:_ensure_fade_controller()
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     if widget.fade_duration <= 0 then
         self:_dispose_fade_controller()
         return nil
@@ -304,14 +308,14 @@ function AutoHideState:_finish_hidden()
     if owner and owner.render_owner then
         owner.render_owner:cancel_pointer()
     end
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     if not widget.maintain_state and self:is_mounted() then
         self:set_state()
     end
 end
 
 function AutoHideState:_set_visibility(visible)
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     self:_notify_child_visibility()
     if visible then
         self.hidden = false
@@ -359,7 +363,7 @@ end
 
 function AutoHideState:_controller_event(event, visible, x, y, viewport)
     if event == 'activity' then
-        local widget = self.widget --[[@as elxosc.player.AutoHide]]
+        local widget = self.widget --[[@as AutoHide]]
         if self:_child_requests_visibility() then
             self:_restart_timer()
             if not widget.controller.visible then
@@ -404,7 +408,7 @@ function AutoHideState:_controller_event(event, visible, x, y, viewport)
 end
 
 function AutoHideState:init_state()
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     self.hidden = not widget.controller.visible
     self.opacity = self.hidden and 0 or 1
     self._remove_listener = widget.controller:add_listener(function(event, visible, x, y, viewport)
@@ -415,7 +419,7 @@ function AutoHideState:init_state()
     local owner = context and context.owner
     if owner and owner.scheduler and widget.enabled and widget.timeout > 0 then
         self._ticker = self:create_ticker(function(dt)
-            local current_widget = self.widget --[[@as elxosc.player.AutoHide]]
+            local current_widget = self.widget --[[@as AutoHide]]
             local ticker = self._ticker
             if ticker == nil then
                 return
@@ -439,8 +443,8 @@ function AutoHideState:init_state()
 end
 
 function AutoHideState:did_update_widget(old_widget)
-    local old = old_widget --[[@as elxosc.player.AutoHide]]
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local old = old_widget --[[@as AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     if old.controller ~= widget.controller then
         if self._remove_listener then
             self._remove_listener()
@@ -474,7 +478,7 @@ function AutoHideState:dispose()
 end
 
 function AutoHideState:build()
-    local widget = self.widget --[[@as elxosc.player.AutoHide]]
+    local widget = self.widget --[[@as AutoHide]]
     if self.hidden and not widget.maintain_state then
         return nil
     end

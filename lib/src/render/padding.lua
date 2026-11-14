@@ -3,6 +3,9 @@
 
 -- Single-child box that insets its child (Flutter's `RenderPadding`).
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local render_object = require 'src.render.render_object'
@@ -11,7 +14,7 @@ local Offset = geometry.Offset
 local Size = geometry.Size
 local RenderObject = render_object.RenderObject
 
----@class elxosc.src.render.padding
+---@class mod.src.render.padding
 local M = {}
 
 ---@class RenderPadding : RenderObject

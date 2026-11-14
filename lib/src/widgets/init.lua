@@ -1,2 +1,2 @@
--- Source-root alias for the public collector.
+-- Single-direction alias to the public layer collector.
 return require 'widgets'

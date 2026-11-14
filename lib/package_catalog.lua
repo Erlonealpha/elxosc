@@ -1,9 +1,12 @@
 -- Complete static package inventory; no filesystem scan or incidental require order.
+---@namespace elxosc
+---@using elxosc
+
 local exports = require('export').new()
 
 local export = exports.export
 
----@class elxosc.mod.package_catalog
+---@class mod.package_catalog
 local M = {}
 
 export('foundation', require 'foundation')
@@ -116,7 +119,7 @@ export('material.slider', require 'src.material.slider')
 export('material.text_button', require 'src.material.text_button')
 export('material.theme', require 'src.material.theme')
 
----@return elxosc.export.Package<elxosc.export.Exports>[]
+---@return export.Package<export.Exports>[]
 function M.collect()
     return exports.collect()
 end

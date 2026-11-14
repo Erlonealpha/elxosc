@@ -12,6 +12,9 @@
 -- (`Element:first_render_object`), which lets composite widgets (stateless /
 -- stateful) sit between two render objects without extra bookkeeping.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'src.widgets.builder'
@@ -31,7 +34,7 @@ local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 local GlobalKey = key_mod.GlobalKey
 local LocalKey = foundation_key.LocalKey
 
----@class elxosc.mod.src.widgets.element
+---@class mod.src.widgets.element
 local M = {}
 
 --== base =================================================================

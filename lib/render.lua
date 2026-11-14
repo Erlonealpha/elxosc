@@ -2,6 +2,9 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Render primitives; colliding helpers receive explicit public aliases.
+---@namespace elxosc
+---@using elxosc
+
 local exports = require 'export'.new()
 
 local export = exports.export
@@ -38,30 +41,30 @@ export('render', {
     normalize_progress_indicator = require 'src.render.progress_indicator'.normalize,
 }, true)
 
----@class elxosc.render :
---- elxosc.src.render.align,
---- elxosc.src.render.constrained_box,
---- elxosc.src.render.custom_paint,
---- elxosc.src.render.decorated_box,
---- elxosc.src.render.fitted_box,
---- elxosc.src.render.flex,
---- elxosc.src.render.gesture,
---- elxosc.src.render.layout_scale_box,
---- elxosc.src.render.offset_box,
---- elxosc.src.render.offstage,
---- elxosc.src.render.opacity,
---- elxosc.src.render.overflow_box,
---- elxosc.src.render.padding,
---- elxosc.src.render.painting_context,
---- elxosc.src.render.pipeline_owner,
---- elxosc.src.render.region_snapshot,
---- elxosc.src.render.render_object,
---- elxosc.src.render.render_owner,
---- elxosc.src.render.renderer_binding,
---- elxosc.src.render.sized_box,
---- elxosc.src.render.stack,
---- elxosc.src.render.text,
---- elxosc.src.render.transform_box
+---@class mod.render :
+--- mod.src.render.align,
+--- mod.src.render.constrained_box,
+--- mod.src.render.custom_paint,
+--- mod.src.render.decorated_box,
+--- mod.src.render.fitted_box,
+--- mod.src.render.flex,
+--- mod.src.render.gesture,
+--- mod.src.render.layout_scale_box,
+--- mod.src.render.offset_box,
+--- mod.src.render.offstage,
+--- mod.src.render.opacity,
+--- mod.src.render.overflow_box,
+--- mod.src.render.padding,
+--- mod.src.render.painting_context,
+--- mod.src.render.pipeline_owner,
+--- mod.src.render.region_snapshot,
+--- mod.src.render.render_object,
+--- mod.src.render.render_owner,
+--- mod.src.render.renderer_binding,
+--- mod.src.render.sized_box,
+--- mod.src.render.stack,
+--- mod.src.render.text,
+--- mod.src.render.transform_box
 ---@field RenderSlider RenderSlider
 ---@field RenderLinearProgressIndicator RenderLinearProgressIndicator
 ---@field normalize_slider fun(options: _RenderSliderOptions): _RenderSliderOptions

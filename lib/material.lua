@@ -2,6 +2,9 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- Styled construction surface, including every basic widget member.
+---@namespace elxosc
+---@using elxosc
+
 local exports = require('export').new()
 local geometry = require 'src.foundation.geometry'
 local color = require 'src.foundation.color'
@@ -26,7 +29,7 @@ export('material', require 'src.material.slider', true).show('Slider')
 export('material', require 'src.material.text_button', true)
 export('material', require 'src.material.theme', true)
 
----@class elxosc.material.ValueExports
+---@class material.ValueExports
 local values = {
     Offset = geometry.Offset,
     Point = geometry.Point,
@@ -42,14 +45,20 @@ local values = {
 }
 export('material', values, true)
 
----@class elxosc.mod.material : elxosc.mod.widgets, elxosc.material.ValueExports,
---- elxosc.mod.src.material.button, elxosc.mod.src.material.button_base,
---- elxosc.mod.src.material.button_style, elxosc.mod.src.material.elevated_button,
---- elxosc.mod.src.material.icon_button, elxosc.mod.src.material.icons,
---- elxosc.mod.src.material.outlined_button, elxosc.mod.src.material.text_button,
---- elxosc.mod.src.material.theme
----@field Slider Slider
----@field LinearProgressIndicator LinearProgressIndicator
+---@class mod.material :
+--- mod.widgets,
+--- material.ValueExports,
+--- mod.src.material.button,
+--- mod.src.material.button_base,
+--- mod.src.material.button_style,
+--- mod.src.material.elevated_button,
+--- mod.src.material.icon_button,
+--- mod.src.material.icons,
+--- mod.src.material.outlined_button,
+--- mod.src.material.text_button,
+--- mod.src.material.theme
+---@field Slider material.Slider
+---@field LinearProgressIndicator material.LinearProgressIndicator
 local M = exports.get('material')
 
 return M

@@ -1,6 +1,7 @@
 -- Foundation layer: geometry value types, colour, paint, path and the canvas
 -- contract. Pure Lua -- nothing here touches mpv.
 ---@namespace test.foundation
+---@using elxosc
 
 -- See the note in test_widget.lua: the `std.class` / optional-ownership
 -- diagnostics are disabled across the suite.generic-constraint-mismatch

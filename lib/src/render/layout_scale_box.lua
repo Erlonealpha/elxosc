@@ -5,6 +5,9 @@
 -- mapped through the inverse scale before the child is laid out; the scaled
 -- child size is then reported to the parent.
 
+---@namespace elxosc
+---@using elxosc
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
@@ -20,7 +23,7 @@ local RenderObject = render_object.RenderObject
 local raise = std.raise
 local huge = math.huge
 
----@class elxosc.src.render.layout_scale_box
+---@class mod.src.render.layout_scale_box
 local M = {}
 
 ---@param value number

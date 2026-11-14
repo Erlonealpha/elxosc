@@ -1,5 +1,9 @@
 -- Single-tree description preview, panel and keyboard lifecycle.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.player
+
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local text_style_mod = require 'src.text.text_style'
@@ -35,33 +39,33 @@ local ColorBlack = Color.rgba255(0, 0, 0, 255)
 local text_controls_mod = require 'player.src.text_controls'
 local PlayerHoverText = text_controls_mod.PlayerHoverText
 
----@class elxosc.mod.player.src.description
+---@class mod.player.src.description
 local M = {}
 
----@class elxosc.player._PlayerDescriptionLayerOptions
----@field theme elxosc.player.PlayerThemeData
+---@class player._PlayerDescriptionLayerOptions
+---@field theme PlayerThemeData
 ---@field text string
 ---@field preview string
 ---@field bounds Rect
 ---@field viewport_width number
 ---@field viewport_height number
----@field actions elxosc.player.HostActions
+---@field actions HostActions
 ---@field links string[]
 ---@field stats string
 ---@field key any?
 
----@class elxosc.player.PlayerDescriptionLayer : StatefulWidget
----@field theme elxosc.player.PlayerThemeData
+---@class player.PlayerDescriptionLayer : StatefulWidget
+---@field theme PlayerThemeData
 ---@field text string
 ---@field preview string
 ---@field bounds Rect
 ---@field viewport_width number
 ---@field viewport_height number
----@field actions elxosc.player.HostActions
+---@field actions HostActions
 ---@field links string[]
 ---@field stats string
----@overload fun(options: elxosc.player._PlayerDescriptionLayerOptions): self
-local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer' --[[@as 'elxosc.player.PlayerDescriptionLayer']], StatefulWidget)
+---@overload fun(options: _PlayerDescriptionLayerOptions): self
+local PlayerDescriptionLayer = std.class.new('PlayerDescriptionLayer', StatefulWidget)
 
 function PlayerDescriptionLayer:__init(options)
     options = options or {}
@@ -77,12 +81,12 @@ function PlayerDescriptionLayer:__init(options)
     self.stats = options.stats or ''
 end
 
----@class elxosc.player.PlayerDescriptionLayerState : State
+---@class player.PlayerDescriptionLayerState : State
 ---@field open boolean
 ---@field scroll number
 ---@field selected_link integer
 ---@overload fun(): self
-local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState' --[[@as 'elxosc.player.PlayerDescriptionLayerState']], State)
+local PlayerDescriptionLayerState = std.class.new('PlayerDescriptionLayerState', State)
 
 function PlayerDescriptionLayerState:init_state()
     self.open = false
@@ -91,7 +95,7 @@ function PlayerDescriptionLayerState:init_state()
 end
 
 function PlayerDescriptionLayerState:did_update_widget(old_widget)
-    local widget = self.widget --[[@as elxosc.player.PlayerDescriptionLayer]]
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
     if old_widget.text ~= widget.text then
         self.open = false
         self.scroll = 0
@@ -110,7 +114,7 @@ function PlayerDescriptionLayerState:handle_key(event)
     if event_type ~= 'down' and event_type ~= 'press' then
         return false
     end
-    local widget = self.widget --[[@as elxosc.player.PlayerDescriptionLayer]]
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
     if key == 'ESC' or key == 'ESCAPE' or key == 'escape' then
         self:set_state(function()
             self.open = false
@@ -163,7 +167,7 @@ function PlayerDescriptionLayerState:keep_auto_hide_visible()
 end
 
 function PlayerDescriptionLayerState:build()
-    local widget = self.widget --[[@as elxosc.player.PlayerDescriptionLayer]]
+    local widget = self.widget --[[@as PlayerDescriptionLayer]]
     local bounds = widget.bounds
     if not self.open then
         local alignment = bounds.left < widget.viewport_width / 2 and Offset(0, 0.5) or Offset(1, 0.5)

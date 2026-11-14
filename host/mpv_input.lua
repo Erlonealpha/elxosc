@@ -9,6 +9,10 @@
 --   * sections have mouse areas, so ordinary clicks still reach mpv's default
 --     bindings outside interactive render regions.
 
+---@namespace elxosc
+---@using elxosc
+---@using elxosc.host
+
 local mp = require 'mp'
 
 local std = require 'elxlibs.std'
@@ -41,7 +45,7 @@ local function pixel_ceil(value)
     return ceil(value) --[[@as integer]]
 end
 
----@class elxosc.host.mpv_input
+---@class mod.host.mpv_input
 local M = {}
 
 local INPUT_SECTION = 'elxosc-input'
@@ -50,7 +54,7 @@ local NAVIGATION_SECTION = 'elxosc-navigation'
 local BINDING_FLAGS = 'allow-hide-cursor'
 local owned_sections = {}
 
----@class MpInputOwner
+---@class host.MpInputOwner
 ---@field clear_hover fun(self: MpInputOwner)
 ---@field cancel_pointer fun(self: MpInputOwner)
 ---@field dispatch_pointer_result fun(self: MpInputOwner, event: PointerEvent): DispatchResult
@@ -58,7 +62,7 @@ local owned_sections = {}
 ---@field pointer_regions fun(self: MpInputOwner): PointerRegion[]
 ---@field region_snapshot (fun(self: MpInputOwner): RegionSnapshot)?
 
----@class MpInputOptions
+---@class host.MpInputOptions
 ---@field owner MpInputOwner receives structured pointer events
 ---@field get_viewport fun(): Rect returns the current root-space viewport
 ---@field notify_activity fun(x: number?, y: number?, viewport: Rect?) informs application visibility policies
@@ -66,7 +70,7 @@ local owned_sections = {}
 ---@field get_can_pop (fun(): boolean)? whether an ESC action is currently claimed
 ---@field handle_key (fun(event: KeyEvent): boolean)? dispatches a structured key event
 
----@class MpInput : std.object
+---@class host.MpInput : std.object
 ---@field owner MpInputOwner
 ---@field get_viewport fun(): Rect
 ---@field notify_activity fun(x: number?, y: number?, viewport: Rect?)
