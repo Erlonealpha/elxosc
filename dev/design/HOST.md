@@ -2,6 +2,35 @@
 
 本文负责 mpv 边界、帧循环、ASS presenter、输入接线以及初始化期 Define。
 
+## 已确认的接线重组（2026-11-14，代码待迁移）
+
+框架/player/Define 的目标所有权见 [架构](ARCHITECTURE.md)。当前 extension 将更名 define，
+host.mpv_app 保留通用 frame/tree/input/presenter/display lifecycle；播放器默认观察、
+Theme/PlayerScope/HostActions 和 activity 路由迁到明确的 host player assembly。
+通用 App 不默认订阅媒体属性或识别播放器 State methods。每个 context/adapter/timer
+只有一个 disposer owner，正常/异常 shutdown 都清理；Main 的 hover/捕获和 resize 行为保持。
+
+框架 export 产生静态 `{ name, exports }` descriptor，host 注册完整 framework catalog，
+再加入 player/Define 包和 scoped mp/player facade。所有框架实际 runtime source/导出/
+整合包可导入；show/hide 只整理单条来源，不充当权限或隐藏框架的手段。多级名字精确
+登记，不按任意对象字段/文件路径查找。source alias 的 slash/init 解析仍归 module_loader。
+
+默认 builtins 从所属 collector 手动选择，保持当前 material 表的 115 个公开字段。
+Material 将只拥有框架样式控件和基础 widgets 的重导出；player/Slot/DSL 字段由其 owning
+包提供。新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
+DefineSession 仍生成和恢复 scope-aware import/import_as/require/mod/bind；print 由 host 提供。
+导出 API 的数组原 key/false/同名冲突与发布规则见 ARCHITECTURE，仍保持 class identity。
+
+meta/ 是扩展项目统一加载提示的开发入口，汇集 framework/player/Define 导出类型、
+scope builtins/facade、import_as 字面包名重载和类工厂提示；允许追加扩展自己的包类型
+声明并检测同名冲突。基础源码类型不反向依赖上层，提示文件不 require、不重复 class。
+“跨层安装”指编辑器 workspace library 的加载方式，不建立新的 runtime publication。
+import 不返回包、import_as 返回浅包且不注入环境的区别必须在提示中准确表达。
+扩展自有类型可以自己的 namespace；meta 不管理 mounted tree、源码热重载或 scope shutdown。
+
+上述为待实施合同；下文路径、默认组装和测试基线描述当前代码。首次 payload/transaction、
+protected names、loader scope、fresh description before mount 和资源清理语义不改变。
+
 ## 宿主边界
 
 只有 `host/`、`main.lua` 和 `elxlib_load.lua` 可以加载 `mp`。核心通过以下契约

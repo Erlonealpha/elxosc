@@ -50,6 +50,53 @@ host 增加 runtime facade 后统一注册。`import('render.stack')`、
 `import_as('widget.widgets.slider')` 解析明确登记的多级包，不遍历任意对象字段。
 受保护父包同时保护未登记的子名称；新增包不扩大 `material` 默认 surface。
 
+## 已确认的重组合同（2026-11-14，代码待迁移）
+
+上述分区和路径记录当前实现。下一轮迁移采用以下所有权；新名字在实现完成前不能
+当作现有 require/import 入口。
+
+| 目标分区 | 所有权和入口 |
+| --- | --- |
+| `lib/src/widgets/`、`lib/widgets.lua` | 扁平的 Widget/Element/State/Binding、基础布局/文字/输入/Provider/Overlay/导航；Widget 基类 source 名为 `src.widgets.framework` |
+| `lib/src/material/`、`lib/material.lua` | 现有设计 Theme、按钮 family、有样式 Slider/LinearProgressIndicator；重导出基础 widgets |
+| `player/` | 播放器 state/actions、DefaultApp/Main、Timeline、AutoHide、主题和布局；公共根 `player/init.lua` |
+| `define/` | 原 extension 的协议、sandbox/registry、bind/DSL/Slot/SlotBuilder；公共根 `define/init.lua` |
+| `host/` | 通用 mpv App、player/Define adapters、默认包/builtins 和 scoped facade 接线 |
+| `meta/` | 扩展开发统一类型提示入口和包类型声明管理；不属于 runtime catalog |
+
+`lib/` source/collector 不加载 player、define 或 mp；基础 widgets 不反向加载 Material。
+player/Define 的领域与协议代码仍不加载 mp。player 的初始化 composition 可以依赖 Define
+的 Slot 协议，具体播放器 Slot ID/规则由 player 拥有。clock/property/message/presenter
+继续由 host 适配。基础值、render、animation/scheduler/backends 的现有分区保持。
+
+实际 class/function source 与层 collector 分开；每个 `lib/*.lua` 无条件收集所属导出。
+`src.<layer>.init` 是明确的单向 collector alias，collector 不加载该 alias；现有 animation
+init 的重复清单合并到 animation collector。source/collector/alias 共享同一 class 和表
+身份。原 `src.widget.*`、`widget.*`、`extension.*`、`main_layout` 迁移后删除；现有
+WidgetBinding/RenderOwner 的 class identity alias 保留，不与旧 module path 混为一项删除。
+
+目标 canonical require 为 `src.widgets.*`、`src.material.*`、`player.src.*`、`define.src.*`；
+不为 player/define 增加另一个裸 `src` 搜索根。包名为 widgets/material/player/define 及
+精确子包。模块表类型统一 `elxosc.mod.<canonical require>`，例如
+`elxosc.mod.src.widgets.framework`；生产实例/Options/alias 使用 elxosc namespace，
+Material/player/Define/host 类型放在相应子 namespace。运行时路径不添加 elxosc 前缀。
+
+框架整体向扩展开放，catalog 覆盖全部 framework runtime source、导出包和整合包。
+show/hide 是来源组合手段：先筛选各自来源再合并，不缩减框架注册范围。静态 descriptor
+为 `{ name, exports }`，普通 require 返回 exports；Define 接线才加入 `loader?`。
+
+export 声明浅复制 source 自身字段，支持 string/有限 integer key，保留 false/数组原 key。
+show/hide 只对当前来源执行一次；不存在或重复筛选 key 报错。同键同对象/标量可去重，
+不同值冲突报错；需要别名时显式构造来源表，整包替换显式声明。get 首次发布目标，
+collect 验证全部待发布包后按首次声明顺序发布；失败不发布半成品。重复读取共享 exports
+身份，已发布包不可追加或重新筛选。source/metatable 不修改，pairs 次序不保证，包枚举
+次序稳定。export 不管理 scope、事务或运行时树。
+
+PaintingBinding/SchedulerBinding/RendererBinding 当前在函数内引用具体 WidgetsBinding，
+这是既有 role 接线；迁移只更新其路径/type，不同时重构 Binding topology。
+阶段 0 固定上述合同与完整映射，随后按所有权分离、Widgets/Material、导出、类型顺序实施；
+布局、dirty、Binding singleton、Define 初始化协议和资源清理行为保持。
+
 ## Flutter runtime 对齐
 
 运行时采用 Flutter-style concrete Binding singleton 加 owner scope 拓扑：

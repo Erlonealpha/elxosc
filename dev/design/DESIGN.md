@@ -55,6 +55,12 @@ extension provides sandbox/Define services and is consumed by host/entry assembl
 构造 surface。原 `libs/` 迁为 `extension/`。加载路径和多级 import 见
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
+2026-11-14 已确认下一轮所有权与导出重组，阶段 0 已固定合同和完整迁移映射，生产代码
+尚未迁移：lib 仅保留框架，widgets 扁平并分出 Material；播放器业务/Timeline/AutoHide
+归 player，extension 更名 define。框架全部 runtime 包向扩展开放，show/hide 组织来源；
+meta 提供统一扩展开发提示与包类型声明管理。目标路径、类型、发布与清理合同见
+ARCHITECTURE/WIDGETS/HOST/PLAYER 中标明“代码待迁移”的章节，当前路径与历史基线保持。
+
 ## 三棵运行时树
 
 1. **Widget tree**：不可变配置和声明式子树，由 `State` rebuild 产生新描述。

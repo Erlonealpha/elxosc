@@ -2,6 +2,33 @@
 
 本文负责声明式 Widget 树、Element 生命周期、State rebuild、绑定和控件 API。
 
+## 已确认的组件归属（2026-11-14，代码待迁移）
+
+当前源码仍位于 `lib/src/widget/`。后续 runtime 与基础组件在 `lib/src/widgets/` 扁平
+组织，Widget 基类对应 framework.lua；Element/State/Binding/Builder 等各保留功能文件。
+布局、文字、CustomPaint、gesture、Provider、Visibility、Overlay/Navigator、通用
+Tooltip/HoverText/Icon 属基础 widgets。设计 Theme 和整个按钮 family、现有有样式
+Slider/LinearProgressIndicator 属 `lib/src/material/`，Material 重导出 widgets。
+widgets 不反向 require Material/player/Define。
+
+WidgetsApp 将只提供 display/default_text_style/child/key；默认文字保持 14px TextStyle。
+Theme/PlayerTheme/HostActionsScope/PlayerScope 由 Material/player 的上层 assembly 明确包装。
+PlayerContext、HostActions、Timeline 与 AutoHide 归 player；bind/DSL/Slot/SlotBuilder 归
+define。ContextBuilder/call_context 与通用 callback/result 校验仍归框架，define.builder
+复用该校验而保持 SlotBuilder 的挂载前参数边界。
+
+RenderSlider/RenderLinearProgressIndicator 的数值、输入、layout/dirty 与配置校验留 render；
+设计颜色/尺寸默认移到 Material wrapper，render 接收明确 config，不引用 Material Options。
+Timeline 迁到 player 继续继承同一 RenderSlider。HoverText 改用基础 gesture/text visual
+机制解除 ButtonBase 依赖，保持 hover/点击效果。Icon 当前字体/variation API 与默认视觉
+保持，生成的字体声明仍为框架资源；本次不新增 RawIcon 或完整图标主题 API。
+
+Tooltip 不再识别 AutoHide 类/私有 State hook。它提供通用取消/可见性清理边界，player
+适配在 fade 开始立即释放 thumbfast，并维持淡出期间的现有 pointer capture。Opacity/
+Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变。
+
+新模块名和类型规则见 [架构](ARCHITECTURE.md)；以上为待实施合同，下文继续描述当前行为。
+
 ## Widget 不可变
 
 Widget 是轻量描述，不负责 lib/src/layout/paint，也不在 mount 后修改自己的 child 或

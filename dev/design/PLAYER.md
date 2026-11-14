@@ -4,6 +4,31 @@
 和 Define 的核心不变量，而是记录 `WidgetsApp`、`DefaultApp`、播放器 Main、Extension、
 WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
+## 已确认的播放器所有权（2026-11-14，代码待迁移）
+
+当前散落在 lib/widget/render 的播放器内容将统一归 player/：PlayerSnapshot/Store/
+Provider/Scope/Capability、HostActions/Scope、Main/DefaultApp/WindowLayer、Timeline/
+RenderTimeline、AutoHide/Controller/State、PlayerTheme、布局与语义图标映射。
+player 领域代码不加载 mp，属性/actions/preview/消息适配继续归 host。基础 framework
+widgets/material 不导出这些领域内容，player 公共根补齐迁出前已可使用的 state/actions
+类型，Main/PlayerMain 保持同一对象；内部 State 不默认展平。
+
+main_layout 的构造与当前四个 Slot ID/规则迁到 player.src.composition；Slot/Contribution/
+Assembler primitive 归 define，只有这部分播放器初始化 composition 需要协议依赖。
+通用 WidgetsApp 只负责 display/默认文字/child，上层 player assembly 明确包装设计
+Theme、PlayerTheme、PlayerScope 与 HostActionsScope。host player assembly 拥有默认
+observer/adapter/context、activity 路由与其清理；通用 App 保持 tree/frame/presenter owner。
+
+AutoHide 的 inactivity/reveal/fade 策略当前属于 player。通用 Tooltip 不读取 AutoHide
+祖先，player 可见性适配在 fade 开始立即取消 hover/释放 thumbfast；nested policy、
+controller replacement、dispose 和下一次真实 move 恢复预览继续保持。淡出中的 capture
+和 fade 完成后的 hidden paint/input eligibility 不改变，preview border 仍使用共享像素坐标。
+
+Timeline 继续复用框架 RenderSlider 的 numeric/dirty/输入机制，其媒体 cache/chapter/seek
+语义归 player。Material 分层只调整现有样式/default 的 owner，不改变播放器外观、
+uniform scale、tooltip 跟随/布局或底部左右追加按钮的行为。新入口规则见
+[架构](ARCHITECTURE.md)，实现前下文继续描述当前生产路径。
+
 ## 应用构成
 
 当前结构如下：
