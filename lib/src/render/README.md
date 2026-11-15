@@ -79,5 +79,5 @@ implementations.
 
 See [rendering](../../../dev/design/RENDERING.md) and [architecture](../../../dev/design/ARCHITECTURE.md).
 
-Owner naming migration and alias removal conditions are recorded in
+The retained PipelineOwner/RenderOwner identity aliases are recorded in
 [widget ownership](../widgets/README.md).

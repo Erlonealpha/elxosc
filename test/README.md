@@ -64,25 +64,24 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-10): **2820 Lua checks** through both the project
-adapter and direct dependency CLI; project runner regression **16 passed**;
-`emmylua_check . --warnings-as-errors`: **No issues found**. The historical ASS
-benchmark source is patched only for the current `std.class.new` signature in
-its isolated fixture. The project Python suite is **47 passed**, with no skips
-(real-host 17, runner 16, measurement CLI 11, benchmark CLI 3).
-The initialized user-selected dependency checkout is `307bcc3`; the existing
-gitlink change is preserved.
-Framework commit `66e921c` passes checks in an independent clone: **41 Lua
-checks**, the example's **2 checks**, **30 CLI regressions**, and zero EmmyLua
-diagnostics.
-Commands and scope are recorded in
-[`dev/design/TESTING.md`](../dev/design/TESTING.md). The input contract in
-[`dev/design/INPUT.md`](../dev/design/INPUT.md) is partially implemented through
-root-space regions, per-rectangle sections, capture cleanup, structured pointer/key
-values and dispatch results; the PlayerContext 6.3 contracts are implemented. R1/R2
-now cover SlotSpec/Contribution assembly, transactional Define payloads and mount-only
-WidgetTree behavior; the N3 Page/Route/Navigator slice is covered by the navigation regression
-file, while multi-overlay contracts remain planned.
+Current baseline (2026-11-16): **3333 Lua checks**, production EmmyLua
+**No issues found**, and the independent framework/catalog Python checks
+**2 passed** at the unchanged framework boundary; related extension/Demo real-host
+checks **2 passed** after the minimal-builtins and returning-require change, with no skips.
+Production analysis uses
+`emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'`; dedicated metadata
+tests and editor acceptance are deferred at the user's request.
+
+The isolated framework test checks four initial require orders, catalog identity,
+mount/paint/input/dispose, and complete runtime source coverage. Module-loading
+tests also reject 19 removed source/collector/application names. Current and
+historical commands, selected real-host results, and platform limitations are in
+[`TESTING.md`](../dev/design/TESTING.md). The 2026-11-15 convergence changed only
+comments, documentation and removed-path tests, so its related host checks were not repeated.
+The user confirmed current player appearance and interaction on 2026-11-15.
+Current Define tests cover default factories without component injection, explicit
+package construction/mount/publication, and the returning `require = import_as`
+alias with scoped loaders and flat-import preservation. Metadata tests remain deferred.
 
 ## Real host (Python + uv, first stage)
 

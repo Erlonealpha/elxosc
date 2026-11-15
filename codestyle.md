@@ -21,6 +21,9 @@
   `elxosc.` 是类型名前缀；运行时 `require`、`import`、`import_as` 仍使用裸模块名
   和短包名。源码 require 使用 `src.material.slider`，扩展 import 使用
   `material.slider`、`widgets`、`player`、`mp`。
+- meta 的作用域名称使用 `elxosc.meta.Builtins` 局部表类型，不声明编辑器全局变量。
+  Define `require` 与 `import_as` 返回局部包，`import` 注入成员；标准源码 require
+  仍加载文件模块。默认 builtins 仅有 new_widget/new_state，组件和值类型从包取得。
 - 重复使用的字符串联合提取为语义化的命名 alias，并逐行列出候选值。例如
   `MainAlignment`、`CrossAlignment`、`FlexDirection`、`PaintStyle`、`BindTarget`。
   声明、字段、参数及返回类型应复用同一 alias，而不是重复一长串字面量。

@@ -15,6 +15,7 @@ Public layers are `foundation`, `painting`, `text`, `layout`, `render`, `animati
 flat in `src.widgets.*`; Theme and styled controls live in `src.material.*`.
 `material` reexports basic widgets and collects styled controls/value constructors;
 `host/builtins.lua` owns the explicit default Define construction surface.
+It exposes only the class factories; components and values use explicit package imports.
 
 `export` organizes static declarations independently of extensions. Its module-level
 API and `export.new()` contexts provide `export(name, source, append?)`, `get(name)`
@@ -59,8 +60,8 @@ and class name strings retain their existing spelling.
 Files use `@namespace elxosc` for declarations and `@using elxosc`
 for short type references; styled controls also use `@using elxosc.material`.
 The namespace resolves class-name templates without inline name casts.
-Source init files return the layer collector without declaring another module type. Extension consumers
-use the development-only [meta entry](../meta/README.md) for scoped imports and
+Source init files return the layer collector without declaring another module type.
+Extension consumers use the development-only [meta entry](../meta/README.md) for scoped imports and
 default construction names.
 
 See [architecture](../dev/design/ARCHITECTURE.md),

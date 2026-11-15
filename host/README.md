@@ -1,6 +1,6 @@
 # Host
 
-`host/` is the only framework directory allowed to import mpv APIs. It adapts the
+`host/` owns the mpv adapters outside the reusable framework. It adapts the
 core contracts to mpv/mpv.net and keeps process, overlay, input, and Define behavior
 outside the reusable layers.
 
@@ -58,6 +58,10 @@ of collector fields; new registrations do not add builtins automatically.
 Define transaction and exact package registration are implemented by `define/src/`.
 MpDefine owns its facade subscriptions and main owns the initialization window timer.
 `import_as` returns local packages; new packages do not expand default builtins.
+Default construction builtins are only `new_widget` and `new_state`; components and
+values come from explicit owning-package imports. DefineSession supplies its protocol
+functions and host supplies `print`. Metadata describes these names on a local table
+type instead of defining editor globals.
 
 Host module types use `elxosc.mod.host.*`; instances/options/facades use
 `elxosc.host.*`. `MpPackage` and `PlayerPackage` describe the exact scoped additions.

@@ -2,14 +2,14 @@
 
 本文负责声明式 Widget 树、Element 生命周期、State rebuild、绑定和控件 API。
 
-## FPK-1 实施状态（2026-11-14）
+## 当前组织
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已完成 widgets/Material 分层，FPK-3 export 与完整
-静态 catalog 与 FPK-4 namespace/meta 已实施，扩展提示见 [meta](../../meta/README.md)。
+路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
+[TESTING.md](TESTING.md)。widgets/Material、来源级 export、完整静态 catalog 与 namespace
+已统一，扩展提示见 [meta](../../meta/README.md)，专项验收暂缓。
 
-## 组件归属（2026-11-15，FPK-1/2 已实施）
+## 组件归属
 
 FPK-2 已实施：公共 collector 使用 widgets/material，基础源采用 src.widgets.*，
 样式源采用 src.material.*。删除旧 widget、widget.widgets 和 basic/layout 二次整合入口，
@@ -146,8 +146,8 @@ widgets 和 material collectors 只重导出独立模块成员；旧 basic/layou
 新增控件应优先创建所属层独立模块，再补 collector、模块 README 和加载/行为
 测试。
 
-本轮 widgets/material 模块表使用 `elxosc.mod.<canonical require>`；全量 namespace 在 FPK-4
-统一。直接模块和 collector 保持对象 identity。`{ name, exports }` 描述保留类型化成员，
+生产模块表统一使用 `elxosc.mod.<canonical require>`，通过 `@namespace`/`@using` 简写。
+直接模块和 collector 保持对象 identity。`{ name, exports }` 描述保留类型化成员，
 基础 widgets 不包含 Slot/bind/DSL/player 内容；这些从 owning 包获取。
 静态包由 framework/player/Define 各自 catalog 收集，host.package_catalog 合并注册；
 默认 builtins 由 host.builtins 手选。扩展可通过 `import_as` 局部引用

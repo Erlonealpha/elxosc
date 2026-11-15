@@ -2,14 +2,14 @@
 
 本文负责 mpv 边界、帧循环、ASS presenter、输入接线以及初始化期 Define。
 
-## FPK-1 实施状态（2026-11-14）
+## 当前组织
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已迁到 widgets/material 包名，FPK-3 已实现 export 与
-完整静态 catalog 与 FPK-4 namespace/meta。
+路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
+[TESTING.md](TESTING.md)。widgets/material、来源级 export、完整静态 catalog 与 namespace
+已统一；meta 实现与开发说明保留，专项验收暂缓。
 
-## 已确认的接线重组（2026-11-14，FPK-1 已实施，后续分层待实施）
+## 接线与资源所有权
 
 框架/player/Define 的目标所有权见 [架构](ARCHITECTURE.md)。原 extension 已更名 define，
 host.mpv_app 保留通用 frame/tree/input/presenter/display lifecycle；播放器默认观察、
@@ -22,9 +22,9 @@ Theme/PlayerScope/HostActions 和 activity 路由已归 host.mpv_player_app。
 整合包可导入；show/hide 只整理单条来源，不充当权限或隐藏框架的手段。多级名字精确
 登记，不按任意对象字段/文件路径查找。source alias 的 slash/init 解析仍归 module_loader。
 
-默认 builtins 从所属 collector 手动选择，保持迁移前 material 表的 115 个公开字段。
-Material 只拥有框架样式控件和基础 widgets 的重导出；player/Slot/DSL 字段由其 owning
-包提供。新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
+默认 builtins 仅提供 `new_widget`、`new_state`。组件、值类型、player/Slot 接口从 owning
+包显式导入；Material 只拥有框架样式控件和基础 widgets 的重导出。
+新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
 DefineSession 仍生成和恢复 scope-aware import/import_as/require/mod/bind；print 由 host 提供。
 导出 API 的数组原 key/false/同名冲突与发布规则见 ARCHITECTURE，仍保持 class identity。
 
@@ -32,7 +32,8 @@ meta/ 是扩展项目统一加载提示的开发入口，汇集 framework/player
 scope builtins/facade、import_as 字面包名重载和类工厂提示；允许追加扩展自己的包类型
 声明并检测同名冲突。基础源码类型不反向依赖上层，提示文件不 require、不重复 class。
 “跨层安装”指编辑器 workspace library 的加载方式，不建立新的 runtime publication。
-import 不返回包、import_as 返回浅包且不注入环境的区别必须在提示中准确表达。
+import 不返回包；import_as/require 返回浅包且不注入环境。meta 将作用域名称写入
+`elxosc.meta.Builtins` 表类型，不声明编辑器全局变量、不覆盖标准 Lua require/print。
 扩展自有类型可以自己的 namespace；meta 不管理 mounted tree、源码热重载或 scope shutdown。
 
 上述接线边界、export 与 meta 已实施。下文描述当前代码。首次 payload/transaction、
@@ -111,8 +112,8 @@ define_end
 ```
 
 每个 scope 使用受限 env。`import`/`require`、`import_as`、`mod` 和 `bind` 由 DefineSession 提供；
-Widget constructors、`new_widget`、`new_state`、DefaultApp/Slot 接口和宿主 facade 由外部
-注入。Define 负责传入扩展内容，不规定扩展内部的运行时行为；扩展可以自行实现
+`new_widget`、`new_state` 为默认类工厂，print 由 host 提供。Widget constructors、
+值类型、DefaultApp/Slot 和宿主 facade 经包导入获得。Define 负责传入扩展内容，不规定扩展内部的运行时行为；扩展可以自行实现
 State、消息和页面逻辑，也可以使用播放器预先提供的配置/API 更新接口。
 
 模块使用统一描述 `DefinePackage<T> = { name, exports, loader? }`；`exports` 是类型化的
@@ -124,12 +125,13 @@ init 别名使用所属 collector，annotation-only metadata 不注册。
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
 `elxosc.*` 为生产类型 namespace，不加入 runtime 包名；模块表使用 elxosc.mod.*。
 
-`host/builtins.lua` 显式选择框架构造器、值类型、player/Slot 接口和类工厂，
+`host/builtins.lua` 只选择 `define.src.dsl` 的两个类工厂，
 `mpv_define.builtins()` 返回该表；`lib/material.lua` 仅收集框架。`MpDefineOptions.builtins` 替换默认 surface，host
 仍提供 `print`。`define.src.dsl` 只提供类工厂；scope 的 `bind` 由 DefineSession 提供。
 
-`import('player')`/`require('player')` 将名称写入 scope env；
-`local player = import_as('player')` 返回包而不注入名称。两者只允许在 payload 中调用，
+`import('player')` 将名称写入 scope env；
+`local player = require('player')` / `import_as('player')` 返回包而不注入名称。
+require 与 import_as 是同一函数。它们只允许在 payload 中调用，
 均使用当前 transaction 可见的模块。`import_as` 浅复制顶层导出并在返回表中执行
 `loader(package, scope_id)`；数组成员保留，嵌套值和 class 对象仍共享 identity。
 `import_as('mp')` 的 `on_message`/`emit` 因此仍绑定当前 scope。
@@ -160,10 +162,12 @@ priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容�
 
 加载 [meta](../../meta/README.md) 与 owning sources 可提示全部框架/player/Define 包和
 mp/player scoped facade；运行时不 require meta。tools/generate_meta.py 使用相同静态
-catalog 校验 module type，再按明确包名生成 import_as 重载；默认全局仅来自 115 个
-host-selected builtins 与五个协议函数/print。扩展声明只用于提示生成，同名不同类型
-拒绝，不替代 mod 的 transaction/保护规则。import/require 返回无值，其他环境注入
-不作静态推断；需要可靠字段提示使用 import_as。动态包名仅 table fallback。
+catalog 校验 module type，再按明确包名生成 import_as 重载，require 复用同一 callable。
+`elxosc.meta.Builtins` 表类型包含两个类工厂、五个协议函数和 print；所有声明都写在
+局部表成员上，不声明编辑器全局变量。扩展可将当前 payload 的作用域函数捕获到一个
+局部类型化表，示例见 meta README；host 不增加运行时 builtins 变量。
+扩展声明只用于提示生成，同名不同类型拒绝，不替代 mod 的 transaction/保护规则。
+import 返回无值，require/import_as 返回包；其他环境注入不作静态推断，动态包名仅 table fallback。
 
 ## 宿主变更规则
 
@@ -230,12 +234,12 @@ batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unob
 `PlayerProvider`、`PlayerCapability` 和 `HostActions`。`PlayerIcons` 提供
 `spec`/`glyph_name`/`icon` 语义图标入口，不扁平注入短名称。
 内部 State、geometry 和 controller assembly helper 不属于此导出清单。
-标准 `Tooltip`、`Slider`、`LinearProgressIndicator`、`HoverText` 通过显式选择的 builtins
-或 owning 包可用：Tooltip/HoverText 从 `import_as('widgets')`，Slider/LinearProgressIndicator
+标准 `Tooltip`、`Slider`、`LinearProgressIndicator`、`HoverText` 通过 owning 包获取：
+Tooltip/HoverText 从 `import_as('widgets')`，Slider/LinearProgressIndicator
 从 `import_as('material')` 或 material 子包获取；播放器适配复用标准实现。
 `widgets` collector 保留基础 framework helper；扁平 import 后由 DefineSession 恢复
-scope-aware `bind`。局部包可注解为 `elxosc.mod.widgets`、`elxosc.mod.material`、`elxosc.host.mpv_define.player` 或
-`elxosc.host.mpv_define.mp`。该模块仍无内容热注入或 mounted tree 管理能力。
+scope-aware `bind`。局部包可注解为 `elxosc.mod.widgets`、`elxosc.mod.material`、`elxosc.host.PlayerPackage` 或
+`elxosc.host.MpPackage`。该模块仍无内容热注入或 mounted tree 管理能力。
 
 框架内消费者可以使用 `PlayerStore:subscribe_selector(selector, callback)` 只监听相关
 字段；列表/窗口/metadata 更新不必让所有 selector consumer 重建。缺失 capability 始终以

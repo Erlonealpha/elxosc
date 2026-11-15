@@ -4,12 +4,12 @@
 如何连接。更高层不能绕过契约
 直接操作低层实现；需要新能力时应在拥有该语义的层增加接口。
 
-## FPK-1 实施状态（2026-11-14）
+## 当前组织
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已扁平 widgets 并拆分 Material，FPK-3 export 与完整静态
-catalog 与 FPK-4 全量 namespace/meta 已实施。类型提示使用方式见 [meta](../../meta/README.md)。
+路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
+[TESTING.md](TESTING.md)。widgets 已扁平并与 Material 分层；来源级 export、完整静态
+catalog 与生产 namespace 已统一。扩展类型提示见 [meta](../../meta/README.md)，专项验收暂缓。
 
 ## 分区
 
@@ -73,10 +73,9 @@ host 增加 runtime facade 后统一注册。`import('render.stack')`、
 `import_as('material.slider')` 解析明确登记的多级包，不遍历任意对象字段。
 受保护父包同时保护未登记的子名称；新增包不扩大 host 默认 builtins。
 
-## 已确认的重组合同（2026-11-14，FPK-1 已实施，后续分层待实施）
+## 框架与应用的所有权
 
-上述分区和路径记录当前实现。下列最终所有权中 player/define 已实施；
-widgets/material 扁平、export、完整清单和 namespace/meta 已实施。
+下列分区、入口和导出合同已实施。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |
@@ -129,25 +128,61 @@ PaintingBinding/SchedulerBinding/RendererBinding 当前在函数内引用具体 
 阶段 0 固定上述合同与完整映射，随后按所有权分离、Widgets/Material、导出、类型顺序实施；
 布局、dirty、Binding singleton、Define 初始化协议和资源清理行为保持。
 
-## 扩展类型提示（2026-11-15，FPK-4）
+## 迁移入口对照
+
+旧框架中的播放器和 Define 内容按所有权迁出；以下旧路径已删除，没有运行时 fallback。
+公开 collector 和精确子包分别加载，不通过整合表中的嵌套字段访问子模块。
+
+| 原 require / 包名 | 当前 require | Define import_as |
+| --- | --- | --- |
+| `widget`、`widget.widgets` 及其 `basic`/`layout` 整合 | `widgets`；有样式控件用 `material` | `widgets` / `material` |
+| `src.widget.widget`、`widget.widget` | `src.widgets.framework` | `widgets.framework` |
+| `src.widget.widgets.text` | `src.widgets.text` | `widgets.text` |
+| `src.widget.widgets.slider`、`src.widget.widgets.button` | `src.material.slider`、`src.material.button` | `material.slider`、`material.button` |
+| `src.widget.ambient` 的 Display/默认文字 | `src.widgets.ambient` | `widgets.ambient` |
+| `src.widget.ambient` 的 Theme | `src.material.theme` | `material.theme` |
+| `src.widget.player_context`、`player_context` | `player.src.context` | `player.context` |
+| `src.widget.actions` | `player.src.actions` | `player.actions` |
+| `src.widget.player.timeline`、`src.render.timeline` | `player.src.timeline`、`player.src.render.timeline` | `player.timeline`、`player.render.timeline` |
+| `src.widget.visibility` 的 AutoHide | `player.src.auto_hide` | `player.auto_hide` |
+| `src.widget.player.theme` | `player.src.theme` | `player.theme` |
+| `extension.define`、`extension.modules`、`extension.sandbox` | `define.src.session`、`define.src.modules`、`define.src.sandbox` | `define.session`、`define.modules`、`define.sandbox` |
+| `src.widget.dsl`、`src.widget.bind`、`src.widget.slot` | `define.src.dsl`、`define.src.bind`、`define.src.slot` | `define.dsl`、`define.bind`、`define.slot` |
+| `src.widget.builder` 的 ContextBuilder | `src.widgets.builder` | `widgets.builder` |
+| `src.widget.builder` 的 SlotBuilder/call_slot | `define.src.builder` | `define.builder` |
+| `main_layout` | `player.src.composition` | `player.composition` |
+
+Opacity/Offstage/Visibility 留在 `src.widgets.visibility`。当前 canonical source 的
+slash/`.lua`/`init` 拼写仍是受支持的同对象 alias；WidgetBinding/WidgetsBinding、
+PipelineOwner/RenderOwner 和 Main/PlayerMain 也保留 class identity alias。
+它们与已移除的旧目录入口不同。
+
+模块表类型现为 `elxosc.mod.<canonical require>`；例如 Slider 源模块为
+`elxosc.mod.src.material.slider`，实例/Options 为 `elxosc.material.Slider` / `SliderOptions`。
+类型中的 owner 与运行时 require/import 包名分别表达。
+
+## 扩展类型提示
 
 生产模块表为 elxosc.mod.<canonical require>，框架实例/Options/alias 为 elxosc.*；
 Material/player/Define/host 分别使用 owning namespace。runtime require/类名字字符串
-保持原值，std.class.new 的类型模板通过局部注解绑定 qualified type。PipelineOwner 的
+保持原值，std.class.new 的类型模板通过 `@namespace`/`@using` 解析声明。PipelineOwner 的
 类型别名由 render owning source 声明，init 仅返回 collector，不重复声明模块类型。
 
 meta/elxosc.lua 不在 runtime catalog 中；扩展编辑器一次加载 owning sources、elxlib
 与该 meta 文件。tools/generate_meta.py 从三个显式 catalog 校验 source module types，
-生成全部 143 包名 literal import_as 重载，默认名从 host/builtins 的 115 字段逐项复用。
+生成全部 143 包名 literal import_as 重载，require 复用同一 callable；默认类工厂仅
+new_widget/new_state。协议和类工厂声明收集为 elxosc.meta.Builtins 局部表类型，
+不定义编辑器全局、不覆盖标准 Lua require/print。
 mp/player 的 runtime additions 使用 host.MpPackage/PlayerPackage；筛选后的 collector
 仅提示实际成员。new_widget/new_state 复用 owning factory 的名称模板/父类约束。
 
 扩展 JSON 以 {name,type} 声明包类型，支持 named type/array 交集，按输入顺序组合。
 相同 name/type 去重，不同类型同名失败且保留原输出；与内建包冲突同样失败。该登记
 只生成提示，实际包仍经 Define mod transaction 发布。动态包名返回普通 table 提示；
-missing type 在实际消费时报诊断。import/Define require 不返回包，编辑器不追踪任意
-环境字段注入；超出默认 builtins 的类型提示应使用 import_as。只加载一份完整生成文件，
-避免重复全局声明。配置和可移植示例见 [meta/README.md](../../meta/README.md)。
+missing type 在实际消费时报诊断。import 不返回包；Define require 是 import_as 的同函数
+别名，返回 scope 包且不注入环境。编辑器不追踪任意环境字段注入；组件/值类型通过
+局部包取得。只加载一份完整生成文件，避免重复类型声明。
+配置和局部 builtins 表示例见 [meta/README.md](../../meta/README.md)。
 
 ## Flutter runtime 对齐
 
@@ -246,7 +281,7 @@ config/API snapshot, State/set_state or host input
     → backend output / one or more host overlay presenters
 ```
 
-6.3 的 PlayerStore 位于 Widget 层但不依赖 mpv：宿主只负责将 property/API 数据
+PlayerStore 位于 player 应用层且不依赖 mpv：宿主只负责将 property/API 数据
 校验后替换 Snapshot。`PlayerScope` 将 Store 更新转换为 State dirty，Provider
 依赖者再通过既有 BuildOwner 管线 rebuild。
 

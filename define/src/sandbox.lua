@@ -6,7 +6,7 @@
 -- There is deliberately no sandbox *object* here: the environment is a plain
 -- table whose metatable delegates reads to an `api` table and keeps writes
 -- local. Which names exist, what `import` does and when a chunk runs all belong
--- to `extension/define.lua` / `extension/modules.lua`. Keeping this file stateless is what
+-- to `define/src/session.lua` / `define/src/modules.lua`. Keeping this file stateless is what
 -- stops the define layer from turning into one object that owns everything.
 
 ---@namespace elxosc

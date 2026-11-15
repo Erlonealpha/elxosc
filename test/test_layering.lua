@@ -1,8 +1,8 @@
 -- Layering guard: the framework layers must stay host agnostic.
 --
 -- The whole point of elxosc is that foundation / painting / text / scheduler /
--- layout / render / widget / backends / libs stay mpv-free (so a mpv.net backend
--- can reuse them verbatim). This test fails the suite if one of those starts
+-- layout / render / widgets / material / backends, player and Define stay mpv-free.
+-- This test fails the suite if one of those starts
 -- requiring mpv. Everything else (host/, entry points, tests, examples/design
 -- sketches) is free to use mpv.
 
@@ -15,7 +15,7 @@ local F = require('framework')
 local self_path = debug.getinfo(1, 'S').source:gsub('^@', ''):gsub('\\', '/')
 local is_windows = package.config:sub(1, 1) == '\\'
 
--- Repository root: the directory that holds `host/`, `render/`, ... .
+-- Repository root: the directory that holds `lib/`, `player/`, `define/`, `host/`.
 local root
 do
     local dir = self_path:gsub('/[^/]*$', '')

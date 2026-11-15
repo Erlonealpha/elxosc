@@ -3,78 +3,42 @@
 本文是 elxosc 的当前设计主文档和决策索引。它描述已经实现的架构、不可破坏的
 契约以及下一步方向；代码和测试是最终事实来源，旧设计记录只用于追溯历史。
 
-## FPK-4 Namespace 与扩展 meta（2026-11-15）
+## 目录与模块入口
 
-生产 module/instance/Options/alias 已统一 elxosc namespace，166 Lua 文件/552 类型声明
-无未限定或重复类型；模块表 elxosc.mod.<canonical require>，instance 归 owning namespace。
-生产使用 `@namespace elxosc` 限定声明，`@using elxosc` 与 owner using 简写引用；
-模块表写 `mod.*`，领域类型写 `material.*`/`player.*`/`define.*`/`host.*`，解析后的完整
-类型身份不变。runtime require/class 字符串保持，类名模板无需重复的全名 cast；
-source init 单向返回 collector，PipelineOwner 类型 alias 归 render，测试/工具引用同步。
+可复用框架统一位于 `lib/src/`，各 `lib/*.lua` collector 收集所属成员。基础 widgets
+在 `src.widgets.*` 扁平组织，Theme、按钮和有样式数值控件归 `src.material.*`。
+Material 重导出基础 widgets；整合表不附加子模块，direct/collector 保持对象身份。
 
-meta/elxosc.lua 复用真实 source、catalog/builtins/facade 类型，生成 143 精确 import_as
-重载和默认构造器/协议提示，不进入 runtime catalog。扩展 JSON named/array intersection
-按顺序合并，冲突失败且保留输出；实际包仍通过 mod transaction 发布。配置、生成工具
-与两个自有包/子类示例见 [meta](../../meta/README.md)。生成器识别 namespace 简写声明。
+播放器状态、动作、Timeline、AutoHide、主题与默认组合归 `player/`；sandbox、模块
+注册、Define session、DSL、bind 和 Slot 归 `define/`。`lib/` 不加载 player/Define/mp，
+基础 widgets 不反向加载 Material。mpv clock/input/property/message/presenter 和应用
+适配归 `host/`；`main.lua` 负责入口组合与 Define 窗口 timer。
 
-按用户最新要求，meta 专项测试及编辑器验收暂缓；新增测试文件、示例运行测试与
-meta 专项 guard 已撤下。完整 Lua 3266 与生产 EmmyLua 通过，未运行 meta/real-host/
-benchmark 专项验证。此前 3278/13 项为撤下前结果，不作为当前基线，范围见 TESTING。
-动态包 table fallback、import/require 无返回值及任意环境注入无法静态追踪的限制已说明。
+`lib/export.lua` 提供独立静态声明上下文、来源级 show/hide、get/collect。各 owner
+catalog 显式枚举全部 runtime source、collector、工具和字体资源，host 合并注册并加入
+scoped mp/player facade；默认 builtins 仅包含 new_widget/new_state。框架整体向扩展开放，
+show/hide 只组织来源成员。多级 import 精确解析登记包，不遍历整合表字段。
 
-## FPK-3 Export 与完整注册（2026-11-15）
+当前 canonical require 为 `src.widgets.*`、`src.material.*`、`player.src.*` 和
+`define.src.*`。旧 widget/extension/player_context/main_layout 入口已删除；当前 source
+的 slash/`.lua`/`init` 拼写与公开 class identity alias 保留。详细映射见
+[迁移入口对照](ARCHITECTURE.md#迁移入口对照)。
 
-`lib/export.lua` 已提供声明、来源级 show/hide、get/collect 和独立 new() 上下文。
-所有框架 collector 和 player/Define 根入口使用同一组织合同，整合表只含选取的成员。
-来源浅快照、raw identity 去重、false/稀疏整数键和冲突检查保持；collect 先验证全部
-待发布包，成功后一起发布，已发布包禁止追加/替换/筛选。它不参与 Define scope 生命周期。
+所有生产 module/instance/Options/alias 已统一 `elxosc` namespace。声明使用
+`@namespace elxosc`，引用通过 `@using elxosc` 和 owning namespace 简写；模块表为
+`elxosc.mod.<canonical require>`，运行时包名和 class name 字符串保持短名。
+[meta](../../meta/README.md) 将协议函数与类工厂提示收集为 `elxosc.meta.Builtins` 表类型，
+汇集 143 个包的 import_as/require 提示、scoped facade 和扩展自有包类型组合说明，
+不声明编辑器全局变量，也不进入 runtime catalog。meta 专项测试与编辑器验收按用户
+要求暂缓，当前生产静态检查排除 meta 与 ignored tmp。
 
-framework/player/Define 各自 package_catalog 显式枚举全部 runtime source、collector、
-初始化工具和字体资源；host 合并清单，加入 mp/player facade，仍手选原 115 builtins。
-扩展可精确导入 player.context、export、module_loader 等包。旧 player_context 删除，
-Define 根包的 sandbox 子模块改为 load_chunk/new_env 成员；独立 define.sandbox 保留。
-animation init 已单向返回 collector。FPK-4 namespace/meta 已完成，见下节。
+2026-11-15 已完成目录、包、类型和文档收口；用户确认当前分支播放器外观与交互正常。
+完整 Lua、生产 EmmyLua、独立框架和全包清单检查通过，实际命令与历史结果见
+[TESTING.md](TESTING.md)。当次未改变宿主行为，沿用此前定向 real-host 结果。
 
-完整 Lua **3266 checks passed**、严格 EmmyLua **No issues found**、定向 Python
-**4 passed**，无 skip。Python 为独立框架/全清单审计两项与扩展/入口 real-host 两项，
-未运行全量 real-host、benchmark 或前阶段已忽略的 Demo 原生点击。命令见 TESTING。
-
-## FPK-1 实施状态（2026-11-14）
-
-### FPK-2 组织完成（2026-11-15）
-
-公共 widgets collector 和 src.widgets.* 已扁平化；Widget 基类位于 framework.lua，
-Element/State/Binding 等保持独立功能文件。src.material.* 拥有 Theme、按钮系列、
-Slider/LinearProgressIndicator 和图标字体集合入口；material 重导出全部基础 widgets
-成员，整合表不附加子模块。旧 widget/widget.widgets/basic/layout 入口已删除。
-通用 Display/DefaultTextStyle、Tooltip/Icon/HoverText/导航仍归 widgets；HoverText
-通过 RenderText setter 更新颜色/glow，不依赖 ButtonBase。数值 render 接收明确视觉
-config，Material 保留原 palette/尺寸，Player RenderTimeline 明确提供其自绘初始字段。
-字体资源在 lib/fonts/material_symbols.lua，Material 与基础 Icon 共享具名资源；
-Icon 保留 bundled 默认，自定义字体不携带 Material variation intent。
-完整 Lua 3144、严格 EmmyLua、7 项定向 Python 检查通过，范围见 TESTING。
-本切片未实现 FPK-3 export 或 FPK-4 全量 namespace/meta；人工外观确认仍待用户审阅。
-
-框架与 player/Define 的边界已迁移。`lib/` source/collector 不加载 player/define/mp；
-`WidgetsApp` 仅提供 display/default_text_style/child/key。`player.src.ambients.PlayerApp`
-明确组装 Theme/PlayerTheme/HostActionsScope 和 WidgetsApp；`host.mpv_player_app.PlayerHostApp`
-接媒体 observer、PlayerScope、默认动作和 activity，并向通用 App 传入唯一 context disposer。
-App 正常/异常 teardown 及部分初始化失败清理自身资源；main 仍拥有 Define 窗口 timer。
-
-player 根收集公开组件和迁出的状态/actions/AutoHide；Main/PlayerMain 同一类。
-Define 的 DSL/bind/Slot/SlotBuilder 已迁出，ContextBuilder/通用校验留框架。
-Tooltip 通过通用 hover_enabled(context)/refresh_hover_visibility 边界接受上层策略；
-PlayerTooltip 判断所有 AutoHide 祖先，fade-start 清理与淡出期间预览抑制保持。
-host/package_catalog.lua 收集包，host/builtins.lua 手选原 115 字段；material 只含框架。
-旧 extension、lib/player、widget/player 和 main_layout 入口已删除；调用者使用 player.src.*、
-define.src.*。迁出模块表与类型已同步 owning namespace，不改变运行时类名和对象身份。
-
-FPK-2～4 已完成；FPK-5 整体收口与人工审阅仍待实施，不能提前视为整计划完成。
-验证与实际范围见 [TESTING.md](TESTING.md)。
-
-用户随后明确整合模块不直接导出子模块。lib collectors 已统一为来源成员导出，
-独立 source/子包继续 require/import_as；具名值表保留 identity。完整 Lua 2993、
-严格 EmmyLua 通过；定向验证与阶段 1 原记录分别见 TESTING。
+2026-11-16 默认 builtins 收敛为两个类工厂；组件和值类型通过显式包导入获得。
+Define 的 `require` 现为 `import_as` 的同函数别名：返回包且不注入环境；`import` 保持
+成员注入。meta 将这些作用域名称描述为局部表类型，不覆盖编辑器的 Lua 全局。
 
 ## 阅读路径
 
@@ -130,8 +94,8 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 原框架内的播放器内容迁入 player。加载路径和多级 import 见
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
-2026-11-14 的阶段 0 固定完整迁移映射和导出合同，FPK-1 已完成框架与应用边界；
-widgets/Material、export 与 namespace/meta 已完成，整体收口与人工审阅留下一阶段。
+目录、导出与类型整理保持既有布局、dirty、Binding singleton、Define 初始化协议
+和资源清理合同。资源所有权与构造边界见对应方向文档。
 
 ## 三棵运行时树
 
@@ -151,8 +115,8 @@ setter 选择 `paint` 或 `layout + paint` 失效类型。
 
 除 `host/`、`main.lua`、`elxlib_load.lua` 外不得加载 `mp`。模块使用裸 require
 名称，例如 `require 'src.render.text'`，不得引入 `elxosc.` 前缀或循环依赖。
-FPK-1 迁出的模块表类型使用 `elxosc.mod.<canonical require>`，实例类型为 elxosc.player/define；
-未迁框架仍使用现有类型，FPK-4 统一。类型前缀不属于运行时路径。
+所有生产模块表类型使用 `elxosc.mod.<canonical require>`，实例/Options/alias 归
+`elxosc` 及其 owning namespace；类型前缀不属于运行时路径。
 扩展包描述、统一收集、host builtins 选择和 `import_as` 合同见 [HOST.md](HOST.md)。
 
 ### 布局和变换
@@ -197,79 +161,24 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
-2026-11-15 FPK-3 后完整 **3266 Lua checks**、严格 EmmyLua **No issues found**、
-定向 Python **4 passed**，无 skip；静态组织/完整清单、四种 require 顺序、Define
-组织导出后的 transaction 回滚/重试与扩展接线通过，详细范围见 [TESTING.md](TESTING.md)。
+2026-11-16 默认环境与 require 调整后完整 **3333 Lua checks passed**、生产 EmmyLua
+**No issues found**、相关 real-host **2 passed**，无 skip。验证默认环境不隐式包含组件，
+显式导入和两个类工厂可构造/挂载/发布；require 返回 shallow 包、正确绑定 scope loader，
+保留嵌套/数组/false identity，且在 flat import 后仍为 returning alias。命令见
+[TESTING.md](TESTING.md)。meta 专项验证继续暂缓。
 
-2026-11-15 FPK-2 后完整 **3144 Lua checks**、严格 EmmyLua **No issues found**、
-定向 Python **7 passed**，无 skip。基础 widgets 的独立加载、Material 默认视觉、
-HoverText persistent paint/input、显式 render config 和相关 host 接线通过。
-人工外观/手感仍待用户审阅；当前及历史命令与范围见 [TESTING.md](TESTING.md)。
+2026-11-15 收口基线为完整 **3304 Lua checks passed**、生产 EmmyLua **No issues found**、
+独立框架和 catalog Python **2 passed**，无 skip。新增 19 个旧 require 路径拒绝检查，
+现有 direct/collector/alias identity、Define transaction、资源生命周期和播放器行为
+回归保持通过。用户确认当前分支标题/按钮、时间线/音量、AutoHide/thumbfast、全屏与
+Demo 开关外观和交互正常；未提供具体媒体与宿主版本，不补写实测细节。
 
-2026-11-14 FPK-1 后完整 **2976 Lua checks**、EmmyLua（warnings-as-errors）
-**No issues found**；定向 Python 曾 **9 passed**，最终复验 **8 passed, 1 Demo 点击失败**，
-用户要求忽略错误并保留记录。框架隔离/其他 host 检查通过，无 skip。
-框架独立 mount/paint/input、应用模块身份、115 builtins、Define transaction、PlayerScope
-和 App 正常/异常清理通过；命令和范围见 [TESTING.md](TESTING.md)。
-
-2026-11-10 框架库目录迁移与多级模块后 **2820 Lua checks**、EmmyLua
-**No issues found**、完整 Python **47 passed**，无 skip。`lib/src/` 提供实现，
-`lib/*.lua` 统一收集导出，`material` 接替 builtins；`extension/` 负责 Define，
-支持明确登记的多级 import。验证详情见 [TESTING.md](TESTING.md)。
-
-2026-11-10 标准控件拆分和扩展包标准化后完整 **2540 Lua checks**、EmmyLua
-**No issues found**、完整 Python **47 passed**，无 skip。模块返回表使用 `elxosc.*`
-类型，标准包统一收集、由 host 注册，builtins 显式选择；`import_as` 返回局部包。
-检查范围和宿主间歇点击失败记录见 [TESTING.md](TESTING.md)。
-
-2026-11-08 测试类迁移后完整 **2330 Lua checks**，项目入口与独立
-`mpv-luatest` CLI 均通过，EmmyLua **No issues found**。离线测试运行器、断言和
-mp 桩改为根目录 `mpv-luatest/` Git submodule 开发依赖；项目路径、elxlib 加载与
-桩配置仍由 `test/` 管理。独立仓库不含 elxosc 适配文件，生产运行时不加载它。
-完整 Python **46 passed**，无 skip；依赖安装、版本更新和验证详情见
+宿主接线最后在导出/完整注册阶段验证：扩展左右按钮和生产入口/Demo 消息两项
+real-host 通过；此前 Material 分层另验证按钮输入、图标 ASS 与 AutoHide thumbfast。
+当次只有文档、注释和旧路径拒绝测试，无宿主行为变化，未重复这些结果。
+meta 专项测试及编辑器验收暂缓；未运行全量 real-host、benchmark 或内存调查，
+不因组织迁移承诺 240Hz 性能改善。命令、实际范围和历史失败记录见
 [TESTING.md](TESTING.md)。
-
-2026-11-06 通用 ASS 测量与 benchmark 完成后为 **2318 Lua checks**、EmmyLua
-**No issues found**、real-host **15 passed**、runner **14 passed**、测量 CLI **11 passed**、
-benchmark CLI **3 passed**。AssMeasure 固定初始化分辨率、复用隐藏 overlay/native command、
-返回原生 bounds；诊断报告单独适配。benchmark 覆盖四类框架场景、paint-only动画/
-Record重放和旧/持久update/native三种测量对照，同环境报告与限制见
-[TESTING.md](TESTING.md)。它不改变生产帧循环或 TextLayout，不提供新的渲染缓存API。
-
-历史基线：
-
-2026-11-06 离线 ASS 测量工具完成后为 **2290 Lua checks**、EmmyLua **No issues found**、
-real-host **14 passed**、runner **14 passed**、测量 CLI **11 passed**；
-新增显式调用的 `host.ass_measure.AssMeasure` 与 JSON/Markdown CLI，六类 framework 样例
-各五次宿主测量稳定。它不进入播放器帧循环，不将宿主 bounds 写回框架布局。输入、错误/
-清理边界和测量限制见 [HOST.md](HOST.md) 与 [TESTING.md](TESTING.md)。
-
-2026-11-05 默认播放器收口后为 **2241 Lua checks**、runner CLI **14 passed**；
-`emmylua_check .` **No issues found**；默认启用 Demo 的生产入口 real-host **12 passed**。
-AutoHide 开始隐藏时清理 thumbfast，预览使用共享像素坐标的白色边框和黑色外描边。
-用户整体外观审阅认可支持当前默认播放器范围收口；完整 ModernX 兼容和 240 Hz 性能
-仍为后续方向。应用边界见 [PLAYER.md](PLAYER.md)，实际验证和性能限制见
-[TESTING.md](TESTING.md)。
-
-2026-10-28 P2 ModernX 默认播放器后为 **1753 Lua checks**（ModernX **31**，Builder **26**，
-runtime **252**）、CLI **14 passed**；
-生产静态检查排除本地 ignored tmp 草稿后 **No issues found**，启用入口的隔离副本
-real-host **10 passed**。工作区入口被用户关闭时为 **8 passed, 2 failed**；默认静态扫描
-本地重复类型草稿会产生 warning。详情和实际命令见 [TESTING.md](TESTING.md)。
-
-2026-10-26 的历史 P0/R1/R2 + N1/N2 + R3/R4 + N3 Demo + N4/N5 工作区为 **1491 Lua checks**、EmmyLua
-**No issues found**、real-host **10 passed**。R3 已将
-默认入口收敛为唯一 `app.extension` 内容边界；R4 已将 mpv clock/presenter primitive
-从 `App` 实现中拆出，并让 `MpInput` 使用最小 owner/callback 接口；N3 已将 Page/Route
-和 Popup/ESC 接入同一 Theatre；Demo 展示页面/弹窗、返回结果及首页 State 保留；N4/N5
-已接入单 Canvas cache 和 RegionSnapshot/section cache。命令和测试职责以
-[TESTING.md](TESTING.md) 为准。
-
-6.3 的核心链路和语义修复已实现：Provider 使用 exact lookup，提供非监听 read API，
-State 支持 `did_change_dependencies`，并对 init/dispose 的 listening lookup 做边界
-诊断。N1/N2 的 DefaultApp、ambient、AutoHide、OverlayEntry lifecycle 实现继续遵守
-这些 Provider 和生命周期契约；N3 已提供同一 Theatre 内的 Navigator/Route/Popup/ESC
-最小切片，完整 focus/restoration 和 host-level 多 overlay 仍延期。
 
 ## 变更决策规则
 

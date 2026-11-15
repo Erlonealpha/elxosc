@@ -4,14 +4,14 @@
 和 Define 的核心不变量，而是记录 `WidgetsApp`、`DefaultApp`、播放器 Main、Extension、
 WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
-## FPK-1 实施状态（2026-11-14）
+## 当前组织
 
 player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-新路径和资源边界见 [DESIGN.md](DESIGN.md#fpk-1-实施状态2026-11-14)，实际检查见
-[TESTING.md](TESTING.md)。FPK-2 已更新 owning imports 和 Material Theme 接线；FPK-3
-export、完整静态 catalog 与 FPK-4 namespace/meta 已实施。
+路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
+[TESTING.md](TESTING.md)。owning imports、Material Theme、export、完整静态 catalog 和 namespace
+已统一；2026-11-15 用户确认当前分支播放器外观与交互正常。
 
-## 已确认的播放器所有权（2026-11-14，FPK-1 已实施，后续分层待实施）
+## 播放器所有权
 
 原 lib/widget/render 的播放器内容已统一归 player/：PlayerSnapshot/Store/
 Provider/Scope/Capability、HostActions/Scope、Main/DefaultApp/WindowLayer、Timeline/

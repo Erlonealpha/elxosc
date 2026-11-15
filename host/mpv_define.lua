@@ -3,7 +3,7 @@
 
 -- The mpv side of the define protocol (dev/design/HOST.md).
 --
--- The framework owns the protocol; this module owns the three things it
+-- The Define layer owns the protocol; this module owns the three things it
 -- deliberately does not:
 --   * the transport — `script-message-to elxosc define_start|define|define_end`;
 --   * the `mp` module (data + loader) that scripts `import`;

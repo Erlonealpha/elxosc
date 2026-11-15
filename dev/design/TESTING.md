@@ -17,7 +17,64 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：FPK-4 注解风格与 meta 范围调整（2026-11-15）
+## 当前检查：默认内置与返回包的 require（2026-11-16）
+
+host/builtins 仅保留 new_widget/new_state，默认作用域不再隐式暴露组件或值类型。
+组件通过 owning 包显式导入；自定义 builtins override 的替换语义保持。用户手动将
+Define require 改为 import_as 的同函数别名，返回 scoped shallow 包且不注入环境。
+新增运行回归验证最小默认环境、显式组件构造/挂载/发布、scope loader、false/数组/
+嵌套 identity，以及 flat import 后返回别名保持；既有 transaction 与生命周期检查通过。
+
+meta/elxosc.lua 和生成器改用 elxosc.meta.Builtins 局部表类型描述协议与类工厂，不再
+定义编辑器全局变量或覆盖标准 Lua require/print。require 复用 import_as callable。
+示例在局部表中捕获当前 payload 的作用域函数并标注类型；没有新增 host 注入变量。
+本次仅生成输出并检查修改内容，未运行 meta 专项测试、生成一致性、独立分析器或
+编辑器验收，仍遵守用户延期要求。
+
+完整 Lua **3333 checks passed**，生产 EmmyLua **No issues found**；相关 real-host
+**2 passed in 7.18s**，无 skip，仅扩展左右按钮与生产入口/Demo 消息。real-host peer
+验证默认组件缺失、两个类工厂存在、require 返回 mp/player 包并完成导入与原生点击。
+因默认环境和 require 语义改变，这两项最终复验；没有全量宿主、已忽略的 Demo 原生
+点击、benchmark、内存调查或框架隔离重复检查。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+uv run --group test python -m pytest -q test/real_host/test_player_extensions.py test/real_host/test_elxosc.py::test_elxosc_script_loads_and_accepts_demo_message --tb=short
+```
+
+本地工具来自 project.conf；uv 默认缓存被沙箱拒绝后授权运行，未改用户缓存/配置。
+先前 builtins 调整中间验证为 3312 Lua / real-host 2 passed；最终基线包含随后用户的
+require alias 更改与相关新用例，以上 3333 与 7.18s 为最终结果。
+
+## 已完成检查：目录、模块和文档收口（2026-11-15）
+
+新增旧 require 路径拒绝回归：19 个已删除的 widget/source/player/extension/入口名字
+均报告 module not found，不因 loader alias 或旧搜索路径回退。现有 public/source/
+slash/init identity、catalog 可导入、静态 export 和资源生命周期检查继续通过。
+根 README、模块与设计导航、owner 说明、迁移入口对照和测试基线已同步。
+本轮重新统计 166 个生产 Lua 文件：549 个唯一类型声明、152 个模块类型，无重复或
+未限定声明。早前 552/153 是统计记录错误；本轮未修改生产类型或执行代码。
+
+完整 Lua **3304 checks passed**；生产 EmmyLua **No issues found**；独立框架与完整
+catalog Python **2 passed in 0.36s**，无 skip。生产检查排除 ignored tmp 和暂缓验收的
+meta。本轮 uv 默认缓存被沙箱拒绝后授权重试，未更换缓存或修改用户配置。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+uv run --group test python -m pytest -q test/test_framework_packages.py --tb=short
+```
+
+2026-11-15 用户确认当前分支播放器标题/按钮、时间线/音量、AutoHide/thumbfast、全屏与
+Demo 开关外观和交互正常；没有提供具体媒体、mpv 版本和帧率，记录仅包含其确认范围。
+本次生产文件只改注释，没有宿主行为变化；沿用此前已通过的定向 real-host 结果，
+未重复全量或相关宿主检查。meta 专项测试/生成一致性/扩展分析器/编辑器验收继续暂缓；
+未重跑 benchmark/内存调查，不作性能改善结论。
+
+下文阶段段落保留当时版本和验证范围，其中“未实施/待审阅”属于历史状态。
+
+## 已完成检查：FPK-4 注解风格与 meta 范围调整（2026-11-15）
 
 生产声明采用 `@namespace elxosc`，引用采用 `@using elxosc` 与 owner using；解析后
 仍为 552 个类型声明/153 module types，init 不另声明类型，runtime 类名保持。
@@ -677,9 +734,10 @@ runtime identity、生命周期和 frame 顺序由离线/host stub 测试验收�
 - lib/src/foundation/painting/text：值语义、边界校验、Canvas/TextLayout 契约；
 - lib/src/layout/render：约束代数、布局收敛、绘制记录、命中/输入逆映射、dirty 分类；
 - lib/src/animation/scheduler：假时钟、重复/反向、监听替换和 State 资源生命周期；
-- widget：Widget/Element 复用、State rebuild、Builder contract/失败清理、ModernX Main/
-  ProgressBar/AutoHide、聚合 identity、控件行为；
-- extension/Define：沙箱、模块、scope 首次 payload、transaction 失败隔离、module 延迟发布、
+- widgets/material：Widget/Element 复用、State rebuild、Builder contract/失败清理、
+  collector identity、基础机制与有样式控件行为；
+- player：PlayerStore/Scope、ModernX Main、Timeline/AutoHide 和资源生命周期；
+- define：沙箱、模块、scope 首次成功 payload、transaction 失败隔离、module 延迟发布、
   bind 顺序和错误边界；
 - host stub/ASS：presenter、Demo、ASS 标签、host wiring 和 layering 规则；
 - Flutter runtime：BuildScope/inactive/finalize、PipelineOwner/RenderOwner identity、

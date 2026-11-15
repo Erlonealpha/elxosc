@@ -12,6 +12,8 @@ repeatable `--declarations` composes extension JSON descriptors, checking names,
 named type intersections and same-name conflicts before writing `--output`.
 Generated metadata is editor input only. Setup and a typed payload example are
 documented in [meta/README.md](../meta/README.md).
+It declares `elxosc.meta.Builtins` table members for scope functions and the two
+default class factories, without adding editor globals or implicit component exports.
 
 ## ASS measurement
 

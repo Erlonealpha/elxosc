@@ -39,8 +39,7 @@ local define_window = 0.5
 
 --== debug =================================================================
 
--- `host/mpv_input.lua` calls these globals; they belong in a `libs/debug.lua`
--- module (dev/design/HOST.md), but the host layer is being built out first.
+-- The entry supplies diagnostic globals used by `host/mpv_input.lua`.
 local debug_enabled = true
 
 function debug_msg(arg0, ...)

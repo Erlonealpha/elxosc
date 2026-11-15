@@ -18,8 +18,8 @@ its scope. The first successful payload commits; later payloads warn and are ign
 At seal the host assembles once before mount. This protocol has no runtime unbind,
 scope shutdown, mounted-tree rollback, root manager or source hot reload.
 
-`import` injects exports; `import_as` returns a shallow package without environment
-injection. Both preserve nested/class/array identity and run loaders within the
+`import` injects exports; `import_as` and its `require` alias return a shallow package
+without environment injection. They preserve nested/class/array identity and run loaders within the
 active transaction. Multi-level names resolve exact registered packages, not fields.
 Protecting a parent also protects unpublished descendant names.
 
@@ -30,13 +30,17 @@ it does not attach the sandbox source table. Use `import_as('define.sandbox')` o
 static package descriptors; ModuleRegistry adds scoped loaders and owns transactional
 publication, protection and payload visibility.
 
-`host/package_catalog.lua` joins the three owning catalogs; `host/builtins.lua` explicitly
-selects 115 default fields. Host mp/player facades provide owned disposable subscriptions.
+`host/package_catalog.lua` joins the three owning catalogs; `host/builtins.lua` exposes
+only `new_widget` and `new_state`. Components and values are imported from their
+owning packages. DefineSession supplies the five protocol functions and host adds
+`print`; custom builtin overrides retain their replacement semantics.
+Host mp/player facades provide owned disposable subscriptions.
 Static source modules and collectors remain usable without registration.
 
 Types belong to `elxosc.mod.define.*` and `elxosc.define.*`. Class factory name
 templates bind declared extension subclasses and keep their constructor signatures;
 the runtime class names remain caller-controlled. The [meta entry](../meta/README.md)
-provides imports, default globals and extension package/type declarations for editors.
+describes payload names through `elxosc.meta.Builtins` table members and package/type
+declarations. Metadata does not declare editor globals or replace Lua's `require`.
 
 See [host protocol](../dev/design/HOST.md) and [player composition](../dev/design/PLAYER.md).
