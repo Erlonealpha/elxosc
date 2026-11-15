@@ -99,23 +99,19 @@ end)
 
 F.section('host define: builtins')
 
-F.test('builtins exposes the widget library', function()
+F.test('builtins contains only the two class factories', function()
     local b = host_define.builtins()
-    F.ok(b.Text ~= nil, 'Text')
-    F.ok(b.Icon ~= nil, 'Icon')
-    F.ok(b.Container ~= nil, 'Container')
-    F.ok(b.SlotSpec ~= nil, 'SlotSpec')
-    F.ok(b.SlotWrap ~= nil, 'SlotWrap')
-    F.ok(b.Column ~= nil, 'Column')
-    F.ok(b.Button ~= nil, 'Button')
-    F.ok(b.TransformBox ~= nil, 'TransformBox')
-    F.ok(b.LayoutScaleBox ~= nil, 'LayoutScaleBox')
+    local count = 0
+    for name, value in pairs(b) do
+        count = count + 1
+        F.ok(name == 'new_widget' or name == 'new_state', 'explicit factory name: ' .. name)
+        F.eq(value, dsl[name], 'canonical class factory: ' .. name)
+    end
+    F.eq(count, 2, 'only factory exports')
 end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()
-    local b = host_define.builtins()
     local define_api = require('define')
-    F.eq(b.SlotSpec, slot_mod.SlotSpec, 'DSL SlotSpec')
     F.eq(define_api.SlotSpec, slot_mod.SlotSpec, 'Define SlotSpec')
     F.eq(define_api.CompositionAssembler, slot_mod.CompositionAssembler,
         'Define CompositionAssembler')
@@ -149,18 +145,18 @@ F.test('layout modules and aggregate preserve class identity', function()
     end
 end)
 
-F.test('builtins exposes the value types', function()
-    local b = host_define.builtins()
+F.test('material collector exposes value types with direct identity', function()
+    local b = basic_widgets
     F.ok(b.EdgeInsets ~= nil, 'EdgeInsets')
     F.ok(b.Color ~= nil, 'Color')
     F.ok(b.TextStyle ~= nil, 'TextStyle')
     F.ok(rawequal(b.Matrix2D, transform_mod.Matrix2D), 'Matrix2D')
-    F.ok(rawequal(b.TextStyle, text_style_mod.TextStyle), 'DSL and direct-module style class identity')
+    F.ok(rawequal(b.TextStyle, text_style_mod.TextStyle), 'material and direct-module style class identity')
     F.ok(rawequal(b.Anchor, anchor_mod.Anchor), 'Anchor constants')
-    F.ok(rawequal(b.TextPaint, text_paint_mod.TextPaint), 'DSL and direct-module paint class identity')
+    F.ok(rawequal(b.TextPaint, text_paint_mod.TextPaint), 'material and direct-module paint class identity')
     local style = b.TextStyle({ font_size = 12.5, wrap = false })
-    F.eq(style.font_size, 12.5, 'DSL constructor uses options')
-    F.eq(style.wrap, false, 'DSL constructor keeps false')
+    F.eq(style.font_size, 12.5, 'imported constructor uses options')
+    F.eq(style.wrap, false, 'imported constructor keeps false')
 end)
 
 F.test('builtins exposes the two factories', function()

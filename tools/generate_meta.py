@@ -77,6 +77,10 @@ def render(packages, root=ROOT):
     lines += [f"---@field ['{name}'] {type_name}" for name, type_name in packages.items()]
     lines += [
         '',
+        '--- Describes names available in a Define payload, without declaring editor globals.',
+        '---@class meta.Builtins : mod.host.builtins',
+        'local Builtins = {}',
+        '',
         '--- Returns a scoped shallow package without adding fields to the payload environment.',
         '--- Nonliteral/dynamic names have only a table fallback; declare their type for field hints.',
         '---@param name string',
@@ -84,49 +88,51 @@ def render(packages, root=ROOT):
     ]
     lines += [f"---@overload fun(name: '{name}'): {type_name}" for name, type_name in packages.items()]
     lines += [
-        'function import_as(name) end',
+        'function Builtins.import_as(name)',
+        'end',
         '',
         '--- Injects members into this scope; it returns no package. Prefer import_as for local hints.',
         '---@param name string',
-        'function import(name) end',
+        'function Builtins.import(name)',
+        'end',
         '',
-        '--- Define require is the scope import alias, not the framework source loader.',
-        '---@param name string',
-        'function require(name) end',
+        '--- Define require is the returning import_as alias, not the framework source loader.',
+        'Builtins.require = Builtins.import_as',
         '',
         '--- Publishes data within the active Define payload transaction.',
         '---@param name string',
         '---@param data table?',
-        'function mod(name, data) end',
+        'function Builtins.mod(name, data)',
+        'end',
         '',
         '---@param id string',
         '---@param widget elxosc.Widget|elxosc.Widget[]|nil',
         '---@param opts table<string, any>?',
-        'function bind(id, widget, opts) end',
+        'function Builtins.bind(id, widget, opts)',
+        'end',
         '',
         '---@param ... any',
-        'function print(...) end',
+        'function Builtins.print(...)',
+        'end',
         '',
     ]
     content = (root / 'host/builtins.lua').read_text(encoding='utf-8')
-    entries = re.findall(r'^        ([A-Za-z_][A-Za-z0-9_]*) = ', content, re.M)
+    entries = re.findall(r'^    ([A-Za-z_][A-Za-z0-9_]*) = ', content, re.M)
     if len(entries) != len(set(entries)):
         raise ValueError('host/builtins.lua: duplicate default name')
-    # Indexed access reuses the actual callable class and exact selected export type.
+    # Inheritance reuses selected exports; factory annotations retain name templates.
     dsl = (root / 'define/src/dsl.lua').read_text(encoding='utf-8')
     for name in entries:
         if name in ('new_widget', 'new_state'):
             # Indexed function aliases lose name-template constraints in the analyzer.
-            # Reuse the source factory annotations verbatim for its global counterpart.
+            # Reuse the source factory annotations verbatim for the table member.
             doc = re.search(r'(---@generic[^\n]*\n(?:---@[^\n]*\n)+)function M\.' + name + r'\(', dsl)
             if doc is None:
                 raise ValueError(f'define/src/dsl.lua: missing factory signature for {name}')
-            lines += [doc.group(1).rstrip(), f'function {name}(name, parent) end']
-        else:
-            lines += [f"---@type elxosc.mod.host.builtins['{name}']\n{name} = nil"]
+            lines += [doc.group(1).rstrip(), f'function Builtins.{name}(name, parent)', 'end', '']
     return '\n'.join(line.replace('elxosc.', '') if line.startswith('---@')
                      and not line.startswith(('---@namespace ', '---@using '))
-                     else line for line in lines) + '\n'
+                     else line for line in lines).rstrip() + '\n'
 
 
 def main(argv=None):

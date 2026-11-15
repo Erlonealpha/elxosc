@@ -7,7 +7,7 @@
 --   * `new_widget` / `new_state` let a script declare a `StatefulWidget` +
 --     `State` pair without touching `std` (see `dev/feat_example.lua`);
 --
--- The default construction surface is collected by lib/material.lua.
+-- host/builtins.lua exposes these factories; components are imported separately.
 
 ---@namespace elxosc
 ---@using elxosc

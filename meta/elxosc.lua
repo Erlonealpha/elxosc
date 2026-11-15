@@ -149,6 +149,10 @@
 ---@field ['define.package_catalog'] mod.define.package_catalog
 ---@field ['mp'] host.MpPackage
 
+--- Describes names available in a Define payload, without declaring editor globals.
+---@class meta.Builtins : mod.host.builtins
+local Builtins = {}
+
 --- Returns a scoped shallow package without adding fields to the payload environment.
 --- Nonliteral/dynamic names have only a table fallback; declare their type for field hints.
 ---@param name string
@@ -296,264 +300,45 @@
 ---@overload fun(name: 'define.slot'): mod.define.src.slot
 ---@overload fun(name: 'define.package_catalog'): mod.define.package_catalog
 ---@overload fun(name: 'mp'): host.MpPackage
-function import_as(name) end
+function Builtins.import_as(name)
+end
 
 --- Injects members into this scope; it returns no package. Prefer import_as for local hints.
 ---@param name string
-function import(name) end
+function Builtins.import(name)
+end
 
---- Define require is the scope import alias, not the framework source loader.
----@param name string
-function require(name) end
+--- Define require is the returning import_as alias, not the framework source loader.
+Builtins.require = Builtins.import_as
 
 --- Publishes data within the active Define payload transaction.
 ---@param name string
 ---@param data table?
-function mod(name, data) end
+function Builtins.mod(name, data)
+end
 
 ---@param id string
 ---@param widget Widget|Widget[]|nil
 ---@param opts table<string, any>?
-function bind(id, widget, opts) end
+function Builtins.bind(id, widget, opts)
+end
 
 ---@param ... any
-function print(...) end
+function Builtins.print(...)
+end
 
----@type mod.host.builtins['Widget']
-Widget = nil
----@type mod.host.builtins['StatelessWidget']
-StatelessWidget = nil
----@type mod.host.builtins['StatefulWidget']
-StatefulWidget = nil
----@type mod.host.builtins['ProxyWidget']
-ProxyWidget = nil
----@type mod.host.builtins['ParentDataWidget']
-ParentDataWidget = nil
----@type mod.host.builtins['InheritedWidget']
-InheritedWidget = nil
----@type mod.host.builtins['RenderObjectWidget']
-RenderObjectWidget = nil
----@type mod.host.builtins['LeafRenderObjectWidget']
-LeafRenderObjectWidget = nil
----@type mod.host.builtins['SingleChildRenderObjectWidget']
-SingleChildRenderObjectWidget = nil
----@type mod.host.builtins['MultiChildRenderObjectWidget']
-MultiChildRenderObjectWidget = nil
----@type mod.host.builtins['State']
-State = nil
----@type mod.host.builtins['Key']
-Key = nil
----@type mod.host.builtins['LocalKey']
-LocalKey = nil
----@type mod.host.builtins['UniqueKey']
-UniqueKey = nil
----@type mod.host.builtins['ValueKey']
-ValueKey = nil
----@type mod.host.builtins['ObjectKey']
-ObjectKey = nil
----@type mod.host.builtins['GlobalKey']
-GlobalKey = nil
----@type mod.host.builtins['Provider']
-Provider = nil
----@type mod.host.builtins['PlayerProvider']
-PlayerProvider = nil
----@type mod.host.builtins['PlayerCapability']
-PlayerCapability = nil
----@type mod.host.builtins['PlayerSnapshot']
-PlayerSnapshot = nil
----@type mod.host.builtins['PlayerScope']
-PlayerScope = nil
----@type mod.host.builtins['Theme']
-Theme = nil
----@type mod.host.builtins['ThemeData']
-ThemeData = nil
----@type mod.host.builtins['DefaultTextStyle']
-DefaultTextStyle = nil
----@type mod.host.builtins['DisplaySnapshot']
-DisplaySnapshot = nil
----@type mod.host.builtins['DisplayScope']
-DisplayScope = nil
----@type mod.host.builtins['HostActions']
-HostActions = nil
----@type mod.host.builtins['HostActionsScope']
-HostActionsScope = nil
----@type mod.host.builtins['Opacity']
-Opacity = nil
----@type mod.host.builtins['Offstage']
-Offstage = nil
----@type mod.host.builtins['Visibility']
-Visibility = nil
----@type mod.host.builtins['AutoHide']
-AutoHide = nil
----@type mod.host.builtins['AutoHideController']
-AutoHideController = nil
----@type mod.host.builtins['Overlay']
-Overlay = nil
----@type mod.host.builtins['OverlayEntry']
-OverlayEntry = nil
----@type mod.host.builtins['OverlayEntryWidget']
-OverlayEntryWidget = nil
----@type mod.host.builtins['OverlayScope']
-OverlayScope = nil
----@type mod.host.builtins['Theatre']
-Theatre = nil
----@type mod.host.builtins['Navigator']
-Navigator = nil
----@type mod.host.builtins['NavigatorScope']
-NavigatorScope = nil
----@type mod.host.builtins['Page']
-Page = nil
----@type mod.host.builtins['PopupPage']
-PopupPage = nil
----@type mod.host.builtins['Route']
-Route = nil
----@type mod.host.builtins['PopupRoute']
-PopupRoute = nil
----@type mod.host.builtins['RouteResult']
-RouteResult = nil
----@type mod.host.builtins['ModalBarrier']
-ModalBarrier = nil
----@type mod.host.builtins['WidgetsApp']
-WidgetsApp = nil
----@type mod.host.builtins['DefaultApp']
-DefaultApp = nil
----@type mod.host.builtins['Main']
-Main = nil
----@type mod.host.builtins['PlayerMain']
-PlayerMain = nil
----@type mod.host.builtins['WindowLayer']
-WindowLayer = nil
----@type mod.host.builtins['PlayerTheme']
-PlayerTheme = nil
----@type mod.host.builtins['PlayerThemeData']
-PlayerThemeData = nil
----@type mod.host.builtins['PlayerLayout']
-PlayerLayout = nil
----@type mod.host.builtins['PlayerDescriptionLayer']
-PlayerDescriptionLayer = nil
----@type mod.host.builtins['PlayerControlBar']
-PlayerControlBar = nil
----@type mod.host.builtins['PlayerControlButton']
-PlayerControlButton = nil
----@type mod.host.builtins['PlayerTimeDisplay']
-PlayerTimeDisplay = nil
----@type mod.host.builtins['PlayerHoverText']
-PlayerHoverText = nil
----@type mod.host.builtins['PlayerTooltip']
-PlayerTooltip = nil
----@type mod.host.builtins['PlayerIcons']
-PlayerIcons = nil
----@type mod.host.builtins['Timeline']
-Timeline = nil
----@type mod.host.builtins['SlotSpec']
-SlotSpec = nil
----@type mod.host.builtins['SlotWrap']
-SlotWrap = nil
----@type mod.host.builtins['Text']
-Text = nil
----@type mod.host.builtins['Icon']
-Icon = nil
----@type mod.host.builtins['CustomPaint']
-CustomPaint = nil
----@type mod.host.builtins['GestureDetector']
-GestureDetector = nil
----@type mod.host.builtins['Button']
-Button = nil
----@type mod.host.builtins['ButtonBase']
-ButtonBase = nil
----@type mod.host.builtins['ButtonStyle']
-ButtonStyle = nil
----@type mod.host.builtins['ElevatedButton']
-ElevatedButton = nil
----@type mod.host.builtins['OutlinedButton']
-OutlinedButton = nil
----@type mod.host.builtins['TextButton']
-TextButton = nil
----@type mod.host.builtins['IconButton']
-IconButton = nil
----@type mod.host.builtins['Tooltip']
-Tooltip = nil
----@type mod.host.builtins['LinearProgressIndicator']
-LinearProgressIndicator = nil
----@type mod.host.builtins['Slider']
-Slider = nil
----@type mod.host.builtins['HoverText']
-HoverText = nil
----@type mod.host.builtins['Padding']
-Padding = nil
----@type mod.host.builtins['Align']
-Align = nil
----@type mod.host.builtins['Center']
-Center = nil
----@type mod.host.builtins['SizedBox']
-SizedBox = nil
----@type mod.host.builtins['DecoratedBox']
-DecoratedBox = nil
----@type mod.host.builtins['Flexible']
-Flexible = nil
----@type mod.host.builtins['Expanded']
-Expanded = nil
----@type mod.host.builtins['Spacer']
-Spacer = nil
----@type mod.host.builtins['Flex']
-Flex = nil
----@type mod.host.builtins['Row']
-Row = nil
----@type mod.host.builtins['Column']
-Column = nil
----@type mod.host.builtins['Stack']
-Stack = nil
----@type mod.host.builtins['Positioned']
-Positioned = nil
----@type mod.host.builtins['ConstrainedBox']
-ConstrainedBox = nil
----@type mod.host.builtins['LimitedBox']
-LimitedBox = nil
----@type mod.host.builtins['UnconstrainedBox']
-UnconstrainedBox = nil
----@type mod.host.builtins['OverflowBox']
-OverflowBox = nil
----@type mod.host.builtins['FittedBox']
-FittedBox = nil
----@type mod.host.builtins['Container']
-Container = nil
----@type mod.host.builtins['OffsetBox']
-OffsetBox = nil
----@type mod.host.builtins['TransformBox']
-TransformBox = nil
----@type mod.host.builtins['LayoutScaleBox']
-LayoutScaleBox = nil
----@type mod.host.builtins['Offset']
-Offset = nil
----@type mod.host.builtins['Point']
-Point = nil
----@type mod.host.builtins['Size']
-Size = nil
----@type mod.host.builtins['Rect']
-Rect = nil
----@type mod.host.builtins['EdgeInsets']
-EdgeInsets = nil
----@type mod.host.builtins['Color']
-Color = nil
----@type mod.host.builtins['Paint']
-Paint = nil
----@type mod.host.builtins['TextStyle']
-TextStyle = nil
----@type mod.host.builtins['Matrix2D']
-Matrix2D = nil
----@type mod.host.builtins['Anchor']
-Anchor = nil
----@type mod.host.builtins['TextPaint']
-TextPaint = nil
 ---@generic T: StatefulWidget
 ---@[constructor('__init', 'object')]
 ---@param name `T`
 ---@param parent StatefulWidget? defaults to StatefulWidget
 ---@return T
-function new_widget(name, parent) end
+function Builtins.new_widget(name, parent)
+end
+
 ---@generic T: State
 ---@[constructor('__init', 'object')]
 ---@param name `T`
 ---@param parent State? defaults to State
 ---@return T
-function new_state(name, parent) end
+function Builtins.new_state(name, parent)
+end

@@ -215,6 +215,43 @@ F.test('host collects standard packages and keeps builtins independent of regist
     define:shutdown()
 end)
 
+F.test('default scope imports components while retaining class factories and protocol', function()
+    reset_fake()
+    local define = MpDefine()
+    for _, name in ipairs({ 'Text', 'Button', 'Color', 'Widget', 'PlayerScope', 'SlotSpec',
+        'material', 'widgets', 'player' }) do
+        F.eq(define.session.api[name], nil, 'no implicit component or package: ' .. name)
+    end
+    define.session:define_start()
+    define.session:define('minimal', [[
+        local widgets = require('widgets')
+        local material = require('material')
+        local host = import_as('mp')
+        local Control = new_widget('minimal.Control')
+        local ControlState = new_state('minimal.ControlState')
+        function ControlState:build()
+            return material.TextButton({ child = widgets.Text('explicit import') })
+        end
+        function Control:create_state()
+            return ControlState()
+        end
+        mod('minimal.controls', { Control = Control })
+        bind('slot', Control())
+        host.set_prop('user-data/minimal-import', 'ready')
+    ]])
+    local env = define.session:env_for('minimal')
+    F.eq(env.Text, nil, 'local imports leave component names out of the scope')
+    F.eq(env.widgets, nil, 'local packages are not injected')
+    F.eq(env.new_widget, require('define.src.dsl').new_widget, 'default widget factory')
+    F.eq(env.new_state, require('define.src.dsl').new_state, 'default state factory')
+    F.ok(define.session.modules:has('minimal.controls'), 'factory class publishes transactionally')
+    define.session:define_end()
+    local owner, tree = mount(define:assemble(scaffold(Text('root'))))
+    F.ok(owner.root ~= nil, 'explicitly imported components mount with minimal builtins')
+    tree:dispose()
+    define:shutdown()
+end)
+
 F.test('flattened standard widget import preserves the Define bind protocol', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })

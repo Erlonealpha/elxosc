@@ -2,15 +2,15 @@
 -- Copyright (C) 2026 ErloneAlpha
 
 -- The define protocol (dev/design/HOST.md): `define_start` → `define(scope, code)`
--- (repeatable) → `define_end`.
+-- (first successful payload per scope) → `define_end`.
 --
 -- Deliberately thin. It owns three things and nothing more:
 --   * the phase machine and the message routing;
---   * the scopes — one environment per scope id, reused across payloads;
+--   * the scopes — one environment per scope id, with failed-payload retries;
 --   * the scope-aware DSL: `import` / `import_as` / `mod` / `bind`.
 --
 -- Everything else is injected. `builtins` are the names every scope can read
--- (widget constructors, `print`, ...); modules come from `extension/modules.lua`; and
+-- (widget constructors, `print`, ...); modules come from `define/src/modules.lua`; and
 -- the host's own services are just modules the host publishes — mpv properties
 -- and script messages are the `mp` module's business, not the framework's.
 
@@ -90,7 +90,7 @@ function DefineSession:__init(options)
     api['import_as'] = function(name)
         return self:_import_as(name)
     end
-    api['require'] = api['import']
+    api['require'] = api['import_as']
     api['mod'] = function(name, data)
         self:_mod(name, data)
     end
@@ -103,8 +103,8 @@ function DefineSession:__init(options)
     self.api = api
 end
 
---- The environment of `scope_id`, created on first use and reused afterwards,
---- so a script may split its declaration across several `define` messages.
+--- The environment of `scope_id`, retained for failed-payload retries and
+--- callbacks from its first accepted payload. Later payloads are ignored.
 ---@param scope_id string
 ---@return table env
 function DefineSession:env_for(scope_id)
@@ -124,7 +124,7 @@ function DefineSession:_import(name)
             "import('%s') outside of a define payload", name)))
     end
     self.modules:import_into(name, env, self.current_define --[[@as string]])
-    -- Framework packages also expose a registry-based bind helper. Keep the
+    -- Define packages also expose a registry-based bind helper. Keep the
     -- payload's scope-aware construction protocol after flattening a package.
     for _, builtin in ipairs({ 'import', 'import_as', 'require', 'mod', 'bind' }) do
         env[builtin] = self.api[builtin]

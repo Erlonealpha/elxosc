@@ -348,6 +348,39 @@ F.test('mod can publish an explicit table', function()
     F.eq(session:env_for('t').copy, 7, 'explicit payload published')
 end)
 
+F.test('require returns scoped packages without injecting exports and survives flat imports', function()
+    local modules = ModuleRegistry()
+    local shared = { marker = false, nested = {}, [1] = 'first' }
+    modules:add('shared', shared)
+    modules:add_loader('shared', function(package, scope_id)
+        package.scope = scope_id
+    end)
+    local session = DefineSession({ modules = modules })
+    F.eq(session.api.require, session.api.import_as, 'require uses the same returning function')
+    session:define_start()
+    for _, scope_id in ipairs({ 'first', 'second' }) do
+        session:define(scope_id, [[
+            package = require('shared')
+            marker_before = marker
+            import('shared')
+            package_after = require('shared')
+        ]])
+        local env = session:env_for(scope_id)
+        F.eq(env.marker_before, nil, 'require does not inject exports')
+        F.eq(env.package.marker, false, 'returned false member')
+        F.eq(env.package[1], 'first', 'returned array member')
+        F.eq(env.package.nested, shared.nested, 'nested member identity')
+        F.eq(env.package.scope, scope_id, 'loader receives the requiring scope')
+        F.eq(env.package_after.scope, scope_id, 'require works after flat import')
+        F.eq(env.require, session.api.import_as, 'flat import preserves returning alias')
+        F.eq(env.marker, false, 'explicit import injects members')
+    end
+    F.eq(shared.scope, nil, 'scope loader does not mutate registered exports')
+    F.raises(function()
+        session.api.require('shared')
+    end, 'outside of a define payload', 'alias retains payload boundary')
+end)
+
 F.test('a host module imported by a chunk works end to end', function()
     local modules = ModuleRegistry()
     modules:add('mp', { get_prop = function(name) return 'v:' .. name end })

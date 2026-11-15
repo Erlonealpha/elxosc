@@ -3,16 +3,35 @@
 ---@using example
 ---@using elxosc
 
-local widgets = import_as('widgets')
-local material = import_as('material')
-local player = import_as('player')
-local dsl = import_as('define.dsl')
-local host = import_as('mp')
+-- Capture only this payload's runtime environment; metadata declares no globals.
+---@type elxosc.meta.Builtins
+local builtins = {
+    -- The analyzer cannot infer functions supplied by Define's sandbox.
+    ---@diagnostic disable-next-line: undefined-global
+    import_as = import_as,
+    ---@diagnostic disable-next-line: undefined-global
+    import = import,
+    require = require,
+    ---@diagnostic disable-next-line: undefined-global
+    mod = mod,
+    ---@diagnostic disable-next-line: undefined-global
+    bind = bind,
+    print = print,
+    ---@diagnostic disable-next-line: undefined-global
+    new_widget = new_widget,
+    ---@diagnostic disable-next-line: undefined-global
+    new_state = new_state,
+}
+
+local widgets = builtins.require('widgets')
+local material = builtins.require('material')
+local player = builtins.import_as('player')
+local host = builtins.import_as('mp')
 
 ---@class Counter : StatefulWidget
 ---@field initial number
 ---@overload fun(initial: number): self
-local Counter = dsl.new_widget('example.Counter')
+local Counter = builtins.new_widget('example.Counter')
 
 function Counter:__init(initial)
     widgets.StatefulWidget.__init(self)
@@ -22,7 +41,7 @@ end
 ---@class CounterState : State
 ---@field value number
 ---@overload fun(): self
-local CounterState = dsl.new_state('example.CounterState')
+local CounterState = builtins.new_state('example.CounterState')
 
 function CounterState:__init()
     widgets.State.__init(self)
@@ -52,13 +71,13 @@ end
 local controls = { Counter = Counter, Slider = material.Slider }
 ---@class Labels
 local labels = { title = 'Counter', 'first', 'second' }
-mod('example.controls', controls)
-mod('example.labels', labels)
+builtins.mod('example.controls', controls)
+builtins.mod('example.labels', labels)
 
-local local_controls = import_as('example.controls')
-local local_labels = import_as('example.labels')
+local local_controls = builtins.import_as('example.controls')
+local local_labels = builtins.import_as('example.labels')
 local slider = local_controls.Slider({ value = 0.5 })
 local first_label = local_labels[1] or ''
 local counter = local_controls.Counter(#first_label)
 host.set_prop('user-data/example-type-hints', player.get_snapshot().time_pos)
-bind('app.extension', widgets.Column({ children = { counter, slider } }))
+builtins.bind('app.extension', widgets.Column({ children = { counter, slider } }))

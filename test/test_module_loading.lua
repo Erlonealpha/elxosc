@@ -26,6 +26,19 @@ F.test('source path spellings reuse modules and canonical classes', function()
     F.eq(require('src.render'), require('render'), 'render init uses collector')
 end)
 
+F.test('removed module paths have no runtime fallback', function()
+    for _, name in ipairs({ 'widget', 'widget.widgets', 'widget.widgets.slider',
+        'src.widget', 'src.widget.widget', 'src.widget.widgets.text', 'src.widget.ambient',
+        'src.widget.player_context', 'src.widget.actions', 'src.widget.player.timeline',
+        'src.widget.dsl', 'src.widget.bind', 'src.widget.slot', 'src.render.timeline',
+        'extension.define', 'extension.modules', 'extension.sandbox', 'main_layout', 'player_context' }) do
+        local ok, err = pcall(require, name)
+        F.eq(ok, false, 'removed require: ' .. name)
+        F.ok(tostring(err):find("module '" .. name .. "' not found", 1, true) ~= nil,
+            'removed path reports missing module: ' .. name)
+    end
+end)
+
 F.test('every library layer exposes canonical members without mp', function()
     for _, name in ipairs({ 'foundation', 'painting', 'text', 'layout', 'render',
         'animation', 'scheduler', 'widgets', 'backends', 'material', 'player' }) do
@@ -196,5 +209,5 @@ F.test('application packages share canonical classes and stay outside framework 
     for _ in pairs(host_define.builtins()) do
         count = count + 1
     end
-    F.eq(count, 115, 'explicit default builtin field count remains stable')
+    F.eq(count, 2, 'default builtins contain only class factories')
 end)
