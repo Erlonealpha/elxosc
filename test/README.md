@@ -64,10 +64,12 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-16): **3333 Lua checks**, production EmmyLua
-**No issues found**, and the independent framework/catalog Python checks
-**2 passed** at the unchanged framework boundary; related extension/Demo real-host
-checks **2 passed** after the minimal-builtins and returning-require change, with no skips.
+Current baseline (2026-11-16): **3389 Lua checks**, production EmmyLua
+**No issues found**; two related real-host cases passed in separate runs for
+AutoHide thumbfast cleanup/recovery and timeline click/drag playback/preview.
+The initial timeline click failure and unchanged rerun are recorded in
+[TESTING.md](../dev/design/TESTING.md). Framework/catalog and extension/Demo
+checks retain their previous results; meta-specific verification remains deferred.
 Production analysis uses
 `emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'`; dedicated metadata
 tests and editor acceptance are deferred at the user's request.

@@ -157,6 +157,89 @@ def test_autohide_clears_thumbfast_without_a_pointer_leave(real_host_factory, tm
 
 
 @pytest.mark.real_host
+def test_timeline_click_drag_resume_and_thumbfast_follow(real_host_factory, tmp_path):
+    script = Path(__file__).parents[2] / "main.lua"
+    peer = tmp_path / "thumbfast.lua"
+    peer.write_text(
+        "local mp = require 'mp'\n"
+        "mp.register_script_message('announce', function()\n"
+        "    mp.commandv('script-message', 'thumbfast-info', "
+        "'{\"width\":320,\"height\":180,\"available\":true,\"disabled\":false}')\n"
+        "end)\n"
+        "mp.register_script_message('thumb', function(seconds)\n"
+        "    mp.set_property('user-data/elxosc-test-thumb-time', seconds)\n"
+        "end)\n"
+        "mp.register_script_message('clear', function() end)\n"
+        "mp.set_property('user-data/elxosc-test-thumb-time', '-1')\n",
+        encoding="utf-8",
+    )
+    media = tmp_path / "timeline-controls.wav"
+    with wave.open(str(media), "wb") as stream:
+        stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
+        stream.writeframes(bytes(48000 * 2 * 60))
+    with real_host_factory(f"--script={script}", "--force-window=yes",
+                           "--geometry=1280x720") as (client, _, process, log):
+        wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
+        client.command("load-script", str(peer))
+        wait_for_property(client, process, log, "user-data/elxosc-test-thumb-time", "-1")
+        client.command("loadfile", str(media))
+        wait_for_property(client, process, log, "idle-active", False)
+        client.command("set_property", "pause", False)
+        wait_for_property(client, process, log, "pause", False)
+        client.command("script-message-to", "thumbfast", "announce")
+        time.sleep(0.3)
+        dimensions = client.command("get_property", "osd-dimensions")
+        width, height = dimensions["w"], dimensions["h"]
+        left, span = 25 * 1.5, width - 50 * 1.5
+        x, target_x, y = int(left + span * 0.2), int(left + span * 0.5), int(height - 100 * 1.5)
+        with WindowInput(process, client) as pointer:
+            pointer.move(x, y)
+            time.sleep(0.3)
+            client.command("keydown", "MBTN_LEFT")
+            try:
+                time.sleep(0.2)
+                assert client.command("get_property", "pause") is False, "press alone must not pause"
+            finally:
+                client.command("keyup", "MBTN_LEFT")
+            wait_for_property(client, process, log, "pause", False)
+            assert 60 * 0.15 < client.command("get_property", "time-pos") < 60 * 0.3
+
+            client.command("keydown", "MBTN_LEFT")
+            try:
+                pointer.move(target_x, y)
+                wait_for_property(client, process, log, "pause", True)
+                # Allow the pause observer to rebuild the production player;
+                # the active seek callback must survive this replacement.
+                time.sleep(0.3)
+                target_x = int(left + span * 0.6)
+                pointer.move(target_x, y)
+                deadline = time.monotonic() + 5
+                while True:
+                    preview = float(client.command("get_property", "user-data/elxosc-test-thumb-time"))
+                    if abs(preview - 60 * 0.6) < 0.2:
+                        break
+                    assert process.poll() is None, log.read_text(errors="replace")
+                    assert time.monotonic() < deadline, f"drag preview stayed at {preview}"
+                    time.sleep(0.05)
+            finally:
+                client.command("keyup", "MBTN_LEFT")
+            wait_for_property(client, process, log, "pause", False)
+            assert abs(client.command("get_property", "time-pos") - 60 * 0.6) < 2
+
+            client.command("set_property", "pause", True)
+            time.sleep(0.3)
+            pointer.move(x, y)
+            client.command("keydown", "MBTN_LEFT")
+            try:
+                pointer.move(int(left + span * 0.4), y)
+                time.sleep(0.3)
+            finally:
+                client.command("keyup", "MBTN_LEFT")
+            wait_for_property(client, process, log, "pause", True)
+            assert abs(client.command("get_property", "time-pos") - 60 * 0.4) < 1
+
+
+@pytest.mark.real_host
 def test_demo_navigation_returns_results_and_releases_escape(real_host_factory, tmp_path):
     script = Path(__file__).parents[2] / "main.lua"
     # mpv.net supplies its own default ESC=quit binding, overriding --input-conf.

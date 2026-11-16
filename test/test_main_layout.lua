@@ -360,9 +360,9 @@ F.test('seek dragging pauses once, deduplicates motion and restores playback', f
     owner:dispatch_pointer('move', geometry.Offset(offset.x + 200, y))
     owner:dispatch_pointer('move', geometry.Offset(offset.x + 200, y))
     owner:dispatch_pointer('up', geometry.Offset(offset.x + 200, y), 'left')
-    F.eq(calls[1][1], 'pause', 'drag pauses before seeking')
-    F.eq(calls[1][2], true, 'drag pause is explicit')
-    F.eq(calls[2][1], 'seek', 'drag starts with absolute seek')
+    F.eq(calls[1][1], 'seek', 'press seeks without changing playback')
+    F.eq(calls[2][1], 'pause', 'actual movement pauses before the next seek')
+    F.eq(calls[2][2], true, 'drag pause is explicit')
     F.eq(calls[3][1], 'seek', 'changed motion seeks')
     F.eq(calls[4][1], 'seek', 'release sends the final seek')
     F.eq(calls[5][1], 'pause', 'release restores playback')
@@ -522,6 +522,48 @@ F.test('tooltip cleanup starts before the AutoHide fade removes input', function
     clock:tick(0.2)
     F.ok(owner.root.hidden, 'fade completes normally')
     F.eq(cleared, 1, 'fade completion does not duplicate preview cleanup')
+    binding:dispose()
+    scheduler:dispose()
+end)
+
+F.test('fixed player tooltip resumes inside its retained hitbox after AutoHide', function()
+    local tooltip_mod = require 'player.src.tooltip'
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner, binding = mount(AutoHide({
+        controller = controller, timeout = 0.1, fade_duration = 0.2,
+        child = tooltip_mod.PlayerTooltip({
+            child = GestureDetector(Text('button'), { on_tap = function() end }),
+            text = 'hint',
+        }),
+    }), scheduler)
+    local state = find_widget_element(binding.root_element, tooltip_mod.PlayerTooltip).state
+    owner:dispatch_pointer('move', geometry.Offset(10, 5))
+    F.ok(state.hovered, 'button tooltip initially hovers')
+    clock:tick(0)
+    clock:tick(0.1)
+    F.ok(not state.hovered, 'inactivity clears tooltip at fade start')
+    clock:tick(0)
+    clock:tick(0.2)
+    F.ok(owner.root.hidden, 'inactivity hides the retained hitbox')
+    controller:activity()
+    binding:flush_build()
+    owner:layout()
+    F.ok(not state.hovered, 'reveal waits for real movement')
+    owner:dispatch_pointer('move', geometry.Offset(11, 5))
+    F.ok(state.hovered, 'movement inside the same button restores tooltip')
+    clock:tick(0)
+    clock:tick(0.05)
+    local canvas = require('src.backends.record').RecordCanvas()
+    owner:paint(canvas)
+    local visible = false
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_text' and op[1].text == 'hint' then
+            visible = true
+        end
+    end
+    F.ok(visible, 'restored tooltip paints during reveal')
     binding:dispose()
     scheduler:dispose()
 end)

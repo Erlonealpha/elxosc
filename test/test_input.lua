@@ -473,6 +473,41 @@ F.test('capture routes move and up outside the hit area', function()
     F.ok(not owner:has_pointer_capture(), 'capture is released after up')
 end)
 
+F.test('hover movement observes the hit path without retargeting captured events', function()
+    local observed, moved, released = {}, 0, 0
+    local node = box(20, 20)
+    -- This node is a deliberately dynamic routing test double.
+    ---@diagnostic disable-next-line: duplicate-set-field
+    function node:on_pointer_event(event)
+        if event.type == 'move' then
+            moved = moved + 1
+        elseif event.type == 'up' then
+            released = released + 1
+        end
+        return { handled = true, capture = event.type == 'down', stop_propagation = true }
+    end
+    local gesture = RenderGesture(node, {
+        on_hover_move = function(_, point, event)
+            observed[#observed + 1] = point
+            F.eq(event.point, point, 'observer receives the original structured event')
+        end,
+        on_move = function()
+            error('captured movement must not bubble to another target')
+        end,
+    })
+    local owner = laid_out(gesture)
+    owner:dispatch_pointer('down', Offset(5, 5), 'left')
+    local result = owner:dispatch_pointer_result(PointerEvent('move', Offset(10, 5)))
+    F.eq(observed[1], Offset(10, 5), 'hover observer updates during capture')
+    F.ok(result.capture and result.stop_propagation, 'capture result is preserved')
+    owner:dispatch_pointer('move', Offset(100, 100))
+    F.eq(#observed, 1, 'movement outside the hit path does not notify the observer')
+    F.eq(moved, 2, 'captured target receives each move exactly once')
+    owner:dispatch_pointer('up', Offset(100, 100), 'left')
+    F.eq(released, 1, 'outside release still belongs to the captured target')
+    F.ok(not owner:has_pointer_capture(), 'release ends capture')
+end)
+
 F.test('a new down replaces capture without losing the new release', function()
     local taps = 0
     local owner = laid_out(RenderGesture(box(20, 20), {

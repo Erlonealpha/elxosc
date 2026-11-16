@@ -129,11 +129,19 @@ Tooltip 使用控件上沿的 bottom-center anchor，文本/位置变化只更�
 职责拆分；`PlayerLayout` 和已有聚合/direct-module identity 保持兼容。
 
 `AutoHide` 在控制器开始隐藏时，向保留的子 State 发送内部
-`did_auto_hide_visibility_change()` 通知；tooltip 读取全部祖先 AutoHide 的当前 policy，
+`refresh_hover_visibility()` 通知；tooltip 读取全部祖先 AutoHide 的当前 policy，
 立即清理 hover 和外部 thumbfast，不等待 fade 完成或鼠标 leave。淡出期间仍保留原控件
 输入/capture，但不产生新 tooltip/thumbnail 请求；下一次重显后的真实 move 恢复预览。
 controller replacement、nested AutoHide、capability loss 和 dispose 均清理，通知只在可见性
 变化时执行，不给每次移动增加树遍历。
+
+2026-11-16 tooltip/时间线交互修复：固定文字 tooltip 在重显后的真实 move 上恢复，
+不要求先离开原按钮 hitbox。时间线预览通过当前命中路径的 hover move observer 更新，
+拖拽 capture 期间时间与 thumbfast 继续共享当前位置；移出时间线仍清理预览。
+`Timeline.on_seek` 在 start 时固定本次生命周期回调，Widget 重建替换的非 nil 回调用于
+下次操作；end/cancel 释放旧回调，禁用或移除 seek 回调仍取消当前操作。
+默认 `mouse_seek_pause` 只在拖动改变位置后暂停播放中的媒体；普通点击仅 seek。
+本次拖动持有的 pause 在 release/cancel、能力失效或卸载时恢复，原本暂停的媒体保持暂停。
 
 thumbnail 的请求、时间标签和边框共享取整后的 host 像素坐标。`PlayerThemeData` 提供
 `thumbnail_border`（默认 1）、`thumbnail_border_radius`（默认 5）、

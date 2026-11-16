@@ -196,6 +196,30 @@ F.test('generic tooltip accepts a policy and cancels previews without changing i
     end, 'must be a function', 'policy callback validated')
 end)
 
+F.test('fixed tooltip resumes on movement inside the same hitbox after policy suppression', function()
+    text_layout.set_default(ControlTextLayout())
+    local enabled = true
+    local owner, tree = mount(Tooltip({
+        text = 'fixed',
+        hover_enabled = function()
+            return enabled
+        end,
+    }))
+    owner:dispatch_pointer('move', Offset(100, 10))
+    F.ok(label_draw(owner, 'fixed') ~= nil, 'fixed label initially appears')
+    local state = tree.root_element.state
+    enabled = false
+    state:refresh_hover_visibility()
+    F.eq(label_draw(owner, 'fixed'), nil, 'suppression removes the label')
+    enabled = true
+    state:refresh_hover_visibility()
+    F.eq(label_draw(owner, 'fixed'), nil, 'policy change does not synthesize hover')
+    owner:dispatch_pointer('move', Offset(101, 10))
+    F.ok(label_draw(owner, 'fixed') ~= nil, 'same-hitbox movement restores the fixed label')
+    F.ok(not owner:needs_layout() and not tree.build_owner:has_dirty(), 'recovery remains paint-only')
+    tree:dispose()
+end)
+
 F.test('slider separates start, change and end callbacks and quantizes numeric selection', function()
     local changes = {}
     local options = { min = 10, max = 110, value = 35, divisions = 4, track_inset = 0,

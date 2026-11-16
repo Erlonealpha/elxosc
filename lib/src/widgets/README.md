@@ -15,6 +15,8 @@ other sources directly; they do not load collectors, Material, player or Define.
   foreground/glow without rebuilding, measuring text or invalidating layout.
 - Tooltip owns hover, measurement, anchoring and preview hooks. PlayerTooltip
   supplies player styling and AutoHide eligibility from above this layer.
+  Real hit-path movement restores suppressed hover and updates previews during
+  child capture; policy changes alone do not synthesize hover or rebuild layout.
 - Icon owns nominal glyph layout and paint offsets. Its bundled font default is
   supplied by the resource contract in `fonts.material_symbols`; custom font
   families do not acquire Material Symbols variation intent.

@@ -29,6 +29,7 @@ local M = {}
 ---@field on_enter fun(self: RenderGesture)?
 ---@field on_leave fun(self: RenderGesture)?
 ---@field on_move fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
+---@field on_hover_move fun(self: RenderGesture, point: Offset, event: PointerEvent)? observes hit-path movement during capture too
 ---@field on_down fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
 ---@field on_up fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
 ---@field on_tap fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
@@ -127,6 +128,13 @@ function RenderGesture:input_region_rect()
     return Rect(-expand, -expand, self.size.width + expand, self.size.height + expand)
 end
 
+function RenderGesture:on_hover_move(point, event)
+    local callback = self.handlers.on_hover_move
+    if callback then
+        callback(self, point, event)
+    end
+end
+
 function RenderGesture:wants_pointer(event)
     local h = self.handlers
     if event == 'down' or event == 'up' then
@@ -135,7 +143,7 @@ function RenderGesture:wants_pointer(event)
     elseif event == 'wheel' then
         return h.on_wheel ~= nil
     elseif event == 'move' then
-        return h.on_move ~= nil or h.on_enter ~= nil or h.on_leave ~= nil
+        return h.on_move ~= nil or h.on_hover_move ~= nil or h.on_enter ~= nil or h.on_leave ~= nil
     end
     return false
 end

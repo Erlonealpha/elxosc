@@ -308,9 +308,16 @@ function TooltipState:build()
                 self:_clear_hover()
             end
         end,
-        on_move = function(_, point)
-            if self:_hover_allowed() and point and (widget.follow_pointer or widget.text_for_point
-                or widget.on_hover_point or widget.paint_for_point) then
+        on_hover_move = function(_, point)
+            if not self:_hover_allowed() then
+                return
+            end
+            if not self.hovered then
+                self.hovered = true
+                self:_invalidate_paint()
+            end
+            if widget.follow_pointer or widget.text_for_point
+                or widget.on_hover_point or widget.paint_for_point then
                 local label_at_point = widget.text_for_point
                     and (widget.text_for_point(point) or '') or nil
                 local changed = self.hover_point == nil

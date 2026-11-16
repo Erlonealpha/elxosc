@@ -187,6 +187,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     local seek_callback
     local seek_state = {
         was_playing = false,
+        pause_owned = false,
         mode = 'keyframe',
     }
     if duration ~= nil and duration > 0 and actions:has('seek_to') then
@@ -194,20 +195,24 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             if phase == 'start' then
                 seek_state.was_playing = snapshot ~= nil and snapshot:get('pause') ~= true
                 seek_state.mode = mode or 'keyframe'
-                if seek_state.was_playing and theme.mouse_seek_pause and actions:has('set_pause') then
+                actions:seek_to(duration * fraction, seek_state.mode)
+            elseif phase == 'update' then
+                if seek_state.was_playing and not seek_state.pause_owned
+                    and theme.mouse_seek_pause and actions:has('set_pause') then
+                    seek_state.pause_owned = true
                     actions:set_pause(true)
                 end
                 actions:seek_to(duration * fraction, seek_state.mode)
-            elseif phase == 'update' then
-                actions:seek_to(duration * fraction, seek_state.mode)
             elseif phase == 'end' then
                 actions:seek_to(duration * fraction, seek_state.mode)
-                if seek_state.was_playing and theme.mouse_seek_pause and actions:has('set_pause') then
+                if seek_state.pause_owned then
+                    seek_state.pause_owned = false
                     actions:set_pause(false)
                 end
                 seek_state.was_playing = false
             elseif phase == 'cancel' then
-                if seek_state.was_playing and theme.mouse_seek_pause and actions:has('set_pause') then
+                if seek_state.pause_owned then
+                    seek_state.pause_owned = false
                     actions:set_pause(false)
                 end
                 seek_state.was_playing = false

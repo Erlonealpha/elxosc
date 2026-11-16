@@ -364,6 +364,13 @@ function RenderObject:on_pointer(event, point, data)
     return false
 end
 
+--- Observe real movement within the hover path, independently of capture.
+--- This hook does not handle or retarget the captured pointer sequence.
+---@param point Offset
+---@param event PointerEvent
+function RenderObject:on_hover_move(point, event)
+end
+
 --- Whether this node cares about `event`; the host uses it to decide which
 --- mpv key bindings to enable while the cursor is over this subtree.
 ---@param event PointerEvents

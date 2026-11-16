@@ -327,8 +327,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
 
     local path = pointer.point and self:pointer_path(pointer.point) or {}
     if pointer.type == 'move' then
-        local root_point = pointer.point --[[@as Offset]]
-        self:_update_hover(path, root_point)
+        self:_update_hover(path, pointer)
         self:has_pointer_capture()
         if self._capture then
             local captured = self._capture
@@ -485,20 +484,23 @@ function RenderOwner:_cleanup_detached_pointer_state()
 end
 
 ---@param path {node: RenderObject, point: Offset}[]
----@param root_point Offset
-function RenderOwner:_update_hover(path, root_point)
+---@param pointer PointerEvent
+function RenderOwner:_update_hover(path, pointer)
     local current = {}
     for _, entry in ipairs(path) do
         current[entry.node] = true
     end
     for node in pairs(self._hovered) do
         if not current[node] then
-            node:on_pointer_event(PointerEvent('leave', root_point), nil)
+            node:on_pointer_event(PointerEvent('leave', pointer.point), nil)
         end
     end
     for _, entry in ipairs(path) do
         if not self._hovered[entry.node] then
-            entry.node:on_pointer_event(PointerEvent('enter', root_point), entry.point)
+            entry.node:on_pointer_event(PointerEvent('enter', pointer.point), entry.point)
+        end
+        if entry.node.owner == self then
+            entry.node:on_hover_move(entry.point, pointer)
         end
     end
     self._hovered = current

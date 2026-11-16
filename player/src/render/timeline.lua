@@ -219,6 +219,7 @@ end
 ---@field _last_sent_fraction number?
 ---@field _seek_mode SeekMode
 ---@field _pending_seek_mode SeekMode?
+---@field _interaction_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@overload fun(options?: _RenderTimelineOptions): self
 local RenderTimeline = std.class.new('RenderTimeline', RenderSlider)
 
@@ -289,6 +290,7 @@ function RenderTimeline:__init(options)
     self._last_sent_fraction = nil
     self._seek_mode = 'keyframe'
     self._pending_seek_mode = nil
+    self._interaction_seek = nil
 end
 
 ---@param seek_mode SeekMode
@@ -751,22 +753,27 @@ function RenderTimeline:__interaction_start(value)
     self._seek_mode = self._pending_seek_mode or self.seek_mode
     self._pending_seek_mode = nil
     self._last_sent_fraction = value
-    if self.on_seek then
-        self.on_seek(value, 'start', self._seek_mode)
+    -- Pause/seek observers can rebuild the widget during this interaction.
+    -- Keep its original lifecycle callback until end or cancellation.
+    self._interaction_seek = self.on_seek
+    if self._interaction_seek then
+        self._interaction_seek(value, 'start', self._seek_mode)
     end
 end
 
 function RenderTimeline:__interaction_update(value)
-    if self._last_sent_fraction ~= value and self.on_seek then
+    if self._last_sent_fraction ~= value and self._interaction_seek then
         self._last_sent_fraction = value
-        self.on_seek(value, 'update', self._seek_mode)
+        self._interaction_seek(value, 'update', self._seek_mode)
     end
 end
 
 function RenderTimeline:__interaction_end(value, cancelled)
     self._last_sent_fraction = nil
-    if self.on_seek then
-        self.on_seek(value, cancelled and 'cancel' or 'end', self._seek_mode)
+    local callback = self._interaction_seek
+    self._interaction_seek = nil
+    if callback then
+        callback(value, cancelled and 'cancel' or 'end', self._seek_mode)
     end
 end
 

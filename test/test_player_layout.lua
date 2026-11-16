@@ -584,6 +584,154 @@ F.test('seekbar hover shows a formatted time and chapter fallback tooltip', func
     F.contains(canvas:text(), 'Intro', 'seek tooltip includes chapter fallback text')
 end)
 
+F.test('timeline click keeps playing and drag restores playback across pause-triggered rebuilds', function()
+    local store = PlayerStore({ duration = 100, percent_pos = 25, pause = false })
+    local pauses, seeks = {}, {}
+    local owner, binding = mount(WidgetsApp({
+        actions = HostActions({
+            set_pause = function(paused)
+                pauses[#pauses + 1] = paused
+                store:replace({ duration = 100, percent_pos = 25, pause = paused })
+            end,
+            seek_to = function(seconds, mode)
+                seeks[#seeks + 1] = { seconds, mode }
+            end,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    local timeline = find_widget_element(binding.root_element, Timeline).render_object
+    owner:dispatch_pointer('down', geometry.Offset(400, 620), 'left')
+    binding:flush_build()
+    owner:layout()
+    owner:dispatch_pointer('up', geometry.Offset(400, 620), 'left')
+    F.eq(#pauses, 0, 'ordinary click never changes playback pause')
+    F.ok(#seeks > 0, 'ordinary click seeks')
+    owner:dispatch_pointer('down', geometry.Offset(400, 620), 'left')
+    F.eq(#pauses, 0, 'holding without movement does not pause')
+    owner:dispatch_pointer('move', geometry.Offset(600, 620))
+    F.eq(pauses[1], true, 'actual drag pauses playing media')
+    binding:flush_build()
+    owner:layout()
+    F.eq(find_widget_element(binding.root_element, Timeline).render_object, timeline,
+        'pause rebuild preserves the capture target')
+    owner:dispatch_pointer('move', geometry.Offset(700, 620))
+    F.eq(#pauses, 1, 'further drag movement does not reacquire pause')
+    owner:dispatch_pointer('up', geometry.Offset(0, 0), 'left')
+    F.eq(pauses[2], false, 'outside release restores pre-drag playback')
+    F.eq(store:get():get('pause'), false, 'store resumes playing after drag')
+    F.close(seeks[#seeks][1], 100 * (700 - 25) / 1230, 'release keeps the last dragged fraction')
+    F.eq(seeks[#seeks][2], 'keyframe', 'seek mode survives rebuild')
+    F.ok(not owner:has_pointer_capture(), 'release clears capture')
+    binding:dispose()
+end)
+
+F.test('timeline cancellation restores owned pause after rebuild and capability loss', function()
+    for _, cause in ipairs({ 'cancel', 'disabled', 'dispose' }) do
+        local store = PlayerStore({ duration = 100, percent_pos = 25, pause = false })
+        local pauses = {}
+        local owner, binding = mount(WidgetsApp({
+            actions = HostActions({
+                seek_to = function() end,
+                set_pause = function(paused)
+                    pauses[#pauses + 1] = paused
+                    store:replace({ duration = 100, percent_pos = 25, pause = paused })
+                end,
+            }),
+            display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+            child = PlayerScope({ store = store, child = Main() }),
+        }))
+        owner:dispatch_pointer('down', geometry.Offset(400, 620), 'left')
+        owner:dispatch_pointer('move', geometry.Offset(600, 620))
+        binding:flush_build()
+        owner:layout()
+        if cause == 'cancel' then
+            owner:cancel_pointer()
+        elseif cause == 'disabled' then
+            store:replace({ duration = 0, percent_pos = 0, pause = true })
+            binding:flush_build()
+        else
+            binding:dispose()
+        end
+        F.eq(pauses[1], true, cause .. ': drag pauses')
+        F.eq(pauses[2], false, cause .. ': cancellation restores playback')
+        owner:cancel_pointer()
+        owner:dispatch_pointer('up', geometry.Offset(600, 620), 'left')
+        F.eq(#pauses, 2, cause .. ': cleanup does not duplicate pause changes')
+        binding:dispose()
+    end
+end)
+
+F.test('timeline does not resume already paused media or pause when drag policy is disabled', function()
+    for _, fixture in ipairs({ { paused = true, seek_pause = true }, { paused = false, seek_pause = false } }) do
+        local pauses = {}
+        local store = PlayerStore({ duration = 100, percent_pos = 25, pause = fixture.paused })
+        local owner, binding = mount(WidgetsApp({
+            actions = HostActions({
+                seek_to = function() end,
+                set_pause = function(paused)
+                    pauses[#pauses + 1] = paused
+                end,
+            }),
+            display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+            player_theme = PlayerThemeData({ mouse_seek_pause = fixture.seek_pause }),
+            child = PlayerScope({ store = store, child = Main() }),
+        }))
+        owner:dispatch_pointer('down', geometry.Offset(400, 620), 'left')
+        owner:dispatch_pointer('move', geometry.Offset(600, 620))
+        owner:dispatch_pointer('up', geometry.Offset(600, 620), 'left')
+        F.eq(#pauses, 0, 'drag changes pause only when it owns a playing-media pause')
+        F.eq(store:get():get('pause'), fixture.paused, 'initial playback state is preserved')
+        binding:dispose()
+    end
+end)
+
+F.test('timeline drag updates time and thumbfast together through captured movement', function()
+    local requests, clears = {}, 0
+    local store = PlayerStore({ duration = 100, percent_pos = 25,
+        capabilities = { thumbfast = { status = 'available', detail = '320x180' } } })
+    local owner, binding = mount(WidgetsApp({
+        actions = HostActions({
+            seek_to = function() end,
+            thumbfast_request = function(seconds, x, y)
+                requests[#requests + 1] = { seconds, x, y }
+            end,
+            thumbfast_clear = function()
+                clears = clears + 1
+            end,
+        }),
+        display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
+        child = PlayerScope({ store = store, child = Main() }),
+    }))
+    owner:paint(RecordCanvas())
+    local snapshot = owner:region_snapshot()
+    owner:dispatch_pointer('move', geometry.Offset(271, 620))
+    owner:dispatch_pointer('down', geometry.Offset(271, 620), 'left')
+    owner:dispatch_pointer('move', geometry.Offset(640, 620))
+    F.eq(#requests, 2, 'capture still delivers a new thumbnail position')
+    F.close(requests[2][1], 50, 'thumbnail follows dragged time')
+    local canvas = RecordCanvas()
+    owner:paint(canvas)
+    local time_draw
+    for _, op in ipairs(canvas.ops) do
+        if op.name == 'draw_text' and op[1].text == '00:50' then
+            time_draw = op
+        end
+    end
+    F.ok(time_draw ~= nil, 'tooltip follows dragged time')
+    F.eq(time_draw[2].x, requests[2][2] + 160, 'time and thumbnail retain their shared center')
+    F.eq(owner:region_snapshot(), snapshot, 'drag preview reuses input snapshot')
+    F.ok(not owner:needs_layout() and not binding.build_owner:has_dirty(), 'preview movement remains paint-only')
+    F.ok(owner:has_pointer_capture(), 'preview updates preserve capture')
+    owner:dispatch_pointer('move', geometry.Offset(0, 0))
+    F.eq(clears, 1, 'leaving timeline clears preview during capture')
+    owner:dispatch_pointer('move', geometry.Offset(640, 620))
+    F.eq(#requests, 3, 'returning during drag restores preview')
+    owner:dispatch_pointer('up', geometry.Offset(640, 620), 'left')
+    binding:dispose()
+    F.eq(clears, 2, 'disposal cleans restored preview once')
+end)
+
 F.test('an injected right control preserves pin/fullscreen spacing and moves later controls', function()
     local base = player_layout_mod.geometry_for('original', 1280, 720, { info_button = true })
     local extra = player_layout_mod.geometry_for('original', 1280, 720, {

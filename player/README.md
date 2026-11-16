@@ -17,6 +17,9 @@ the same classes as `player.src.*`; internal State and assembly helpers stay in 
 - `src/timeline.lua`, `src/render/timeline.lua`: media Slider/RenderSlider
   specializations for chapters, cache ranges and seeking; generic numeric/dirty/
   capture behavior is inherited from the framework.
+  Each interaction retains its starting seek callback across rebuilds and releases
+  it on end/cancel. Default controls pause on changed drag movement, then restore
+  only their own pause; click and initially paused media keep their playback state.
 - `src/auto_hide.lua`: frame-clock inactivity, scaled wake zones and local fade.
 - `src/tooltip.lua`: player style and hover eligibility for nested AutoHide ancestors.
 - `src/layout.lua`, `geometry.lua`, `controls.lua`, `visuals.lua`, `data.lua`,

@@ -208,6 +208,11 @@ event.point 仍有效。框架保证 target 卸载、root replacement、shutdown
 button 消耗旧序列剩余的 up，不投递给替代目标。其他取消时机属于 host/控件策略。
 最后一个捕获 button 释放后才结束 capture；鼠标静止时不因布局变化主动合成 hover。
 
+真实 move 另外在当前命中路径上调用 `RenderObject:on_hover_move(local_point, event)`；
+`GestureHandlers.on_hover_move` 暴露这个观察入口，捕获期间仍可更新 tooltip 等 hover
+反馈。该回调没有 DispatchResult，不消费事件，也不改变 capture 目标；普通 move/up
+仍按原分发规则投递。移出命中路径后执行 leave，不向区域外 hover observer 投递坐标。
+
 ## 分期
 
 ### 6.0 mpv 输入 spike

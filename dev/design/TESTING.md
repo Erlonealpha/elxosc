@@ -17,7 +17,35 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：默认内置与返回包的 require（2026-11-16）
+## 当前检查：tooltip 与时间线交互（2026-11-16）
+
+修复 AutoHide 后原 hitbox 内移动无法恢复固定 tooltip、时间线暂停状态因回调重建
+丢失，以及 capture 期间时间/缩略图不跟随。新增 hover move 观察入口保持原 capture
+分发规则；时间线保留本次 seek 回调直到 end/cancel，默认暂停仅在实际改变拖动位置后
+发生。Lua 回归覆盖固定 tooltip 恢复、paint-only/快照复用、预览坐标、暂停触发重建、
+区域外释放、原本暂停/关闭暂停策略、取消/禁用/卸载 cleanup 和回调替换生命周期。
+
+完整 Lua **3389 checks passed**，生产 EmmyLua **No issues found**。real-host 仅选
+AutoHide thumbfast 与新增时间线操作两项用例，分次通过且无 skip；前者验证淡出清理和
+原区域内重显，后者用 60 秒 WAV、原生鼠标/按键及 thumbfast 协议 peer 验证点击不暂停、
+拖动暂停后恢复、原本暂停保持和重建后的缩略图时间更新。预览文字和共同中心坐标由
+RecordCanvas 的 Lua 回归检查；协议 peer 不替代真实解码或像素验收。
+
+首轮 real-host 为 **1 passed, 1 failed in 7.55s**：时间线首次点击未发生跳转，AutoHide
+通过。用户要求重新测试后，没有修改代码或用例，时间线单项 **1 passed in 4.34s**。
+未确认首轮输入未生效的外部原因，未以 skip 或放宽断言消除失败。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+uv run --group test python -m pytest -q test/real_host/test_elxosc.py::test_autohide_clears_thumbfast_without_a_pointer_leave test/real_host/test_elxosc.py::test_timeline_click_drag_resume_and_thumbfast_follow --tb=short
+uv run --group test python -m pytest -q test/real_host/test_elxosc.py::test_timeline_click_drag_resume_and_thumbfast_follow --tb=short
+```
+
+工具使用 project.conf 的本机路径；uv 缓存被沙箱拒绝后授权运行。meta 专项、全量
+real-host、benchmark 和内存调查未运行；用户 bug 记录中的第四项布局收缩不在本次范围。
+
+## 已完成检查：默认内置与返回包的 require（2026-11-16）
 
 host/builtins 仅保留 new_widget/new_state，默认作用域不再隐式暴露组件或值类型。
 组件通过 owning 包显式导入；自定义 builtins override 的替换语义保持。用户手动将

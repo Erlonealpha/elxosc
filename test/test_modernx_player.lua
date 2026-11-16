@@ -236,6 +236,29 @@ F.test('timeline uses slider capture and releases seek lifecycle when callback i
     F.eq(#phases, 2, 'capture cancellation does not duplicate cleanup')
 end)
 
+F.test('timeline retains its active seek callback across rebuilds and cancels it once', function()
+    local old_phases, new_phases = {}, {}
+    local bar = RenderTimeline({
+        on_seek = function(_, phase)
+            old_phases[#old_phases + 1] = phase
+        end,
+    })
+    local owner = layout_bar(bar)
+    owner:dispatch_pointer('down', Offset(40, 10), 'left')
+    bar:set_on_seek(function(_, phase)
+        new_phases[#new_phases + 1] = phase
+    end)
+    owner:dispatch_pointer('move', Offset(80, 10))
+    owner:dispatch_pointer('up', Offset(80, 10), 'left')
+    F.eq(table.concat(old_phases, ','), 'start,update,end', 'active callback receives the complete sequence')
+    F.eq(#new_phases, 0, 'replacement callback waits for the next interaction')
+    owner:dispatch_pointer('down', Offset(50, 10), 'left')
+    bar:set_enabled(false)
+    owner:cancel_pointer()
+    F.eq(table.concat(new_phases, ','), 'start,cancel', 'disable cancels the new callback exactly once')
+    F.eq(bar._interaction_seek, nil, 'completed callback is released')
+end)
+
 F.section('modernx player: snapshot and actions')
 
 F.test('default mpv properties map to immutable player fields', function()

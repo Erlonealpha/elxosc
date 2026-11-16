@@ -161,6 +161,11 @@ reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLA
 
 ## 当前验证基线
 
+2026-11-16 tooltip/时间线交互修复后完整 **3389 Lua checks passed**，生产 EmmyLua
+**No issues found**。相关 real-host 两项用例分次通过：AutoHide thumbfast 清理/恢复，
+时间线原生点击、拖拽播放恢复和 thumbfast 跟随。没有运行全量 real-host；详细范围及
+首轮未通过、随后重测通过的记录见 [TESTING.md](TESTING.md)。meta 专项继续暂缓。
+
 2026-11-16 默认环境与 require 调整后完整 **3333 Lua checks passed**、生产 EmmyLua
 **No issues found**、相关 real-host **2 passed**，无 skip。验证默认环境不隐式包含组件，
 显式导入和两个类工厂可构造/挂载/发布；require 返回 shallow 包、正确绑定 scope loader，

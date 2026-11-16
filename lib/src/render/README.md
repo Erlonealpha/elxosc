@@ -53,6 +53,10 @@ cancelled sequence's stale up/cancel is not retargeted to the replacement tree.
 Capture keeps the original target while additional button sequences are active;
 the target is released only after the final captured button is released or the
 sequence is cancelled.
+Real movement also calls `on_hover_move(local_point, event)` on the current hit
+path, including during capture. GestureDetector exposes the same observer in its
+handlers. It has no dispatch result and does not retarget captured move/up events;
+outside the hit path, ordinary leave cleanup still applies.
 
 `RegionSnapshot` is invalidated by layout/tree changes and explicit paint-only
 input changes. Host code receives copied region values and cannot mutate the
