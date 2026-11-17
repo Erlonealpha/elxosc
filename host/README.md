@@ -53,15 +53,21 @@ error. No player or Define modules are loaded by generic App.
 The player package comes from `player/init.lua`; the host adds get_snapshot/on_update.
 Framework, player and Define catalogs use static export descriptors. Host registers
 all exact package names, including low-level sources and export/module_loader tools,
-then adds the mp facade and player runtime functions. Named packages are independent
+then adds the mp facade, player runtime functions and the external elxlib `std` package.
+Named packages are independent
 of collector fields; new registrations do not add builtins automatically.
 Define transaction and exact package registration are implemented by `define/src/`.
 MpDefine owns its facade subscriptions and main owns the initialization window timer.
 `import_as` returns local packages; new packages do not expand default builtins.
-Default construction builtins are only `new_widget` and `new_state`; components and
-values come from explicit owning-package imports. DefineSession supplies its protocol
-functions and host supplies `print`. Metadata describes these names on a local table
-type instead of defining editor globals.
+Default builtins include `new_widget`/`new_state`, selected Lua functions, `math`,
+`table`. Components and framework values come from
+explicit owning-package imports. `rawlen` and `utf8` are optional runtime capabilities,
+not LuaJIT guarantees. Library tables are shared as-is; assigning a builtin name shadows
+only the current scope. `std` is registered in `mpv_define.lua`, outside the framework
+catalog and default builtins. `require('std')`/`import_as('std')` return a shallow package with
+the same class/function members. DefineSession supplies its protocol functions and
+host supplies `print`. Metadata describes these names on a local table type instead
+of defining editor globals.
 
 Host module types use `elxosc.mod.host.*`; instances/options/facades use
 `elxosc.host.*`. `MpPackage` and `PlayerPackage` describe the exact scoped additions.

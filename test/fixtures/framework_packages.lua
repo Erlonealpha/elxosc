@@ -39,6 +39,7 @@ end
 assert(names['widgets.framework'].Widget == widgets.Widget, 'source identity')
 assert(names['material'].Text == widgets.Text, 'integrated identity')
 assert(names['export'].new ~= nil and names['module_loader'].install ~= nil, 'independent tools')
+assert(names['std'] == nil, 'external std registration belongs to the host')
 assert(names['fonts.material_symbols'].MaterialSymbols == require('material').MaterialSymbols, 'font resource')
 assert(names['player'] == nil and names['define'] == nil, 'framework catalog contains applications')
 print('framework catalog: ' .. table.concat((function()

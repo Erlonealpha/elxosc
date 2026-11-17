@@ -39,6 +39,7 @@ def package_types(root=ROOT):
             packages[name] = module_type
     packages['player'] = 'elxosc.host.PlayerPackage'
     packages['mp'] = 'elxosc.host.MpPackage'
+    packages['std'] = 'elxstd'
     return packages
 
 

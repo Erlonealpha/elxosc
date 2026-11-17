@@ -170,9 +170,11 @@ Material/player/Define/host 分别使用 owning namespace。runtime require/类�
 
 meta/elxosc.lua 不在 runtime catalog 中；扩展编辑器一次加载 owning sources、elxlib
 与该 meta 文件。tools/generate_meta.py 从三个显式 catalog 校验 source module types，
-生成全部 143 包名 literal import_as 重载，require 复用同一 callable；默认类工厂仅
+生成全部 144 包名 literal import_as 重载，require 复用同一 callable；默认类工厂仅
 new_widget/new_state。协议和类工厂声明收集为 elxosc.meta.Builtins 局部表类型，
 不定义编辑器全局、不覆盖标准 Lua require/print。
+默认环境另含 host 手选的 Lua 工具；外部 std 包由 mpv_define 登记，复用 elxlib 类型与
+类/函数对象，不进入框架 catalog 或 builtins。生成器对该 host 包使用 elxstd 类型。
 mp/player 的 runtime additions 使用 host.MpPackage/PlayerPackage；筛选后的 collector
 仅提示实际成员。new_widget/new_state 复用 owning factory 的名称模板/父类约束。
 

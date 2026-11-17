@@ -17,7 +17,31 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：tooltip 与时间线交互（2026-11-16）
+## 当前检查：选定 Lua 工具与外部 std 包（2026-11-17）
+
+用户在 builtins 中增加选定 Lua 函数及 math/table；rawlen/utf8 按实际运行时可选，
+本机 LuaJIT 两者均缺失。外部 elxlib std 从 builtins 移除，由 mpv_define.install_modules
+登记为受保护包，未加入 lib source 或框架 catalog。require/import_as 返回顶层浅副本，
+类/异常/函数保持 identity；空 builtins override 仍可显式导入 std。
+
+完整 Lua **3449 checks passed**，生产 EmmyLua **No issues found**；定向 Python
+**3 passed in 5.86s**，无 skip，包括两项框架隔离/静态 catalog 检查和一项左右扩展按钮
+real-host。宿主 payload 验证 std 不默认注入、显式导入成功、工具函数执行，并完成原生点击。
+Lua 回归另覆盖包保护、跨作用域顶层副本隔离、flat import 与协议函数保留。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+uv run --group test python -m pytest -q test/test_framework_packages.py test/real_host/test_player_extensions.py --tb=short
+uv run --group test python tools/generate_meta.py
+```
+
+工具来自 project.conf；uv 默认缓存被沙箱拒绝后授权运行。仅生成 std 包提示及继承
+builtins 类型，没有运行 meta 专项测试、生成一致性检查或编辑器验收。没有全量 real-host、
+benchmark 或内存调查。早期误将 std 当框架 alias 并保留 builtin 的实现已撤回，相关旧
+断言/静态诊断修正后复验；其 3451 Lua 结果不作为最终版本证据。
+
+## 已完成检查：tooltip 与时间线交互（2026-11-16）
 
 修复 AutoHide 后原 hitbox 内移动无法恢复固定 tooltip、时间线暂停状态因回调重建
 丢失，以及 capture 期间时间/缩略图不跟随。新增 hover move 观察入口保持原 capture

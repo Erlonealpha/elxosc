@@ -30,18 +30,21 @@ fallback and need an explicit type when their fields are known.
 `import` injects names and returns no value. Define's `require` aliases `import_as`:
 both return a scoped package without injecting its exports. They resolve registry
 package names rather than framework source paths. Hints cannot track arbitrary
-runtime environment writes. Default construction builtins contain only
-`new_widget` and `new_state`; Define supplies `import`, `import_as`, `require`, `mod`
+runtime environment writes. Default builtins contain `new_widget` and `new_state`
+plus host-selected Lua utilities, `math` and `table`; Define supplies `import`, `import_as`, `require`, `mod`
 and `bind`, and host supplies `print`. Components, value types and application APIs
 come from explicit package imports. The example demonstrates declared subclasses
 with `new_widget`/`new_state`, options and two extension packages.
 When overriding a State constructor, call `widgets.State.__init(self)` before
 initializing custom fields so the inherited resource lifecycle remains valid.
 The payload uses only actual Define builtins and imported package members;
-standard Lua globals such as `assert` and `tostring` are not implicitly provided.
+Only the selected standard Lua names are provided; `assert`, `io`, `os` and `_G`
+remain absent. `rawlen`/`utf8` depend on the runtime. `require('std')` returns the
+host-registered external shallow package with canonical class/function members;
+it is absent from default builtins and the framework catalog.
 
-The committed metadata is generated from the three static catalogs and host's
-explicit builtin fields:
+The committed metadata is generated from the three static catalogs, host package
+type mappings and host's explicit builtin fields:
 
 ```text
 python tools/generate_meta.py

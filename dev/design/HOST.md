@@ -22,7 +22,7 @@ Theme/PlayerScope/HostActions 和 activity 路由已归 host.mpv_player_app。
 整合包可导入；show/hide 只整理单条来源，不充当权限或隐藏框架的手段。多级名字精确
 登记，不按任意对象字段/文件路径查找。source alias 的 slash/init 解析仍归 module_loader。
 
-默认 builtins 仅提供 `new_widget`、`new_state`。组件、值类型、player/Slot 接口从 owning
+默认 builtins 提供 `new_widget`、`new_state` 与选定 Lua 工具。组件、框架值类型、player/Slot 接口从 owning
 包显式导入；Material 只拥有框架样式控件和基础 widgets 的重导出。
 新包不会自动扩张默认 surface，MpDefineOptions.builtins 的替换语义保持。
 DefineSession 仍生成和恢复 scope-aware import/import_as/require/mod/bind；print 由 host 提供。
@@ -125,9 +125,18 @@ init 别名使用所属 collector，annotation-only metadata 不注册。
 增加快照接口并加入 `mp` facade，统一注册为受保护模块。运行时包名保留短名称；
 `elxosc.*` 为生产类型 namespace，不加入 runtime 包名；模块表使用 elxosc.mod.*。
 
-`host/builtins.lua` 只选择 `define.src.dsl` 的两个类工厂，
+`host/builtins.lua` 选择 `define.src.dsl` 的两个类工厂和常用 Lua 工具，
 `mpv_define.builtins()` 返回该表；`lib/material.lua` 仅收集框架。`MpDefineOptions.builtins` 替换默认 surface，host
 仍提供 `print`。`define.src.dsl` 只提供类工厂；scope 的 `bind` 由 DefineSession 提供。
+
+选定工具为 next/pairs/ipairs、tonumber/tostring、rawequal/rawget/rawset、select/type/unpack、
+pcall/xpcall/error、_VERSION、math/table；rawlen/utf8 仅随实际运行时存在，
+不补 LuaJIT polyfill。未列出的标准全局（如 assert、io、os、_G）不会自动注入。
+库表按 builtins 既有 as-is 合同共享，直接写表成员会影响其他消费者；scope 名称赋值仍局部。
+外部 elxlib std 由 host/mpv_define.install_modules 注册为独立 std 包，直接使用 elxlibs.std
+来源表，不加入 builtins、lib source 或框架 catalog；require/import_as
+顶层浅副本隔离直接字段写入，嵌套 class/exception/function 继续保持 identity。
+自定义 builtins override 不影响 std 的受保护包注册。
 
 `import('player')` 将名称写入 scope env；
 `local player = require('player')` / `import_as('player')` 返回包而不注入名称。

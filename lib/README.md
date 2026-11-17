@@ -15,7 +15,9 @@ Public layers are `foundation`, `painting`, `text`, `layout`, `render`, `animati
 flat in `src.widgets.*`; Theme and styled controls live in `src.material.*`.
 `material` reexports basic widgets and collects styled controls/value constructors;
 `host/builtins.lua` owns the explicit default Define construction surface.
-It exposes only the class factories; components and values use explicit package imports.
+It exposes class factories and selected Lua utilities; components and framework values
+use explicit package imports. External dependency packages such as elxlib `std`
+are registered by the host, outside this framework catalog.
 
 `export` organizes static declarations independently of extensions. Its module-level
 API and `export.new()` contexts provide `export(name, source, append?)`, `get(name)`

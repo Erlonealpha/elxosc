@@ -148,6 +148,7 @@
 ---@field ['define.slot'] mod.define.src.slot
 ---@field ['define.package_catalog'] mod.define.package_catalog
 ---@field ['mp'] host.MpPackage
+---@field ['std'] elxstd
 
 --- Describes names available in a Define payload, without declaring editor globals.
 ---@class meta.Builtins : mod.host.builtins
@@ -300,6 +301,7 @@ local Builtins = {}
 ---@overload fun(name: 'define.slot'): mod.define.src.slot
 ---@overload fun(name: 'define.package_catalog'): mod.define.package_catalog
 ---@overload fun(name: 'mp'): host.MpPackage
+---@overload fun(name: 'std'): elxstd
 function Builtins.import_as(name)
 end
 

@@ -16,7 +16,7 @@ Material 重导出基础 widgets；整合表不附加子模块，direct/collecto
 
 `lib/export.lua` 提供独立静态声明上下文、来源级 show/hide、get/collect。各 owner
 catalog 显式枚举全部 runtime source、collector、工具和字体资源，host 合并注册并加入
-scoped mp/player facade；默认 builtins 仅包含 new_widget/new_state。框架整体向扩展开放，
+scoped mp/player facade；默认 builtins 包含 new_widget/new_state 与选定 Lua 工具。框架整体向扩展开放，
 show/hide 只组织来源成员。多级 import 精确解析登记包，不遍历整合表字段。
 
 当前 canonical require 为 `src.widgets.*`、`src.material.*`、`player.src.*` 和
@@ -28,7 +28,7 @@ show/hide 只组织来源成员。多级 import 精确解析登记包，不遍�
 `@namespace elxosc`，引用通过 `@using elxosc` 和 owning namespace 简写；模块表为
 `elxosc.mod.<canonical require>`，运行时包名和 class name 字符串保持短名。
 [meta](../../meta/README.md) 将协议函数与类工厂提示收集为 `elxosc.meta.Builtins` 表类型，
-汇集 143 个包的 import_as/require 提示、scoped facade 和扩展自有包类型组合说明，
+汇集 144 个包的 import_as/require 提示、scoped facade 和扩展自有包类型组合说明，
 不声明编辑器全局变量，也不进入 runtime catalog。meta 专项测试与编辑器验收按用户
 要求暂缓，当前生产静态检查排除 meta 与 ignored tmp。
 
@@ -39,6 +39,11 @@ show/hide 只组织来源成员。多级 import 精确解析登记包，不遍�
 2026-11-16 默认 builtins 收敛为两个类工厂；组件和值类型通过显式包导入获得。
 Define 的 `require` 现为 `import_as` 的同函数别名：返回包且不注入环境；`import` 保持
 成员注入。meta 将这些作用域名称描述为局部表类型，不覆盖编辑器的 Lua 全局。
+
+2026-11-17 用户补充选定 Lua 函数与 math/table 到 builtins；rawlen/utf8 仅在运行时
+提供时存在。库表按现有注入规则共享，scope 名称赋值仍局部。外部 elxlib std 由
+host/mpv_define 注册为独立包，不在框架 catalog 或 builtins 中；require/import_as
+返回顶层浅副本，class/function 保持 identity；组件不默认注入。
 
 ## 阅读路径
 

@@ -212,6 +212,7 @@ function M.install_modules(modules, store, register_disposer)
         packages[#packages + 1] = package
     end
     packages[#packages + 1] = mp_package(register_disposer)
+    packages[#packages + 1] = { name = 'std', exports = std }
     for i, package in ipairs(packages) do
         if package.name == 'player' then
             packages[i] = player_package(store, register_disposer)

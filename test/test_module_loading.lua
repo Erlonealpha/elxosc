@@ -205,9 +205,9 @@ F.test('application packages share canonical classes and stay outside framework 
         F.eq(rawget(widget, name), nil, 'framework excludes ' .. name)
         F.eq(rawget(require('material'), name), nil, 'material excludes ' .. name)
     end
-    local count = 0
-    for _ in pairs(host_define.builtins()) do
-        count = count + 1
-    end
-    F.eq(count, 2, 'default builtins contain only class factories')
+    local builtins = host_define.builtins()
+    F.eq(builtins.new_widget, define.new_widget, 'default widget class factory')
+    F.eq(builtins.new_state, define.new_state, 'default state class factory')
+    F.eq(rawget(builtins, 'std'), nil, 'external std remains an explicit host package')
+    F.eq(rawget(builtins, 'Widget'), nil, 'components remain explicit imports')
 end)

@@ -252,6 +252,73 @@ F.test('default scope imports components while retaining class factories and pro
     define:shutdown()
 end)
 
+F.test('default Lua utilities run in scopes and std imports preserve member identity', function()
+    reset_fake()
+    local define = MpDefine()
+    local canonical_std = std
+    F.eq(define.session.api.std, nil, 'std is not a default builtin')
+    F.eq(define.session.modules:get('std'), canonical_std, 'host registers the independent source table')
+    define.session:define_start()
+    define.session:define('utilities', [[
+        local imported_std = require('std')
+        local namespaced_std = import_as('std')
+        same_class = rawequal(imported_std.class, namespaced_std.class)
+            and rawequal(imported_std.RuntimeError, namespaced_std.RuntimeError)
+        local values = { 3, tonumber('7') }
+        local sum = 0
+        for _, value in ipairs(values) do
+            sum = sum + value
+        end
+        result = tostring(math.floor(sum / 2)) .. ':' .. table.concat(values, ',')
+        local ok, value = pcall(function() error('selected utility') end)
+        caught = not ok and type(value) == 'string'
+        imported_std.version = 'scope copy'
+        copy_is_local = namespaced_std.version ~= imported_std.version
+    ]])
+    define.session:define('other', [[
+        local standard = require('std')
+        canonical_version = standard.version
+        class_new = standard.class.new
+    ]])
+    local env = define.session:env_for('utilities')
+    local other = define.session:env_for('other')
+    F.eq(env.result, '5:3,7', 'selected functions and library tables execute')
+    F.eq(env.caught, true, 'pcall and error are usable')
+    F.eq(env.same_class, true, 'std imports share class and exception objects')
+    F.eq(env.copy_is_local, true, 'imported top-level fields do not edit another package copy')
+    F.eq(env.std, nil, 'local import does not inject a std global')
+    F.eq(other.std, nil, 'other scopes also import std explicitly')
+    F.eq(other.canonical_version, canonical_std.version, 'import mutation did not reach canonical std')
+    F.eq(other.class_new, canonical_std.class.new, 'registered member identity')
+    F.eq(env.new_widget, require('define.src.dsl').new_widget, 'class factory remains available')
+    define.session:define_end()
+    define:shutdown()
+end)
+
+F.test('std remains explicitly importable with an empty builtins override', function()
+    reset_fake()
+    local define = MpDefine({ builtins = {} })
+    F.eq(define.session.api.std, nil, 'std package is independent of the builtins override')
+    F.eq(define.session.api.math, nil, 'override replaces Lua library defaults')
+    define.session:define_start()
+    define.session:define('std-package', [[
+        local standard = require('std')
+        class_new = standard.class.new
+        import('std')
+        canonical_class_new = class.new
+    ]])
+    local env = define.session:env_for('std-package')
+    F.eq(env.class_new, std.class.new, 'std package is independent of defaults')
+    F.eq(env.canonical_class_new, std.class.new, 'flat import exposes canonical members')
+    F.eq(env.std, nil, 'package import does not inject a nested std table')
+    F.eq(env.require, env.import_as, 'flat import preserves the return-package protocol')
+    F.raises(function()
+        define.session.modules:publish('std', {})
+    end, 'RuntimeError', 'host std package is protected')
+    define.session:define_end()
+    define:shutdown()
+end)
+
 F.test('flattened standard widget import preserves the Define bind protocol', function()
     reset_fake()
     local define = MpDefine({ builtins = {} })

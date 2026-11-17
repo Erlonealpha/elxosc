@@ -99,15 +99,38 @@ end)
 
 F.section('host define: builtins')
 
-F.test('builtins contains only the two class factories', function()
+F.test('builtins contains explicit factories and runtime utilities', function()
     local b = host_define.builtins()
+    ---@type table<string, any>
+    local expected = {
+        next = next, pairs = pairs, ipairs = ipairs, tonumber = tonumber,
+        tostring = tostring, rawequal = rawequal, rawget = rawget,
+        rawlen = rawget(_G, 'rawlen'), rawset = rawset, select = select,
+        type = type, unpack = unpack, pcall = pcall, xpcall = xpcall,
+        error = error, _VERSION = _VERSION, math = math, table = table,
+        utf8 = rawget(_G, 'utf8'),
+    }
     local count = 0
     for name, value in pairs(b) do
         count = count + 1
-        F.ok(name == 'new_widget' or name == 'new_state', 'explicit factory name: ' .. name)
-        F.eq(value, dsl[name], 'canonical class factory: ' .. name)
+        if name == 'new_widget' or name == 'new_state' then
+            F.ok(dsl[name] ~= nil, 'explicit factory: ' .. name)
+            F.eq(value, dsl[name], 'canonical class factory: ' .. name)
+        else
+            F.ok(expected[name] ~= nil, 'explicit builtin name: ' .. name)
+            F.eq(value, expected[name], 'canonical builtin: ' .. name)
+        end
     end
-    F.eq(count, 2, 'only factory exports')
+    local expected_count = 2
+    for _ in pairs(expected) do
+        expected_count = expected_count + 1
+    end
+    F.eq(count, expected_count, 'all selected utilities, without implicit components')
+    F.eq(b.rawlen, rawget(_G, 'rawlen'), 'rawlen follows runtime availability')
+    F.eq(b.utf8, rawget(_G, 'utf8'), 'utf8 follows runtime availability')
+    F.eq(b.assert, nil, 'other standard globals are not implicitly included')
+    F.eq(b._G, nil, 'host global environment is not a builtin')
+    F.eq(b.std, nil, 'external std is obtained from its host-registered package')
 end)
 
 F.test('Slot aggregate exports preserve direct-module identity', function()

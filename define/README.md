@@ -31,9 +31,13 @@ static package descriptors; ModuleRegistry adds scoped loaders and owns transact
 publication, protection and payload visibility.
 
 `host/package_catalog.lua` joins the three owning catalogs; `host/builtins.lua` exposes
-only `new_widget` and `new_state`. Components and values are imported from their
-owning packages. DefineSession supplies the five protocol functions and host adds
-`print`; custom builtin overrides retain their replacement semantics.
+`new_widget`/`new_state` and selected Lua utilities, including `math` and `table`.
+Components and framework values are imported from their owning packages.
+Builtins are injected as-is: library tables are shared, while assignments to names
+stay in one scope. The external `std` package is registered by `host/mpv_define.lua`,
+without adding a builtin, and remains importable when defaults are overridden.
+DefineSession supplies the five protocol functions and host adds `print`;
+custom builtin overrides retain their replacement semantics.
 Host mp/player facades provide owned disposable subscriptions.
 Static source modules and collectors remain usable without registration.
 
