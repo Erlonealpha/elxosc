@@ -4,14 +4,13 @@
 
 ## 当前组织
 
-player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
-[TESTING.md](TESTING.md)。widgets/material、来源级 export、完整静态 catalog 与 namespace
-已统一；meta 实现与开发说明保留，专项验收暂缓。
+host 适配框架、player 和 Define 到 mpv；通用 WidgetsApp 与 host App 不默认加载或
+订阅 player。路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，测试策略见
+[TESTING.md](TESTING.md)。
 
 ## 接线与资源所有权
 
-框架/player/Define 的目标所有权见 [架构](ARCHITECTURE.md)。原 extension 已更名 define，
+框架/player/Define 的所有权见 [架构](ARCHITECTURE.md)。
 host.mpv_app 保留通用 frame/tree/input/presenter/display lifecycle；播放器默认观察、
 Theme/PlayerScope/HostActions 和 activity 路由已归 host.mpv_player_app。
 通用 App 不默认订阅媒体属性或识别播放器 State methods。每个 context/adapter/timer
@@ -76,7 +75,7 @@ ASS 坐标一致；不要让 render 层读取 overlay 字符串来做布局。
 ## 输入
 
 `MpInput` 只依赖 RenderOwner、viewport getter、activity/frame callbacks 和可选的
-Navigator key callbacks，不依赖整个 `App`。它监听鼠标位置和按键，把事件交给 RenderOwner。当前输入阶段已经接入
+Navigator key callbacks，不依赖整个 `App`。它监听鼠标位置和按键，把事件交给 RenderOwner。当前已接入
 `mp.set_mouse_area()` 区域同步和按区域拆分的 input sections：passive 的 Root/排版
 节点不创建输入区域，interactive 控件只在自己的 root-space 区域消费相关事件，
 modal/exclusive layer 可以显式阻止穿透。默认情况下，Button 区域会消费
@@ -172,7 +171,7 @@ priority 冲突系统或 Navigator。配置/API 热更新不是第二条内容�
 加载 [meta](../../meta/README.md) 与 owning sources 可提示全部框架/player/Define 包和
 mp/player scoped facade；运行时不 require meta。tools/generate_meta.py 使用相同静态
 catalog 校验 module type，再按明确包名生成 import_as 重载，require 复用同一 callable。
-`elxosc.meta.Builtins` 表类型包含两个类工厂、五个协议函数和 print；所有声明都写在
+`elxosc.meta.Builtins` 表类型包含协议函数、两个类工厂和 host 选定的 Lua 工具；声明写在
 局部表成员上，不声明编辑器全局变量。扩展可将当前 payload 的作用域函数捕获到一个
 局部类型化表，示例见 meta README；host 不增加运行时 builtins 变量。
 扩展声明只用于提示生成，同名不同类型拒绝，不替代 mod 的 transaction/保护规则。
@@ -205,7 +204,8 @@ shutdown callback。核心没有结果缓存；实际 OSD、默认字体/样式�
 工具记录 payload SHA-256、场景版本、OS、mpv/Lua/libass 可得版本和实际 OSD 尺寸；
 libass 版本从初始化日志提取，未暴露时明确为空。RecordCanvas 逻辑布局及绘制记录与宿主 bounds 并列，
 不将二者强行等同；bounds 不能证明 glyph ink、baseline 或光学中心。字体回退必须在
-报告中保留宿主 fontselect 日志。工具 schema、命令和实际限制见 [TESTING.md](TESTING.md)。
+报告中保留宿主 fontselect 日志。工具 schema、命令和限制见
+[tools/README.md](../../tools/README.md)。
 
 宿主服务必须以受控 facade 或明确模块注入，不能把原始 `mp` 暴露给框架层。新增
 script-message 或 property API 时，先记录生命周期、错误处理和卸载行为，再添加
@@ -213,21 +213,21 @@ mp stub 与真实进程测试。
 
 ## 配置/API 热更新
 
-本阶段默认支持配置和对外接口数据的热更新，不支持 Lua 源码热重载。流程为：
+配置和对外接口数据更新使用既有状态管线，不支持 Lua 源码热重载。流程为：
 
 ```text
 mp option/property or public API event
     → validate and create immutable snapshot
     → provider/state or explicit render setter
     → scheduler frame
-    → one or more overlay presenters
+    → current single overlay presenter
 ```
 
 扩展可以订阅播放器公开接口，也可以在 Define 内容中设计自己的消息协议；这些
 更新不绕过 Define 注入新的 Widget。订阅、timer、script-message 和 property observer
 必须有明确的 dispose/清理生命周期。
 
-当前 6.3 实现提供 host-independent `PlayerStore`、`PlayerSnapshot`/capability values 和 host-side
+当前提供 host-independent `PlayerStore`、`PlayerSnapshot`/capability values 和 host-side
 `MpPlayerContext`。后者可以把指定 mpv property 转换为新的 `PlayerSnapshot`，支持 coalesced
 batch observers、异步 capability adapters，并在 dispose 时调用 `mp.unobserve_property` 和
 释放 adapter/timer handles。Define 的受保护 `player` 模块提供：
@@ -263,10 +263,10 @@ disposable；`MpDefine:shutdown()` 会清理 host-owned handles，State/扩展�
 
 ## 多层 overlay
 
-当前 App 只有一个 `AssPresenter`。N2 `Overlay`/`Theatre` 是 framework 内单一逻辑 root
+当前 App 只有一个 `AssPresenter`。`Overlay`/`Theatre` 是 framework 内单一逻辑 root
 中的 Entry runtime，不是 host-level 多 `osd_overlay`，也不创建独立 root、Canvas 或
 PipelineOwner。Entry 的 `visible`、`opaque`、`maintain_state` 和 plan 只控制同一
 RenderOwner 的 paint/input eligibility；WindowLayer 空根也只产生空内容，不释放 presenter。
 
-N4 保持单 Canvas/presenter；host-level 多 overlay、独立 presenter、z 排序和跨 surface 输入延期，不得把
+当前保持单 Canvas/presenter；host-level 多 overlay、独立 presenter、z 排序和跨 surface 输入延期，不得把
 `OverlayEntry` 的逻辑顺序当成 `overlay.z` 或 Define priority。

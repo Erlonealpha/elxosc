@@ -28,19 +28,14 @@ show/hide 只组织来源成员。多级 import 精确解析登记包，不遍�
 `@namespace elxosc`，引用通过 `@using elxosc` 和 owning namespace 简写；模块表为
 `elxosc.mod.<canonical require>`，运行时包名和 class name 字符串保持短名。
 [meta](../../meta/README.md) 将协议函数与类工厂提示收集为 `elxosc.meta.Builtins` 表类型，
-汇集 144 个包的 import_as/require 提示、scoped facade 和扩展自有包类型组合说明，
-不声明编辑器全局变量，也不进入 runtime catalog。meta 专项测试与编辑器验收按用户
-要求暂缓，当前生产静态检查排除 meta 与 ignored tmp。
+汇集登记包的 import_as/require 提示、scoped facade 和扩展自有包类型组合说明，
+不声明编辑器全局变量，也不进入 runtime catalog。
 
-2026-11-15 已完成目录、包、类型和文档收口；用户确认当前分支播放器外观与交互正常。
-完整 Lua、生产 EmmyLua、独立框架和全包清单检查通过，实际命令与历史结果见
-[TESTING.md](TESTING.md)。当次未改变宿主行为，沿用此前定向 real-host 结果。
-
-2026-11-16 默认 builtins 收敛为两个类工厂；组件和值类型通过显式包导入获得。
+默认 builtins 提供两个类工厂和 host 选定的 Lua 工具；组件和值类型通过显式包导入获得。
 Define 的 `require` 现为 `import_as` 的同函数别名：返回包且不注入环境；`import` 保持
 成员注入。meta 将这些作用域名称描述为局部表类型，不覆盖编辑器的 Lua 全局。
 
-2026-11-17 用户补充选定 Lua 函数与 math/table 到 builtins；rawlen/utf8 仅在运行时
+选定 Lua 工具包括 math/table；rawlen/utf8 仅在运行时
 提供时存在。库表按现有注入规则共享，scope 名称赋值仍局部。外部 elxlib std 由
 host/mpv_define 注册为独立包，不在框架 catalog 或 builtins 中；require/import_as
 返回顶层浅副本，class/function 保持 identity；组件不默认注入。
@@ -53,12 +48,12 @@ host/mpv_define 注册为独立包，不在框架 catalog 或 builtins 中；req
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 分层、依赖、三棵树和模块边界 |
 | [RENDERING.md](RENDERING.md) | 约束布局、绘制、文本、ASS、变换和动画 |
-| [INPUT.md](INPUT.md) | `set_mouse_area`、输入 section、默认行为和事件重构 |
+| [INPUT.md](INPUT.md) | 输入区域、section、默认行为、事件和 capture |
 | [WIDGETS.md](WIDGETS.md) | Widget/Element/State、控件和绑定 |
 | [HOST.md](HOST.md) | mpv 帧循环、输入、Define 传输和宿主边界 |
 | [PLAYER.md](PLAYER.md) | WidgetsApp/DefaultApp/Main、扩展边界、配置热更新和 OverlayEntry |
 | [TESTING.md](TESTING.md) | 测试分层、命令、fixture 和回归要求 |
-| [ROADMAP.md](ROADMAP.md) | 已完成能力、已知限制和后续路线 |
+| [ROADMAP.md](ROADMAP.md) | 能力缺口、依赖和后续方向 |
 
 模块所有权和入口见各目录的 `README.md`；历史文档位于
 [`old/`](old/)，不应作为新 API 的依据。
@@ -95,12 +90,10 @@ define provides sandbox/Define services and is consumed by host/entry assembly
 `main.lua` 和 `elxlib_load.lua` 是唯一的 mpv 边界。聚合模块必须转出独立模块的
 同一个类对象，不能重新定义兼容副本。
 `lib/*.lua` 为每个框架层统一收集导出，不依赖扩展系统；`lib/material.lua` 提供框架
-构造 surface，host/builtins.lua 手动收集默认 Define 环境。原 extension 更名 define，
-原框架内的播放器内容迁入 player。加载路径和多级 import 见
+构造 surface，host/builtins.lua 手动收集默认 Define 环境。加载路径和多级 import 见
 [ARCHITECTURE.md](ARCHITECTURE.md) 与 [HOST.md](HOST.md)。
 
-目录、导出与类型整理保持既有布局、dirty、Binding singleton、Define 初始化协议
-和资源清理合同。资源所有权与构造边界见对应方向文档。
+资源所有权与构造边界见对应方向文档。
 
 ## 三棵运行时树
 
@@ -145,7 +138,7 @@ setter 选择 `paint` 或 `layout + paint` 失效类型。
 Define 是用户扩展内容进入播放器的唯一入口。它负责 transport、sandbox、scope、
 模块和内容交付；扩展内容的页面行为、状态机、事件处理和更新策略由扩展自己决定。
 当前应用组合使用 `DefaultApp` 的 Main、Extension 和 WindowLayer 边界；Define/Slot
-只在初始化期把扩展 Widget 放入允许的内容位置。N2 `Overlay`/`Theatre` 只管理同一
+只在初始化期把扩展 Widget 放入允许的内容位置。`Overlay`/`Theatre` 只管理同一
 logical root 内的 Entry lifecycle，不是第二条 Define 内容入口。
 
 当前 Define 仍是初始化期协议：每个 `scope_id` 只接受第一个成功 payload。payload
@@ -162,33 +155,14 @@ Lua 源码。改变这些语义必须先更新本目录的设计和测试。
 的组合。Main 负责标题栏、时间线、底部信息和受控 host actions；扩展通过初始化
 Define/Slot 提供内容。Theatre 的 entry paint/input eligibility 与 host-level 多层
 `osd_overlay` 分开；`overlay.z` 仍只属于未来 presentation 层，不改变 Widget
-reconciliation、bind priority 或 Define scope 优先级。详细规划见 [PLAYER.md](PLAYER.md)。
+reconciliation、bind priority 或 Define scope 优先级。详细契约见 [PLAYER.md](PLAYER.md)。
 
-## 当前验证基线
+## 验证职责
 
-2026-11-16 tooltip/时间线交互修复后完整 **3389 Lua checks passed**，生产 EmmyLua
-**No issues found**。相关 real-host 两项用例分次通过：AutoHide thumbfast 清理/恢复，
-时间线原生点击、拖拽播放恢复和 thumbfast 跟随。没有运行全量 real-host；详细范围及
-首轮未通过、随后重测通过的记录见 [TESTING.md](TESTING.md)。meta 专项继续暂缓。
-
-2026-11-16 默认环境与 require 调整后完整 **3333 Lua checks passed**、生产 EmmyLua
-**No issues found**、相关 real-host **2 passed**，无 skip。验证默认环境不隐式包含组件，
-显式导入和两个类工厂可构造/挂载/发布；require 返回 shallow 包、正确绑定 scope loader，
-保留嵌套/数组/false identity，且在 flat import 后仍为 returning alias。命令见
-[TESTING.md](TESTING.md)。meta 专项验证继续暂缓。
-
-2026-11-15 收口基线为完整 **3304 Lua checks passed**、生产 EmmyLua **No issues found**、
-独立框架和 catalog Python **2 passed**，无 skip。新增 19 个旧 require 路径拒绝检查，
-现有 direct/collector/alias identity、Define transaction、资源生命周期和播放器行为
-回归保持通过。用户确认当前分支标题/按钮、时间线/音量、AutoHide/thumbfast、全屏与
-Demo 开关外观和交互正常；未提供具体媒体与宿主版本，不补写实测细节。
-
-宿主接线最后在导出/完整注册阶段验证：扩展左右按钮和生产入口/Demo 消息两项
-real-host 通过；此前 Material 分层另验证按钮输入、图标 ASS 与 AutoHide thumbfast。
-当次只有文档、注释和旧路径拒绝测试，无宿主行为变化，未重复这些结果。
-meta 专项测试及编辑器验收暂缓；未运行全量 real-host、benchmark 或内存调查，
-不因组织迁移承诺 240Hz 性能改善。命令、实际范围和历史失败记录见
-[TESTING.md](TESTING.md)。
+公共行为、非法边界、生命周期、dirty 分类和模块 identity 由自动回归覆盖；真实宿主
+检查负责输入接线、ASS 消费和资源清理，人工审阅负责视觉和交互手感。测试策略见
+[TESTING.md](TESTING.md)，运行方式见 [test/README.md](../../test/README.md)。
+设计正文不维护逐轮结果或测试计数，实际执行记录由本地规划和交付说明承担。
 
 ## 变更决策规则
 

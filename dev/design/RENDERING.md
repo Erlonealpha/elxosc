@@ -28,7 +28,7 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 | --- | --- |
 | 平移、视觉偏移、颜色、纯绘制 scale、clip、subtree opacity | paint |
 | 宽高、padding、约束、字号、行距、布局 scale | layout + paint |
-| Widget 子树结构 | build，再按结果 lib/src/layout/paint |
+| Widget 子树结构 | build，再按结果 layout/paint |
 
 动画控制器不决定 dirty 类别；目标 RenderObject 的 setter 决定。动画监听在节点
 脱离 owner 时必须解除，替换 controller/tween 时必须移除旧监听。
@@ -37,12 +37,12 @@ RenderObject 实例跨帧存活。setter 必须在属性边界验证值并选择
 
 `PipelineOwner` 是 RenderObject pipeline 的规范名称；当前单根实现由
 `lib/src/render/pipeline_owner.lua` 重导出既有 `RenderOwner` class，两个入口保持相同 identity。
-它负责 viewport、lib/src/layout/paint dirty、`flush_layout()`、`flush_paint()` 和 visual update
+它负责 viewport、layout/paint dirty、`flush_layout()`、`flush_paint()` 和 visual update
 通知；每个 attached WidgetTree 拥有自己的 PipelineOwner。通用命中路径、hover/capture
 仍归此 owner，mpv input section 和失焦/隐藏/resize 等取消策略及 presenter 归 host。
 
 RenderObject 的 paint 边界使用 `PaintingContext`：context 持有当前 Canvas，统一 child
-paint、offset、clip 和 save/restore；现有 Canvas 入口在迁移期间仍可直接调用。它不是
+paint、offset、clip 和 save/restore；现有 Canvas 入口仍可直接调用。它不是
 Flutter Layer tree，不暴露 ASS `Layer`/`ReadOrder`，不改变布局或 hit testing。
 
 内置变换节点也通过 `paint_child` 遍历；`with_save`/`clip_rect_and_paint` 在子绘制或
@@ -52,7 +52,7 @@ clip 抛错时仍 restore；`with_opacity` 使用同一 save/restore 边界应�
 
 当前 frame 顺序为：transient/ticker → Widget build scopes → inactive finalize → layout
 → input region snapshot → PaintingContext paint → presenter → post-frame callbacks。
-F runtime 首版每个 production owner scope 仍只支持一个 root 和一个 Canvas；Binding
+当前每个 production owner scope 仍只支持一个 root 和一个 Canvas；Binding
 composition 不因 attached owner scope 增加而复制。
 
 ## Canvas 和文本
@@ -82,7 +82,7 @@ ASS `osd-overlay` 的 `ass-events` 不提供本框架需要的 PTS 动画推进�
 生成 `\move`、`\t` 等标签。`AnimationController` 每帧更新框架值，下一帧重新输出
 静态 `\pos`、缩放或颜色参数。这样 UI 动画不依赖媒体播放状态。
 
-### N4 单 Canvas presentation
+### 单 Canvas presentation
 
 OverlayState 的 plan 通过同一个 RenderObject tree 的 Offstage/Stack 生效；host 不复制
 Entry list 或再挂载内容。每个 dirty frame 只 reset/paint/submit 一次同一个 AssCanvas。
@@ -145,16 +145,15 @@ Main 的实际 uniform scale 换算到 display space，通用 AutoHide 不读取
 RepaintBoundary 或大列表虚拟化。新增能力必须先定义逻辑尺寸、绘制溢出和输入区域
 的区别，再添加后端和真实宿主回归。
 
-2026-10-28 的 P0.5 评估进一步确认：当前单 Canvas/静态 ASS presenter 没有可公开承诺
+当前单 Canvas/静态 ASS presenter 没有可公开承诺
 的 Flutter 同义 `RepaintBoundary` 或 `RelayoutBoundary`。paint isolation 和 relayout
 pruning 必须先经过同环境 benchmark、逐事件输出等价和输入/布局回归，再进入独立的
-lib/src/render/backend 优化切片。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
+render/backend 优化。动画控制器仍只提供时间和值，目标 RenderObject setter 决定
 paint-only 或 layout + paint；`RenderLayoutScaleBox` 的 alignment 若改变 pointer mapping
 必须同步 invalidates input snapshot。ModernX fade 使用 `RenderOpacity.hidden`：fade-out 完成
 前保持 paint/input，完成时才移除 pointer regions；fade-in 先恢复 hidden=false，再由
 AnimationController 逐帧更新 alpha。不得使用 `\move` 或 `\t` 替代 frame-clock 静态输出。
 
-2026-11-06 benchmark以静态子树的Record重放比较paint-only偏移动画，逐帧ASS一致且
-无layout失效；结果见[TESTING.md](TESTING.md)。这只是工具侧的缓存实验，不提供生产
-boundary/cache API；真实输入坐标偏移仍会使region snapshot失效。一般子树缓存需要
-独立定义样式/布局/文本/变换失效和输入合同，不能从该实验推断已实现。
+工具侧的静态子树 Record 重放不提供生产 boundary/cache API；真实输入坐标偏移
+仍会使 region snapshot 失效。一般子树缓存需要独立定义样式、布局、文本、变换失效
+和输入合同；输出等价与性能比较方法见 [tools/README.md](../../tools/README.md)。

@@ -70,28 +70,19 @@ The framework directories are meant to stay free of *all* diagnostics; the
 test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
-Current baseline (2026-11-16): **3389 Lua checks**, production EmmyLua
-**No issues found**; two related real-host cases passed in separate runs for
-AutoHide thumbfast cleanup/recovery and timeline click/drag playback/preview.
-The initial timeline click failure and unchanged rerun are recorded in
-[TESTING.md](../dev/design/TESTING.md). Framework/catalog and extension/Demo
-checks retain their previous results; meta-specific verification remains deferred.
 Production analysis uses
-`emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'`; dedicated metadata
-tests and editor acceptance are deferred at the user's request.
+`emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'`; metadata generation
+and editor acceptance are separate scopes. Runtime checks do not prove editor hints.
 
-The isolated framework test checks four initial require orders, catalog identity,
-mount/paint/input/dispose, and complete runtime source coverage. Module-loading
-tests also reject 19 removed source/collector/application names. Current and
-historical commands, selected real-host results, and platform limitations are in
-[`TESTING.md`](../dev/design/TESTING.md). The 2026-11-15 convergence changed only
-comments, documentation and removed-path tests, so its related host checks were not repeated.
-The user confirmed current player appearance and interaction on 2026-11-15.
-Current Define tests cover default factories without component injection, explicit
-package construction/mount/publication, and the returning `require = import_as`
-alias with scoped loaders and flat-import preservation. Metadata tests remain deferred.
+The isolated framework test checks initial require orders, catalog identity,
+mount/paint/input/dispose and runtime source coverage. Module-loading tests reject
+removed paths; Define tests cover explicit package construction/publication,
+scoped loaders and the returning `require = import_as` alias without implicit
+component injection. Testing strategy and evidence limits are in
+[TESTING.md](../dev/design/TESTING.md). Actual run results belong in local planning
+records and commit or handoff reports, without duplicating counts in this README.
 
-## Real host (Python + uv, first stage)
+## Real host (Python + uv)
 
 `test/real_host/` starts a **real** mpv.net/mpv process in a temporary, empty
 `--config-dir` and queries its JSON IPC endpoint. It stages and loads the elxosc
@@ -136,7 +127,7 @@ command or assertion failures fail the test.
 
 The suite also includes elxosc integration tests. It loads
 `main.lua`, opens the injected Demo with `elxosc-demo-open`, sends `elxosc-demo`, checks that the host remains alive, and reads
-back `osd-dimensions`. The N3 demo test opens Page/Popup routes, sends real ESC
+back `osd-dimensions`. The navigation demo test opens Page/Popup routes, sends real ESC
 keypresses, checks results and retained State, then verifies that home releases ESC
 to a separate host-script binding. The button fixture also sends real mpv `mouse` commands
 through an isolated user `input.conf` to verify interactive double-click capture
@@ -169,9 +160,34 @@ The separate `tools/benchmark_real_player_hover.py` generates H.264 video with
 ffmpeg and measures native Windows pointer moves through the production player,
 frame loop and ASS presenter. It supports 60/240 Hz, pause/play, debug toggles and
 a staging-only mouse_move experiment. Use `--output` to save statistics; no probe
-is loaded into the workspace entry. Commands, environment, results and the ASS
-submission endpoint are documented in
-[`dev/design/TESTING.md`](../dev/design/TESTING.md#真实播放器-timeline-hover-benchmark2026-11-05).
+is loaded into the workspace entry. Usage and the ASS submission endpoint are documented in
+[tools/README.md](../tools/README.md#hover-probes); individual run environments
+and results are recorded with their reports.
+
+### Demo navigation
+
+The default `demo_enabled` switch injects a right control next to pin and a shared
+launcher in WindowLayer. Click the Demo control to open it; **Close Demo** disposes
+the Demo, and reopening creates fresh State. From the mpv console:
+
+```text
+script-message elxosc-demo-open
+script-message elxosc-demo page
+script-message elxosc-demo popup
+```
+
+**Open Page** opens an opaque page; **Back with result** returns `Page: done`,
+and ESC returns `Page: dismissed`. **Open Popup** creates a barrier and card;
+**Confirm / Cancel** return `Popup: confirmed / cancelled`. Barrier click or ESC
+returns `Popup: dismissed`; clicking empty card space keeps it open.
+
+Home **Result / Returns** displays the latest result and completion count. Change
+the original counter before opening a route to check retained home State. Home
+releases ESC to the host. Repeated open commands while a route is open are ignored.
+`elxosc-demo` without an argument runs the counter example. The observable
+`user-data/elxosc-demo-route`, `elxosc-demo-result` and `elxosc-demo-returns` values
+support lifecycle checks; disposal releases message handlers and result listeners.
+These operations are reproducible checks, without recording a particular run's result.
 
 ## Layout
 

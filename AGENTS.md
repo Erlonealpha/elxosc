@@ -188,8 +188,11 @@ luajit test/run.lua
 emmylua_check .
 ```
 
-The current local baseline is recorded in `dev/design/TESTING.md`; update the
-current design/testing documents when the intentional test count changes.
+Record actual commands, source versions, results, failures, and untested scope
+in the active local plan's acceptance records, or local work notes when no plan
+applies. Report the checks actually run in the commit or handoff. Update design
+and testing documents when strategy, coverage responsibilities, supported behavior,
+or tool usage changes; test counts alone do not require design changes.
 
 Run real-host tests when changes affect behavior they cover, such as script
 loading, presentation, input, Define wiring, or player integration. In most cases,
@@ -214,7 +217,7 @@ development dependency. New files are named `test_*.lua` and are discovered
 automatically. Host modules may use the `test/mp_stub.lua` compatibility import, while
 `test/real_host/` verifies behavior against a real process.
 
-Runner behavior (2026-10-27, now owned by mpv-luatest): automatic discovery of
+Runner behavior, owned by mpv-luatest: automatic discovery of
 `test_*.lua`, including nested group directories whose names start with `test`.
 Use slash-separated group/file filters and `-v` for full logs; default logs show
 failures and the summary. Keep project/elxlib bootstrap and compatibility
@@ -224,10 +227,22 @@ before updating its gitlink. See `dev/design/TESTING.md` for setup and ownership
 
 ## 8. Documentation and commits
 
-Current design documents live in `dev/design/`; historical records belong in
-`dev/design/old/`. Use the direction document that owns the decision instead of
-adding another long unindexed design note. Keep module READMEs short and link
-to the relevant design direction.
+Current design documents live in `dev/design/`. They describe architecture,
+observable behavior, invariants, technical rationale, and support boundaries.
+Use the direction document that owns the decision and keep module READMEs short.
+`ROADMAP.md` records capability gaps and dependencies, not implementation stages.
+
+Development context belongs primarily in the local `.plan`: investigations and
+working notes in `work/`, implementation stages and decisions in the active plan,
+and execution results and manual feedback in its acceptance records. Do not append
+task progress, session history, local environment handling, or test-run logs to
+design documents. The parent repository must remain readable without `.plan`;
+public links and contracts must not depend on local plan IDs or files.
+
+`dev/design/old/` preserves historical design rationale and is not a destination
+for new development logs. Keep benchmark or measurement artifacts in `dev/` only
+when their methods, source versions, and limits make them useful shared references;
+ordinary run results belong in local planning records.
 
 Use concise conventional commits such as `feat:`, `fix:`, `refactor:`,
 `test:`, and `docs:`. A commit message should identify the affected layer.

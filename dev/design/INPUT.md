@@ -1,19 +1,17 @@
 # MPV 输入区域与事件系统
 
-本文规划下一阶段的 mpv 输入边界。它建立在当前 `host/mpv_input.lua`、
-`RenderOwner` 和 `RenderGesture` 之上，目标是让 UI 控件精确拦截属于自己的输入，
-同时保留播放器背景区域的用户 `input.conf` 行为。
+本文定义 `host/mpv_input.lua`、`RenderOwner` 和 `RenderGesture` 的输入边界，让 UI 控件
+精确拦截属于自己的输入，同时保留播放器背景区域的用户 `input.conf` 行为。
 
-**状态：6.0、6.1 已完成，6.2 的结构化 pointer path 已完成。** Keyboard
-target/focus、Gesture arena 和真实宿主的结构化字段回归仍未完成；实施顺序和依赖见
-[ROADMAP.md](ROADMAP.md)。
+当前支持结构化 pointer path 和独立的 KeyEvent 值对象；通用 keyboard target/focus、
+宿主 key translation 和 Gesture arena 尚未提供。能力缺口见 [ROADMAP.md](ROADMAP.md)。
 
-P0/R1/R2 的初始化 assembly 不改变输入 owner：Define seal 只生成一个 fresh Widget
+初始化 assembly 不改变输入 owner：Define seal 只生成一个 fresh Widget
 description，mounted WidgetTree 仍由同一个 RenderOwner 导出 regions、capture 和 section
 policy。普通 mouse move 不因 assembly 或 root swap 合成 hover；结构变化后等待下一次真实
 move，旧 capture 仍按 RenderOwner 的卸载/root replacement/shutdown 规则清理。
 
-## 当前基线
+## 当前输入接线
 
 当前宿主输入层使用 `elxosc-input`、`elxosc-wheel` 以及按区域追加编号的 section，
 按 `RenderOwner:pointer_regions()` 导出的 root-space 区域来启用或禁用。它已经支持
@@ -21,19 +19,9 @@ move，旧 capture 仍按 RenderOwner 的卸载/root replacement/shutdown 规则
 转换为带有 button、held buttons、wheel delta、click count、pointer id、source 和
 timestamp 的 `PointerEvent`；`data` 仍保留为兼容 payload。
 
-旧实现中，控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 仍可能执行例如
+控件区域遇到用户配置的 `mbtn_left_dbl` 时，mpv 可能执行例如
 `cycle fullscreen`。仅在 Lua 层收到一次普通 down/up 不能可靠地表达“这个区域已经
 消费双击”，因此当前 section 必须显式声明并处理 `mbtn_left_dbl`。
-
-本次提供的参考脚本只作为设计参考，不是运行依赖：
-
-- `osc.lua:439–472`：窗口/虚拟 ASS 坐标换算；`3003–3038`：区域与可见性；
-  `3288–3322`：显示监听与点击 section 分离、显式忽略双击；`3509–3511`：空区域初始化。
-- `gallerymode.lua:77–80, 127–136`：更新全窗口区域并绑定双击；`160–168`：
-  查找用户双击命令。这个“拦截后手动执行命令”的例子不作为通用回退协议。
-
-参考代码提供 mpv 接线经验，不改变核心层无 mpv 依赖的边界。实施时针对目标版本
-验证行为，不依赖参考脚本长期存在，也不默认移植其整屏拦截逻辑。
 
 ## 输入区域模型
 
@@ -53,7 +41,7 @@ RenderObject tree
 - layout 或 viewport/OSD 尺寸变化；
 - paint-only offset/scale、clip 或有效命中边界变化（不能只监听 layout dirty）；
 - Widget 的可见性或交互能力变化；
-- Pages、overlay 的 z 顺序或 modal layer 切换；
+- Page/OverlayEntry 的顺序、遮挡或 modal 内容变化；
 - input policy 或配置变化。
 
 普通 mouse move 不应重建整个区域集合；但鼠标位置仍可用于精确命中与 section 选择。
@@ -61,11 +49,11 @@ RenderObject tree
 一个包围盒，导致中间原本可透传的空隙也被吞掉。
 
 当前目标版本的 mpv 输入实现中，一个 section 只保存一个 `mp_rect`；重复调用
-`mp.set_mouse_area()` 会替换该 section 的矩形，而不是追加多个矩形。因此当前 6.1
+`mp.set_mouse_area()` 会替换该 section 的矩形，而不是追加多个矩形。因此当前
 实现使用一个区域对应一个 section，例如 `elxosc-input`、`elxosc-input-2`，并对
-wheel 区域使用对应的 `elxosc-wheel` 编号。这样不能把分离的按钮粗暴合并成包围盒，
-也保留了区域空隙、前后层遮挡和拖动 capture。窗口与 OSD 坐标关系、像素边界取整、
-零尺寸窗口保护，以及 `force`/exclusive 的实际优先级仍需在目标宿主中继续验证。
+wheel 区域使用对应的 `elxosc-wheel` 编号，以保留区域空隙、前后层遮挡和拖动 capture。
+窗口与 OSD 坐标关系、像素边界取整、零尺寸窗口保护，以及 `force`/exclusive 的实际
+优先级需要针对目标宿主验证，不能从 stub 推断所有平台行为。
 
 ## 三类节点
 
@@ -106,35 +94,33 @@ Button、GestureDetector、Slider、时间线和其他可操作控件是 interac
 
 ## 默认双击规则
 
-下一阶段的默认规则是：
+默认规则如下：
 
 1. interactive 控件的 section 显式绑定 `mbtn_left_dbl`，默认处理为 ignore/consume；
 2. 控件没有 double-click handler 时，不产生额外的 UI 回调；
 3. 保留宿主实际交付的正常 down/up，不为双击额外合成 click，也不默认延迟单击；
 4. UI 空白区和视频背景区没有 interactive area，用户的 `input.conf` 双击行为继续
    生效；
-5. 未来需要双击语义的控件再声明 `on_double_tap`，届时明确单/双击互斥规则；普通
-   按钮快速点击可能仍产生多次正常 click，这不等于双击事件额外触发业务回调。
+5. 显式 double-click handler 与普通 click 的互斥需要由控件另行定义；普通按钮快速
+   点击可能仍产生多次正常 click，这不等于双击事件额外触发业务回调。
 
 这同时解决“按钮双击触发 fullscreen”和“背景双击仍可 fullscreen”两个需求。
 
 ## 输入 section 分区
 
-计划使用职责清晰的 section，而不是把所有事件放在一个动态开关里：
+当前 `MpInput` 使用基础名称加编号的区域 section，并单独管理导航 ESC：
 
 | Section | 用途 | 默认行为 |
 | --- | --- | --- |
-| `elxosc-showhide` | mouse move/leave，驱动顶层控件显隐 | 不抢播放器 click |
-| `elxosc-input` | 普通 Button、时间线、菜单控件 | 仅在区域内消费相关鼠标事件 |
-| `elxosc-window-controls` | 标题栏和窗口控制 | 仅在标题栏区域内消费 |
-| `elxosc-drag` | 明确声明的视频/窗口拖动 | 按控件策略选择 dragging flags |
-| `elxosc-modal` | 菜单、对话框和 modal layer | 可 exclusive，关闭时完整清理 |
+| `elxosc-input`、`elxosc-input-N` | Button、时间线、标题栏及其他交互区域 | 仅在区域内消费声明的鼠标事件 |
+| `elxosc-wheel`、`elxosc-wheel-N` | 声明滚轮能力的区域 | 仅在区域内消费对应滚轮事件 |
+| `elxosc-navigation` | Navigator 返回 | `can_pop()` 时才启用 ESC |
 
-表中为职责分组；普通输入区域当前使用基础名称加编号的 section。普通控件不默认
-允许窗口拖动；`allow-vo-dragging`、`allow-hide-cursor` 按显示监听、拖动区和控件区
-分别配置，不把当前全局 flags 原样复制到所有分组。
+mouse move/leave 的观察与应用 activity 路由不依赖全屏交互区域。显示监听、窗口拖动、
+modal 与键盘焦点是不同职责；它们不因表中的普通输入 section 自动成为独立 section。
+普通控件不默认允许窗口拖动；`allow-vo-dragging`、`allow-hide-cursor` 必须按区域职责配置。
 
-`elxosc-showhide` 的 activity 由应用可见性策略消费，不通过全屏 interactive region
+activity 由应用可见性策略消费，不通过全屏 interactive region
 拦截点击。默认播放器的 `AutoHide` 可分别配置 bottom hover zone 和 top hover zone；
 ModernX 方向默认使用 bottom 175px、top 40px 逻辑高度，应用组合层按 Main scale 转换为
 display-space 高度；两个区域均采用半开区间，中心区域不
@@ -146,10 +132,10 @@ display-space 高度；两个区域均采用半开区间，中心区域不
 状态。只移除本应用拥有的 section/observer，不修改用户 `input.conf`。移出窗口时取消
 capture 是当前 MpInput 的产品策略；resize、Popup 出现和 Main 隐藏不构成通用取消规则。
 
-### N5 RegionSnapshot 与 section cache
+### RegionSnapshot 与 section cache
 
 单 RenderOwner 按 input generation 缓存 `RegionSnapshot`，快照复制 root-space rect、
-目标和事件资格。lib/src/layout/tree/visibility 变化使快照失效；paint-only transform 与输入能力
+目标和事件资格。布局、树结构和 visibility 变化使快照失效；paint-only transform 与输入能力
 setter 显式调用 `mark_needs_input()`，普通颜色变化和无状态改变的 mouse move 复用快照。
 `pointer_regions()` 返回快照的副本，host 不修改 owner 的缓存。
 
@@ -157,7 +143,7 @@ MpInput 每个 section 只定义一次，按照区域的后绘制/后注册顺�
 几何更新只改 mouse area，不重复注册闭包或改变优先级。disable 只移除指定 section；
 区域顺序改变时才重建本应用的活动 section 顺序。capture 使用原 section 的 viewport
 区域，最后一个 button 释放后恢复区域 policy。更新同时验证 capture 目标仍属于当前树，
-不能让卸载后的全窗口 section 残留。未来区域更新不对静止鼠标合成 hover，下一次真实
+不能让卸载后的全窗口 section 残留。区域更新不对静止鼠标合成 hover，下一次真实
 move 才重新命中；目标卸载只做生命周期清理。
 
 ## 事件模型
@@ -198,9 +184,8 @@ boolean `handled` 不能区分“业务已处理”“请求 capture”和“停
 
 Keyboard 不伪装成 PointerEvent，当前已经提供独立的 `KeyEvent` 值对象，包含
 key、down/up/press、modifier、repeat 和 timestamp，并在构造边界校验和复制 modifier
-快照。N3 只为 Navigator 的 ESC 返回提供 host section 和显式 callback；框架仍没有
-通用 keyboard target、focus owner、焦点遍历或全局 key policy。Gesture arena 仍属于
-原有交互路线。
+快照。宿主只为 Navigator 的 ESC 返回提供专用 section 和显式 callback；框架仍没有
+通用 keyboard target、focus owner、焦点遍历或全局 key policy。Gesture arena 尚未提供。
 
 capture 归属包含当前 owner、target 和按键序列；在 capture 期间优先投递到原目标，
 不能因为移到另一个 entry 就重新命中。当前 legacy local point 在区域外为 nil；root-space
@@ -213,41 +198,15 @@ button 消耗旧序列剩余的 up，不投递给替代目标。其他取消时�
 反馈。该回调没有 DispatchResult，不消费事件，也不改变 capture 目标；普通 move/up
 仍按原分发规则投递。移出命中路径后执行 leave，不向区域外 hover observer 投递坐标。
 
-## 分期
-
-### 6.0 mpv 输入 spike
-
-- 验证 `mp.set_mouse_area()` 的坐标和多区域语义；已确认每个 section 只有一个矩形，
-  当前实现采用按区域拆分 section；
-- 验证 `force`、exclusive、用户 `input.conf` 和双击事件优先级；
-- 已新增最小 mp stub 和真实 host fixture，不先改整个 RenderOwner。
-
-### 6.1 区域与默认输入隔离
-
-- 为 RenderObject 增加可导出的交互区域快照；
-- host 完成 OSD/窗口坐标换算、section 生命周期和区域更新；
-- interactive 区域消费双击，passive/background 保留 mpv 默认行为；
-- 覆盖隐藏 overlay、root swap、resize、capture 和 shutdown 清理。
-
-### 6.2 输入事件重构
-
-- 已完成结构化 PointerEvent/KeyEvent、modifier 字段契约、button 快照、click count、
-  四向 wheel delta 和 timestamp/source；当前 mpv Lua binding 没有可靠 modifier 来源，
-  host 明确暂留 nil；
-- 已完成 `RenderOwner:dispatch_pointer_result()` 与 `dispatch_pointer()` 兼容入口，
-  区分 handled、capture 和 stop propagation；
-- 已完成等价 host 输入适配，接入 middle/right、四向 wheel 和 double-click；keyboard
-  基础事件值对象已提供，但 keyboard target/focus 和宿主 key translation 尚未接入；
-- 保持核心层无 mpv 依赖，host 负责将 mpv 事件翻译为值对象。
-
-## 验收标准
+## 回归要求
 
 - Button 区域双击不会执行用户 `input.conf` 的 fullscreen；
 - 没有 interactive region 的背景仍可执行用户默认双击；
 - Root、Column、Row、Padding、Align 等排版节点默认不吞输入；
 - input area 随 layout、paint-only transform、clip、OSD resize、visibility 和层级变化更新；
 - pointer capture 在移出后仍能收到 up/cancel；
-- root swap、隐藏 overlay 和 shutdown 清理 capture、hover、area、section；
+- 目标卸载、root replacement 和 shutdown 取消 capture 并清理旧序列；隐藏或遮挡内容
+  移除交互区域，capture 的额外取消时机遵循 host/控件策略；
 - mpv stub 和真实 host 都覆盖双击拦截、区域间空隙透传和坐标缩放；
 - 真实输入回归经过 mpv 的按键解析/section 选择，而非只用 script-message 直调
   RenderOwner；原先的注入式 Button 测试不能单独证明默认绑定不穿透。

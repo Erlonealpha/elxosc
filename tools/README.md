@@ -104,8 +104,36 @@ does not supply runtime text measurement or update the framework estimator.
 
 `benchmark_player_hover.lua` investigates the offline Lua path;
 `benchmark_real_player_hover.py` and `player_hover_probe.lua` measure real-player
-input through ASS submission. Their scenarios, reports and endpoint limits are in
-[TESTING.md](../dev/design/TESTING.md).
+input through ASS submission. Run the host probe separately from input tests and
+memory probes because they share the physical mouse:
+
+```text
+uv run --group test python tools/benchmark_real_player_hover.py --seconds 4 --output tmp/player-hover.json
+uv run --group test python tools/benchmark_real_player_hover.py --rates 240 --modes observe --debug true --seconds 4 --output tmp/player-hover-debug.json
+```
+
+The tool generates H.264 media with ffmpeg and supports 60/240 Hz input, pause/play
+and debug toggles. Windows moves target a fixture-owned native window; only temporary
+staging loads the probe. Production uses the `mouse-pos` observer; `mouse_move` is a
+staging-only forced-binding experiment, not a replacement production input mode.
+`--host` or `ELXOSC_MPV_BINARY` selects the executable.
+
+Latency ends at the first ASS submission for each input sequence; repeated paints
+from playback do not count as new input latency. Dirty counts include all frames.
+Input and OS-move timing use the same monotonic clock; p50/p95 use nearest-rank.
+The report records actual input rate, received events, tooltip submissions and
+frame phases. It does not measure libass pixels, scan-out, external thumbfast or
+ModernX. Short samples and probe overhead cannot establish universal frame rates.
+
+Selected historical data:
+
+- [Real-player scenes](../dev/benchmark/player-hover-real-2026-11-05.json)
+- [Debug supplement](../dev/benchmark/player-hover-real-debug-2026-11-05.json)
+
+Use each artifact's source version and environment when interpreting it. Playback
+can rebuild the Main provider chain and refresh layout/input regions; compare the
+same real scenes after an optimization rather than inferring performance from
+paused or offline output.
 
 ## Framework and measurement benchmark
 
@@ -146,8 +174,17 @@ separately. Host changed payloads vary both placement and text size; empty chang
 payloads stay empty. Timed batches use libass warn logging, with font/version evidence
 collected separately by the calibration CLI.
 
-Executable defaults come from `project.conf`. Reports and statistical limitations
-are documented in [TESTING.md](../dev/design/TESTING.md).
+Executable defaults come from `project.conf`. Selected historical reports keep
+their original source and sampling scope:
+
+- [Framework and ASS baseline](../dev/benchmark/framework-ass-baseline-2026-11-06.md)
+- [Matching regression comparison](../dev/benchmark/framework-regression-2026-11-06.md)
+- [ASS calibration](../dev/measure/ass-measure-2026-11-06.md)
+- [Persistent measurement instance calibration](../dev/measure/ass-measure-reuse-2026-11-06.md)
+
+These artifacts are references, not acceptance results for the current checkout.
+Ordinary run results belong in local planning records; shared reports must explain
+their method, versions and limitations.
 
 `gen_font_glyphs.py` generates glyph metadata from the bundled font.
 

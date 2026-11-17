@@ -6,10 +6,10 @@
 
 ## 当前组织
 
-player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
-[TESTING.md](TESTING.md)。widgets 已扁平并与 Material 分层；来源级 export、完整静态
-catalog 与生产 namespace 已统一。扩展类型提示见 [meta](../../meta/README.md)，专项验收暂缓。
+框架位于 lib，player 与 Define 分别拥有媒体领域和初始化协议。通用 WidgetsApp 与
+host App 不默认加载或订阅 player。widgets 扁平组织并与 Material 分层；来源级 export、
+静态 catalog 和生产 namespace 的规则见下文。扩展类型提示见
+[meta](../../meta/README.md)。
 
 ## 分区
 
@@ -59,7 +59,7 @@ Anchor、Curves 等来源定义的具名值表保持原对象。点分包名表�
 同一 canonical 模块，避免 class 和 Binding singleton 重复。项目代码优先使用点路径。
 所有生产模块表使用 `elxosc.mod.<canonical require>`，例如
 `elxosc.mod.src.foundation.geometry` 和 collector `elxosc.mod.foundation`；
-实例/Options/alias 使用对应 owning namespace，FPK-4 已同步全部引用。
+实例/Options/alias 使用对应 owning namespace。
 文件使用 `@namespace elxosc` 限定声明、`@using elxosc` 与必要 owner using 简写引用，
 类型身份保持上述完整名称；运行时名称和 class name 字符串不受影响。
 `init.lua` 单向转出 collector，不重复类型或 classes；类型名前缀不进入运行时路径。
@@ -75,7 +75,7 @@ host 增加 runtime facade 后统一注册。`import('render.stack')`、
 
 ## 框架与应用的所有权
 
-下列分区、入口和导出合同已实施。
+各分区拥有以下入口和导出合同。
 
 | 目标分区 | 所有权和入口 |
 | --- | --- |
@@ -92,12 +92,12 @@ player/Define 的领域与协议代码仍不加载 mp。player 的初始化 comp
 继续由 host 适配。基础值、render、animation/scheduler/backends 的现有分区保持。
 
 实际 class/function source 与层 collector 分开；每个 `lib/*.lua` 无条件收集所属导出。
-`src.<layer>.init` 是明确的单向 collector alias，collector 不加载该 alias；现有 animation
-init 的重复清单合并到 animation collector。source/collector/alias 共享同一 class 和表
+`src.<layer>.init` 是明确的单向 collector alias，collector 不加载该 alias；animation
+init 同样单向转出 animation collector。source/collector/alias 共享同一 class 和表
 身份。原 `src.widget.*`、`widget.*`、`extension.*`、`main_layout` 迁移后删除；现有
 WidgetBinding/RenderOwner 的 class identity alias 保留，不与旧 module path 混为一项删除。
 
-目标 canonical require 为 `src.widgets.*`、`src.material.*`、`player.src.*`、`define.src.*`；
+canonical require 为 `src.widgets.*`、`src.material.*`、`player.src.*`、`define.src.*`；
 不为 player/define 增加另一个裸 `src` 搜索根。包名为 widgets/material/player/define 及
 精确子包。模块表类型统一 `elxosc.mod.<canonical require>`，例如
 `elxosc.mod.src.widgets.framework`；生产实例/Options/alias 使用 elxosc namespace，
@@ -114,19 +114,18 @@ collect 验证全部待发布包后按首次声明顺序发布；失败不发布
 身份，已发布包不可追加或重新筛选。source/metatable 不修改，pairs 次序不保证，包枚举
 次序稳定。export 不管理 scope、事务或运行时树。
 
-FPK-3 的 `require('export')` 提供默认声明上下文；`export.new()` 返回独立上下文，
+`require('export')` 提供默认声明上下文；`export.new()` 返回独立上下文，
 供每个 collector 和扩展显式使用。上下文的 export/get/collect 是点调用函数；每条
 export 返回一次性 show/hide handle，声明其他包不使 handle 失效，替换自身来源后旧
 handle 报 RuntimeError。成功发布后释放来源快照，保留普通 exports；collect 每次返回
 新 descriptor 容器。render 的同名 normalize helpers 通过显式来源表重命名；Material
 只选 Slider/LinearProgressIndicator，完整 helpers 仍可从独立子包导入。
-animation init 已改成单向 collector alias。Define collector 输出 sandbox 自身成员
+animation init 是单向 collector alias。Define collector 输出 sandbox 自身成员
 load_chunk/new_env，不再附加 sandbox 子模块；player.PlayerIcons 保留原具名 API。
 
 PaintingBinding/SchedulerBinding/RendererBinding 当前在函数内引用具体 WidgetsBinding，
-这是既有 role 接线；迁移只更新其路径/type，不同时重构 Binding topology。
-阶段 0 固定上述合同与完整映射，随后按所有权分离、Widgets/Material、导出、类型顺序实施；
-布局、dirty、Binding singleton、Define 初始化协议和资源清理行为保持。
+这是 role 到 concrete composition 的接线，不能因模块命名或分区改变而复制
+Binding singleton。
 
 ## 迁移入口对照
 
@@ -170,7 +169,7 @@ Material/player/Define/host 分别使用 owning namespace。runtime require/类�
 
 meta/elxosc.lua 不在 runtime catalog 中；扩展编辑器一次加载 owning sources、elxlib
 与该 meta 文件。tools/generate_meta.py 从三个显式 catalog 校验 source module types，
-生成全部 144 包名 literal import_as 重载，require 复用同一 callable；默认类工厂仅
+生成登记包名的 literal import_as 重载，require 复用同一 callable；默认类工厂仅
 new_widget/new_state。协议和类工厂声明收集为 elxosc.meta.Builtins 局部表类型，
 不定义编辑器全局、不覆盖标准 Lua require/print。
 默认环境另含 host 手选的 Lua 工具；外部 std 包由 mpv_define 登记，复用 elxlib 类型与
@@ -209,7 +208,7 @@ Lua runtime / host isolate
 composition 只初始化一次；多树通过 `WidgetsBinding:attach()` 复制 BuildOwner、
 PipelineOwner 和 root Element，不复制第二套 Binding。
 
-F runtime 的生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPresenter` 和单
+当前生产边界仍是单 logical root、单 `AssCanvas`、单 `AssPresenter` 和单
 `osd-overlay`。Layer/compositing、Semantics、multi-view 和 GlobalKey 跨父节点 reparent
 不因名称对齐而进入当前 API。
 

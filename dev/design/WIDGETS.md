@@ -4,14 +4,13 @@
 
 ## 当前组织
 
-player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
-[TESTING.md](TESTING.md)。widgets/Material、来源级 export、完整静态 catalog 与 namespace
-已统一，扩展提示见 [meta](../../meta/README.md)，专项验收暂缓。
+基础 widgets 与 Material 分层，player/Define 不属于框架目录。通用 WidgetsApp 与
+host App 不默认加载或订阅 player。路径和资源边界见
+[DESIGN.md](DESIGN.md#目录与模块入口)，扩展提示见 [meta](../../meta/README.md)。
 
 ## 组件归属
 
-FPK-2 已实施：公共 collector 使用 widgets/material，基础源采用 src.widgets.*，
+公共 collector 使用 widgets/material，基础源采用 src.widgets.*，
 样式源采用 src.material.*。删除旧 widget、widget.widgets 和 basic/layout 二次整合入口，
 所有调用者迁到 owning source 或新 collector。整合表仍仅导出成员，不附加子模块。
 RenderSlider/RenderLinearProgressIndicator 的视觉字段由上层显式提供；Material wrapper
@@ -35,13 +34,13 @@ RenderSlider/RenderLinearProgressIndicator 的数值、输入、layout/dirty 与
 设计颜色/尺寸默认移到 Material wrapper，render 接收明确 config，不引用 Material Options。
 Timeline 已迁到 player，继续继承同一 RenderSlider。HoverText 改用基础 gesture/text visual
 机制解除 ButtonBase 依赖，保持 hover/点击效果。Icon 当前字体/variation API 与默认视觉
-保持，生成的字体声明仍为框架资源；本次不新增 RawIcon 或完整图标主题 API。
+保持，生成的字体声明为框架资源；当前没有 RawIcon 或完整图标主题 API。
 
 Tooltip 不再识别 AutoHide 类/私有 State hook。它提供通用取消/可见性清理边界，player
 适配在 fade 开始立即释放 thumbfast，并维持淡出期间的现有 pointer capture。Opacity/
 Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变。
 
-新模块名和类型规则见 [架构](ARCHITECTURE.md)；全量类型迁移仍为后续合同。
+模块名和类型规则见 [架构](ARCHITECTURE.md)。
 
 ## Widget 不可变
 
@@ -82,7 +81,7 @@ active → inactive → active
                  ↘ finalize → unmounted
 ```
 
-本阶段只提供 inactive/finalize 基础语义，不宣称 GlobalKey 跨父节点 reparent。不同
+当前只提供 inactive/finalize 基础语义，不宣称 GlobalKey 跨父节点 reparent。不同
 tree handle 不得共享 dirty queue、BuildOwner、PipelineOwner、GlobalKey registry 或 root
 frame state；它们共享 concrete Binding composition。App shutdown 只释放自己的 tree/owner，
 不自动 dispose 共享 Binding。
@@ -204,23 +203,23 @@ fresh Widget 描述，mounted tree 不保留 Slot wrapper。普通 Widget 的 `i
 
 ## WidgetsApp、DefaultApp、Main 与扩展区域
 
-当前 N1 应用组合为：
+播放器应用组合为：
 
 ```text
-WidgetsApp
-├── Theme
-├── DisplayScope
-├── DefaultTextStyle
-└── HostActionsScope
-    └── DefaultApp
-        └── Theatre（单一逻辑 Overlay owner）
-            ├── ExtensionEntry
-            ├── MainEntry → AutoHide → Main
-            └── WindowLayer（空根或受控内容）
+PlayerApp
+├── Theme / PlayerTheme / HostActionsScope
+└── WidgetsApp（DisplayScope / DefaultTextStyle）
+    └── PlayerScope（由播放器 host 适配提供）
+        └── DefaultApp
+            └── Theatre（单一逻辑 Overlay owner）
+                ├── ExtensionEntry
+                ├── MainEntry → AutoHide → Main
+                └── WindowLayer（空根或受控内容）
 ```
 
-`WidgetsApp` 只提供 host-independent ambient；`host/mpv_app.lua` 注入当前显示尺寸、
-Theme 和受控 `HostActions`。`Text` 在没有显式 style 时读取 `DefaultTextStyle`。
+`WidgetsApp` 只提供 host-independent display/default text ambient；`host/mpv_app.lua`
+提供当前显示尺寸，`host/mpv_player_app.lua` 通过 PlayerApp 和 PlayerScope 包装主题、
+受控 actions 与媒体状态。`Text` 在没有显式 style 时读取 `DefaultTextStyle`。
 Theme 不拥有播放器状态，DisplayScope 不拥有输入 section，HostActions 也不暴露原始
 `mp` 给 Widget 层。
 
@@ -235,7 +234,7 @@ Provider 生命周期，不能运行时 unbind、回滚或直接编辑 mounted W
 
 ## OverlayEntry 与 Theatre
 
-N2 的 `Overlay`/`Theatre` 是同一个 class object，不是第二套 runtime。一个 Entry 和它的
+`Overlay`/`Theatre` 是同一个 class object，不是第二套 runtime。一个 Entry 和它的
 内容 subtree 只有一个 owner，builder 在 `OverlayEntryMountState` 的 mounted context 中
 调用。Entries 按插入顺序生成单一 Stack：
 
@@ -249,7 +248,7 @@ N2 的 `Overlay`/`Theatre` 是同一个 class object，不是第二套 runtime�
 - `remove()`、visibility/opaque/maintain_state 变化和 `mark_needs_build()` 都通过
   OverlayState 的唯一 authoritative entry list 驱动 reconciliation。
 
-N3 在同一 Theatre 上提供轻量 `Navigator`、`Page`、`Route`、`PopupRoute`、结果句柄和
+Navigator 在同一 Theatre 上提供轻量 `Navigator`、`Page`、`Route`、`PopupRoute`、结果句柄和
 `ModalBarrier`，不创建第二个 owner、Canvas 或 surface。`Page` builder 延迟到 mounted
 route entry 中执行；相同 page class/key 复用 Route 和内容 Element，删除的 route 先从
 Theatre reconciliation 中移除，再完成 result 和 dispose。空 root Navigator 不处理
@@ -263,7 +262,7 @@ InheritedWidget 查询：监听式 `depend_on_inherited_widget_of_exact_type()` 
 `Provider.of(context)` / `Provider.maybe_of(context)` 入口；具体 Provider 可以通过
 `SomeProvider.of(context)` 和 `SomeProvider.maybe_of(context)` 查询最近的同类祖先。
 
-6.3 提供 `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和 `PlayerProvider`。Store
+player 提供 `PlayerSnapshot`、`PlayerStore`、`PlayerScope` 和 `PlayerProvider`。Store
 只替换快照，不原地修改快照；订阅按注册顺序通知，并返回可幂等 `dispose()` 的句柄。
 只读视图被调用方持有时拥有 backing snapshot/table；正向缓存同时弱化 key/value，
 反向映射只弱化 key。LuaJIT weak-key 表没有 ephemeron 语义，不能用强 value 回指

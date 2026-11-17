@@ -6,21 +6,20 @@ WindowLayer 与同一 logical root 内 OverlayEntry 的组合方式。
 
 ## 当前组织
 
-player/Define 内容已迁出 lib；通用 WidgetsApp 与 host App 不默认加载或订阅 player。
-路径和资源边界见 [DESIGN.md](DESIGN.md#目录与模块入口)，实际检查见
-[TESTING.md](TESTING.md)。owning imports、Material Theme、export、完整静态 catalog 和 namespace
-已统一；2026-11-15 用户确认当前分支播放器外观与交互正常。
+player 拥有媒体状态、动作和默认 UI，Define 拥有初始化贡献协议；二者不属于 lib。
+通用 WidgetsApp 与 host App 不默认加载或订阅 player。路径和资源边界见
+[DESIGN.md](DESIGN.md#目录与模块入口)，测试策略见 [TESTING.md](TESTING.md)。
 
 ## 播放器所有权
 
-原 lib/widget/render 的播放器内容已统一归 player/：PlayerSnapshot/Store/
+player/ 拥有：PlayerSnapshot/Store/
 Provider/Scope/Capability、HostActions/Scope、Main/DefaultApp/WindowLayer、Timeline/
 RenderTimeline、AutoHide/Controller/State、PlayerTheme、布局与语义图标映射。
 player 领域代码不加载 mp，属性/actions/preview/消息适配继续归 host。基础 framework
-widgets/material 不导出这些领域内容，player 公共根补齐迁出前已可使用的 state/actions
+widgets/material 不导出这些领域内容，player 公共根导出 state/actions
 类型，Main/PlayerMain 保持同一对象；内部 State 不默认展平。
 
-原 main_layout 的构造与当前四个 Slot ID/规则已迁到 player.src.composition；Slot/Contribution/
+默认应用构造与四个 Slot ID/规则位于 player.src.composition；Slot/Contribution/
 Assembler primitive 归 define，只有这部分播放器初始化 composition 需要协议依赖。
 通用 WidgetsApp 只负责 display/默认文字/child，上层 player assembly 明确包装设计
 Theme、PlayerTheme、PlayerScope 与 HostActionsScope。host player assembly 拥有默认
@@ -31,10 +30,9 @@ AutoHide 的 inactivity/reveal/fade 策略当前属于 player。通用 Tooltip �
 controller replacement、dispose 和下一次真实 move 恢复预览继续保持。淡出中的 capture
 和 fade 完成后的 hidden paint/input eligibility 不改变，preview border 仍使用共享像素坐标。
 
-Timeline 继续复用框架 RenderSlider 的 numeric/dirty/输入机制，其媒体 cache/chapter/seek
-语义归 player。Material 分层只调整现有样式/default 的 owner，不改变播放器外观、
-uniform scale、tooltip 跟随/布局或底部左右追加按钮的行为。新入口规则见
-[架构](ARCHITECTURE.md)，下文描述当前生产行为。
+Timeline 复用框架 RenderSlider 的 numeric/dirty/输入机制，其媒体 cache/chapter/seek
+语义归 player。Material 提供基础视觉默认，PlayerTheme 提供播放器的 uniform scale、
+tooltip 和按钮样式；入口规则见 [架构](ARCHITECTURE.md)。
 
 ## 应用构成
 
@@ -50,7 +48,7 @@ PlayerApp
         └── WindowLayer
 ```
 
-`Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线、进度条
+`Main` 是播放器内置固定 UI 的所有者；标题栏、窗口控制、底部 metadata、时间线
 和播放控制由播放器定义，统一正数 scale 只负责布局外层缩放，控制器内部使用
 `PlayerThemeData` 的 root-relative `Stack`/`Positioned` 几何。`ExtensionEntry` 接受受控扩展
 内容；未贡献时 `WindowLayer` 为空，应用可以显式提供逻辑页面 owner，不创建额外
@@ -76,9 +74,9 @@ Main 标题栏、窗口控制和底部播放器骨架不是扩展的隐式 targe
 完成后由 opacity render object 禁止绘制、命中和 pointer regions。`maintain_state=false` 只
 在 fade 完成后的 build pass 卸载 Main；ExtensionEntry 的 Element/State 不被卸载或重置。
 
-## P2 ModernX 默认播放器
+## ModernX 默认播放器
 
-P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默认能力包括：
+默认播放器采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默认能力包括：
 
 - 顶部媒体标题、窗口最小化/全屏/关闭按钮；
 - 底部媒体 metadata、播放/暂停、相对 `seek(-/+10)`；
@@ -102,41 +100,37 @@ P2 采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默�
 - 生产 `player/src/composition.lua` 使用 ModernX 默认 `1.5` uniform scale；`LayoutScaleBox` 负责将
   display-space 输入逆映射到 PlayerLayout 的逻辑坐标。
 
-进度、buffer、handle、hover scale 和颜色是 paint-only；进度条高度、统一布局 scale 和
-结构变化分别走 layout 或 rebuild。`GAP-ANIM-001` 已修复：`LayoutScaleBox` alignment
-setter 在 paint invalidation 外同时 invalidates input snapshot。
+进度、buffer、handle、hover scale 和颜色是 paint-only；时间线高度、统一布局 scale 和
+结构变化分别走 layout 或 rebuild。`LayoutScaleBox` alignment setter 在 paint
+invalidation 外同时 invalidates input snapshot。
 
 当前已实现 seekbar/volume tooltip、ModernX hover/pressed/glow、seekable cache ranges、
 persistent progress ranges、thumbfast capability fallback、description panel AutoHide 保持、
 download/SponsorBlock capability consumers 和 metadata/idle states。YouTube comments 仍保持
 explicit `unavailable`，不作为默认集成。
 
-P2 的当前默认播放器范围已完成，用户确认外观基本无问题，最后两项 thumbfast 差异已
-修正。original/reduced、控件状态、metadata/capability、输入边界和生命周期有自动证据；
-人工结论记录当前播放器整体审阅，不扩大为每个操作系统/配置组合的像素一致性保证。
 完整 ModernX 配置/全局快捷键兼容、季节性 idle 装饰、自动修改 `sub-pos` 的字幕避让、多
 host overlay、focus/IME 和非批准第三方脚本 UI 仍未实现。240 Hz 下的播放更新失效成本
-由后续性能工作负责，测量见 [TESTING.md](TESTING.md)。静态 ASS 不使用 `\move` 或 `\t`。
+需要真实播放场景评估，方法见 [tools/README.md](../../tools/README.md#hover-probes)。静态 ASS 不使用 `\move` 或 `\t`。
 
 旧 `player/src/composition.lua` 三行三列 scaffold、九个固定 id 和 `more` 已从当前生产入口删除。
-Navigator/Route 由 N3 单独接入，不是 N1/N2 的隐式副作用；host-level 多 overlay 仍延期。
+Navigator/Route 显式管理页面；host-level 多 overlay 尚未提供。
 
-2026-11-05 外观复核修复：Main 的唤醒区按 uniform scale 换算；顶部控件移回 0～30px
+Main 的唤醒区按 uniform scale 换算；顶部控件位于 0～30px
 逻辑行；hover glow 使用额外模糊字形，不可用控件使用 alpha 215；音量 0 对应
 `volume_mute`，静音对应 `volume_off`。上下渐变源位于 viewport 外并覆盖水平边界。
 Tooltip 使用控件上沿的 bottom-center anchor，文本/位置变化只更新绘制，保持布局、
-输入快照和 seek capture target 不变。播放器组件已按几何、控件、文本、描述和数据
-职责拆分；`PlayerLayout` 和已有聚合/direct-module identity 保持兼容。
+输入快照和 seek capture target 不变。播放器组件按几何、控件、文本、描述和数据
+划分职责；`PlayerLayout` 的 aggregate/direct-module identity 保持一致。
 
-`AutoHide` 在控制器开始隐藏时，向保留的子 State 发送内部
-`refresh_hover_visibility()` 通知；tooltip 读取全部祖先 AutoHide 的当前 policy，
-立即清理 hover 和外部 thumbfast，不等待 fade 完成或鼠标 leave。淡出期间仍保留原控件
-输入/capture，但不产生新 tooltip/thumbnail 请求；下一次重显后的真实 move 恢复预览。
-controller replacement、nested AutoHide、capability loss 和 dispose 均清理，通知只在可见性
-变化时执行，不给每次移动增加树遍历。
+`AutoHide` 在控制器开始隐藏时通知保留的子 State；player 可见性适配综合全部祖先
+AutoHide policy，向通用 Tooltip 提供可见性/取消边界，立即清理 hover 和外部 thumbfast，
+不等待 fade 完成或鼠标 leave。淡出期间仍保留原控件输入/capture，但不产生新
+tooltip/thumbnail 请求；下一次重显后的真实 move 恢复预览。controller replacement、
+nested AutoHide、capability loss 和 dispose 均清理；可见性变化通知不在每次移动遍历树。
 
-2026-11-16 tooltip/时间线交互修复：固定文字 tooltip 在重显后的真实 move 上恢复，
-不要求先离开原按钮 hitbox。时间线预览通过当前命中路径的 hover move observer 更新，
+固定文字 tooltip 在重显后的真实 move 上恢复，不要求先离开原按钮 hitbox。
+时间线预览通过当前命中路径的 hover move observer 更新，
 拖拽 capture 期间时间与 thumbfast 继续共享当前位置；移出时间线仍清理预览。
 `Timeline.on_seek` 在 start 时固定本次生命周期回调，Widget 重建替换的非 nil 回调用于
 下次操作；end/cancel 释放旧回调，禁用或移除 seek 回调仍取消当前操作。
@@ -185,10 +179,10 @@ NavigatorState 的 `push`/`pop`/`set_pages` 驱动，不重新执行 Define。�
 
 ## 配置和对外接口热更新
 
-本阶段的“热重载”收缩为**配置热更新和对外接口数据更新**，不包含 Lua 源码或扩展
-模块代码重载。
+配置和对外接口的热更新指数据与事件更新，不包含 Lua 源码或扩展模块代码重载。
+当前状态传播链路见下文；统一配置解析和完整配置 schema 尚未提供。
 
-默认支持的流程是：
+数据更新使用以下流程：
 
 ```text
 user config / public API data
@@ -201,7 +195,7 @@ user config / public API data
 
 规则如下：
 
-- 配置信息默认可以在 mpv 运行期间热更新；
+- 运行时配置更新必须经过校验和状态传播管线；
 - 播放器对外公开的数据/API 更新接口由播放器维护稳定版本和生命周期；
 - 扩展需要响应更新时，可以订阅预先提供的接口，也可以在自己的 Define 内容中
   设计消息/状态协议；
@@ -211,10 +205,10 @@ user config / public API data
   修改已挂载 Widget；
 - 配置/API 订阅必须在扩展或 State 销毁时清理，不能重复注册。
 
-Lua 代码热重载暂不属于本阶段。它涉及 class identity、State 保留、controller、
+Lua 代码热重载不属于当前播放器 API。它涉及 class identity、State 保留、controller、
 宿主回调和 mpv script-message 清理，应作为独立的开发工具设计。
 
-### 6.3 当前实现
+### 当前状态传播
 
 当前已提供以下最小更新链路：
 
@@ -229,8 +223,9 @@ mpv property / host API event
 ```
 
 核心入口位于 `player/src/context.lua`，不依赖 mpv；宿主桥位于
-`host/mpv_player_context.lua`。`App` 接受可选 `player_store` 并把 root 放入
-`PlayerScope`。`MpDefine` 可以把同一个 Store 暴露为受控的 `player` module。
+`host/mpv_player_context.lua`。`host.mpv_player_app.PlayerHostApp` 接受可选
+`player_store` 并把 root 放入 `PlayerScope`；通用 `App` 不承担媒体订阅。
+`MpDefine` 可以把同一个 Store 暴露为受控的 `player` module。
 
 Snapshot 使用新对象表达新状态，Store 不修改调用方数据。订阅按注册顺序执行，返回
 的句柄支持幂等 `dispose()`；App shutdown、State unmount 和 Define 扩展生命周期必须
@@ -239,16 +234,16 @@ class identity。
 
 需要局部更新的消费者可以通过 `PlayerStore:subscribe_selector()` 选择播放、窗口、列表或
 metadata 子集；只有 selection 结构变化才回调。`MpPlayerContext` 的默认 property bridge
-在 App 中使用 coalesced batch observer，相关属性在一个 Store replacement 中提交，避免
+在播放器 host 适配中使用 coalesced batch observer，相关属性在一个 Store replacement 中提交，避免
 chapter/track/window 中间快照。thumbfast、yt-dlp 等外部能力由 host adapter 发布明确的
 loading/available/error 状态；缺失能力为 unavailable，不伪造 action 成功。
 
-6.3 的 Provider 语义是最小 InheritedWidget 模型，不是 `package:provider` 兼容层：
+Provider 语义是最小 InheritedWidget 模型，不是 `package:provider` 兼容层：
 监听式 `of` / `maybe_of` 返回 Provider Widget 并建立依赖，非监听式 `read` /
 `maybe_read` 只读取最近的精确运行时类型。State 首次挂载和依赖更新经过
 `did_change_dependencies()`；`init_state`、事件回调和 dispose 不得使用监听式查询。
 
-## N3 Page/Route/Navigator
+## Page/Route/Navigator
 
 Navigator 是同一 logical Theatre 内的运行时页面 owner：
 
@@ -270,12 +265,12 @@ Theatre 在下一次 build flush 中卸载 entries，再按顺序调用 `on_pop`
 `ModalBarrier` Widget：dismissible barrier 调用当前 Navigator 的 pop，非 dismissible
 barrier 仍消费其区域输入但不伪造 pop。页面默认注册 ESC；有可 pop route 时 host 才启用
 navigation section，无可 pop 内容时不抢占用户默认 ESC 绑定，KeyEvent 只在 section 已选中
-后交给 NavigatorState。首版不提供 focus traversal、Hero、restoration、browser parser、
+后交给 NavigatorState。当前不提供 focus traversal、Hero、restoration、browser parser、
 nested Navigator 状态恢复或复杂 transition 协商。
 
-### N3 Demo
+### 开发 Demo
 
-`main.lua` 的临时 `demo_enabled = true` 开关控制开发内容注入，未来由配置系统替代。
+`main.lua` 的 `demo_enabled` 开关控制开发内容注入，默认开启。
 入口发布受保护的 `development-demo` 模块，再执行单次 Define payload：
 `app.window_layer` 贡献 `DemoLauncher`，`player.controls.right` 追加按钮。
 两个 Widget 共享一个 runtime controller，内容和按钮都由 Define 构造；
@@ -286,22 +281,11 @@ nested Navigator 状态恢复或复杂 transition 协商。
 再打开会创建新的 Demo。关闭时 WindowLayer 没有页面；打开时拦截背景点击，防止点击下方
 播放器。按钮继承 Main 的字号、颜色、glow、scale、AutoHide 和右侧按钮间距。
 `demo.lua` 的 Page builder 在 mounted context 中取得 Navigator handle；按钮事件复用
-该 handle，返回结果通过 `RouteResult` 更新首页 State。
+该 handle，返回结果通过 `RouteResult` 更新首页 State。首页不占用 ESC，页面打开期间
+重复打开命令被忽略；Demo dispose 释放消息注册及待完成的 result 订阅。
+操作命令和可观察结果见 [test/README.md](../../test/README.md#demo-navigation)。
 
-- 首页 **N3 Navigation → Open Page** 打开 opaque Page；**Back with result** 返回
-  `Page: done`，ESC 返回 `Page: dismissed`。
-- **Open Popup** 显示遮罩和居中卡片；**Confirm / Cancel** 分别返回
-  `Popup: confirmed / cancelled`。点击遮罩或 ESC 显示 `Popup: dismissed`，点击卡片
-  空白处保持弹窗打开。
-- 首页的 **Result / Returns** 显示最近结果和完成次数；打开页面前修改原有计数，返回后
-  可检查其 State 保留。首页不占用 ESC，继续执行宿主自己的绑定。
-
-也可先在 mpv 控制台执行 `script-message elxosc-demo-open`，再执行 `script-message elxosc-demo page` 或
-`script-message elxosc-demo popup`；不带参数仍为原有计数演示。页面打开期间重复打开命令
-会被忽略。`user-data/elxosc-demo-route`、`elxosc-demo-result` 和 `elxosc-demo-returns`
-提供对应观测值，Demo dispose 会释放消息注册及待完成的 result 订阅。
-
-## N2 逻辑 Overlay 与未来 host layers
+## 逻辑 Overlay 与未来 host layers
 
 当前 `Overlay`/`Theatre` 是 framework 内单一 logical root 的 runtime；它不是 host-level
 `osd_overlay`，也不改变 Bind priority。一个 Entry 和内容 subtree 只有一个 owner：
@@ -316,8 +300,8 @@ Theatre
 Entries 按插入顺序生成一个 Stack。`visible` 控制自身 paint/input，顶层可见 `opaque`
 entry 使下方 entry occluded；`maintain_state` 决定下方内容是通过 `Offstage` 保持挂载
 还是在下一次 build flush 中 unmount/dispose。`OverlayState` 发布 generation-stamped
-plan，分别记录 visible、occluded、paint、input 和 mounted 状态。N2 不实现 Route、
-PopupRoute、barrier、ESC result 或 multi-surface。
+plan，分别记录 visible、occluded、paint、input 和 mounted 状态。Overlay 本身不提供 Route、
+PopupRoute、barrier 或 ESC result；这些语义由 Navigator 管理，multi-surface 尚未支持。
 
 未来 host-level `OverlayHost/OverlayRegistry` 仍可管理独立命名 layer：
 
@@ -348,72 +332,22 @@ layer 后使用该 layer 的 RenderOwner 路径和 capture 规则。passive laye
 所有 host overlay 输出仍然是当前帧静态 ASS；不能使用 `\move`、`\t` 代替 FrameClock。
 未来 host layer 的更新、删除、z 调整和分辨率变化都必须可重复且有缓存策略。
 
-## 实施分期
-
-### 6.3 PlayerContext 和公共更新接口
-
-- 完善 `BuildContext` 的 `of/maybe_of` 使用模式；
-- 提供只读播放器状态/API snapshot 和订阅生命周期；
-- 配置解析、校验、不可变快照和热更新；
-- 扩展只通过 Define 获得这些接口。
-
-### 6.4 N1 DefaultApp/Main（已实现）
-
-- `PlayerApp` 明确提供 Theme/PlayerTheme/HostActionsScope，复用 WidgetsApp 的 DisplayScope/DefaultTextStyle；
-- `DefaultApp` 通过单一 Theatre 组装 Main、Extension 和 WindowLayer；
-- Main 使用统一 scale、流式顶部/底部骨架和受控 window/playback actions；
-- AutoHide 的 fade/hidden 只隐藏 Main，不卸载 Extension State；
-- 旧九宫格、固定 region id 和 `more` 从当前生产入口删除；
-- Define/Slot 仍只在 mount 前组装内容，mounted Widget 不被外部直接修改。
-
-### 6.5 N2 Overlay runtime（已实现）
-
-- OverlayEntry builder 在 mounted context 执行，Entry/State/Element 只有一个挂载 owner；
-- visible/opaque/maintain_state、occluded plan 和 paint/input eligibility 有离线证据；
-- remove、visibility/opaque/maintain_state 变更和 mark_needs_build 通过唯一 entry list
-  驱动真实 mount/update/dispose；
-
-### 6.6 N3 Navigator（已实现最小切片）
-
-- Page/Route/Navigator 使用同一个 Theatre，Page builder 只在 mounted context 执行；
-- class/key reconciliation 保留稳定 Route/Element，重复 key 和空 root pop 有明确边界；
-- push/pop、RouteResult、on_pop/on_dispose、PopupRoute barrier/content 和 ESC 已覆盖；
-- host 只在 `NavigatorState:can_pop()` 时启用 `elxosc-navigation`，不创建第二个 presenter；
-- focus、restoration、Hero、复杂 transition、nested state restoration 和 browser parser 延后。
-
-### 6.7 OverlayHost
-
-- 多个 AssPresenter/OSD overlay 的创建、更新、移除和 z 排序；
-- 每层独立 dirty/cache 和 input policy；
-- overlay 重叠输入、隐藏清理和真实 mpv 回归；
-- layer policy、input callback 和移除流程使用非监听 Provider read，Widget build
-  才使用监听式 lookup；
-- 把 DefaultApp/Theatre layer 和未来 host overlay layer 的职责明确分开。
-
-### 6.8 可扩展播放器 Shell
-
-- Main 的标题栏、时间线、底部和两侧控件；
-- 可隐藏的顶层控件和 auto/always/never visibility 状态；
-- N3 之后的 Shell 页面产品和未来 host layer 的组合；
-- Shell 的 build 使用监听式 Provider，init/event/resource 回调使用非监听 read，
-  依赖变化资源通过 `did_change_dependencies` 更新；
-- 配置/API 热更新驱动 State/Provider，而非代码重载。
-
 ## 非目标
 
 - 不把 Define 改成运行时 Widget tree manager；
 - 不新增第二条扩展内容注入通道；
 - 不默认支持 Lua 源码热重载；
 - 不把 overlay.z 变成 bind 或页面优先级；
-- 不在本阶段承诺完整 Navigator API 或复杂页面导航；
+- 当前不提供完整 Navigator API 或复杂页面导航；
 - 不让根布局节点默认拦截播放器输入。
 
-## 验收标准
+## 回归要求
 
 - 扩展只能通过 Define/Slot 进入 DefaultApp 的初始化扩展边界；
 - Main、Extension 和 WindowLayer 边界清晰，初始化冲突可诊断；
-- 默认配置可运行时热更新，更新经过 snapshot/Provider/State 或明确 setter；
+- 运行时数据更新经过 snapshot/Provider/State 或明确 setter；
 - 扩展代码不因配置/API 更新而重新加载或重复注册；
 - 同一逻辑 Overlay 的 entries 支持更新、隐藏、移除和真实 State dispose；
 - hidden/occluded entry 没有绘制输出和交互区域，maintain_state 内容仍可保留；
-- N1/N2/N3 的离线、stub 和 real-host 回归均已记录；host-level layer 仍另行验收。
+- 应用组合、逻辑 Overlay 和导航分别进行离线、stub 及相关 real-host 验证；
+  host-level layer 必须单独建立验收范围。
