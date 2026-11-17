@@ -6,6 +6,12 @@ Smoke/regression tests for the elxosc framework core, run by the pinned
 load from `lib/*.lua`, and player/Define/host modules load from the repository root.
 The sibling `elxlib` supplies `elxlibs.*`, without its native `init.lua` setup.
 
+The isolated `real_host/test_ass_text_probe.py` captures ASS alignment spans with
+production encoding, real viewport resize, font changes and virtual resolution.
+It records raw data in ignored `tmp/ass-text-probe-*.json`, checks finite Latin
+font-file references and keeps image bounds distinct from logical text size.
+It starts no production App and is not a player hover benchmark.
+
 ## Running
 
 ```sh

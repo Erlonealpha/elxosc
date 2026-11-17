@@ -17,7 +17,34 @@
 uv run --group test python -m pytest -q test/real_host/test_player_extensions.py
 ```
 
-## 当前检查：选定 Lua 工具与外部 std 包（2026-11-17）
+## 当前检查：ASS文本度量探针（2026-11-18）
+
+新增隔离driver复用AssCanvas编码与AssMeasure，不改变生产App。三个实际窗口各执行
+初始/resize/默认字体变化/2倍虚拟resolution四组，每组146请求，保留原始ASS与bounds。
+左右anchor安全位置差分、中心/重复稳定、空格/ligature/CJK/RTL/spacing/clip/font0与
+scale边界已检查。五个Arial字体文件hmtx/AV kern参考误差不超过1px；复杂script只验证
+宿主定位一致性，不承诺完整字体排版精度。纯空白与错误恢复不合并为成功零宽。
+
+完整Lua **3449 checks passed**、生产EmmyLua **No issues found**；最终文本real-host
+**3 passed in 10.98s**，无skip。此前连带现有AssMeasure稳定性回归 **4 passed in 12.80s**，
+后来仅增加独立字体参考的Python检查后复跑新文本三项。fixture只增加新driver名单，
+窗口调整限定为隔离进程树所有权；没有全量宿主、生产播放器benchmark或meta专项。
+
+```text
+E:/lua/local/LuaJIT/bin/luajit.exe test/run.lua
+F:/Tools-soft/emmylua/emmylua_check.exe . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+uv run --group test python -m pytest -q test/real_host/test_ass_text_probe.py test/real_host/test_ass_measure.py::test_framework_measurement_samples_are_stable --tb=short
+uv run --group test python -m pytest -q test/real_host/test_ass_text_probe.py --tb=short
+```
+
+报告生成在ignored tmp/ass-text-probe-*.json，记录字体、viewport、版本、坐标、计时与
+资源清理，不作为提交产物。native计时每组10预热/100记录，未接入结果cache；小样
+两次差分p50约0.033～0.035ms，不代表冷字体、播放器整帧或240Hz跟手感。
+uv既有缓存被沙箱拒绝后审批运行，未更换缓存或用户配置。启动geometry最初被最大化
+状态覆盖，修正为owned resize后才获得跨尺寸证据；默认字体必变和clip必差断言曾失败，
+按真实宿主结果区分rDefault/显式family、主动排除clip，最终检查通过。
+
+## 已完成检查：选定 Lua 工具与外部 std 包（2026-11-17）
 
 用户在 builtins 中增加选定 Lua 函数及 math/table；rawlen/utf8 按实际运行时可选，
 本机 LuaJIT 两者均缺失。外部 elxlib std 从 builtins 移除，由 mpv_define.install_modules
