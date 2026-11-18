@@ -17,7 +17,7 @@
 --   * alpha    -> `\1a&HAA&` with AA = 255 - opacity (00 = opaque)
 --   * reset    -> `\rDefault` neutralises the `OSD` style mpv applies
 -- mpv assigns Layer=0 and monotonically increasing ReadOrder to these lines.
--- Keep each call in one event; neither field is a public Canvas parameter.
+-- Shapes and non-empty text rows each emit an event; neither field is a public Canvas parameter.
 
 ---@namespace elxosc
 ---@using elxosc

@@ -31,6 +31,16 @@ local frame_started
 local layout_needed = false
 ---@type any
 local current_app
+local frame_native = {}
+local native_command = mp.command_native
+mp.command_native = function(command)
+    local started = now()
+    local result, err = native_command(command)
+    if active and command._name == 'osd-overlay' and command.hidden and command.compute_bounds then
+        frame_native[#frame_native + 1] = now() - started
+    end
+    return result, err
+end
 
 -- Dynamic method instrumentation preserves arguments and all return values.
 ---@param target any
@@ -130,6 +140,7 @@ app_api.start = function(build, options)
         stages = {}
         painting_tooltip = false
         local input = latest
+        frame_native = {}
         local text_before = self.text_layout:cache_stats()
         local result = render(self)
         local text_after = self.text_layout:cache_stats()
@@ -141,6 +152,9 @@ app_api.start = function(build, options)
                 regions_changed = generation ~= self.owner:region_snapshot().generation,
                 native_calls = text_after.native_calls - text_before.native_calls,
                 cache_hits = text_after.hits - text_before.hits,
+                native_seconds = frame_native,
+                ass_events = #self.canvas.events, ass_bytes = #self.canvas:text(),
+                text_generation = self.text_layout_generation,
             }
         end
         return result
@@ -154,6 +168,17 @@ mp.register_script_message('elxosc-bench-begin', function()
     active = true
 end)
 
+mp.register_script_message('elxosc-bench-refresh', function()
+    current_app:refresh_text_layout()
+    current_app:render()
+end)
+
+mp.register_script_message('elxosc-bench-offline', function()
+    current_app:refresh_text_layout()
+    current_app.text_layout._measure_ass = nil
+    current_app:render()
+end)
+
 mp.register_script_message('elxosc-bench-save', function()
     active = false
     local report = {
@@ -165,6 +190,8 @@ mp.register_script_message('elxosc-bench-save', function()
         host_version = mp.get_property('mpv-version'),
         thumbfast = current_app.player_store:get():capability('thumbfast').status,
         text_cache = current_app.text_layout:cache_stats(),
+        text_generation = current_app.text_layout_generation,
+        elxlib = require 'elxlib.version',
     }
     local file = assert(io.open(mp.get_script_directory() .. '/hover-trace.json', 'w'))
     local encoded = assert(utils.format_json(report)) --[[@as string]]

@@ -198,12 +198,13 @@ def _running_host(tmp_path, extra_args=()):
                                                  Path(__file__).parent / "text_service.lua",
                                                  Path(__file__).parent / "text_consumers.lua",
                                                  Path(__file__).parent / "multiline_text.lua",
+                                                 Path(__file__).parent / "text_cache_endurance.lua",
                                                  Path(__file__).parent / "ass_measure_benchmark.lua"}):
                 staged_elxosc = config / "scripts" / "elxosc"
                 _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
                 if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua",
                                    "ass_measure.lua", "ass_measure_benchmark.lua", "ass_text_probe.lua", "text_service.lua",
-                                   "text_consumers.lua", "multiline_text.lua"}:
+                                   "text_consumers.lua", "multiline_text.lua", "text_cache_endurance.lua"}:
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
                 if script.name == "multiline_text.lua":

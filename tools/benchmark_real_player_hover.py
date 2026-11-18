@@ -7,6 +7,7 @@ Reported latency ends at ASS submission, not pixel scan-out or external thumbfas
 
 import argparse
 import itertools
+import hashlib
 import json
 import math
 import os
@@ -49,18 +50,20 @@ def wait_property(client, process, name, expected):
     raise TimeoutError(f"host property {name} did not reach {expected!r}")
 
 
-def trajectory(pointer, width, height, rate, seconds):
+def trajectory(pointer, width, height, rate, seconds, scale=1.5, fixed=False):
     motions = []
     start = time.perf_counter()
     count = int(rate * seconds)
     # Stay on the production original seekbar at Main scale 1.5, away from edges.
-    y = int(height - 100 * 1.5)
+    y = int(height - 100 * scale)
     for index in range(count):
         deadline = start + index / rate
         delay = deadline - time.perf_counter()
         if delay > 0:
             time.sleep(delay)
         x = int(80 + (width - 160) * ((index % (rate * 2)) / (rate * 2 - 1)))
+        if fixed:
+            x = int(width * .4) + index % 2
         sent = pointer.move(x, y)
         motions.append({"x": x, "y": y, "sent": sent,
                         "finished": time.perf_counter(), "deadline": deadline})
@@ -105,6 +108,14 @@ def summarize(trace, motions, seconds):
                          for name in ("build", "layout", "prepare", "regions", "paint_ass", "present")},
               "native_text_calls": sum(f.get("native_calls", 0) for f in frames),
               "text_cache_hits": sum(f.get("cache_hits", 0) for f in frames)}
+    result['native_measurement'] = distribution([value for f in all_frames for value in f.get('native_seconds', [])])
+    result['all_native_text_calls'] = sum(f.get('native_calls', 0) for f in all_frames)
+    result['ass_events'] = sorted(set(f.get('ass_events', 0) for f in all_frames))
+    result['ass_bytes'] = {'min': min((f.get('ass_bytes', 0) for f in all_frames), default=0),
+                           'max': max((f.get('ass_bytes', 0) for f in all_frames), default=0)}
+    result['text_generations'] = sorted(set(f.get('text_generation', 0) for f in all_frames))
+    result['unique_labels'] = len({f['label'] for f in all_frames})
+    result['coalesced_input_events'] = max(0, len(events) - len(frames))
     if trace["qpc"]:
         result["os_move_to_input"] = distribution([by_seq[seq]["time"] - m["sent"]
                                                    for seq, m in matched.items()])
@@ -113,7 +124,9 @@ def summarize(trace, motions, seconds):
     return result
 
 
-def run_case(temp, media, rate, mode, playback, debug, seconds):
+def run_case(temp, media, rate, mode, playback, debug, seconds, *, warmup=1, scale=1.5,
+             fixed=False, cold=False, offline=False, milliseconds=False, font='Arial',
+             geometry='1280x720', resize=None, thumbfast=False, title=None):
     original_stage = host_helpers._stage_elxosc
 
     def stage(source, destination, include_main=True):
@@ -127,31 +140,72 @@ def run_case(temp, media, rate, mode, playback, debug, seconds):
         content = content.replace("local debug_enabled = true", f"local debug_enabled = {debug}")
         entry.write_text(content, encoding="utf-8")
         shutil.copy2(ROOT / "tools" / "player_hover_probe.lua", destination / "player_hover_probe.lua")
+        composition = destination / 'player/src/composition.lua'
+        content = composition.read_text(encoding='utf-8')
+        content = content.replace("title = 'elxosc', scale = 1.5,", f"title = 'elxosc', scale = {scale},")
+        composition.write_text(content, encoding='utf-8')
+        if milliseconds:
+            theme = destination / 'player/src/theme.lua'
+            content = theme.read_text(encoding='utf-8').replace(
+                "pick(options.time_ms, false)", "pick(options.time_ms, true)")
+            theme.write_text(content, encoding='utf-8')
 
     host_helpers._stage_elxosc = stage
     try:
         with host_helpers._running_host(temp, (
-            f"--script={ROOT / 'main.lua'}", "--force-window=yes", "--geometry=1280x720",
+            f"--script={ROOT / 'main.lua'}", "--force-window=yes", f"--geometry={geometry}", f'--osd-font={font}',
             "--osc=no", "--vo=gpu", "--hwdec=no", "--audio=no",
             f"--script-opts=elxosc-bench-input={mode}",
         )) as (client, config, process, log):
             wait_property(client, process, "user-data/elxosc-demo-open", "false")
+            if title:
+                client.command('set_property', 'force-media-title', title)
             client.command("set_property", "pause", playback == "paused")
             client.command("loadfile", str(media))
             wait_property(client, process, "idle-active", False)
             time.sleep(0.5)
+            if thumbfast:
+                peer = temp / 'thumbfast.lua'
+                peer.write_text("local mp = require 'mp'\nlocal requests, clears = 0, 0\n"
+                    "mp.register_script_message('thumb', function() requests=requests+1; "
+                    "mp.set_property('user-data/elxosc-bench-thumb-requests', tostring(requests)) end)\n"
+                    "mp.register_script_message('clear', function() clears=clears+1; "
+                    "mp.set_property('user-data/elxosc-bench-thumb-clears', tostring(clears)) end)\n",
+                    encoding='utf-8')
+                client.command('load-script', str(peer))
+                time.sleep(.15)
+                client.command('script-message', 'thumbfast-info',
+                    '{"width":320,"height":180,"available":true,"disabled":false}')
+                time.sleep(.1)
             dimensions = client.command("get_property", "osd-dimensions")
             width, height = dimensions["w"], dimensions["h"]
             with WindowInput(process, client) as pointer:
-                trajectory(pointer, width, height, rate, 1)
+                trajectory(pointer, width, height, rate, warmup, scale, fixed)
+                if resize:
+                    from test_ass_text_probe import resize_viewport
+                    resize_viewport(client, process, log, *resize)
+                    dimensions = client.command('get_property', 'osd-dimensions')
+                    width, height = dimensions['w'], dimensions['h']
+                if cold or offline:
+                    client.command('script-message', 'elxosc-bench-offline' if offline else 'elxosc-bench-refresh')
                 client.command("script-message", "elxosc-bench-begin")
-                motions = trajectory(pointer, width, height, rate, seconds)
+                motions = trajectory(pointer, width, height, rate, seconds, scale, fixed)
                 time.sleep(0.1)
                 client.command("script-message", "elxosc-bench-save")
                 wait_property(client, process, "user-data/elxosc-bench-saved", "yes")
-            trace = json.loads((config / "scripts" / "elxosc" / "hover-trace.json").read_text())
+            trace = json.loads((config / "scripts" / "elxosc" / "hover-trace.json").read_text(encoding='utf-8'))
             result = summarize(trace, motions, seconds)
             result.update(requested_hz=rate, input_mode=mode, playback=playback, debug=debug)
+            result.update(warmup_seconds=warmup, scale=scale, label_mode='fixed' if fixed else 'varying',
+                          cold=cold, offline=offline, milliseconds=milliseconds, font=font, resize=resize,
+                          thumbfast_peer=thumbfast, title=title)
+            if not result['tooltip_frames']:
+                raise RuntimeError('trajectory did not paint any timeline Tooltip frames')
+            if thumbfast:
+                result['thumbfast_requests'] = int(client.command('get_property', 'user-data/elxosc-bench-thumb-requests'))
+            result['source_sha256'] = {relative.as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in (config / 'scripts/elxosc').rglob('*.lua')
+                for relative in [path.relative_to(config / 'scripts/elxosc')]}
             return result
     finally:
         host_helpers._stage_elxosc = original_stage
@@ -162,14 +216,35 @@ def main():
     parser.add_argument("--host", default=os.environ.get("ELXOSC_MPV_BINARY"))
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg"))
     parser.add_argument("--seconds", type=float, default=4)
+    parser.add_argument('--warmup', type=float, default=1)
+    parser.add_argument('--scale', type=float, default=1.5)
+    parser.add_argument('--label-mode', choices=('varying', 'fixed'), default='varying')
+    parser.add_argument('--cold', action='store_true', help='replace the text environment after warmup')
+    parser.add_argument('--offline', action='store_true', help='staged same-code estimate control')
+    parser.add_argument('--milliseconds', action='store_true')
+    parser.add_argument('--font', default='Arial')
+    parser.add_argument('--geometry', default='1280x720')
+    parser.add_argument('--resize', help='resize after warmup, WIDTHxHEIGHT')
+    parser.add_argument('--thumbfast', action='store_true', help='use a protocol peer without external decoding')
+    parser.add_argument('--title', help='generated media title for a long-label workload')
     parser.add_argument("--rates", default="60,240")
     parser.add_argument("--modes", default="observe,mouse_move")
     parser.add_argument("--playback", default="paused,playing")
     parser.add_argument("--debug", choices=("true", "false"), default="false")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if args.seconds <= 0 or not args.ffmpeg:
+    if not math.isfinite(args.seconds) or args.seconds <= 0 or not args.ffmpeg:
         parser.error("positive duration and an installed ffmpeg are required")
+    if not math.isfinite(args.warmup) or args.warmup < 0 or not math.isfinite(args.scale) or args.scale <= 0:
+        parser.error('finite non-negative warmup and positive scale required')
+    resize = None
+    if args.resize:
+        try:
+            resize = tuple(int(value) for value in args.resize.split('x'))
+        except ValueError:
+            parser.error('resize must be WIDTHxHEIGHT')
+        if len(resize) != 2 or min(resize) <= 0:
+            parser.error('resize must be positive WIDTHxHEIGHT')
     if args.host:
         os.environ["ELXOSC_MPV_BINARY"] = args.host
     modes, playback = args.modes.split(","), args.playback.split(",")
@@ -179,7 +254,7 @@ def main():
     if not rates or min(rates) <= 0:
         parser.error("positive rates required")
     report = {"revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-              "seconds": args.seconds, "warmup_seconds": 1,
+              "seconds": args.seconds, "warmup_seconds": args.warmup,
               "media": "generated 1280x720 testsrc2 H.264 at 60 fps; no audio", "cases": [],
               "limits": "ASS submission latency, excludes pixel scan-out and external thumbfast; staged instrumentation"}
     with tempfile.TemporaryDirectory(prefix="elxosc-hover-") as directory:
@@ -192,7 +267,10 @@ def main():
             case_dir = temp / str(index)
             case_dir.mkdir()
             print(f"case {index + 1}: {rate} Hz {mode} {state} debug={args.debug}", flush=True)
-            case = run_case(case_dir, media, rate, mode, state, args.debug, args.seconds)
+            case = run_case(case_dir, media, rate, mode, state, args.debug, args.seconds,
+                warmup=args.warmup, scale=args.scale, fixed=args.label_mode == 'fixed', cold=args.cold,
+                offline=args.offline, milliseconds=args.milliseconds, font=args.font, geometry=args.geometry,
+                resize=resize, thumbfast=args.thumbfast, title=args.title)
             report["cases"].append(case)
             print(json.dumps({key: case[key] for key in ("input_events", "tooltip_frames", "dispatch",
                                                         "frame_wait", "lua_frame", "input_to_submit")}), flush=True)

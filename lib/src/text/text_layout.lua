@@ -4,7 +4,7 @@
 -- Text measurement contract + generic wrapping.
 --
 -- `line_width` requires a backend; `line_height` has a logical default which a
--- backend may override. ASS estimates; a native backend can use font metrics.
+-- backend may override. ASS uses injected native spans or explicit offline estimates.
 -- Everything else -- hard line breaks, greedy word wrapping, the paragraph
 -- box -- is generic and therefore implemented once, here.
 

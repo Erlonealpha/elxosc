@@ -161,6 +161,8 @@ compute_bounds分别记录；compute_bounds耗时不等同presenter提交或像�
 比较需要相同场景、源码、runtime、sampling 和输出合同，明确 warmup、统计方法、GC/JIT
 及系统负载限制。ASS 提交延迟不包含像素呈现、scan-out 或外部 thumbfast。
 短期进程内存变化包含 decoder/GPU/libass 等分配，不能证明长期没有原生泄露。
+持续文本压力分别触及条目数与原文/key字节上限，并跨环境替换检查旧layout回收、
+其他App存活和自有ID移除。记录实际工作量与抽样GC干预，不把目标速率当宿主帧率。
 
 可共享的历史数据保存在 `dev/benchmark/` 和 `dev/measure/`，解释时使用各报告的代码版本
 及适用范围，不作为当前代码的验收结果。工具方法和报告入口由 tools README 维护。

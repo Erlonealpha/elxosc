@@ -245,5 +245,11 @@ paint anchors/offsets. It compares visible/clip/ellipsis under identical constra
 Screenshots in tmp/multiline-ATL-3.png and tmp/multiline-ATL-3-overflow.png include
 these guides; the guides represent logical layout rather than glyph ink or baselines.
 
+`real_host/test_text_cache_endurance.py` runs 120 seconds of unique short/long
+labels, sampling both cache limits and Lua heap while replacing environments. It
+checks old-layout collection, a second App's independent lifetime and owned IDs.
+The workload target and actual rate are separate; full GC samples and bounded
+retention do not prove long-term native process memory stability.
+
 Nothing here is loaded by mpv: the directory has no `main.lua`, so mpv's script
 auto-loader ignores it.

@@ -129,6 +129,18 @@ The real hover trace records local prepare separately from layout (exclusive
 timings), native text-call deltas and cache hits per frame. JSON distributions
 include p50/p95/p99. Native shaping, cache work and ASS encoding remain synchronous;
 moving measurement out of paint is a phase contract, not a throughput guarantee.
+The probe also records each hidden native request's elapsed time, complete-frame
+native counts, unique labels, input coalescing, ASS event/payload sizes, generations
+and hashes of staged sources. `--warmup`, `--label-mode fixed`, `--milliseconds`,
+`--cold`, `--font`, `--resize WIDTHxHEIGHT`, and `--scale` select text/environment
+workloads. `--offline` disables native only in staging as a same-code estimate
+control; `--thumbfast` uses a protocol peer, without thumbnail decoding.
+`--title` supplies a generated long-media-title workload. A `--cold` refresh clears
+the layout's result cache after warmup; it does not cool the host's font cache.
+
+```text
+uv run --group test python tools/benchmark_real_player_hover.py --warmup 3 --seconds 8 --rates 240 --modes observe --playback paused --milliseconds --cold --output tmp/hover-cold.json
+```
 
 Selected historical data:
 

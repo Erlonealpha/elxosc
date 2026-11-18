@@ -32,6 +32,7 @@
 ---@field ['painting.path'] mod.src.painting.path
 ---@field ['painting.text_paint'] mod.src.painting.text_paint
 ---@field ['text.paragraph'] mod.src.text.paragraph
+---@field ['text.grapheme'] mod.src.text.grapheme
 ---@field ['text.text_layout'] mod.src.text.text_layout
 ---@field ['text.text_style'] mod.src.text.text_style
 ---@field ['layout.constraints'] mod.src.layout.constraints
@@ -186,6 +187,7 @@ local Builtins = {}
 ---@overload fun(name: 'painting.path'): mod.src.painting.path
 ---@overload fun(name: 'painting.text_paint'): mod.src.painting.text_paint
 ---@overload fun(name: 'text.paragraph'): mod.src.text.paragraph
+---@overload fun(name: 'text.grapheme'): mod.src.text.grapheme
 ---@overload fun(name: 'text.text_layout'): mod.src.text.text_layout
 ---@overload fun(name: 'text.text_style'): mod.src.text.text_style
 ---@overload fun(name: 'layout.constraints'): mod.src.layout.constraints
