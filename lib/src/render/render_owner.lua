@@ -102,6 +102,9 @@ end
 ---@field private _input_generation integer
 ---@field private _region_snapshot RegionSnapshot?
 ---@field private _cancelled_buttons table<PointerButton, true>
+---@field private _prepare_callbacks table<fun(), true>
+---@field private _prepare_order fun()[]
+---@field private _active_prepare table<fun(), true>?
 ---@overload fun(root: RenderObject?): self
 local RenderOwner = std.class.new('RenderOwner')
 
@@ -124,6 +127,9 @@ function RenderOwner:__init(root)
     self._capture_buttons = {}
     self._cancelled_sequence = false
     self._cancelled_buttons = {}
+    self._prepare_callbacks = {}
+    self._prepare_order = {}
+    self._active_prepare = nil
     if root then
         self:set_root(root)
     end
@@ -195,15 +201,71 @@ function RenderOwner:layout()
     local root = self.root
     if root == nil then
         self._needs_layout = false
+        self:flush_prepare()
         return
     end
     if not self._needs_layout and root.constraints == self.viewport then
+        self:flush_prepare()
         return
     end
     self._needs_layout = false
     self._needs_paint = true
     root:layout(self.viewport)
     self:mark_needs_input()
+    self:flush_prepare()
+end
+
+--- Coalesce local preparation without dirtying the layout or input geometry.
+---@param callback fun()
+function RenderOwner:schedule_prepare(callback)
+    if type(callback) ~= 'function' then
+        raise(std.TypeError('RenderOwner.schedule_prepare expects a callback'))
+    end
+    if not self._prepare_callbacks[callback] then
+        self._prepare_callbacks[callback] = true
+        self._prepare_order[#self._prepare_order + 1] = callback
+    end
+    self:mark_needs_paint()
+end
+
+---@param callback fun()
+function RenderOwner:cancel_prepare(callback)
+    self._prepare_callbacks[callback] = nil
+    if self._active_prepare then
+        self._active_prepare[callback] = nil
+    end
+    for index = #self._prepare_order, 1, -1 do
+        if self._prepare_order[index] == callback then
+            table.remove(self._prepare_order, index)
+        end
+    end
+end
+
+--- Run the current queue once. Work queued by a callback waits for the next flush.
+function RenderOwner:flush_prepare()
+    if self._active_prepare or #self._prepare_order == 0 then
+        return
+    end
+    local queued = self._prepare_order
+    local callbacks = self._prepare_callbacks
+    self._prepare_order = {}
+    self._prepare_callbacks = {}
+    self._active_prepare = callbacks
+    local failure
+    for _, callback in ipairs(queued) do
+        if callbacks[callback] then
+            callbacks[callback] = nil
+            self._needs_paint = true
+            local ok, err = pcall(callback)
+            if not ok then
+                failure = failure or err
+            end
+        end
+    end
+    self._active_prepare = nil
+    if failure then
+        error(failure, 0)
+    end
 end
 
 ---@param canvas Canvas
@@ -234,6 +296,13 @@ function RenderOwner:dispose()
     self._hovered = {}
     self._capture = nil
     self._capture_buttons = {}
+    self._prepare_callbacks = {}
+    self._prepare_order = {}
+    if self._active_prepare then
+        for callback in pairs(self._active_prepare) do
+            self._active_prepare[callback] = nil
+        end
+    end
 end
 
 --== pointer routing ======================================================

@@ -10,7 +10,9 @@
 文本服务回归覆盖整行自然跨度、测绘同源、cache双上限、树作用域及环境失效。
 真实宿主分别验证有限字体参考、生产Text/Tooltip的环境替换、独立App测量ID与清理；
 离线测试负责缺能力/native故障、非法边界、缓存淘汰、部分初始化和删除失败重试。
-Tooltip paint准备、播放器内容命中与多行推进仍按各自消费者范围验证。
+消费者回归验证Tooltip同帧合并/固定label零测量、paint无native、队列取消及失败顺序，
+播放器时间/描述/文件大小内容命中、时间占位与本地toggle。真实输入用例覆盖对应区域
+点击、AutoHide/thumbfast及拖动，局部成本与整帧成本分别记录；多行推进按其支持范围验证。
 
 代码更改必须运行完整 Lua suite 和生产 EmmyLua 检查。真实宿主测试按受影响的行为
 选择文件或用例：script loading、presentation、input、Define wiring 和 player integration

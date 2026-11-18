@@ -119,7 +119,7 @@ Navigator/Route 显式管理页面；host-level 多 overlay 尚未提供。
 Main 的唤醒区按 uniform scale 换算；顶部控件位于 0～30px
 逻辑行；hover glow 使用额外模糊字形，不可用控件使用 alpha 215；音量 0 对应
 `volume_mute`，静音对应 `volume_off`。上下渐变源位于 viewport 外并覆盖水平边界。
-Tooltip 使用控件上沿的 bottom-center anchor，文本/位置变化只更新绘制，保持布局、
+Tooltip 使用控件上沿的 bottom-center anchor，文本变化先局部准备，位置变化只更新绘制，保持布局、
 输入快照和 seek capture target 不变。播放器组件按几何、控件、文本、描述和数据
 划分职责；`PlayerLayout` 的 aggregate/direct-module identity 保持一致。
 
@@ -209,6 +209,15 @@ Lua 代码热重载不属于当前播放器 API。它涉及 class identity、Sta
 宿主回调和 mpv script-message 清理，应作为独立的开发工具设计。
 
 ### 当前状态传播
+
+播放器时间/描述/文件大小预览保留原Positioned区域及锚点，区域内Align将loose约束
+传给内容GestureDetector。自然内容与明确时间占位决定hitbox，长串按可用宽度裁剪。
+hover foreground/glow仍paint-only，不以glyph image高度改变控件行高。
+
+PlayerTimeWidth按字体/shape/服务环境及格式、符号、suffix准备十种同数字整串候选，
+每个实际原标签仍整行校验。已观察宽度在同template中不收缩；这不是任意比例字体
+宽度上界保证。template最多32项/每项4096bytes，环境改变重置。PlayerTimeDisplay和
+PlayerTimeTooltip分别在State中持有策略，重建不重复初始化占位，显示文字保持原文。
 
 当前已提供以下最小更新链路：
 

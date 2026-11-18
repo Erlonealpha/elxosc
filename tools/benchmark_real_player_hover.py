@@ -31,6 +31,7 @@ def distribution(values):
     return {"count": len(values), "mean_ms": statistics.mean(values) * 1000,
             "p50_ms": values[math.ceil(len(values) * 0.50) - 1] * 1000,
             "p95_ms": values[math.ceil(len(values) * 0.95) - 1] * 1000,
+            "p99_ms": values[math.ceil(len(values) * 0.99) - 1] * 1000,
             "max_ms": values[-1] * 1000}
 
 
@@ -101,7 +102,9 @@ def summarize(trace, motions, seconds):
               "lua_frame": distribution([f["finish"] - f["start"] for f in frames]),
               "input_to_submit": distribution([f["finish"] - by_seq[f["input_seq"]]["time"] for f in frames]),
               "stages": {name: distribution([f["stages"].get(name, 0) for f in frames])
-                         for name in ("build", "layout", "regions", "paint_ass", "present")}}
+                         for name in ("build", "layout", "prepare", "regions", "paint_ass", "present")},
+              "native_text_calls": sum(f.get("native_calls", 0) for f in frames),
+              "text_cache_hits": sum(f.get("cache_hits", 0) for f in frames)}
     if trace["qpc"]:
         result["os_move_to_input"] = distribution([by_seq[seq]["time"] - m["sent"]
                                                    for seq, m in matched.items()])

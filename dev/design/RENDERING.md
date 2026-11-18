@@ -51,7 +51,10 @@ clip 抛错时仍 restore；`with_opacity` 使用同一 save/restore 边界应�
 画布状态都有离线回归。
 
 当前 frame 顺序为：transient/ticker → Widget build scopes → inactive finalize → layout
-→ input region snapshot → PaintingContext paint → presenter → post-frame callbacks。
+→ 局部prepare → input region snapshot → PaintingContext paint → presenter → post-frame callbacks。
+RenderOwner.schedule_prepare按稳定callback合并、有序执行，cancel_prepare用于卸载清理。
+layout即使无布局dirty也flush_prepare；准备不改父约束/尺寸，不触发整树layout。
+flush_prepare处理入队时的队列快照，准备中再次入队留到下一次flush，失败保留首错并执行其余项。
 当前每个 production owner scope 仍只支持一个 root 和一个 Canvas；Binding
 composition 不因 attached owner scope 增加而复制。
 

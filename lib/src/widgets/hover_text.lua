@@ -7,12 +7,14 @@ local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local text_mod = require 'src.widgets.text'
 local gesture_mod = require 'src.widgets.gesture_detector'
-local container_mod = require 'src.widgets.container'
+local align_mod = require 'src.widgets.align'
+local constraints_mod = require 'src.layout.constraints'
+local constrained_mod = require 'src.widgets.constraints'
 local widget_mod = require 'src.widgets.framework'
 local text_style_mod = require 'src.text.text_style'
 
 local Offset = geometry.Offset
-local Container = container_mod.Container
+local Align = align_mod.Align
 local Text = text_mod.Text
 local GestureDetector = gesture_mod.GestureDetector
 local StatelessWidget = widget_mod.StatelessWidget
@@ -32,6 +34,7 @@ local default_style = text_style_mod.TextStyle({ wrap = false })
 ---@field hover_shadow_radius number?
 ---@field on_tap fun()?
 ---@field key any?
+---@field min_width number? stable content reservation; constrained by parent
 
 ---@class HoverText : StatelessWidget
 ---@field text string
@@ -41,6 +44,7 @@ local default_style = text_style_mod.TextStyle({ wrap = false })
 ---@field hover_shadow_color Color?
 ---@field hover_shadow_radius number
 ---@field on_tap fun()?
+---@field min_width number
 ---@overload fun(options?: _HoverTextOptions): self
 local HoverText = std.class.new('HoverText', StatelessWidget)
 
@@ -54,6 +58,11 @@ function HoverText:__init(options)
     self.hover_shadow_color = options.hover_shadow_color
     self.hover_shadow_radius = options.hover_shadow_radius or 0
     self.on_tap = options.on_tap
+    self.min_width = options.min_width or 0
+    if type(self.min_width) ~= 'number' or self.min_width < 0 or self.min_width ~= self.min_width
+        or self.min_width == math.huge then
+        std.raise(std.ValueError('HoverText.min_width must be finite and non-negative'))
+    end
 end
 
 ---@param gesture RenderGesture
@@ -73,14 +82,16 @@ function HoverText:_update_visual(gesture)
 end
 
 function HoverText:build()
-    local body = Container({
-        alignment = self.alignment,
-        child = Text(self.text, { style = self.style }),
+    local body = constrained_mod.ConstrainedBox({
+        constraints = constraints_mod.Constraints(self.min_width),
+        child = Align(Text(self.text, { style = self.style, clip = true }), {
+            alignment = self.alignment, width_factor = 1, height_factor = 1,
+        }),
     })
     if self.on_tap == nil then
-        return body
+        return Align(body, { alignment = self.alignment })
     end
-    return GestureDetector(body, {
+    return Align(GestureDetector(body, {
         on_enter = function() end,
         on_leave = function() end,
         on_state_change = function(gesture)
@@ -89,7 +100,7 @@ function HoverText:build()
         on_tap = function()
             self.on_tap()
         end,
-    })
+    }), { alignment = self.alignment })
 end
 
 M.HoverText = HoverText

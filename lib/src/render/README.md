@@ -11,6 +11,9 @@ Source modules load as `src.render.*`; the host-independent collector is
 - `render_object.lua` — child ownership, layout/paint, hit testing, pointer paths,
   root-space pointer regions, parent data, and dirty propagation.
 - `render_owner.lua` — compatibility implementation for the single-root owner.
+  schedule_prepare/cancel_prepare/flush_prepare manage ordered, coalesced local
+  preparation after layout and before paint. This queue does not dirty input geometry
+  or layout; its snapshot preserves later work and runs other callbacks after a failure.
 - `region_snapshot.lua` — immutable copies of one root's effective pointer regions;
   `RenderOwner:region_snapshot()` caches one snapshot per input generation.
 - `pipeline_owner.lua` — canonical `PipelineOwner` name; exports the same class as

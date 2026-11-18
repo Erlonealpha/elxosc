@@ -35,6 +35,7 @@ local M = {}
 ---@field style TextStyle
 ---@field text_layout TextLayout?
 ---@field text_layout_generation integer
+---@field clip boolean
 ---@field paragraph Paragraph?
 ---@field text_paint TextPaint
 ---@field color_override Color?
@@ -55,6 +56,7 @@ function RenderText:__init(text, style, measurer, text_paint)
     self.style = style
     self.text_layout = measurer
     self.text_layout_generation = 0
+    self.clip = false
     self.text_paint = text_paint_mod.resolve(text_paint)
     self.color_override = nil
     self.shadow_color_override = nil
@@ -132,7 +134,9 @@ function RenderText:__perform_layout(constraints)
 end
 
 ---@param canvas PaintingContext
-function RenderText:__paint(canvas, offset)
+---@param canvas PaintingContext
+---@param offset Offset
+function RenderText:_paint_content(canvas, offset)
     if self.paragraph then
         -- Anchor within the constrained layout box, not the estimated natural
         -- paragraph. In particular a ligature name may measure much wider than
@@ -184,6 +188,17 @@ function RenderText:__paint(canvas, offset)
         end
     end
     self:paint_children(canvas, offset)
+end
+
+function RenderText:__paint(canvas, offset)
+    local paragraph = self.paragraph
+    if self.clip and paragraph and paragraph.size.width > self.size.width then
+        canvas:clip_rect_and_paint(self:input_region_rect():shift(offset), function()
+            self:_paint_content(canvas, offset)
+        end)
+    else
+        self:_paint_content(canvas, offset)
+    end
 end
 
 M.RenderText = RenderText

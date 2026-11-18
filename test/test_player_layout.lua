@@ -192,6 +192,7 @@ F.test('tooltip moves paint directly with stable layout, input and child identit
     local progress = find_widget_element(binding.root_element, Timeline)
     local identity = progress.render_object
     local snapshot = owner:region_snapshot()
+    owner:flush_prepare()
     owner:paint(AssCanvas())
     owner:dispatch_pointer('move', geometry.Offset(400, 615))
     local function tooltip_draw(canvas)
@@ -202,6 +203,7 @@ F.test('tooltip moves paint directly with stable layout, input and child identit
         end
     end
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     local first = tooltip_draw(canvas)
     F.ok(first ~= nil, 'time tooltip paints without a build flush')
@@ -213,6 +215,7 @@ F.test('tooltip moves paint directly with stable layout, input and child identit
     F.eq(owner:region_snapshot(), snapshot, 'tooltip motion reuses the input snapshot')
     F.eq(progress.render_object, identity, 'seekbar capture target identity stays stable')
     local next_canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(next_canvas)
     local second
     for _, op in ipairs(next_canvas.ops) do
@@ -223,6 +226,7 @@ F.test('tooltip moves paint directly with stable layout, input and child identit
     F.eq(second[2].y, first[2].y, 'vertical mouse movement does not move the tooltip')
     owner:dispatch_pointer('move', geometry.Offset(0, 300))
     local hidden_canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(hidden_canvas)
     local found = false
     for _, op in ipairs(hidden_canvas.ops) do
@@ -381,6 +385,7 @@ F.test('PlayerLayout mounts Positioned geometry and records layer order', functi
     F.eq(progress.render_object.size, Size(1230, 16), 'seekbar root size')
 
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.ok(canvas:count('draw_rect') > 0 or canvas:count('draw_rrect') > 0,
         'RecordCanvas receives the player layers')
@@ -418,6 +423,7 @@ F.test('default window controls keep all three ModernX actions and glyphs', func
         child = PlayerScope({ store = store, child = Main() }),
     }))
     local ass = AssCanvas()
+    owner:flush_prepare()
     owner:paint(ass)
     F.contains(ass:text(), 'minimize', 'minimize glyph is present')
     F.contains(ass:text(), 'fullscreen_exit', 'window fullscreen glyph is present')
@@ -433,6 +439,7 @@ F.test('optional loop control uses the bundled semantic icon mapping', function(
         child = PlayerScope({ store = store, child = Main() }),
     }))
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), 'repeat_on', 'loop control uses the mapped repeat-on glyph')
 end)
@@ -452,6 +459,7 @@ F.test('chapter title uses chapter metadata instead of the numeric chapter index
         child = PlayerScope({ store = store, child = Main() }),
     }))
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), 'Intro', 'chapter metadata is rendered')
     F.ok(not canvas:text():find('chapter title=0', 1, true),
@@ -465,6 +473,7 @@ F.test('idle player state removes controls and presents the empty state', functi
         child = PlayerScope({ store = store, child = Main() }),
     }))
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), 'No media loaded', 'idle state presents an empty message')
     F.ok(find_widget_element(binding.root_element, Timeline) == nil,
@@ -496,6 +505,7 @@ F.test('description preview opens an in-tree panel and keeps the full text', fun
     binding:flush_build()
     owner:layout()
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), description, 'description panel keeps the full text')
 end)
@@ -543,6 +553,7 @@ F.test('disabled player controls retain a hover tooltip without claiming clicks'
     binding:flush_build()
     owner:layout()
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), 'No audio available', 'disabled audio tooltip is visible')
     local audio_click_region = false
@@ -579,6 +590,7 @@ F.test('seekbar hover shows a formatted time and chapter fallback tooltip', func
     binding:flush_build()
     owner:layout()
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), '00:50', 'seek tooltip formats the hovered time')
     F.contains(canvas:text(), 'Intro', 'seek tooltip includes chapter fallback text')
@@ -703,6 +715,7 @@ F.test('timeline drag updates time and thumbfast together through captured movem
         display = DisplaySnapshot({ width = 1280, height = 720, initialized = true }),
         child = PlayerScope({ store = store, child = Main() }),
     }))
+    owner:flush_prepare()
     owner:paint(RecordCanvas())
     local snapshot = owner:region_snapshot()
     owner:dispatch_pointer('move', geometry.Offset(271, 620))
@@ -711,6 +724,7 @@ F.test('timeline drag updates time and thumbfast together through captured movem
     F.eq(#requests, 2, 'capture still delivers a new thumbnail position')
     F.close(requests[2][1], 50, 'thumbnail follows dragged time')
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     local time_draw
     for _, op in ipairs(canvas.ops) do
@@ -754,6 +768,7 @@ F.test('text hover paints a full-strength glow without relayout', function()
     }))
     owner:dispatch_pointer('move', geometry.Offset(35, 636))
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     local text_ops = {}
     for _, op in ipairs(canvas.ops) do
@@ -788,6 +803,7 @@ F.test('volume hover shows the current value with a fixed round handle', functio
     binding:flush_build()
     owner:layout()
     local canvas = AssCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.contains(canvas:text(), '50%', 'volume tooltip reports the hovered value')
     local render_progress_class = require('src.render.slider').RenderSlider
@@ -804,6 +820,7 @@ F.test('volume hover shows the current value with a fixed round handle', functio
     F.eq(fixed_handle.overlay_radius, 0, 'hover keeps the same handle size')
     local record = RecordCanvas()
     fixed_handle:mark_needs_paint()
+    owner:flush_prepare()
     owner:paint(record)
     local circles = 0
     for _, op in ipairs(record.ops) do
@@ -835,6 +852,7 @@ F.test('scaled seek tooltip stays below thumbfast and shares its clamped center'
     }))
     owner:dispatch_pointer('move', geometry.Offset(50, 570))
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     local draw
     for _, op in ipairs(canvas.ops) do
@@ -877,6 +895,7 @@ F.test('thumbnail frame can be disabled without changing the preview request', f
     }))
     owner:dispatch_pointer('move', geometry.Offset(100, 620))
     local canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     F.eq(requests, 1, 'preview is still requested')
     local frames = 0
@@ -964,6 +983,7 @@ F.test('persistent progress uses seekable cache ranges instead of a continuous b
     F.eq(persistent.buffered, 0, 'persistent cache does not use a continuous fill')
     F.close(persistent.ranges[1].start, 0.1, 'persistent cache range start')
     F.close(persistent.ranges[1]['end'], 0.4, 'persistent cache range end')
+    owner:flush_prepare()
     owner:paint(AssCanvas())
 end)
 
@@ -1003,6 +1023,7 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
     F.eq(#requests, 1, 'thumbfast receives one hover request')
     F.close(requests[1][1], 50, 'thumbfast receives hovered seconds')
     local hover_canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(hover_canvas)
     local time_draw
     for _, op in ipairs(hover_canvas.ops) do
@@ -1017,6 +1038,7 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
         'nominal time glyph remains below the thumbnail')
     owner:dispatch_pointer('move', geometry.Offset(35, 615))
     local edge_canvas = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(edge_canvas)
     local edge_time
     for _, op in ipairs(edge_canvas.ops) do
@@ -1042,6 +1064,7 @@ F.test('available thumbfast requests previews and keeps the time fallback path s
     owner:dispatch_pointer('move', geometry.Offset(0, 0))
     F.eq(cleared, 1, 'leaving the seekbar clears thumbfast')
     local after_leave = RecordCanvas()
+    owner:flush_prepare()
     owner:paint(after_leave)
     local remaining_frames = 0
     for _, op in ipairs(after_leave.ops) do
@@ -1059,6 +1082,7 @@ F.test('time displays use click-local toggles for milliseconds', function()
         child = PlayerScope({ store = store, child = Main() }),
     }))
     local ass = AssCanvas()
+    owner:flush_prepare()
     owner:paint(ass)
     F.ok(not ass:text():find('12%.250', 1, false), 'milliseconds are initially hidden')
     F.contains(ass:text(), '01:40', 'right time defaults to total duration')
@@ -1068,6 +1092,7 @@ F.test('time displays use click-local toggles for milliseconds', function()
     binding:flush_build()
     owner:layout()
     ass:reset()
+    owner:flush_prepare()
     owner:paint(ass)
     F.contains(ass:text(), '12.250', 'left time toggles milliseconds')
 end)

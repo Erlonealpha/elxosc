@@ -125,6 +125,11 @@ The report records actual input rate, received events, tooltip submissions and
 frame phases. It does not measure libass pixels, scan-out, external thumbfast or
 ModernX. Short samples and probe overhead cannot establish universal frame rates.
 
+The real hover trace records local prepare separately from layout (exclusive
+timings), native text-call deltas and cache hits per frame. JSON distributions
+include p50/p95/p99. Native shaping, cache work and ASS encoding remain synchronous;
+moving measurement out of paint is a phase contract, not a throughput guarantee.
+
 Selected historical data:
 
 - [Real-player scenes](../dev/benchmark/player-hover-real-2026-11-05.json)

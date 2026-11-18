@@ -60,6 +60,7 @@ local function mount(widget, constraints)
 end
 
 local function label_draw(owner, label)
+    owner:layout()
     local canvas = RecordCanvas()
     owner:paint(canvas)
     for _, op in ipairs(canvas.ops) do

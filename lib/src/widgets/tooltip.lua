@@ -71,6 +71,7 @@ end
 ---@field on_hover_leave fun()?
 ---@field hover_enabled (fun(context: BuildContext): boolean)?
 ---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
+---@field width_for_text (fun(layout: TextLayout, label: string, style: TextStyle): number)? optional stable visual width
 ---@field key any?
 
 ---@class Tooltip : StatefulWidget
@@ -97,6 +98,7 @@ end
 ---@field on_hover_leave fun()?
 ---@field hover_enabled (fun(context: BuildContext): boolean)?
 ---@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
+---@field width_for_text (fun(layout: TextLayout, label: string, style: TextStyle): number)?
 ---@overload fun(options?: _TooltipOptions): self
 local Tooltip = std.class.new('Tooltip', StatefulWidget)
 
@@ -129,6 +131,10 @@ function Tooltip:__init(options)
         raise(std.TypeError('Tooltip.hover_enabled must be a function'))
     end
     self.paint_for_point = options.paint_for_point
+    self.width_for_text = options.width_for_text
+    if self.width_for_text ~= nil and type(self.width_for_text) ~= 'function' then
+        raise(std.TypeError('Tooltip.width_for_text must be a function'))
+    end
 end
 
 ---@class TooltipState : State
@@ -141,6 +147,9 @@ end
 ---@field _text_layout TextLayout?
 ---@field _text_generation integer?
 ---@field _hover_enabled boolean
+---@field _prepare_callback fun()
+---@field _prepare_owner RenderOwner?
+---@field _paragraph_width number?
 ---@overload fun(): self
 local TooltipState = std.class.new('TooltipState', State)
 
@@ -149,6 +158,9 @@ function TooltipState:init_state()
     self.hover_label = ''
     self.hover_point = nil
     self._hover_enabled = true
+    self._prepare_callback = function()
+        self:_prepare_text()
+    end
     self:refresh_hover_visibility()
 end
 
@@ -185,6 +197,10 @@ function TooltipState:did_update_widget(old_widget)
         self:_clear_hover(old)
     end
     self:refresh_hover_visibility()
+    if old.width_for_text ~= widget.width_for_text then
+        self._paragraph = nil
+    end
+    self:_schedule_text()
 end
 
 ---@return string
@@ -201,6 +217,10 @@ end
 
 function TooltipState:dispose()
     self:_clear_hover()
+    if self._prepare_owner then
+        self._prepare_owner:cancel_prepare(self._prepare_callback)
+    end
+    self._prepare_owner = nil
 end
 
 ---@param previous Tooltip?
@@ -220,6 +240,57 @@ function TooltipState:_invalidate_paint()
     if render_object then
         render_object:mark_needs_paint()
     end
+    self:_schedule_text()
+end
+
+function TooltipState:_schedule_text()
+    local widget = self.widget --[[@as Tooltip]]
+    local label = self:_label()
+    if not self.hovered or not self:_hover_allowed() or label == '' then
+        if self._prepare_owner then
+            self._prepare_owner:cancel_prepare(self._prepare_callback)
+        end
+        return
+    end
+    if self._paragraph and self._paragraph_label == label and self._paragraph_style == widget.style then
+        if self._prepare_owner then
+            self._prepare_owner:cancel_prepare(self._prepare_callback)
+        end
+        return
+    end
+    local owner = self.context and self.context.owner and self.context.owner.render_owner
+    if owner then
+        if self._prepare_owner and self._prepare_owner ~= owner then
+            self._prepare_owner:cancel_prepare(self._prepare_callback)
+        end
+        self._prepare_owner = owner
+        owner:schedule_prepare(self._prepare_callback)
+    end
+end
+
+function TooltipState:_prepare_text()
+    if not self:is_mounted() or not self.hovered or not self:_hover_allowed() then
+        return
+    end
+    local widget = self.widget --[[@as Tooltip]]
+    local label = self:_label()
+    local measurer = self._text_layout or text_layout_mod.get_default()
+    if label == '' or measurer == nil then
+        self._paragraph = nil
+        return
+    end
+    local paragraph = measurer:layout(label, widget.style, math.huge)
+    local width = paragraph.size.width
+    if widget.width_for_text then
+        width = widget.width_for_text(measurer, label, widget.style)
+    end
+    if type(width) ~= 'number' or width < 0 or width ~= width or width == math.huge then
+        raise(std.ValueError('Tooltip.width_for_text must return a finite non-negative width'))
+    end
+    self._paragraph = paragraph
+    self._paragraph_label = label
+    self._paragraph_style = widget.style
+    self._paragraph_width = max(width, paragraph.size.width)
 end
 
 ---@param canvas Canvas
@@ -232,20 +303,14 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
         if widget.paint_for_point and self.hover_point then
             widget.paint_for_point(canvas, offset, self.hover_point, label)
         end
-        if self._paragraph == nil or self._paragraph_label ~= label
-            or self._paragraph_style ~= widget.style then
-            local measurer = self._text_layout or text_layout_mod.get_default()
-            if measurer == nil then
-                return
-            end
-            self._paragraph = measurer:layout(label, widget.style, math.huge)
-            self._paragraph_label = label
-            self._paragraph_style = widget.style
-        end
         local paragraph = self._paragraph
+        if paragraph == nil or self._paragraph_label ~= label or self._paragraph_style ~= widget.style then
+            return
+        end
+        local visual_width = self._paragraph_width or paragraph.size.width
         local available_width = widget.bounds_width
-            and max(0, widget.bounds_width - widget.margin * 2) or paragraph.size.width
-        local width = math.min(paragraph.size.width, available_width)
+            and max(0, widget.bounds_width - widget.margin * 2) or visual_width
+        local width = math.min(visual_width, available_width)
         local height = paragraph.size.height
         local anchor_left = widget.anchor_left or 0
         local anchor_top = widget.anchor_top or 0
@@ -297,6 +362,9 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
 end
 
 function TooltipState:build()
+    -- Every rebuild clears old inherited registrations; keep the service
+    -- dependency subscribed even when only the parent Widget changed.
+    self:did_change_dependencies()
     local widget = self.widget --[[@as Tooltip]]
     local children = {}
     if widget.child then

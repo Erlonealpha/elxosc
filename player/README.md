@@ -22,6 +22,11 @@ the same classes as `player.src.*`; internal State and assembly helpers stay in 
   only their own pause; click and initially paused media keep their playback state.
 - `src/auto_hide.lua`: frame-clock inactivity, scaled wake zones and local fade.
 - `src/tooltip.lua`: player style and hover eligibility for nested AutoHide ancestors.
+  PlayerTimeTooltip retains PlayerTimeWidth in State across parent rebuilds.
+  The width helper prepares ten digit-run candidates per format/sign/suffix and
+  shape environment, then checks every actual whole label. Observed width cannot
+  shrink within that template; replacement environments reset it. Candidates are
+  not a universal proportional-font upper bound. Helpers retain at most 32 templates.
 - `src/layout.lua`, `geometry.lua`, `controls.lua`, `visuals.lua`, `data.lua`,
   `description.lua`, `text_controls.lua`, `theme.lua`: default shell and media policy.
 - `src/extension_controls.lua`: appended bottom button bars and themed buttons.
@@ -29,6 +34,10 @@ the same classes as `player.src.*`; internal State and assembly helpers stay in 
 The targets are `app.extension`, `app.window_layer` (`set`/`replace`) and
 `player.controls.left`/`right` (`append`). Right buttons append inward from pin;
 empty groups reserve no space. Define assembles fresh descriptions before mounting.
+
+Time/description/file-size previews keep their allocated anchors while their
+interactive content shrinks to a measured box (or time reservation). Long content
+clips within the available width, so blanks and neighboring controls remain passive.
 
 AutoHide changes only Main. At fade start it refreshes descendant hover policies;
 PlayerTooltip clears thumbfast immediately and blocks fading preview requests.

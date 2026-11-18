@@ -28,6 +28,7 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint?
 ---@field key any?
+---@field clip boolean? clip when natural text width exceeds its constrained box
 
 ---@class TextRenderObjectWidget : LeafRenderObjectWidget
 ---@field text string
@@ -35,20 +36,23 @@ local M = {}
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
 ---@field generation integer
----@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint, generation?: integer): self
+---@field clip boolean
+---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint, generation?: integer, clip?: boolean): self
 local TextRenderObjectWidget = std.class.new('TextRenderObjectWidget', LeafRenderObjectWidget)
 
-function TextRenderObjectWidget:__init(text, style, text_layout, text_paint, generation)
+function TextRenderObjectWidget:__init(text, style, text_layout, text_paint, generation, clip)
     self.text = text
     self.style = style
     self.text_layout = text_layout
     self.text_paint = text_paint
     self.generation = generation or 0
+    self.clip = clip == true
 end
 
 function TextRenderObjectWidget:create_render_object()
     local render_object = RenderText(self.text, self.style, self.text_layout, self.text_paint)
     render_object.text_layout_generation = self.generation
+    render_object.clip = self.clip
     return render_object
 end
 
@@ -58,12 +62,13 @@ function TextRenderObjectWidget:update_render_object(render_object)
         or render_object.style ~= self.style
         or not rawequal(render_object.text_layout, self.text_layout)
         or render_object.text_layout_generation ~= self.generation
-    local paint_changed = render_object.text_paint ~= self.text_paint
+    local paint_changed = render_object.text_paint ~= self.text_paint or render_object.clip ~= self.clip
     render_object.text = self.text
     render_object.style = self.style
     render_object.text_layout = self.text_layout
     render_object.text_layout_generation = self.generation
     render_object.text_paint = self.text_paint
+    render_object.clip = self.clip
     if layout_changed then
         render_object:mark_needs_layout()
     elseif paint_changed then
@@ -76,6 +81,7 @@ end
 ---@field style TextStyle?
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
+---@field clip boolean
 ---@overload fun(text: string | number, options: _TextOptions?): self
 local Text = std.class.new('Text', StatelessWidget)
 
@@ -88,6 +94,10 @@ function Text:__init(text, options)
     self.style = options.style
     self.text_layout = options.text_layout
     self.text_paint = text_paint_mod.resolve(options.text_paint)
+    self.clip = options.clip == true
+    if options.clip ~= nil and type(options.clip) ~= 'boolean' then
+        error('Text.clip must be a boolean', 2)
+    end
     if self.style ~= nil and not std.isinstance(self.style, TextStyle) then
         error('Text.style must be a TextStyle', 2)
     end
@@ -101,7 +111,7 @@ function Text:build(context)
     end
     local scope = self.text_layout == nil and TextLayoutScope.maybe_of(context) or nil
     local layout = self.text_layout or (scope and scope.layout)
-    return TextRenderObjectWidget(self.text, style, layout, self.text_paint, scope and scope.generation)
+    return TextRenderObjectWidget(self.text, style, layout, self.text_paint, scope and scope.generation, self.clip)
 end
 
 M.Text = Text

@@ -17,10 +17,16 @@ other sources directly; they do not load collectors, Material, player or Define.
   invalidates its layout; Tooltip drops its paragraph on the same change.
 - HoverText uses GestureDetector and RenderText setters. Hover/press/leave change
   foreground/glow without rebuilding, measuring text or invalidating layout.
+  Align preserves the allocated position while the gesture surrounds content and
+  optional min_width; overwide text clips to its box, leaving allocated blanks passive.
 - Tooltip owns hover, measurement, anchoring and preview hooks. PlayerTooltip
   supplies player styling and AutoHide eligibility from above this layer.
   Real hit-path movement restores suppressed hover and updates previews during
   child capture; policy changes alone do not synthesize hover or rebuild layout.
+  Text changes enqueue one stable callback on RenderOwner; layout/flush_prepare
+  prepares the final label before paint. Fixed label motion does not measure.
+  Dispose cancels queued work. width_for_text may reserve a stable visual width
+  without changing the displayed paragraph; it must return a finite non-negative value.
 - Icon owns nominal glyph layout and paint offsets. Its bundled font default is
   supplied by the resource contract in `fonts.material_symbols`; custom font
   families do not acquire Material Symbols variation intent.

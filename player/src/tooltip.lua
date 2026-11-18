@@ -9,6 +9,9 @@ local tooltip_mod = require 'src.widgets.tooltip'
 local text_style_mod = require 'src.text.text_style'
 local color_mod = require 'src.foundation.color'
 local AutoHide = require('player.src.auto_hide').AutoHide
+local time_mod = require 'player.src.text_controls'
+local widget_mod = require 'src.widgets.framework'
+local state_mod = require 'src.widgets.state'
 
 local Tooltip = tooltip_mod.Tooltip
 local TextStyle = text_style_mod.TextStyle
@@ -51,5 +54,47 @@ end
 
 ---@class mod.player.src.tooltip
 local M = { PlayerTooltip = PlayerTooltip }
+
+---@class player.PlayerTimeTooltip : StatefulWidget
+---@field config _PlayerTooltipOptions
+---@overload fun(options?: _PlayerTooltipOptions): self
+local PlayerTimeTooltip = std.class.new('PlayerTimeTooltip', widget_mod.StatefulWidget)
+
+function PlayerTimeTooltip:__init(options)
+    self.key = options and options.key
+    self.config = {}
+    for name, value in pairs(options or {}) do
+        self.config[name] = value
+    end
+end
+
+---@class player.PlayerTimeTooltipState : State
+---@field _width PlayerTimeWidth
+---@field _width_for_text fun(layout: TextLayout, label: string, style: TextStyle): number
+---@overload fun(): self
+local PlayerTimeTooltipState = std.class.new('PlayerTimeTooltipState', state_mod.State)
+
+function PlayerTimeTooltipState:init_state()
+    self._width = time_mod.PlayerTimeWidth()
+    self._width_for_text = function(layout, label, style)
+        return self._width:resolve(layout, label, style)
+    end
+end
+
+function PlayerTimeTooltipState:build()
+    local widget = self.widget --[[@as PlayerTimeTooltip]]
+    local config = {}
+    for name, value in pairs(widget.config) do
+        config[name] = value
+    end
+    config.width_for_text = self._width_for_text
+    return PlayerTooltip(config)
+end
+
+function PlayerTimeTooltip:create_state()
+    return PlayerTimeTooltipState()
+end
+
+M.PlayerTimeTooltip = PlayerTimeTooltip
 
 return M

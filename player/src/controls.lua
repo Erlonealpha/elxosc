@@ -24,6 +24,7 @@ local Timeline = timeline_mod.Timeline
 local Slider = basic_widgets.Slider
 local GestureDetector = basic_widgets.GestureDetector
 local PlayerTooltip = tooltip_mod.PlayerTooltip
+local PlayerTimeTooltip = tooltip_mod.PlayerTimeTooltip
 local player_metadata = metadata_mod
 
 local max = math.max
@@ -256,7 +257,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         enabled = seek_callback ~= nil,
     })
     children[#children + 1] = positioned(layout_geometry.seekbar, seekbar)
-    children[#children + 1] = positioned(layout_geometry.seekbar, PlayerTooltip({
+    children[#children + 1] = positioned(layout_geometry.seekbar, PlayerTimeTooltip({
         child = SizedBox({
             width = layout_geometry.seekbar:width(),
             height = layout_geometry.seekbar:height(),

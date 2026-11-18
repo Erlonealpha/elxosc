@@ -48,7 +48,12 @@ local function measure(target, name, stage)
         end
         local result = pack(original(self, ...))
         if active then
-            stages[stage] = (stages[stage] or 0) + now() - started
+            local elapsed = now() - started
+            -- preparation is called within layout(); keep stage timings exclusive.
+            if stage == 'layout' then
+                elapsed = math.max(0, elapsed - (stages.prepare or 0))
+            end
+            stages[stage] = (stages[stage] or 0) + elapsed
         end
         return unpack(result, 1, result.n)
     end
@@ -86,6 +91,9 @@ app_api.start = function(build, options)
     measure(app, 'notify_activity', 'activity')
     measure(app.binding, 'flush_build', 'build')
     measure(app.owner, 'layout', 'layout')
+    if app.owner.flush_prepare then
+        measure(app.owner, 'flush_prepare', 'prepare')
+    end
     measure(app.input, 'update_regions', 'regions')
     measure(app.owner, 'paint', 'paint_ass')
     measure(app.presenter, 'present', 'present')
@@ -122,13 +130,17 @@ app_api.start = function(build, options)
         stages = {}
         painting_tooltip = false
         local input = latest
+        local text_before = self.text_layout:cache_stats()
         local result = render(self)
+        local text_after = self.text_layout:cache_stats()
         if painting_tooltip and input then
             frames[#frames + 1] = {
                 input_seq = input.seq, start = frame_started, finish = now(), label = label,
                 stages = stages,
                 layout_needed = layout_needed, build_dirty = build_dirty,
                 regions_changed = generation ~= self.owner:region_snapshot().generation,
+                native_calls = text_after.native_calls - text_before.native_calls,
+                cache_hits = text_after.hits - text_before.hits,
             }
         end
         return result
@@ -152,6 +164,7 @@ mp.register_script_message('elxosc-bench-save', function()
         display_fps = mp.get_property_number('display-fps'),
         host_version = mp.get_property('mpv-version'),
         thumbfast = current_app.player_store:get():capability('thumbfast').status,
+        text_cache = current_app.text_layout:cache_stats(),
     }
     local file = assert(io.open(mp.get_script_directory() .. '/hover-trace.json', 'w'))
     local encoded = assert(utils.format_json(report)) --[[@as string]]

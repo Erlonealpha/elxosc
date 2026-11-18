@@ -449,6 +449,7 @@ F.test('AutoHide fades through opacity while retaining input until completion', 
     }), scheduler)
     local render_opacity = owner.root
     local state = binding.root_element.state
+    owner:flush_prepare()
     owner:paint(require('src.backends.record').RecordCanvas())
 
     F.ok(not render_opacity.hidden, 'AutoHide starts unhidden')
@@ -556,6 +557,7 @@ F.test('fixed player tooltip resumes inside its retained hitbox after AutoHide',
     clock:tick(0)
     clock:tick(0.05)
     local canvas = require('src.backends.record').RecordCanvas()
+    owner:flush_prepare()
     owner:paint(canvas)
     local visible = false
     for _, op in ipairs(canvas.ops) do

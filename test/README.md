@@ -202,6 +202,7 @@ These operations are reproducible checks, without recording a particular run's r
 | `test_foundation.lua` | Geometry value types, colour, paint, path, canvas contract |
 | `test_text.lua` | Options-only `TextStyle`/`TextPaint`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_text_service.lua` | Native line spans, bounded cache, scope/generation, Tooltip invalidation and App session cleanup/recovery |
+| `test_text_consumers.lua` | Ordered local preparation, final-label coalescing, no paint measurement, bounded content hits and time reservations |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_animation.lua` | Matrix2D, paint-only OffsetBox/TransformBox, layout scale, curves/tweens, controllers and State resource lifecycle |
 | `test_layout.lua` | Constraints, fitted/finite scale boxes, crop/input mapping, owner driving, paint + hit test |

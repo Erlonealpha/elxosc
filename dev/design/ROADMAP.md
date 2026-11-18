@@ -7,7 +7,7 @@
 ## 文本布局与质量
 
 当前ASS单行布局已有注入式宿主定位跨度、环境替换和有界缓存，离线/不可靠结果退估算。
-Tooltip仍需将临时测量移出paint，播放器内容盒与hitbox仍需在预分配区域内收缩；
+Tooltip已在局部prepare阶段测量，播放器内容盒与hitbox在预分配区域内收缩；
 整行跨度不等于逻辑advance或ink bounds，复杂script的独立字体参考仍未提供。
 
 后续文本能力包括baseline/ascent/descent、逐行定位、多行布局、
