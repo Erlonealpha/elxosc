@@ -25,6 +25,8 @@ local M = {}
 --- | 'center'
 --- | 'right'
 
+---@alias TextOverflow 'visible' | 'clip' | 'ellipsis'
+
 M.Align = {
     LEFT = 'left',
     CENTER = 'center',
@@ -46,6 +48,8 @@ M.Align = {
 ---@field line_height number?       non-negative finite multiple of font_size; default 1.2
 ---@field align TextAlign?          default 'left'
 ---@field wrap boolean?             default true
+---@field max_lines integer? positive visible-line limit; nil means unlimited
+---@field overflow TextOverflow? default visible
 ---@field blur_radius number?       non-negative backend blur intent; default 0
 ---@field outline_width number?     non-negative outline width; default 0
 ---@field outline_color Color?      outline color intent
@@ -65,6 +69,8 @@ local option_names = {
     line_height = true,
     align = true,
     wrap = true,
+    max_lines = true,
+    overflow = true,
     blur_radius = true,
     outline_width = true,
     outline_color = true,
@@ -132,6 +138,8 @@ end
 ---@field line_height number multiple of `font_size`
 ---@field align TextAlign
 ---@field wrap boolean
+---@field max_lines integer?
+---@field overflow TextOverflow
 ---@field blur_radius number
 ---@field outline_width number
 ---@field outline_color Color?
@@ -154,6 +162,15 @@ function TextStyle:__init(options)
     self.line_height = check_finite('line_height', pick(options.line_height, 1.2))
     self.align = pick(options.align, M.Align.LEFT)
     self.wrap = check_boolean('wrap', pick(options.wrap, true))
+    self.max_lines = options.max_lines
+    self.overflow = pick(options.overflow, 'visible')
+    if self.max_lines ~= nil and (type(self.max_lines) ~= 'number' or self.max_lines < 1
+        or self.max_lines == math.huge or self.max_lines ~= math.floor(self.max_lines)) then
+        raise(std.ValueError('TextStyle.max_lines must be a positive integer'))
+    end
+    if self.overflow ~= 'visible' and self.overflow ~= 'clip' and self.overflow ~= 'ellipsis' then
+        raise(std.ValueError('TextStyle.overflow must be visible, clip or ellipsis'))
+    end
     self.blur_radius = check_finite('blur_radius', pick(options.blur_radius, 0))
     self.outline_width = check_finite('outline_width', pick(options.outline_width, 0))
     self.outline_color = options.outline_color
@@ -212,6 +229,8 @@ function TextStyle:__eq(other)
         or self.line_height ~= other.line_height
         or self.align ~= other.align
         or self.wrap ~= other.wrap
+        or self.max_lines ~= other.max_lines
+        or self.overflow ~= other.overflow
         or self.blur_radius ~= other.blur_radius
         or self.outline_width ~= other.outline_width
         or self.outline_color ~= other.outline_color
@@ -241,6 +260,8 @@ function TextStyle:copy_with(options)
         line_height = pick(options.line_height, self.line_height),
         align = pick(options.align, self.align),
         wrap = pick(options.wrap, self.wrap),
+        max_lines = pick(options.max_lines, self.max_lines),
+        overflow = pick(options.overflow, self.overflow),
         blur_radius = pick(options.blur_radius, self.blur_radius),
         outline_width = pick(options.outline_width, self.outline_width),
         outline_color = pick(options.outline_color, self.outline_color),

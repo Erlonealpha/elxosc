@@ -146,6 +146,12 @@ peer 验证请求、clear 和恢复，不代表外部解码图像的像素验收
 精确 glyph ink、逻辑 advance、baseline/ascent/descent 或光学居中。
 ASS 文本探针结合生产编码、viewport resize、字体变化及虚拟分辨率验证定位跨度；
 字体文件参考只能支持相应字形/字体范围的结论，复杂 script 不能据此宣称精确逻辑宽度。
+多行回归保留原文范围/空白/支持的组合边界，检查line-limit截断和最终ellipsis整串宽度。
+真实宿主以相同字形行的bounds坐标差验证逻辑行推进、九anchor、视觉offset和正scale；
+空行无event但保留推进，clip bounds位于受约束盒内。事件数/payload与冷热layout、paint、
+compute_bounds分别记录；compute_bounds耗时不等同presenter提交或像素呈现。
+人工文本预览标明独立预期、原文/参数、约束盒、自然段落范围、行号/逻辑行中心和paint anchor。
+溢出对照保持相同原文与约束；辅助线不能称font baseline或精确字形边界，裁剪与原文截断分别说明。
 
 测量服务与 CLI 分别覆盖固定实例复用、空画面、错误、cleanup、外部输入和结果 schema。
 报告需记录源码/字体版本、实际 OSD、请求分辨率和 payload hash；未暴露的宿主版本

@@ -106,7 +106,9 @@ class IpcClient:
         return message.get("data")
 
     def _contains_reply(self, response):
-        for line in response.splitlines():
+        # IPC is newline-delimited UTF-8. A pipe/socket chunk can end inside a
+        # multibyte character; leave the incomplete final line for the next read.
+        for line in response.split(b'\n')[:-1]:
             try:
                 if json.loads(line).get("request_id") == self.request_id:
                     return True
@@ -195,14 +197,18 @@ def _running_host(tmp_path, extra_args=()):
                                                  Path(__file__).parent / "ass_text_probe.lua",
                                                  Path(__file__).parent / "text_service.lua",
                                                  Path(__file__).parent / "text_consumers.lua",
+                                                 Path(__file__).parent / "multiline_text.lua",
                                                  Path(__file__).parent / "ass_measure_benchmark.lua"}):
                 staged_elxosc = config / "scripts" / "elxosc"
                 _stage_elxosc(source_elxosc, staged_elxosc, include_main=script.name == "main.lua")
                 if script.name in {"button_input.lua", "text_anchor.lua", "scale.lua", "transform.lua",
                                    "ass_measure.lua", "ass_measure_benchmark.lua", "ass_text_probe.lua", "text_service.lua",
-                                   "text_consumers.lua"}:
+                                   "text_consumers.lua", "multiline_text.lua"}:
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
+                if script.name == "multiline_text.lua":
+                    shutil.copy2(script.with_name("multiline_preview.lua"),
+                                 staged_elxosc / "multiline_preview.lua")
                 if script.name in {"ass_measure.lua", "ass_measure_benchmark.lua"}:
                     samples = staged_elxosc / "tools" / "ass_measure_samples.lua"
                     samples.parent.mkdir()

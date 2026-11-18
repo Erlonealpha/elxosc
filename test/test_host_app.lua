@@ -332,8 +332,9 @@ F.test('the demo exposes anchors, nominal icons and static animation output', fu
     F.contains(fake.overlay.data, '\\an3', 'bottom-right text anchor')
     F.contains(fake.overlay.data, '\\fnMaterial Symbols Rounded', 'icon font')
     F.contains(fake.overlay.data, 'Frame-clock OffsetBox', 'paint-only offset demo label')
-    F.contains(fake.overlay.data, 'PlayerContext count=7 event=context',
-        'PlayerContext snapshot output')
+    F.contains(fake.overlay.data, 'PlayerContext', 'PlayerContext panel output')
+    F.contains(fake.overlay.data, 'count=7', 'PlayerContext snapshot count')
+    F.contains(fake.overlay.data, 'event=context', 'PlayerContext snapshot event')
 end)
 
 F.test('the demo updates its PlayerContext panel on the next frame', function()
@@ -341,13 +342,13 @@ F.test('the demo updates its PlayerContext panel on the next frame', function()
     local store = PlayerStore({ demo_count = 1, demo_event = 'initial' })
     local app = player_app.PlayerHostApp(Demo(), { player_store = store })
     app:render()
-    F.contains(fake.overlay.data, 'PlayerContext count=1 event=initial',
-        'initial PlayerContext output')
+    F.contains(fake.overlay.data, 'count=1', 'initial PlayerContext count')
+    F.contains(fake.overlay.data, 'event=initial', 'initial PlayerContext event')
 
     store:replace({ demo_count = 2, demo_event = 'updated' })
     mp_stub.pump()
-    F.contains(fake.overlay.data, 'PlayerContext count=2 event=updated',
-        'updated PlayerContext output')
+    F.contains(fake.overlay.data, 'count=2', 'updated PlayerContext count')
+    F.contains(fake.overlay.data, 'event=updated', 'updated PlayerContext event')
 end)
 
 F.test('the demo exposes finite scale box and clip output', function()

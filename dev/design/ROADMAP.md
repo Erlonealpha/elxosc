@@ -10,7 +10,8 @@
 Tooltip已在局部prepare阶段测量，播放器内容盒与hitbox在预分配区域内收缩；
 整行跨度不等于逻辑advance或ink bounds，复杂script的独立字体参考仍未提供。
 
-后续文本能力包括baseline/ascent/descent、逐行定位、多行布局、
+有限多行已有保留空白/原文范围的断行、max_lines/ellipsis和逻辑行高逐行定位。
+后续文本能力包括baseline/ascent/descent、完整Unicode分段/断行、
 fallback 与复杂 script 边界。Tooltip 和播放器标题/时间/metadata 的布局应复用文本
 合同；不能用 ASS 图像矩形包装出未经验证的精确文字度量。相关边界见
 [RENDERING.md](RENDERING.md) 和 [HOST.md](HOST.md#通用-ass-测量)。

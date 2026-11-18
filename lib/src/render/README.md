@@ -41,6 +41,9 @@ Source modules load as `src.render.*`; the host-independent collector is
   unchanged until a visibility owner explicitly sets `hidden`.
 - `RenderText:set_glow_override()` paints a second blurred glyph at the same position;
   it is paint-only and does not change text measurement or input geometry.
+  Prepared paragraph rows/metrics survive foreground and glow copies. Style line
+  limits/wrapping affect layout; overflow crops the finite box without expanding
+  hit regions, and painting never remeasures or breaks lines.
 - `gesture.lua` — pointer-to-gesture behavior used by Widget controls.
 
 RenderObject layout must return finite sizes within Constraints. Paint-only setters

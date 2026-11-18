@@ -65,7 +65,10 @@ local EXPECTED = {
     ['18'] = [==[{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx148\fscy148}Some Example Text.]==],
     ['19'] = [==[{\pos(65,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Some Example Text.]==],
     ['20'] = [==[{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0\fscx28\fscy28}This is some very very very large text that is too big to fit a regular screen in a single line.]==],
-    ['21'] = [==[{\pos(20,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is some very very\Nvery large text that is\Ntoo big to fit a regular\Nscreen in a single line.]==],
+    ['21'] = [==[{\pos(13,281)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is some very very\h
+{\pos(13,317)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}very large text that is\h
+{\pos(13,353)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}too big to fit a regular\h
+{\pos(13,389)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}screen in a single line.]==],
     ['22'] = false,
     ['23'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 2536 l 720 2536 l 720 2824 l 0 2824 c{\p0}
 {\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
@@ -75,18 +78,29 @@ local EXPECTED = {
 {\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very long text that won't fit the line.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 5880 2536 l 6840 2536 l 6840 2824 l 5880 2824 c{\p0}
 {\pos(735,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
-    ['25'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 280 2104 l 1960 2104 l 1960 3256 l 280 3256 c{\p0}
-{\pos(35,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very\Nlong text that\Nwon't fit the\Nline.
+    ['25'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 220 2104 l 2020 2104 l 2020 3256 l 220 3256 c{\p0}
+{\pos(28,281)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a very\h
+{\pos(28,317)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}long text that\h
+{\pos(28,353)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}won't fit the\h
+{\pos(28,389)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}line.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 2240 2536 l 3200 2536 l 3200 2824 l 2240 2824 c{\p0}
 {\pos(280,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['26'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 1960 l 1600 1960 l 1600 3400 l 0 3400 c{\p0}
-{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
+{\pos(0,263)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\h
+{\pos(0,299)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}very long\h
+{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}text that\h
+{\pos(0,371)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}won't fit\h
+{\pos(0,407)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}the line.
 {\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 1600 2536 l 3200 2536 l 3200 2824 l 1600 2824 c{\p0}
 {\pos(200,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
-    ['27'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 1960 l 1560 1960 l 1560 3400 l 0 3400 c{\p0}
-{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\Nvery long\Ntext that\Nwon't fit the\Nline.
-{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 1560 2536 l 2520 2536 l 2520 2824 l 1560 2824 c{\p0}
-{\pos(195,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
+    ['27'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H0000FF&\1a&H00&}{\p4}m 0 1960 l 1200 1960 l 1200 3400 l 0 3400 c{\p0}
+{\pos(0,263)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}This is a\h
+{\pos(0,299)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}very long\h
+{\pos(0,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}text that\h
+{\pos(0,371)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}won't fit\h
+{\pos(0,407)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}the line.
+{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&H00FF00&\1a&H00&}{\p4}m 1200 2536 l 2160 2536 l 2160 2824 l 1200 2824 c{\p0}
+{\pos(150,335)\rDefault\an4\blur0\fs30\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
     ['28'] = [==[{\pos(0,0)\rDefault\an7\blur0\bord0\shad0\1c&HFF0000&\1a&H00&}{\p4}m 0 0 l 512 0 l 512 5360 l 0 5360 c{\p0}
 {\pos(8,10)\rDefault\an4\blur0\fs16\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Hello!
 {\pos(0,29)\rDefault\an4\blur0\fs16\q2\1c&HFFFFFF&\1a&H00&\bord0\shad0}Goodbye!]==],
@@ -149,5 +163,5 @@ end)
 F.test('Expanded and Flexible size themselves differently', function()
     -- Both get an equal allocation, but Flexible shrink-wraps to the text.
     F.contains(rendered['26'], 'm 0 1960 l 1600 1960', 'example 26 red is 200 * 8 wide')
-    F.contains(rendered['27'], 'm 0 1960 l 1560 1960', 'example 27 red is 195 * 8 wide')
+    F.contains(rendered['27'], 'm 0 1960 l 1200 1960', 'example 27 red is 150 * 8 wide')
 end)

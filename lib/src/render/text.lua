@@ -16,14 +16,12 @@ local text_paint_mod = require 'src.painting.text_paint'
 local text_style = require 'src.text.text_style'
 local render_object = require 'src.render.render_object'
 local text_layout = require 'src.text.text_layout'
-local paragraph_mod = require 'src.text.paragraph'
 local color_mod = require 'src.foundation.color'
 
 local Offset = geometry.Offset
 local Anchor = anchor_mod.Anchor
 local RenderObject = render_object.RenderObject
 local Align = text_style.Align
-local Paragraph = paragraph_mod.Paragraph
 local Color = color_mod.Color
 local raise = std.raise
 
@@ -134,7 +132,6 @@ function RenderText:__perform_layout(constraints)
 end
 
 ---@param canvas PaintingContext
----@param canvas PaintingContext
 ---@param offset Offset
 function RenderText:_paint_content(canvas, offset)
     if self.paragraph then
@@ -167,12 +164,7 @@ function RenderText:_paint_content(canvas, offset)
                 style_options.shadow_color = self.shadow_color_override
                 style_options.shadow_radius = self.shadow_radius_override or 0
             end
-            paragraph = Paragraph(
-                paragraph.text,
-                paragraph.style:copy_with(style_options),
-                paragraph.size,
-                paragraph.lines,
-                paragraph.line_height)
+            paragraph = paragraph:with_style(paragraph.style:copy_with(style_options))
         end
         if anchor ~= self.text_paint.anchor then
             text_paint = self.text_paint:copy_with({ anchor = anchor })
@@ -183,8 +175,7 @@ function RenderText:_paint_content(canvas, offset)
                 color = self.glow_color_override,
                 blur_radius = self.glow_radius_override or 0,
             })
-            canvas:draw_text(Paragraph(paragraph.text, glow_style, paragraph.size,
-                paragraph.lines, paragraph.line_height), position, text_paint)
+            canvas:draw_text(paragraph:with_style(glow_style), position, text_paint)
         end
     end
     self:paint_children(canvas, offset)
@@ -192,7 +183,10 @@ end
 
 function RenderText:__paint(canvas, offset)
     local paragraph = self.paragraph
-    if self.clip and paragraph and paragraph.size.width > self.size.width then
+    local constrained_overflow = paragraph and (paragraph.size.width > self.size.width
+        or paragraph.size.height > self.size.height)
+    if paragraph and (self.clip and paragraph.size.width > self.size.width
+        or self.style.overflow ~= 'visible' and constrained_overflow) then
         canvas:clip_rect_and_paint(self:input_region_rect():shift(offset), function()
             self:_paint_content(canvas, offset)
         end)

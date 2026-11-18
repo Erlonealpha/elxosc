@@ -31,6 +31,7 @@ local anchor_mod = require 'src.foundation.anchor'
 local text_paint_mod = require 'src.painting.text_paint'
 local text_style = require 'src.text.text_style'
 local transform_mod = require 'src.foundation.transform'
+local geometry_mod = require 'src.foundation.geometry'
 local ass_text_mod = require 'src.backends.ass_text'
 
 local Canvas = canvas.Canvas
@@ -41,6 +42,7 @@ local Paint = paint_mod.Paint
 local Anchor = anchor_mod.Anchor
 local Align = text_style.Align
 local Matrix2D = transform_mod.Matrix2D
+local Offset = geometry_mod.Offset
 local raise = std.raise
 local math = math
 local floor = math.floor
@@ -138,7 +140,7 @@ local function paint_tags(paint, force_fill, opacity)
 end
 
 ---@class AssCanvas : Canvas
----@field events string[] one ASS `Text` line per drawing call
+---@field events string[] one ASS `Text` event per shape or non-empty paragraph row
 ---@field subpixel integer `\p` level (4 = 8x sub-pixel, the assdraw default)
 ---@field default_font_family string? resolved by the owning host
 ---@overload fun(subpixel: integer?): self
@@ -346,12 +348,12 @@ end
 
 --== content ==============================================================
 
----@param paragraph Paragraph
+---@param line string
+---@param style TextStyle
 ---@param position Offset
 ---@param text_paint TextPaint?
-function AssCanvas:draw_text(paragraph, position, text_paint)
-    local style = paragraph.style
-    if style.font_size == 0 or paragraph:is_empty() then
+function AssCanvas:_draw_text_line(line, style, position, text_paint)
+    if style.font_size == 0 or line == '' then
         return
     end
     text_paint = text_paint_mod.resolve(text_paint)
@@ -407,19 +409,35 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     tags[#tags + 1] = self:_clip_tag()
     tags[#tags + 1] = '}'
 
-    local concat_lines = function ()
-        local r
-        for _, line in ipairs(paragraph.lines) do
-            if r == nil then
-                r = ass_text_mod.escape_line(line)
-            else
-                -- Paragraph.line_height is a logical advance; \N uses libass font metrics.
-                r = r .. '\\N' .. ass_text_mod.escape_line(line)
-            end
-        end
-        return r
+    self:_push(concat(tags) .. ass_text_mod.escape_line(line))
+end
+
+---@param paragraph Paragraph
+---@param position Offset
+---@param text_paint TextPaint?
+function AssCanvas:draw_text(paragraph, position, text_paint)
+    if paragraph.style.font_size == 0 or paragraph:is_empty() then
+        return
     end
-    self:_push(concat(tags) .. concat_lines())
+    text_paint = text_paint_mod.resolve(text_paint)
+    if #paragraph.lines == 1 then
+        self:_draw_text_line(paragraph.lines[1], paragraph.style, position, text_paint)
+        return
+    end
+    local anchor = text_paint.anchor
+    if not text_paint._anchor_explicit then
+        anchor = paragraph.style.align == Align.CENTER and Anchor.CENTER
+            or paragraph.style.align == Align.RIGHT and Anchor.CENTER_RIGHT or Anchor.CENTER_LEFT
+    end
+    local fraction = anchor_mod.fraction(anchor)
+    local middle_anchor = fraction.x == 0 and Anchor.CENTER_LEFT
+        or fraction.x == 1 and Anchor.CENTER_RIGHT or Anchor.CENTER
+    local line_paint = text_paint:copy_with({ anchor = middle_anchor })
+    local top = position.y - paragraph.size.height * fraction.y
+    for index, line in ipairs(paragraph.lines) do
+        local y = top + (index - 0.5) * paragraph.line_height
+        self:_draw_text_line(line, paragraph.style, Offset(position.x, y), line_paint)
+    end
 end
 
 M.AssCanvas = AssCanvas

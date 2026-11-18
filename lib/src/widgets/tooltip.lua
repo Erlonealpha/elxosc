@@ -200,6 +200,9 @@ function TooltipState:did_update_widget(old_widget)
     if old.width_for_text ~= widget.width_for_text then
         self._paragraph = nil
     end
+    if old.bounds_width ~= widget.bounds_width or old.margin ~= widget.margin then
+        self._paragraph = nil
+    end
     self:_schedule_text()
 end
 
@@ -279,7 +282,8 @@ function TooltipState:_prepare_text()
         self._paragraph = nil
         return
     end
-    local paragraph = measurer:layout(label, widget.style, math.huge)
+    local bounds = widget.bounds_width and max(0, widget.bounds_width - widget.margin * 2) or math.huge
+    local paragraph = measurer:layout(label, widget.style, bounds)
     local width = paragraph.size.width
     if widget.width_for_text then
         width = widget.width_for_text(measurer, label, widget.style)

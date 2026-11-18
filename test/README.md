@@ -203,6 +203,7 @@ These operations are reproducible checks, without recording a particular run's r
 | `test_text.lua` | Options-only `TextStyle`/`TextPaint`, copying and invalid boundaries; default/overridden logical line advance and wrapping |
 | `test_text_service.lua` | Native line spans, bounded cache, scope/generation, Tooltip invalidation and App session cleanup/recovery |
 | `test_text_consumers.lua` | Ordered local preparation, final-label coalescing, no paint measurement, bounded content hits and time reservations |
+| `test_multiline_text.lua` | Original byte ranges, whitespace, finite clusters, line limits/ellipsis, ASS row advances and bounded Tooltip preparation |
 | `test_scheduler.lua` | Frame clock contract, the two-phase scheduler, tickers |
 | `test_animation.lua` | Matrix2D, paint-only OffsetBox/TransformBox, layout scale, curves/tweens, controllers and State resource lifecycle |
 | `test_layout.lua` | Constraints, fitted/finite scale boxes, crop/input mapping, owner driving, paint + hit test |
@@ -232,6 +233,17 @@ The real-host suite also includes `test_text_anchor.py`, `test_scale.py` and
 stage the corresponding Lua fixtures and ask the actual host/libass to compute
 non-empty bounds for the text, Icon and finite-scale events. It checks ASS output
 and host consumption; it does not claim exact glyph ink metrics or optical-centre proof.
+
+`real_host/test_multiline_text.py` covers native line provenance, two/three-row
+advances across all anchors/scales, blank rows, wrapping/ellipsis and constrained
+clipping. It records per-row events, payload bytes and separate cold/hot layout,
+paint and compute_bounds timings in ignored tmp/multiline-ATL-3.json. These timings
+measure the isolated fixture rather than whole player frames or display latency.
+The test-only multiline_preview.lua builds review pages with explicit expectations,
+solid constraint boxes, dashed natural paragraph bounds, expected row centers and
+paint anchors/offsets. It compares visible/clip/ellipsis under identical constraints.
+Screenshots in tmp/multiline-ATL-3.png and tmp/multiline-ATL-3-overflow.png include
+these guides; the guides represent logical layout rather than glyph ink or baselines.
 
 Nothing here is loaded by mpv: the directory has no `main.lua`, so mpv's script
 auto-loader ignores it.

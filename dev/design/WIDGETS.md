@@ -50,6 +50,9 @@ Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变�
 不替换可复用的RenderText。Tooltip在dependency更新时丢弃旧paragraph并请求paint；
 Tooltip的局部准备通过RenderOwner队列在layout后、paint前完成，读取同帧最终label；
 固定label移动只paint，shape/服务generation变化重新准备。dispose取消待执行callback。
+TextStyle的max_lines/overflow由Text布局决定可见行与原文关系，ASS按逻辑行高绘制最终行；
+clip/ellipsis裁剪溢出的受约束盒，不扩大命中。Tooltip准备使用bounds_width减双侧margin，
+显式wrap/ellipsis样式可复用有限多行；bounds变化失效准备，默认样式wrap=false。
 HoverText外层Align负责原区域定位，GestureDetector围自然内容及明确min_width，
 Text的clip选项仅在自然宽度溢出时裁剪有限布局盒，短文本不新增clip或改变glow。
 
@@ -180,7 +183,7 @@ widgets 和 material collectors 只重导出独立模块成员；旧 basic/layou
 播放器 `Timeline`/`RenderTimeline` 在 Slider 基础上扩展章节/cache/range 绘制与媒体
 seek phases，核心拖动/capture 复用 RenderSlider。原混合 ProgressBar/SeekBar 入口移除。
 volume 的对数映射与 timeline seek 仍属于播放器业务层。
-`HoverText` 复用 ButtonBase 的 foreground/glow paint-only 更新，播放器时间格式
+`HoverText` 复用 RenderText 的 foreground/glow paint-only 更新，播放器时间格式
 切换保留在 `PlayerTimeDisplay` State。
 
 参考本机 Flutter `9b575904345`：

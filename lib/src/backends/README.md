@@ -18,11 +18,15 @@ Source modules load as `src.backends.*`; the host-independent collector is
 ASS output is a presentation format, not a layout input. Do not make RenderObject
 code parse ASS strings or add PTS-based `\move`/`\t` animation tags here.
 
-`AssCanvas` keeps each drawing call as one non-empty ASS event line; raw newline
+`AssCanvas` emits one ASS event per shape or non-empty paragraph row; raw newline
 and NUL injection is rejected so mpv's internal Layer/ReadOrder mapping remains
 host-owned. `AssPresenter` is the single cache/submit owner for the App and
 deduplicates only after a successful update. Opacity scopes multiply each emitted
 shape/text alpha and are restored with Canvas save/restore.
+Multiline text uses static row events rather than native `\N` spacing. Each row's
+middle anchor advances by `Paragraph.line_height`, preserving the paragraph's
+horizontal anchor, visual offset and canvas scale. Blank rows advance without
+events. Single-row positioning and explicit nine-anchor behavior remain intact.
 
 See [rendering](../../../dev/design/RENDERING.md) and [host](../../../dev/design/HOST.md).
 

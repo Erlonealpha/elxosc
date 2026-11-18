@@ -77,6 +77,24 @@ composition 不因 attached owner scope 增加而复制。
 
 ## ASS 后端边界
 
+### 有限多行文本
+
+TextStyle.max_lines为nil或正整数，overflow为visible/clip/ellipsis（默认visible）。
+TextLayout保留原文及每行UTF-8字节半开范围（1-based）、自然width、source/reason；
+行范围不含硬换行。CR/LF/CRLF分行，tab展开4空格，连续/前后空白保留。
+空source没有行，尾部硬换行保留空行；max_lines最多准备额外一行判断截断，完整source仍校验UTF-8。
+Latin词边界优先、CJK有限断行、长词按支持的grapheme拆，单簇过宽保留overflow。
+支持常见组合标记、variation selector、emoji modifier/ZWJ/RI及Hangul组合，非完整UAX规则。
+NBSP不作为普通词边界，超长单元仍可逐簇拆；不承诺Indic/full bidi编辑等未覆盖组合。
+max_lines限制结果行；ellipsis测全部支持的prefix+省略号整串，取最长实测可容纳prefix，
+不能假定负字距/shaping宽度单调；窄于省略号显示空行。省略号不消耗原文字节。
+TextStyle.copy_with的nil沿用现有字段，清除max_lines需fresh style。Paragraph复制行数组及metrics，
+with_style只用于保留排版的paint样式替换；手动构造的旧Paragraph可省略metrics。
+ASS多行按逻辑line_height输出逐行静态events，空行也保留推进；单行九anchor行为保持。
+Paragraph顶部由paragraph高度及纵向anchor确定，各行middle anchor在(index-0.5)*line_height；
+同一横向anchor对齐每行而非强制短行占满自然宽度。视觉offset与正scale照常作用。
+clip/ellipsis只在受约束RenderText盒溢出时裁剪。paint消费最终行，不能重新测量/断行。
+
 ### 文本测量服务
 
 `TextLayoutScope`提供树作用域的TextLayout及环境generation；Text的显式text_layout

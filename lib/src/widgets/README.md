@@ -27,6 +27,11 @@ other sources directly; they do not load collectors, Material, player or Define.
   prepares the final label before paint. Fixed label motion does not measure.
   Dispose cancels queued work. width_for_text may reserve a stable visual width
   without changing the displayed paragraph; it must return a finite non-negative value.
+  Finite bounds_width minus margins supplies the preparation width, so an explicit
+  wrapping/ellipsis style is resolved before paint. Changing these bounds renews
+  the prepared paragraph; default Tooltip styles remain unwrapped.
+- Text passes TextStyle.max_lines/overflow to layout. Clip/ellipsis crop a naturally
+  overflowing constrained box; Text.clip remains the explicit width-only option.
 - Icon owns nominal glyph layout and paint offsets. Its bundled font default is
   supplied by the resource contract in `fonts.material_symbols`; custom font
   families do not acquire Material Symbols variation intent.
