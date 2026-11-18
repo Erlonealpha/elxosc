@@ -13,6 +13,7 @@
 local std = require 'elxlibs.std'
 local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
+local text_layout_mod = require 'src.text.text_layout'
 
 local raise = std.raise
 local TextStyle = text_style_mod.TextStyle
@@ -170,5 +171,56 @@ end
 M.DisplaySnapshot = DisplaySnapshot
 M.DisplayScope = DisplayScope
 M.DefaultTextStyle = DefaultTextStyle
+
+---@class _TextLayoutScopeOptions
+---@field layout TextLayout
+---@field generation integer? non-negative; default zero
+---@field child Widget?
+---@field key any?
+
+---@class TextLayoutScope : InheritedWidget
+---@field layout TextLayout
+---@field generation integer
+---@field child Widget?
+---@overload fun(options: _TextLayoutScopeOptions): self
+local TextLayoutScope = std.class.new('TextLayoutScope', InheritedWidget)
+local TextLayoutScopeClass = TextLayoutScope --[[@as std.class]]
+
+function TextLayoutScope:__init(options)
+    self.key = options.key
+    self.child = options.child
+    self.layout = options.layout
+    self.generation = options.generation or 0
+    if not std.isinstance(self.layout, text_layout_mod.TextLayout) then
+        raise(std.TypeError('TextLayoutScope.layout must be a TextLayout'))
+    end
+    if not is_finite(self.generation) or self.generation < 0
+        or self.generation ~= math.floor(self.generation) then
+        raise(std.ValueError('TextLayoutScope.generation must be a non-negative integer'))
+    end
+end
+
+function TextLayoutScope:update_should_notify(old_widget)
+    return not rawequal(self.layout, old_widget.layout) or self.generation ~= old_widget.generation
+end
+
+---@param context BuildContext
+---@return TextLayoutScope?
+function TextLayoutScope.maybe_of(context)
+    require_context(context, 'TextLayoutScope')
+    return context:depend_on_inherited_widget_of_exact_type(TextLayoutScopeClass) --[[@as TextLayoutScope?]]
+end
+
+---@param context BuildContext
+---@return TextLayoutScope
+function TextLayoutScope.of(context)
+    local scope = TextLayoutScope.maybe_of(context)
+    if scope == nil then
+        raise(std.RuntimeError('no TextLayoutScope ancestor was found'))
+    end
+    return scope
+end
+
+M.TextLayoutScope = TextLayoutScope
 
 return M

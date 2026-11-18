@@ -16,6 +16,7 @@ local ambient_mod = require 'src.widgets.ambient'
 local TextStyle = text_style.TextStyle
 local RenderText = text_mod.RenderText
 local DefaultTextStyle = ambient_mod.DefaultTextStyle
+local TextLayoutScope = ambient_mod.TextLayoutScope
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local StatelessWidget = widget_mod.StatelessWidget
 
@@ -33,18 +34,22 @@ local M = {}
 ---@field style TextStyle
 ---@field text_layout TextLayout?
 ---@field text_paint TextPaint
----@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint): self
+---@field generation integer
+---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint, generation?: integer): self
 local TextRenderObjectWidget = std.class.new('TextRenderObjectWidget', LeafRenderObjectWidget)
 
-function TextRenderObjectWidget:__init(text, style, text_layout, text_paint)
+function TextRenderObjectWidget:__init(text, style, text_layout, text_paint, generation)
     self.text = text
     self.style = style
     self.text_layout = text_layout
     self.text_paint = text_paint
+    self.generation = generation or 0
 end
 
 function TextRenderObjectWidget:create_render_object()
-    return RenderText(self.text, self.style, self.text_layout, self.text_paint)
+    local render_object = RenderText(self.text, self.style, self.text_layout, self.text_paint)
+    render_object.text_layout_generation = self.generation
+    return render_object
 end
 
 ---@param render_object RenderText
@@ -52,10 +57,12 @@ function TextRenderObjectWidget:update_render_object(render_object)
     local layout_changed = render_object.text ~= self.text
         or render_object.style ~= self.style
         or not rawequal(render_object.text_layout, self.text_layout)
+        or render_object.text_layout_generation ~= self.generation
     local paint_changed = render_object.text_paint ~= self.text_paint
     render_object.text = self.text
     render_object.style = self.style
     render_object.text_layout = self.text_layout
+    render_object.text_layout_generation = self.generation
     render_object.text_paint = self.text_paint
     if layout_changed then
         render_object:mark_needs_layout()
@@ -92,7 +99,9 @@ function Text:build(context)
         local inherited = DefaultTextStyle.maybe_of(context)
         style = inherited and inherited.style or TextStyle()
     end
-    return TextRenderObjectWidget(self.text, style, self.text_layout, self.text_paint)
+    local scope = self.text_layout == nil and TextLayoutScope.maybe_of(context) or nil
+    local layout = self.text_layout or (scope and scope.layout)
+    return TextRenderObjectWidget(self.text, style, layout, self.text_paint, scope and scope.generation)
 end
 
 M.Text = Text

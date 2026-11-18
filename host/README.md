@@ -18,7 +18,8 @@ outside the reusable layers.
   explicit default builtins, and host module facades.
 - `mpv_player_context.lua` — mpv property observers bridged to `PlayerStore`.
 - `ass_measure.lua` — explicitly invoked general ASS `compute_bounds` utility,
-  with fixed instance resolution and a reusable hidden overlay. App does not load it.
+  with fixed instance resolution and a reusable hidden overlay; App uses owned
+  instances for its text service, and tools may use independent instances.
 
 The app flushes Widget rebuilds, lays out and paints through a backend, then presents
 only changed ASS output. Input is routed through `RenderOwner`; host code must not
@@ -49,6 +50,15 @@ player/theme/action ambients, observes media/capabilities and passes one idempot
 context disposer to App. Root-building, partial mount, observer/input installation
 and user teardown failures release acquired resources while preserving the first
 error. No player or Define modules are loaded by generic App.
+
+App wraps both generic and custom roots with TextLayoutScope. Each valid OSD
+environment has its own AssMeasure session and AssTextLayout cache. OSD/font changes
+and `App:refresh_text_layout()` replace the environment and dispose the old session;
+the default font is explicitly shared with AssCanvas. A failed native request disables
+further requests in that layout until replacement. Initial invalid OSD uses estimates.
+Shutdown/partial initialization release text IDs; failed removals retain ownership
+for an explicit refresh or repeated shutdown cleanup retry. Further refreshes use
+estimates until that removal succeeds, keeping hidden ID ownership bounded. Presenter IDs stay separate.
 
 The player package comes from `player/init.lua`; the host adds get_snapshot/on_update.
 Framework, player and Define catalogs use static export descriptors. Host registers

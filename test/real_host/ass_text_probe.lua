@@ -39,6 +39,12 @@ local estimate = AssTextLayout()
 ---@return string
 local function encode(request, anchor, x, y)
     local style = TextStyle(request.style)
+    -- Deliberately retain the old fs0 diagnostic. Production suppresses fs0;
+    -- this probe explicitly asks libass what that raw override means.
+    local zero_font = style.font_size == 0
+    if zero_font then
+        style = style:copy_with({ font_size = 1 })
+    end
     if request.environment_font then
         style = style:copy_with({ font_family = mp.get_property('osd-font') })
     end
@@ -51,6 +57,12 @@ local function encode(request, anchor, x, y)
     end
     canvas:draw_text(paragraph, Offset(x, y), TextPaint({ anchor = anchor }))
     local event = assert(canvas.events[1])
+    if zero_font then
+        event = event:gsub('\\fs1', '\\fs0', 1)
+    end
+    if request.soft_wrap then
+        event = event:gsub('\\q2', '\\q0', 1)
+    end
     if not request.soft_wrap then
         event = event:gsub('}', '\\q2}', 1)
     end

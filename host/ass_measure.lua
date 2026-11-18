@@ -1,7 +1,7 @@
 -- This file is part of elxosc and is released under the terms of the MIT license.
 -- Copyright (C) 2026 ErloneAlpha
 
--- Explicit host utility; the application frame loop does not load this module.
+-- Raw host utility used by owned App text sessions and explicit tooling.
 ---@namespace elxosc
 ---@using elxosc
 ---@using elxosc.host

@@ -133,14 +133,14 @@ F.test('basic widgets never require Material sources or collectors', function()
     F.eq(#offenders, 0, 'widgets Material imports: ' .. table.concat(offenders, '; '))
 end)
 
-F.test('explicit ASS measurement is not loaded by production runtime modules', function()
+F.test('ASS measurement stays in host and offline sample builders stay out of runtime', function()
     local offenders = {}
     for _, path in ipairs(files) do
         if is_framework(path) or path:match('/host/') or path:match('/main%.lua$') then
             local content = read_file(path) or ''
             for line in (content .. '\n'):gmatch('([^\n]*)\n') do
                 local code = line:gsub('%-%-.*$', '')
-                if code:find("require%s*%(?%s*[\"']host%.ass_measure[\"']")
+                if (is_framework(path) and code:find("require%s*%(?%s*[\"']host%.ass_measure[\"']"))
                     or code:find("require%s*%(?%s*[\"']tools%.ass_measure_samples[\"']") then
                     -- The explicit real-host driver is a test entry, not runtime.
                     if not path:match('/test/') then

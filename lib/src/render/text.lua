@@ -34,6 +34,7 @@ local M = {}
 ---@field text string
 ---@field style TextStyle
 ---@field text_layout TextLayout?
+---@field text_layout_generation integer
 ---@field paragraph Paragraph?
 ---@field text_paint TextPaint
 ---@field color_override Color?
@@ -53,6 +54,7 @@ function RenderText:__init(text, style, measurer, text_paint)
     self.text = text
     self.style = style
     self.text_layout = measurer
+    self.text_layout_generation = 0
     self.text_paint = text_paint_mod.resolve(text_paint)
     self.color_override = nil
     self.shadow_color_override = nil

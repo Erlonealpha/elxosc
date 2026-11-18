@@ -11,6 +11,10 @@ other sources directly; they do not load collectors, Material, player or Define.
 - Layout wrappers, Text, CustomPaint, Icon, GestureDetector, Provider, Visibility,
   Overlay and Navigator are basic widgets. Display/DefaultTextStyle belong to
   `ambient.lua`; design Theme belongs to Material.
+- `ambient.TextLayoutScope({layout, generation, child})` supplies tree-local text
+  measurement. Text prefers its explicit text_layout, then the nearest scope, then
+  the offline module default. Replacing layout/generation reuses RenderText and
+  invalidates its layout; Tooltip drops its paragraph on the same change.
 - HoverText uses GestureDetector and RenderText setters. Hover/press/leave change
   foreground/glow without rebuilding, measuring text or invalidating layout.
 - Tooltip owns hover, measurement, anchoring and preview hooks. PlayerTooltip

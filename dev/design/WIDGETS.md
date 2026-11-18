@@ -44,6 +44,12 @@ Offstage/Visibility 的 paint/input 生命周期不随 AutoHide 迁出而改变�
 
 ## Widget 不可变
 
+`TextLayoutScope({layout, generation, child})`位于基础ambient模块，提供最近树作用域的
+文本服务。Text显式text_layout优先；否则监听scope的layout identity及generation，
+最后回落无宿主资源的module default。更新scope沿正常Inherited/build流程重新布局，
+不替换可复用的RenderText。Tooltip在dependency更新时丢弃旧paragraph并请求paint；
+其文本准备当前仍在paint，局部准备和帧内合并属于后续消费者能力。
+
 Widget 是轻量描述，不负责 lib/src/layout/paint，也不在 mount 后修改自己的 child 或
 options。构造器应复制/规范化 caller options；运行时变化放进 State 或 RenderObject
 的明确 setter。

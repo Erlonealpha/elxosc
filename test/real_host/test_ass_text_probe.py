@@ -135,7 +135,7 @@ def check_metrics(report):
     raster_tolerance = 2 * report['res_scale']
     for name, result in metrics.items():
         request = samples[name]['request']
-        if result is None or request.get('clip') or name == 'effect' or name == 'spacing--30':
+        if result is None or request.get('clip') or request.get('soft_wrap') or name == 'effect' or name == 'spacing--30':
             continue
         tolerance = raster_tolerance / request.get('scale', 1)
         assert result['width'] >= 0 and result['disagreement'] <= tolerance, (name, result)
@@ -147,10 +147,12 @@ def check_metrics(report):
     assert metrics['wide']['width'] > metrics['narrow']['width']
     assert abs(metrics['combining']['width'] - metrics['precomposed']['width']) <= raster_tolerance
     assert metrics['long'] is None
+    assert r'\q0' in samples['soft-wrap']['safe_pair']['left']['data']
     # Clipping may leave a consistent pair: exclude it explicitly instead of relying on disagreement alone.
     assert abs(metrics['clipped']['width'] - metrics['latin']['width']) > raster_tolerance
     assert metrics['space'] is None and metrics['spaces'] is None
-    assert metrics['nbsp-leading']['width'] > metrics['leading']['width']
+    assert abs(metrics['nbsp-leading']['width'] - metrics['leading']['width']) <= raster_tolerance
+    assert metrics['leading']['width'] > metrics['a']['width']
     # Compare exact-count blank prefixes, avoiding multiplication of a quantized single-space result.
     blank_one = metrics['one-space-fence']['width'] - metrics['no-space-fence']['width']
     blank_three = metrics['space-fence']['width'] - metrics['no-space-fence']['width']

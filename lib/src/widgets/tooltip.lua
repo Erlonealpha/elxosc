@@ -18,6 +18,7 @@ local custom_paint_mod = require 'src.widgets.custom_paint'
 local stack_mod = require 'src.widgets.stack'
 local positioned_mod = require 'src.widgets.positioned'
 local text_layout_mod = require 'src.text.text_layout'
+local ambient_mod = require 'src.widgets.ambient'
 local text_paint_mod = require 'src.painting.text_paint'
 local anchor_mod = require 'src.foundation.anchor'
 
@@ -137,6 +138,8 @@ end
 ---@field _paragraph Paragraph?
 ---@field _paragraph_label string?
 ---@field _paragraph_style TextStyle?
+---@field _text_layout TextLayout?
+---@field _text_generation integer?
 ---@field _hover_enabled boolean
 ---@overload fun(): self
 local TooltipState = std.class.new('TooltipState', State)
@@ -147,6 +150,18 @@ function TooltipState:init_state()
     self.hover_point = nil
     self._hover_enabled = true
     self:refresh_hover_visibility()
+end
+
+function TooltipState:did_change_dependencies()
+    local scope = ambient_mod.TextLayoutScope.maybe_of(assert(self.context))
+    local layout = scope and scope.layout or text_layout_mod.get_default()
+    local generation = scope and scope.generation or 0
+    if not rawequal(self._text_layout, layout) or self._text_generation ~= generation then
+        self._text_layout = layout
+        self._text_generation = generation
+        self._paragraph = nil
+        self:_invalidate_paint()
+    end
 end
 
 -- Upper layers can cancel hover resources without changing child input capture.
@@ -219,7 +234,7 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
         end
         if self._paragraph == nil or self._paragraph_label ~= label
             or self._paragraph_style ~= widget.style then
-            local measurer = text_layout_mod.get_default()
+            local measurer = self._text_layout or text_layout_mod.get_default()
             if measurer == nil then
                 return
             end

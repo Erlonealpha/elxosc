@@ -13,7 +13,8 @@ Source modules load as `src.text.*`; the host-independent collector is
 - `text_layout.lua` — measurement/layout contract with shared wrapping behavior.
 
 `Paragraph.size` is natural content size; `RenderText.size` is the constrained layout
-box. ASS measurement is an estimate supplied by `backends/ass_text_layout.lua`, so
-ink bounds and baseline precision are not silently promised.
+box. ASS measurement uses an injected host positioning span with an explicit offline
+estimate fallback. Neither result promises ink bounds or baseline precision. The module
+default carries no host resources; Widget consumers prefer the nearest TextLayoutScope.
 
 See [rendering](../../../dev/design/RENDERING.md).

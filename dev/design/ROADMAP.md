@@ -6,11 +6,11 @@
 
 ## 文本布局与质量
 
-当前 ASS 文本布局使用估算宽度；独立 `AssMeasure` 返回宿主 image bounds，尚未接入
-生产 `AssTextLayout`。接入需要先区分逻辑 advance、ink bounds、绘制效果及裁剪，明确
-字体/viewport/resolution 变化、错误回退、测量资源生命周期和有界缓存失效。
+当前ASS单行布局已有注入式宿主定位跨度、环境替换和有界缓存，离线/不可靠结果退估算。
+Tooltip仍需将临时测量移出paint，播放器内容盒与hitbox仍需在预分配区域内收缩；
+整行跨度不等于逻辑advance或ink bounds，复杂script的独立字体参考仍未提供。
 
-后续文本能力包括稳定的整行宽度、baseline/ascent/descent、逐行定位、多行布局、
+后续文本能力包括baseline/ascent/descent、逐行定位、多行布局、
 fallback 与复杂 script 边界。Tooltip 和播放器标题/时间/metadata 的布局应复用文本
 合同；不能用 ASS 图像矩形包装出未经验证的精确文字度量。相关边界见
 [RENDERING.md](RENDERING.md) 和 [HOST.md](HOST.md#通用-ass-测量)。

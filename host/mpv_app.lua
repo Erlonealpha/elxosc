@@ -33,6 +33,7 @@ local app_widgets = require 'src.widgets.app'
 local ambient_mod = require 'src.widgets.ambient'
 local mpv_input = require 'host.mpv_input'
 local mpv_primitives = require 'host.mpv_primitives'
+local ass_measure_mod = require 'host.ass_measure'
 
 local Constraints = constraints_mod.Constraints
 local Rect = geometry.Rect
@@ -43,6 +44,8 @@ local AssTextLayout = ass_text_layout.AssTextLayout
 local WidgetsBinding = binding_mod.WidgetsBinding
 local WidgetsApp = app_widgets.WidgetsApp
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
+local TextLayoutScope = ambient_mod.TextLayoutScope
+local AssMeasure = ass_measure_mod.AssMeasure
 local MpInput = mpv_input.MpInput
 local MpFrameClock = mpv_primitives.MpFrameClock
 local AssPresenter = mpv_primitives.AssPresenter
@@ -86,12 +89,19 @@ local M = {}
 ---@field _root_wrapper (fun(root: Widget, display: DisplaySnapshot): Widget)?
 ---@field _activity_callback (fun(app: App, x: number?, y: number?, viewport: Rect?))?
 ---@field _dispose_callback fun()?
+---@field text_layout AssTextLayout
+---@field text_layout_generation integer
+---@field private _text_sessions AssMeasure[]
+---@field private _text_font string?
+---@field default_text_style TextStyle?
 ---@overload fun(root_widget: Widget, options?: _AppOptions): self
 local App = std.class.new('App')
 
 function App:__init(root_widget, options)
     self._shutdown = false
     self._property_callbacks = {}
+    self._text_sessions = {}
+    self.text_layout_generation = 0
     self._dispose_callback = options and options.on_dispose
     local ok, err = pcall(self._initialize, self, root_widget, options)
     if not ok then
@@ -127,8 +137,12 @@ function App:_initialize(root_widget, options)
     end
     self.scheduler:add_persistent(self._render_callback)
 
-    -- the engine stand-in: `RenderText` falls back to this measurer
-    text_layout.set_default(AssTextLayout())
+    -- Only an offline measurer may live in the module default. Each attached
+    -- tree receives its own service, including custom player root wrappers.
+    if text_layout.get_default() == nil then
+        text_layout.set_default(AssTextLayout())
+    end
+    self.text_layout = AssTextLayout()
 
     self.binding = self.widgets_binding:attach(
         self:_wrap_root(self.root_widget), self.owner, self.scheduler)
@@ -239,14 +253,76 @@ end
 ---@param root_widget Widget
 ---@return Widget
 function App:_wrap_root(root_widget)
+    local content
     if self._root_wrapper then
-        return self._root_wrapper(root_widget, self.display_snapshot)
+        content = self._root_wrapper(root_widget, self.display_snapshot)
+    else
+        content = WidgetsApp({
+            display = self.display_snapshot,
+            default_text_style = self.default_text_style,
+            child = root_widget,
+        })
     end
-    return WidgetsApp({
-        display = self.display_snapshot,
-        default_text_style = self.default_text_style,
-        child = root_widget,
+    return TextLayoutScope({
+        layout = self.text_layout,
+        generation = self.text_layout_generation,
+        child = content,
     })
+end
+
+--- Retries pending removals without dropping ownership of a failed ID.
+---@return string?
+function App:_dispose_text_sessions()
+    local pending = {}
+    local failure
+    for _, session in ipairs(self._text_sessions) do
+        local ok, _removed, err = pcall(session.dispose, session)
+        if not ok or err ~= nil then
+            pending[#pending + 1] = session
+            failure = failure or tostring(ok and err or _removed)
+        end
+    end
+    self._text_sessions = pending
+    return failure
+end
+
+--- Explicit recovery for a failed native session; no per-frame retries.
+function App:refresh_text_layout()
+    if self._shutdown then
+        return
+    end
+    local cleanup_error = self:_dispose_text_sessions()
+    local width, height = mp.get_osd_size()
+    local family = mp.get_property_native('osd-font')
+    self._text_font = type(family) == 'string' and family or nil
+    self.canvas.default_font_family = self._text_font
+    ---@type _AssTextLayoutOptions
+    local options = { default_font_family = self._text_font }
+    if width > 0 and height > 0 then
+        if cleanup_error then
+            -- A failed removal must not accumulate one hidden ID per resize.
+            options.res_x = math.floor(width)
+            options.res_y = math.floor(height)
+            options.measure_ass = function()
+                return nil, cleanup_error, 'error'
+            end
+        else
+            local session = AssMeasure({ res_x = width, res_y = height })
+            self._text_sessions[#self._text_sessions + 1] = session
+            options.measure_ass = function(data)
+                local raw, err, kind = session:measure(data)
+                return raw --[[@as AssTextRawBounds?]], err, kind
+            end
+            options.res_x = session.res_x
+            options.res_y = session.res_y
+        end
+    end
+    self.text_layout = AssTextLayout(options)
+    self.text_layout_generation = self.text_layout_generation + 1
+    if self.binding then
+        self.binding:set_root_widget(self:_wrap_root(self.root_widget))
+        self:request_frame()
+    end
 end
 
 --- Force a redraw (e.g. after mutating the tree by hand).
@@ -293,8 +369,14 @@ function App:_observe()
     local estimated_fps_callback = function()
         self:_update_delay()
     end
-    local names = { 'osd-dimensions', 'display-fps', 'estimated-display-fps' }
-    local callbacks = { dimensions_callback, display_fps_callback, estimated_fps_callback }
+    local font_callback = function()
+        local family = mp.get_property_native('osd-font')
+        if family ~= self._text_font then
+            self:refresh_text_layout()
+        end
+    end
+    local names = { 'osd-dimensions', 'display-fps', 'estimated-display-fps', 'osd-font' }
+    local callbacks = { dimensions_callback, display_fps_callback, estimated_fps_callback, font_callback }
     for index, callback in ipairs(callbacks) do
         self._property_callbacks[#self._property_callbacks + 1] = callback
         mp.observe_property(assert(names[index]), 'native', callback)
@@ -307,6 +389,10 @@ end
 
 function App:shutdown()
     if self._shutdown then
+        local err = self:_dispose_text_sessions()
+        if err then
+            error(err, 0)
+        end
         return false
     end
     self._shutdown = true
@@ -367,6 +453,13 @@ function App:shutdown()
             self.presenter:remove()
         end)
     end
+    release(function()
+        local err = self:_dispose_text_sessions()
+        self.text_layout = AssTextLayout()
+        if err then
+            error(err, 0)
+        end
+    end)
     if failure then
         error(failure, 0)
     end
@@ -379,6 +472,11 @@ function App:_update_display()
     end
     local width, height = mp.get_osd_size()
     if width <= 0 or height <= 0 then
+        if self.display.initialized then
+            self.display.initialized = false
+            self.display_snapshot = DisplaySnapshot({ width = 0, height = 0, initialized = false })
+            self:refresh_text_layout()
+        end
         return
     end
     self.display.width, self.display.height = width, height
@@ -391,9 +489,7 @@ function App:_update_display()
             height = height,
             initialized = true,
         })
-        if self.binding then
-            self.binding:set_root_widget(self:_wrap_root(self.root_widget))
-        end
+        self:refresh_text_layout()
     end
     -- The root gets tight constraints (Flutter's `RenderView` forces the
     -- application's child to exactly fill the viewport), which is what makes

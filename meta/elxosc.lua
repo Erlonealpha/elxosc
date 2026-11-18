@@ -101,6 +101,7 @@
 ---@field ['widgets.visibility'] mod.src.widgets.visibility
 ---@field ['widgets.widgets_binding'] mod.src.widgets.widgets_binding
 ---@field ['backends.ass_canvas'] mod.src.backends.ass_canvas
+---@field ['backends.ass_text'] mod.src.backends.ass_text
 ---@field ['backends.ass_text_layout'] mod.src.backends.ass_text_layout
 ---@field ['backends.record'] mod.src.backends.record
 ---@field ['material.button'] mod.src.material.button
@@ -254,6 +255,7 @@ local Builtins = {}
 ---@overload fun(name: 'widgets.visibility'): mod.src.widgets.visibility
 ---@overload fun(name: 'widgets.widgets_binding'): mod.src.widgets.widgets_binding
 ---@overload fun(name: 'backends.ass_canvas'): mod.src.backends.ass_canvas
+---@overload fun(name: 'backends.ass_text'): mod.src.backends.ass_text
 ---@overload fun(name: 'backends.ass_text_layout'): mod.src.backends.ass_text_layout
 ---@overload fun(name: 'backends.record'): mod.src.backends.record
 ---@overload fun(name: 'material.button'): mod.src.material.button

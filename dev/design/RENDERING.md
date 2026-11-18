@@ -74,6 +74,23 @@ composition 不因 attached owner scope 增加而复制。
 
 ## ASS 后端边界
 
+### 文本测量服务
+
+`TextLayoutScope`提供树作用域的TextLayout及环境generation；Text的显式text_layout
+优先于最近scope，模块default只用于无宿主资源的离线回退。环境替换沿Inherited依赖
+重新布局，RenderObject继续复用；Tooltip同时失效旧paragraph。
+
+ASS布局器通过注入measure_ass函数取得整行左右anchor的同侧坐标差分，返回与ASS
+定位一致的自然跨度，不把image bbox宽高当成font advance/baseline。两差分的差不得
+超过2逻辑px，测量模板无clip/effect且bounds位于实际OSD内部；越界、未知空白或不可靠
+结果退估算。空串/字号0无需native，纯space/NBSP使用具体数量的marker差分。
+测绘共用shape与escape编码，保留边界space，显式禁用ASS自动软换行；逻辑行高仍独立。
+
+`AssTextLayout:measure_line`返回width/source/reason，source为native/estimate/empty；
+line_width保留number接口。LRU按等价shape值缓存，默认512项、256KiB原文与key字节，
+不含color/glow/align/line_height/约束。故障停止该环境的native请求，环境替换可恢复。
+不同App拥有独立服务与cache；cache_stats提供统计副本，不改变布局结果。
+
 ASS Canvas 将矩阵变换降低为静态事件：路径坐标经过平移/缩放，文本使用
 `\fscx`/`\fscy`，裁剪在最终逻辑坐标中求交。只接受有限正缩放；旋转、倾斜、
 零/负缩放和任意仿射布局不能静默近似。

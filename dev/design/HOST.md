@@ -44,11 +44,18 @@ protected names、loader scope、fresh description before mount 和资源清理�
 保持可测试和可复用：
 
 - `Canvas`：输出绘制原语；当前由 `AssCanvas` 和 `RecordCanvas` 实现。
-- `TextLayout`：提供后端文本测量；当前由 `AssTextLayout` 估算。
+- `TextLayout`：提供后端文本测量；AssTextLayout使用注入的宿主跨度及显式估算回退。
 - `FrameClock`：请求并触发帧；mpv 实现按显示刷新率限流。
 - 输入值对象：宿主把鼠标/按键转换为 `PointerEvent` 和局部坐标。
 
 ## App 帧循环
+
+App拥有独立的隐藏AssMeasure session，按实际正OSD尺寸创建，不能借Presenter ID。
+osd-font/尺寸变化及显式refresh_text_layout替换session、布局器和TextLayoutScope
+generation，释放旧ID；无有效viewport保持离线估算。默认字体显式传入测绘编码。
+native故障不在每帧重试，环境变化或显式刷新恢复；shutdown及部分初始化失败释放
+自有测量资源。删除失败保留待清理session，显式刷新/再次shutdown可以重试。
+删除持续失败时不继续创建ID，使用估算直到清理成功，资源保留量保持有界。
 
 `host.mpv_app.App` 是唯一的 host lifecycle owner。它获取共享的 `WidgetsBinding`
 composition，再为自己的 tree 创建独立 PipelineOwner/BuildOwner、Scheduler、AssCanvas
@@ -181,8 +188,8 @@ import 返回无值，require/import_as 返回包；其他环境注入不作静�
 
 ### 通用 ASS 测量
 
-`host.ass_measure.AssMeasure({res_x, res_y})` 是显式调用的通用宿主工具，不由 App、Widget
-或帧循环加载。分辨率在初始化验证并向下取整一次，必须为有限正数且取整后至少为 1；
+`host.ass_measure.AssMeasure({res_x, res_y})` 是通用宿主工具；App管理文本测量实例，工具
+可显式创建独立实例。Widget仅消费注入的TextLayout。分辨率在初始化验证并向下取整一次，必须为有限正数且取整后至少为 1；
 实例持有一个 mpv allocator-owned 隐藏 compute_bounds overlay，分辨率固定。它不使用
 生产 presenter 的 overlay ID，也不把结果写回 TextLayout/RenderObject。
 

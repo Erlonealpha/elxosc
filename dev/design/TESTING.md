@@ -7,6 +7,11 @@
 
 ## 测试范围选择
 
+文本服务回归覆盖整行自然跨度、测绘同源、cache双上限、树作用域及环境失效。
+真实宿主分别验证有限字体参考、生产Text/Tooltip的环境替换、独立App测量ID与清理；
+离线测试负责缺能力/native故障、非法边界、缓存淘汰、部分初始化和删除失败重试。
+Tooltip paint准备、播放器内容命中与多行推进仍按各自消费者范围验证。
+
 代码更改必须运行完整 Lua suite 和生产 EmmyLua 检查。真实宿主测试按受影响的行为
 选择文件或用例：script loading、presentation、input、Define wiring 和 player integration
 变化需要对应 real-host；纯文档或没有相关宿主影响的更改不需要 real-host。

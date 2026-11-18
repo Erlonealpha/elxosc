@@ -31,6 +31,7 @@ local anchor_mod = require 'src.foundation.anchor'
 local text_paint_mod = require 'src.painting.text_paint'
 local text_style = require 'src.text.text_style'
 local transform_mod = require 'src.foundation.transform'
+local ass_text_mod = require 'src.backends.ass_text'
 
 local Canvas = canvas.Canvas
 local Path = path_mod.Path
@@ -136,19 +137,10 @@ local function paint_tags(paint, force_fill, opacity)
     return format('\\blur%g\\bord0\\shad0\\1c&H%s&\\1a&H%s&', blur, rgb, alpha)
 end
 
---- Escape literal text so it cannot open an ASS override block. Mirrors what
---- mpv's own OSD does: prefix `{` with `\`, and break `\` with a word joiner.
----@param text string
----@return string
-local function escape_text(text)
-    text = text:gsub('\\', '\\\226\128\128')
-    text = text:gsub('{', '\\{')
-    return text
-end
-
 ---@class AssCanvas : Canvas
 ---@field events string[] one ASS `Text` line per drawing call
 ---@field subpixel integer `\p` level (4 = 8x sub-pixel, the assdraw default)
+---@field default_font_family string? resolved by the owning host
 ---@overload fun(subpixel: integer?): self
 local AssCanvas = std.class.new('AssCanvas', Canvas)
 
@@ -159,6 +151,7 @@ function AssCanvas:__init(subpixel)
     self._matrix = Matrix2D.identity()
     self._clip = nil
     self._opacity = 1
+    self.default_font_family = nil
 end
 
 --- Drop everything produced so far (start of a frame).
@@ -358,6 +351,9 @@ end
 ---@param text_paint TextPaint?
 function AssCanvas:draw_text(paragraph, position, text_paint)
     local style = paragraph.style
+    if style.font_size == 0 or paragraph:is_empty() then
+        return
+    end
     text_paint = text_paint_mod.resolve(text_paint)
     local visual_offset = text_paint.offset
     local x, y = self:_apply(position.x + visual_offset.x, position.y + visual_offset.y)
@@ -376,21 +372,10 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     end
     local tags = {
         format(
-            '{\\pos(%d,%d)\\rDefault\\an%d\\blur%g\\fs%g',
-            ri(x), ri(y), ass_anchor, style.blur_radius, style.font_size),
+            '{\\pos(%d,%d)\\rDefault\\an%d\\blur%g',
+            ri(x), ri(y), ass_anchor, style.blur_radius),
+        ass_text_mod.shape_tags(style, self.default_font_family),
     }
-    if style.font_family then
-        tags[#tags + 1] = '\\fn' .. style.font_family
-    end
-    if style.bold then
-        tags[#tags + 1] = '\\b1'
-    end
-    if style.italic then
-        tags[#tags + 1] = '\\i1'
-    end
-    if style.letter_spacing ~= 0 then
-        tags[#tags + 1] = format('\\fsp%g', style.letter_spacing)
-    end
     tags[#tags + 1] = '\\1c&H' .. M.ass_rgb(style.color) .. '&'
     tags[#tags + 1] = '\\1a&H' .. ass_alpha_with_opacity(style.color, self._opacity) .. '&'
     tags[#tags + 1] = format('\\bord%g', style.outline_width)
@@ -426,10 +411,10 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
         local r
         for _, line in ipairs(paragraph.lines) do
             if r == nil then
-                r = escape_text(line)
+                r = ass_text_mod.escape_line(line)
             else
                 -- Paragraph.line_height is a logical advance; \N uses libass font metrics.
-                r = r .. '\\N' .. escape_text(line)
+                r = r .. '\\N' .. ass_text_mod.escape_line(line)
             end
         end
         return r

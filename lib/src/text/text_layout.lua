@@ -24,9 +24,8 @@ local max = math.max
 ---@class mod.src.text.text_layout
 local M = {}
 
--- The engine stand-in: a single ambient measurer, like the engine's paragraph
--- builder in Flutter. Hosts install one (`AssTextLayout` in mpv); widgets that
--- need text measurement fall back to it.
+-- Offline fallback for manual render trees. Production Widgets resolve their
+-- TextLayoutScope first; host-owned native resources never belong here.
 ---@type TextLayout?
 local default_layout = nil
 
