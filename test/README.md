@@ -21,6 +21,12 @@ production clock/scheduler/app phases, compares per-frame ASS/input/Tooltip/acti
 and verifies resource and process cleanup. The real-host scope is this one file;
 it does not use the physical mouse or replace native binding tests. Driver CLI and
 measurement limits are documented in [tools/README.md](../tools/README.md#hover-probes).
+`test_hover_profiler.lua` covers nested/recursive scope accounting, multiple returns,
+exceptions, bounded capacity and hook restoration. `test_hover_measure.py` checks
+separate modes against validation and rejects unknown native replay requests.
+Direct-pointer hosts use `quiet=True`; window-minimized and focus retention are
+checked independently of raster/behavior parity. Visible input fixtures can retain
+`quiet=False`.
 
 ```sh
 cd scripts/elxosc

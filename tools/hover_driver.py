@@ -35,9 +35,14 @@ def read_report(path):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
-def run_lua(scene, frames, directory, timeout):
+def run_lua(scene, frames, directory, timeout, options=None):
     output = directory / f'lua-{scene}.json'
-    subprocess.run([executable('luajit'), 'tools/hover_driver_lua.lua', scene, str(frames), str(output)],
+    arguments = [executable('luajit'), 'tools/hover_driver_lua.lua', scene, str(frames), str(output)]
+    if options:
+        config = directory / 'options-lua.json'
+        config.write_text(json.dumps(options), encoding='utf-8')
+        arguments.append(str(config))
+    subprocess.run(arguments,
                    cwd=ROOT, check=True, timeout=timeout, capture_output=True, text=True)
     return read_report(output)
 
@@ -52,15 +57,22 @@ def wait_property(client, process, log, name, timeout):
         except AssertionError:
             value = None
         if value:
+            if name.endswith('-ready'):
+                host_helpers.settle_quiet_host(client, process)
             return value
         time.sleep(.02)
     raise TimeoutError(f'hover driver timed out waiting for {name}')
 
 
-def run_host(client, process, log, scene, frames, directory, timeout):
+def run_host(client, process, log, scene, frames, directory, timeout, options=None):
     output = directory / f'host-{scene}.json'
     client.command('set_property', 'user-data/elxosc-hover-driver-result', '', timeout=timeout)
-    client.command('script-message', 'elxosc-hover-driver', scene, str(frames), str(output), timeout=timeout)
+    config = ''
+    if options:
+        config_path = directory / 'options-host.json'
+        config_path.write_text(json.dumps(options), encoding='utf-8')
+        config = str(config_path)
+    client.command('script-message', 'elxosc-hover-driver', scene, str(frames), str(output), '', config, timeout=timeout)
     value = wait_property(client, process, log, 'user-data/elxosc-hover-driver-result', timeout)
     if value != 'ok':
         raise RuntimeError(value)
@@ -112,6 +124,7 @@ def compare(lua, host):
     if final_ass and (not isinstance(raw, dict) or raw.get('x1', 0) <= raw.get('x0', 0)
                            or raw.get('y1', 0) <= raw.get('y0', 0)):
         raise ValueError('real-host raster bounds missing')
+    # The Lua encoder serializes an empty raw bounds table as an empty array.
     if not final_ass and raw not in ({}, []):
         raise ValueError('empty frame produced nonempty raster bounds')
     return {'equivalent': True, 'frames': len(lua['frames']),
@@ -127,12 +140,16 @@ def source_manifest():
     for path in sorted((ROOT / 'tools').glob('hover_driver*')):
         if path.is_file():
             sources[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for name in ('tools/hover_profiler.lua', 'tools/hover_measure.py', 'tools/benchmark_support.lua'):
+        sources[name] = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
     for name in ('test/real_host/hover_driver.lua', 'test/real_host/conftest.py', 'test/real_host/lifecycle.py',
                  'test/support.lua', 'test/dependency.lua'):
         sources[name] = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
     dependency = {}
     for path in sorted((ROOT.parent / 'elxlib/elxlibs').rglob('*.lua')):
         dependency[path.relative_to(ROOT.parent / 'elxlib').as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for name in ('init.lua', 'version.lua'):
+        dependency[name] = hashlib.sha256((ROOT.parent / 'elxlib' / name).read_bytes()).hexdigest()
     revision = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, check=True, capture_output=True, text=True)
     dependency_commit = subprocess.run(['git', '-c', f'safe.directory={(ROOT.parent / "elxlib").as_posix()}',
                                        'rev-parse', 'HEAD'], cwd=ROOT.parent / 'elxlib', check=True,
@@ -154,7 +171,7 @@ def run(scenes, frames, adapter, timeout):
                 raise RuntimeError('real host unavailable')
             with host_helpers._running_host(directory, (
                     f'--script={ROOT / "test/real_host/hover_driver.lua"}', '--force-window=yes',
-                    '--geometry=1280x720', '--osd-level=0', f'--osd-fonts-dir={ROOT / "lib/fonts"}')) as (client, _, process, log):
+                    '--geometry=1280x720', '--osd-level=0', f'--osd-fonts-dir={ROOT / "lib/fonts"}'), quiet=True) as (client, _, process, log):
                 wait_property(client, process, log, 'user-data/elxosc-hover-driver-ready', timeout)
                 for scene in scenes:
                     host = validate(run_host(client, process, log, scene, frames, directory, timeout))

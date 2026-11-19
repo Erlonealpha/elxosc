@@ -2,6 +2,7 @@
 ---@namespace elxosc.tools.hover
 
 local M = {}
+local wall = require 'tools.benchmark_support'
 local active = false
 
 ---@class HoverBoundary
@@ -16,6 +17,10 @@ local active = false
 ---@field overlays table<integer, boolean>
 ---@field counts table<string, integer>
 ---@field original table<string, function>
+---@field native_requests table[]
+---@field native_seconds number[]
+---@field replay_index integer
+---@field replay_error string?
 ---@field restore fun()
 ---@field emit fun(self: HoverBoundary): boolean
 ---@field resources fun(self: HoverBoundary): table<string, integer>
@@ -39,15 +44,18 @@ end
 ---@param mp table
 ---@param real_host boolean
 ---@return HoverBoundary
-function M.install(mp, real_host)
+function M.install(mp, real_host, options)
     assert(not active, 'hover boundary is already active')
     active = true
+    options = options or {}
     local original, slots = {}, {}
     local boundary = {
         time = 0, width = 1280, height = 720, font = 'Arial',
         timers = {}, observers = {}, events = {}, sections = {}, overlays = {},
         counts = { requested = 0, emitted = 0, updates = 0, removed = 0, estimate_requests = 0 },
         original = original,
+        native_requests = {}, replay_index = 0,
+        native_seconds = {},
         restore = function() end,
         emit = function() return false end,
         resources = function() return {} end,
@@ -64,6 +72,9 @@ function M.install(mp, real_host)
         active = false
     end
     replace('get_time', function()
+        if options.paced and not options.executing then
+            return original.get_time()
+        end
         return boundary.time
     end)
     replace('get_osd_size', function()
@@ -138,6 +149,25 @@ function M.install(mp, real_host)
     replace('command_native', function(command)
         if command._name == 'osd-overlay' and command.compute_bounds then
             boundary.counts.estimate_requests = boundary.counts.estimate_requests + 1
+            local request = { data = command.data, res_x = command.res_x, res_y = command.res_y }
+            if options.text_mode == 'record' then
+                assert(real_host, 'native record requires real host')
+                local started = wall.now()
+                local raw, err = original.command_native(command)
+                boundary.native_seconds[#boundary.native_seconds + 1] = wall.now() - started
+                boundary.native_requests[#boundary.native_requests + 1] = { request = request,
+                    raw = raw, error = err }
+                return raw, err
+            elseif options.text_mode == 'replay' then
+                boundary.replay_index = boundary.replay_index + 1
+                local record = options.corpus[boundary.replay_index]
+                if not (record and record.request.data == request.data
+                    and record.request.res_x == request.res_x and record.request.res_y == request.res_y) then
+                    boundary.replay_error = 'native replay request mismatch at ' .. boundary.replay_index
+                    error(boundary.replay_error)
+                end
+                return record.raw, record.error
+            end
             return nil, 'hover estimate-pair boundary'
         end
         if command._name == 'osd-overlay' and command.format == 'none' then

@@ -117,15 +117,16 @@ state updates, burst, clean frames, nested data, viewport/font replacement and
 preview capability/leave. The two adapters share composition, state, event order
 and logical frames. Both encode ASS; only the host submits real overlays and runs
 an independent final `compute_bounds`. Both use the same estimate fallback at the
-measurement boundary. Native text request record/replay and paced visible frames
-are separate follow-up capabilities. Logical 240Hz timestamps are not measured FPS.
+measurement boundary. `hover_measure.py --native-pair` separately checks native
+text request record/replay and paced raster checkpoints. Visible frames remain
+unobserved. Logical 240Hz timestamps are not measured FPS.
 
-This command publishes behavior evidence, without performance timings: per-frame
+The default validation command publishes behavior evidence: per-frame
 ASS, ordered regions, hit paths/local points, dispatch/capture, player snapshots,
 Tooltip/prepared text and actual draw positions/rows, preview actions, dirty/build/
 layout/prepare/paint/present counts and enabled sections. It checks pointer/state/
 requested timer conservation and compares normalized outputs. Heavy oracle work
-is deliberately outside any future timed mode. CLI reports contain source/trace/
+is outside service timers, and measurement modes omit per-frame oracle work. CLI reports contain source/trace/
 behavior/font hashes and runtime identity; dependencies changing during a run fail.
 
 Native mouse/media observers and key callbacks are isolated only in the staged
@@ -140,8 +141,74 @@ oracle preserves this existing ordering.
 owned overlay IDs are checked after shutdown; boundary slots and instance hooks
 are restored on failure. The fixture exits via owned process cleanup. `--host` or
 `ELXOSC_MPV_BINARY` selects the executable; local defaults come from `project.conf`.
+Direct-pointer hosts opt into fixture `quiet=True`: minimize the video window,
+disable focus-on-open, and keep logs in a file. Windows launches no console.
+Real VO/ASS/libass remain active; this is not `vo=null` or an offscreen estimate.
+The factory retains `quiet=False` for mouse/keyboard/screenshots/visual inspection.
+After script readiness, the fixture checks stable minimization and handles startup
+activation only for owned windows. It restores the previous foreground only if
+the test window still holds focus, preserving a user switch to another window.
 Use `test/test_hover_driver.py` and `test/real_host/test_hover_driver_real.py` for
 the related behavior/timeout/real renderer regressions.
+
+`hover_measure.py` runs the same driver in separate `baseline`, `phase`,
+`class-count`, `table-sites`, `sample-function`, `sample-line`, `gc`, and `gc-off`
+processes. It compares their actual pointer/state/frame/paint/prepare/submit work
+and final ASS against independent validation passes. Class and selected table-site
+counts must also match between adapters. Baseline omits deep instrumentation;
+every mode retains the small driver counters and timer-dispatch boundary cost.
+
+```text
+uv run --group test python tools/hover_measure.py --scenes paused-ms playing --frames 256 --warmup 64 --rounds 3 --native-pair --output tmp/hover-measure.json
+uv run --group test python tools/hover_measure.py --scenes environment preview --frames 64 --warmup 16 --rounds 3 --modes baseline phase table-sites --output tmp/hover-environment.json
+```
+
+`--data-entries 4|32|128` fixes metadata/chapter/track/cache pressure; `--burst-moves
+1|4|16` fixes moves per frame, and `--environment-scale` adds scale replacement.
+Variants are recorded in the trace and compared separately from the defaults.
+
+Warmup replays the same scene with a monotonic logical-time offset. `service`
+includes frame-outside state copy/notification, activity and dispatch, then any
+requested Scheduler frame. Nested phase records contain calls, frame/batch IDs,
+inclusive/exclusive durations and mean/p50/p95/p99/max. `layout` contains `prepare`,
+`regions` contains navigation, and state contains Store notification. Their tail
+percentiles cannot be added. Phase wrappers include clock, pcall and return-table
+cost; separate mode ratios describe observed overhead plus natural JIT/GC noise,
+without subtracting an empty-function constant or claiming negative overhead.
+
+Class mode counts the default `object.__new` entry once per actual runtime class,
+with constructor definition and stage, after warmup and before final oracle/GC/
+export/cleanup. It does not count every inherited `__init` as another instance.
+Custom `__new` paths and name/definition collisions require renewed coverage audit
+when dependencies change. It does not measure physical allocator bytes or exact
+constructor self time; function/line samples provide separate class-call evidence.
+
+Table mode loads checked source markers in four modules through fresh-process
+preloads; production files remain untouched. Sites distinguish table/record
+creation, field writes, node/clip visits, child-array-return calls and repeated
+dirty propagation. A multichild array-return call returns an existing array.
+Coverage names/categories and original source hashes are recorded; absent sites
+do not establish zero global table allocation. Marker mismatches fail explicitly.
+
+Sampling uses 10ms function or line intervals, at most 2048 stack keys, and records
+sample/VM-state/overflow counts. A sparse stack is a clue, not a precise call-time
+ranking. GC controls independently record starting/ending heap and heap after two
+full collections; GC-off is bounded by the trace. Retained heap still contains the
+live App, caches, JIT metadata and profiler structures, not just production objects.
+
+`--native-pair` records full ASS measurement requests/bounds/errors from a real
+host and strictly replays them in Lua; native durations are separate. It also runs
+a paced trace with three independent raster checkpoints after yielding execution
+to mpv. Waiting, checkpoints and final raster work are outside the service timer;
+the minimized window's actual visible frames and scanout remain unobserved.
+
+Each adapter/runtime gets its own at least-three-round report, baseline range and
+pre-candidate noise gate; cross-runtime subtraction is not a libass measurement.
+Every completed scene is additionally saved as `.partial.json`, explicitly marked
+partial. Failure output is `status:error`, never a successful zero-cost result.
+Reports and mode keys/calls are bounded; all hosts use quiet owned cleanup. Source
+and dependency hashes are checked before/after each complete run. The related
+regressions are `test_hover_profiler.lua` and `test_hover_measure.py`.
 
 `benchmark_player_hover.lua` investigates the offline Lua path;
 `benchmark_real_player_hover.py` and `player_hover_probe.lua` measure real-player

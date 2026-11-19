@@ -145,9 +145,16 @@ peer 验证请求、clear 和恢复，不代表外部解码图像的像素验收
 共享hover行为工具用相同scene/直接PointerEvent与逻辑时间，推进生产MpFrameClock /
 Scheduler / App管线。仅Lua记录外部边界，real-host提交真实ASS并独立验证最终栅格bounds；
 原生mouse/media observers及key callback只在隔离工具中屏蔽。它核对实际帧、prepared文字/
-绘制位置、输入路径/区域/动作及owned cleanup，不发布性能计时，也不代替真实绑定路由。
-estimate-pair保证两端相同宽度回退；native请求回放、paced可见帧与阶段/类/表采样为独立
-测量模式。逻辑240Hz和batch更新次数不能称屏幕FPS；工具用法见tools README。
+绘制位置、输入路径/区域/动作及owned cleanup，也不代替真实绑定路由。计时、类计数、
+选定表创建/访问、function/line采样与GC控制独立运行，计时轮不执行重oracle。
+estimate-pair保证两端相同宽度回退；native请求在measure_ass边界严格record/replay，未知/
+剩余请求失败。paced模式让出真实宿主执行机会并检查选定frame的bounds，可见帧/scanout
+仍为未观测。phase计时包括探针开销；inclusive/exclusive记录与baseline轮分别解释。
+逻辑240Hz和batch更新次数不能称屏幕FPS，source事件/heap净增长不等于物理分配。
+
+不依赖真实鼠标的host工具优先使用quiet fixture（最小化、不抢焦点、Windows无console），
+保持真实VO/ASS/libass。需要窗口输入/截图/人工视觉时显式用可见配置；quiet结果与可见
+窗口测量环境分别记录，不能将最小化的呈现行为推断为桌面实际可见帧。工具用法见tools README。
 
 真实 libass bounds 证明 ASS 可被宿主接收，并给出 renderer image rectangle；它不等于
 精确 glyph ink、逻辑 advance、baseline/ascent/descent 或光学居中。

@@ -16,6 +16,57 @@ import pytest
 from lifecycle import OwnedProcess
 
 
+def _settle_quiet_windows(process, previous_foreground):
+    """Minimize only owned windows and undo mpv.net's startup activation."""
+    if os.name != 'nt':
+        return
+    from ctypes import wintypes
+    from window_input import _descendants
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.GetForegroundWindow.restype = wintypes.HWND
+    user.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user.IsWindow.argtypes = [wintypes.HWND]
+    user.SetForegroundWindow.argtypes = [wintypes.HWND]
+    owned = _descendants(process.pid)
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def minimize(hwnd, _):
+        pid = wintypes.DWORD()
+        user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in owned:
+            user.ShowWindow(hwnd, 7)  # SW_SHOWMINNOACTIVE
+        return True
+
+    foreground = user.GetForegroundWindow()
+    pid = wintypes.DWORD()
+    user.GetWindowThreadProcessId(foreground, ctypes.byref(pid))
+    user.EnumWindows(callback_type(minimize), 0)
+    # Do not override a user switch to another window during startup.
+    if pid.value in owned and previous_foreground and user.IsWindow(previous_foreground):
+        user.SetForegroundWindow(previous_foreground)
+
+
+def settle_quiet_host(client, process):
+    """Call after the script is ready, when the video window has been created."""
+    if not getattr(process, '_quiet_host', False):
+        return
+    client.command('set_property', 'window-minimized', True, timeout=1)
+    deadline = time.monotonic() + 2
+    stable_since = None
+    while time.monotonic() < deadline:
+        _settle_quiet_windows(process, process._previous_foreground)
+        if client.command('get_property', 'window-minimized', timeout=1) is True:
+            stable_since = stable_since or time.monotonic()
+            if time.monotonic() - stable_since >= .25:
+                return
+        else:
+            stable_since = None
+            client.command('set_property', 'window-minimized', True, timeout=1)
+        time.sleep(.05)
+    raise RuntimeError('quiet host window did not remain minimized')
+
+
 ELXOSC_SOURCE_DIRS = ('lib', 'host', 'player', 'define')
 
 # Top-level runtime modules `main.lua` requires next to the package dirs.
@@ -163,7 +214,7 @@ class IpcClient:
 
 
 @contextmanager
-def _running_host(tmp_path, extra_args=()):
+def _running_host(tmp_path, extra_args=(), *, quiet=False):
     executable = find_host()
     if not executable:
         pytest.skip("no mpvnet.com/mpv executable available (ELXOSC_MPV_BINARY may override)")
@@ -214,7 +265,8 @@ def _running_host(tmp_path, extra_args=()):
                 if script.name == "hover_driver.lua":
                     tools = staged_elxosc / "tools"
                     tools.mkdir()
-                    for name in ('hover_driver.lua', 'hover_driver_scene.lua', 'hover_driver_boundary.lua'):
+                    for name in ('hover_driver.lua', 'hover_driver_scene.lua', 'hover_driver_boundary.lua',
+                                 'hover_profiler.lua', 'benchmark_support.lua'):
                         shutil.copy2(source_elxosc / 'tools' / name, tools / name)
                 if script.name in {"ass_measure.lua", "ass_measure_benchmark.lua"}:
                     samples = staged_elxosc / "tools" / "ass_measure_samples.lua"
@@ -247,6 +299,20 @@ def _running_host(tmp_path, extra_args=()):
     else:
         address = str(tmp_path / "ipc.sock")
     log = tmp_path / "host.log"
+    previous_foreground = None
+    launch_options = {}
+    if os.name == 'nt':
+        # Logs already go to host.log; a console window has no test purpose.
+        launch_options['creationflags'] = subprocess.CREATE_NO_WINDOW
+        if quiet:
+            ctypes.windll.user32.GetForegroundWindow.restype = ctypes.c_void_p
+            previous_foreground = ctypes.windll.user32.GetForegroundWindow()
+            startup = subprocess.STARTUPINFO()
+            startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startup.wShowWindow = 7  # SW_SHOWMINNOACTIVE: preserve VO, avoid focus.
+            launch_options['startupinfo'] = startup
+    if quiet:
+        staged_args.extend(('--window-minimized=yes', '--focus-on-open=no'))
     with log.open("wb") as output:
         process = subprocess.Popen(
             # Built-in OSC is independent of --load-scripts and can claim mouse
@@ -255,8 +321,11 @@ def _running_host(tmp_path, extra_args=()):
              f"--input-ipc-server={address}", *staged_args],
             stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT,
             start_new_session=(os.name != "nt"),
+            **launch_options,
         )
         owned = OwnedProcess(process)
+        process._quiet_host = quiet
+        process._previous_foreground = previous_foreground
         client = IpcClient(address)
         try:
             deadline = time.monotonic() + 10
@@ -272,6 +341,8 @@ def _running_host(tmp_path, extra_args=()):
                 pytest.fail(f"host IPC did not become available; log: {log.read_text(errors='replace')[-2000:]}")
             if process.poll() is not None:
                 pytest.fail(f"host exited ({process.returncode}); log: {log.read_text(errors='replace')[-2000:]}")
+            if quiet:
+                _settle_quiet_windows(process, previous_foreground)
             yield client, config, process, log
         finally:
             owned.cleanup(lambda: client.command("quit", timeout=2), timeout=5)
@@ -286,6 +357,6 @@ def real_host(tmp_path):
 @pytest.fixture
 def real_host_factory(tmp_path):
     """Start an isolated host with extra command-line options when needed."""
-    def start(*extra_args):
-        return _running_host(tmp_path, extra_args)
+    def start(*extra_args, quiet=False):
+        return _running_host(tmp_path, extra_args, quiet=quiet)
     return start

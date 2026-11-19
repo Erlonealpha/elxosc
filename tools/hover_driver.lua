@@ -3,6 +3,8 @@
 ---@using elxosc
 local boundary_mod = require 'tools.hover_driver_boundary'
 local scene_mod = require 'tools.hover_driver_scene'
+local profiler_mod = require 'tools.hover_profiler'
+local timing = require 'tools.benchmark_support'
 local std = require 'elxlibs.std'
 local json = require 'elxlibs.json'
 local geometry = require 'src.foundation.geometry'
@@ -49,6 +51,19 @@ local function set_visible(element, visible)
     end
 end
 
+local function root_with_scale(root, scale)
+    local app_options, main_options = {}, {}
+    for key, value in pairs(rawget(root, '__dict')) do
+        app_options[key] = value
+    end
+    for key, value in pairs(rawget(root.main, '__dict')) do
+        main_options[key] = value
+    end
+    main_options.scale = scale
+    app_options.main = root.main.__class(main_options)
+    return root.__class(app_options)
+end
+
 local function snapshot(app, actions, dispatch, stats)
     local paths, regions, labels = {}, {}, {}
     tree_paths(assert(app.owner.root), paths, 'root')
@@ -75,8 +90,18 @@ end
 ---@param options table? injected failures are only for driver lifecycle tests
 ---@return table
 function M.run(mp, name, frames, real_host, options)
-    local trace = scene_mod.build(name, frames)
-    local boundary = boundary_mod.install(mp, real_host == true)
+    options = options or {}
+    local mode = options.mode or 'validation'
+    local allowed = { validation = true, baseline = true, phase = true, ['class-count'] = true,
+        ['table-sites'] = true, ['sample-function'] = true, ['sample-line'] = true, gc = true, ['gc-off'] = true }
+    if not allowed[mode] then
+        error('unknown hover measurement mode')
+    end
+    local validation = mode == 'validation'
+    local profiler = profiler_mod.new(mode)
+    local scene_options = options.trace_options or {}
+    local trace = scene_mod.build(name, frames, scene_options)
+    local boundary = boundary_mod.install(mp, real_host == true, options)
     local app
     local report = {}
     local restore_hooks = function()
@@ -86,7 +111,9 @@ function M.run(mp, name, frames, real_host, options)
     local actions, action_total = {}, 0
     local function action(kind, ...)
         action_total = action_total + 1
-        actions[#actions + 1] = { kind = kind, values = { ... } }
+        if validation then
+            actions[#actions + 1] = { kind = kind, values = { ... } }
+        end
     end
     local ok, err = pcall(function()
         -- Load only after the scoped mp boundary is installed.
@@ -152,11 +179,13 @@ function M.run(mp, name, frames, real_host, options)
         local canvas_hooks = app.canvas --[[@as table]]
         local draw_text = canvas_hooks.draw_text
         canvas_hooks.draw_text = function(canvas, paragraph, position, text_paint)
-            stats.text_draws[#stats.text_draws + 1] = {
-                text = paragraph.text, position = { position.x, position.y }, anchor = text_paint and text_paint.anchor,
-                size = { paragraph.size.width, paragraph.size.height }, lines = paragraph.lines,
-                line_metrics = paragraph.line_metrics,
-            }
+            if validation then
+                stats.text_draws[#stats.text_draws + 1] = {
+                    text = paragraph.text, position = { position.x, position.y }, anchor = text_paint and text_paint.anchor,
+                    size = { paragraph.size.width, paragraph.size.height }, lines = paragraph.lines,
+                    line_metrics = paragraph.line_metrics,
+                }
+            end
             return draw_text(canvas, paragraph, position, text_paint)
         end
         restore_hooks = function()
@@ -172,6 +201,76 @@ function M.run(mp, name, frames, real_host, options)
         end
         app.scheduler:add_persistent(frame_callback)
         assert(boundary:emit(), 'initial scheduled production frame missing')
+        if mode == 'phase' or mode == 'class-count' then
+            profiler:wrap(app_hooks, 'notify_activity', 'activity')
+            profiler:wrap(app_hooks, 'render', 'frame')
+            profiler:wrap(app.binding --[[@as table]], 'flush_build', 'build')
+            profiler:wrap(owner_hooks, 'layout', 'layout')
+            profiler:wrap(owner_hooks, 'flush_prepare', 'prepare')
+            profiler:wrap(app.input --[[@as table]], 'update_regions', 'regions')
+            profiler:wrap(app.input --[[@as table]], '_sync_navigation', 'navigation')
+            profiler:wrap(owner_hooks, 'dispatch_pointer_result', 'dispatch')
+            profiler:wrap(owner_hooks, 'paint', 'paint')
+            profiler:wrap(app.presenter --[[@as table]], 'present', 'present')
+            profiler:wrap(store --[[@as table]], 'replace', 'store_notify')
+        end
+        local function perform_step(step, offset)
+            boundary.time = offset + step.time
+            if step.environment then
+                boundary.width, boundary.height, boundary.font = step.environment.width,
+                    step.environment.height, step.environment.font
+                app:_update_display()
+                if step.environment.scale then
+                    app:set_root_widget(root_with_scale(app.root_widget, step.environment.scale))
+                end
+            end
+            if step.state then
+                profiler.stage = 'state'
+                profiler.batch_id = profiler.batch_id + 1
+                local scope = profiler:enter('state')
+                store:replace(store:get():copy(step.state))
+                profiler:leave(scope)
+            end
+            if step.visible ~= nil then
+                set_visible(app.binding.root_element, step.visible)
+            end
+            local dispatch = validation and {} or nil
+            for _, point in ipairs(step.moves) do
+                profiler.stage = 'activity'
+                app:notify_activity(point.x, point.y, geometry.Rect.from_ltwh(0, 0, boundary.width, boundary.height))
+                local position = geometry.Offset(point.x, point.y)
+                local path
+                if validation then
+                    path = {}
+                    local paths = {}
+                    tree_paths(assert(owner_hooks.root), paths, 'root')
+                    for _, entry in ipairs(owner_hooks:pointer_path(position)) do
+                        path[#path + 1] = { path = paths[entry.node], point = { entry.point.x, entry.point.y } }
+                    end
+                end
+                profiler.stage = 'dispatch'
+                local result = owner_hooks:dispatch_pointer_result(PointerEvent('move', position, nil,
+                    { source = 'mouse', pointer_id = 1, timestamp = boundary.time, buttons = {} }))
+                if validation then
+                    local results = assert(dispatch)
+                    results[#results + 1] = { result = result, hit_path = path }
+                end
+                app:request_frame()
+            end
+            if options.fail_at == step.seq then
+                error('injected hover driver failure')
+            end
+            profiler.stage = 'frame'
+            boundary:emit()
+            return dispatch
+        end
+        local warmup = options.warmup or 0
+        assert(warmup >= 0 and warmup <= 128 and warmup == math.floor(warmup), 'warmup out of range')
+        local warmup_trace = scene_mod.build(name, warmup, scene_options)
+        for _, step in ipairs(warmup_trace.steps) do
+            perform_step(step, 0)
+        end
+        local offset = warmup_trace.steps[warmup] and warmup_trace.steps[warmup].time or 0
         local pending_initial = boundary:resources().timers
         stats.frame, stats.paint, stats.present, stats.updates, stats.prepare = 0, 0, 0, 0, 0
         stats.dirty_build, stats.dirty_layout = 0, 0
@@ -180,51 +279,80 @@ function M.run(mp, name, frames, real_host, options)
         actions = {}
         local initial_actions = action_total
         local outputs, state_batches, pointer_events = {}, 0, 0
+        local elapsed_values = {}
+        local heap_start = collectgarbage('count')
+        if mode == 'gc' then
+            collectgarbage('collect')
+            heap_start = collectgarbage('count')
+        elseif mode == 'gc-off' then
+            collectgarbage('stop')
+        end
+        profiler:start()
+        if options.sites then
+            options.sites.active = true
+        end
+        local service_total = 0
         for _, step in ipairs(trace.steps) do
-            stats.text_draws = {}
-            boundary.time = step.time
-            if step.environment then
-                boundary.width, boundary.height, boundary.font = step.environment.width,
-                    step.environment.height, step.environment.font
-                app:_update_display()
+            if validation then
+                stats.text_draws = {}
             end
+            profiler.frame_id = step.seq
+            local started = timing.now()
+            local scope = profiler:enter('service')
+            local dispatch = perform_step(step, offset)
+            profiler:leave(scope)
+            local elapsed = timing.now() - started
+            service_total = service_total + elapsed
+            elapsed_values[#elapsed_values + 1] = elapsed
             if step.state then
-                store:replace(store:get():copy(step.state))
                 state_batches = state_batches + 1
             end
-            if step.visible ~= nil then
-                set_visible(app.binding.root_element, step.visible)
-            end
-            local dispatch = {}
-            for _, point in ipairs(step.moves) do
-                app:notify_activity(point.x, point.y, geometry.Rect.from_ltwh(0, 0, boundary.width, boundary.height))
-                local position = geometry.Offset(point.x, point.y)
-                local path, paths = {}, {}
-                tree_paths(assert(owner_hooks.root), paths, 'root')
-                for _, entry in ipairs(owner_hooks:pointer_path(position)) do
-                    path[#path + 1] = { path = paths[entry.node], point = { entry.point.x, entry.point.y } }
+            pointer_events = pointer_events + #step.moves
+            if validation then
+                stats.sections = {}
+                for section, enabled in pairs(boundary.sections) do
+                    stats.sections[section] = enabled
                 end
-                local result = owner_hooks:dispatch_pointer_result(PointerEvent('move',
-                    position, nil, { source = 'mouse', pointer_id = 1,
-                        timestamp = step.time, buttons = {} }))
-                dispatch[#dispatch + 1] = { result = result, hit_path = path }
-                app:request_frame()
-                pointer_events = pointer_events + 1
+                local current_actions = actions
+                actions = {}
+                outputs[#outputs + 1] = snapshot(app, current_actions, dispatch, stats)
             end
-            if options and options.fail_at == step.seq then
-                error('injected hover driver failure')
+            if options.paced then
+                profiler.active = false
+                coroutine.yield()
+                if options.checkpoint and (step.seq == 1 or step.seq == math.ceil(frames / 2) or step.seq == frames) then
+                    options.checkpoint(canvas_hooks:text(), boundary.width, boundary.height, step.seq, boundary.original)
+                end
+                profiler.active = true
             end
-            boundary:emit()
-            stats.sections = {}
-            for section, enabled in pairs(boundary.sections) do
-                stats.sections[section] = enabled
-            end
-            local current_actions = actions
-            actions = {}
-            outputs[#outputs + 1] = snapshot(app, current_actions, dispatch, stats)
         end
-        report = { schema_version = 1, purpose = 'behavior validation; no performance timing',
+        if options.sites then
+            options.sites.active = false
+            profiler.sites = options.sites.counts
+            profiler.site_coverage = options.sites.coverage
+        end
+        profiler:stop()
+        local heap_end = collectgarbage('count')
+        if mode == 'gc-off' then
+            collectgarbage('restart')
+        end
+        collectgarbage('collect')
+        collectgarbage('collect')
+        local heap_retained = collectgarbage('count')
+        if not validation then
+            outputs[1] = snapshot(app, {}, {}, stats)
+        end
+        if options.text_mode == 'replay' then
+            assert(not boundary.replay_error, boundary.replay_error)
+            assert(boundary.replay_index == #options.corpus, 'native replay corpus has unused requests')
+        end
+        report = { schema_version = 1, purpose = validation and 'behavior validation' or 'instrumented service measurement',
             trace = trace, frames = outputs, pointer_events = pointer_events, state_batches = state_batches,
+            mode = mode, warmup = warmup, profiling = profiler:report(), service = profiler_mod.distribution(elapsed_values),
+            service_total_seconds = service_total, heap = { start_kib = heap_start, end_kib = heap_end,
+                retained_kib = heap_retained, gc_control = mode },
+            native_requests = boundary.native_requests, replay_requests = boundary.replay_index,
+            native_seconds = boundary.native_seconds,
             counts = { requested = boundary.counts.requested, emitted = boundary.counts.emitted,
                 callbacks = stats.frame, paint = stats.paint, present = stats.present, updates = stats.updates,
                 prepare = stats.prepare, actions = action_total - initial_actions,
@@ -233,13 +361,21 @@ function M.run(mp, name, frames, real_host, options)
                 pending_initial = pending_initial, pending_end = boundary:resources().timers },
             runtime = jit.version, runtime_version_num = jit.version_num, jit_enabled = jit.status(),
             std_version = std.version, adapter = real_host and 'real-host' or 'lua',
-            measurement = 'estimate-pair', native_submissions = real_host == true,
+            measurement = options.text_mode or 'estimate', native_submissions = real_host == true,
             native_raster = 'not observed', visible_frames = 'not observed' }
         -- Leave belongs to cleanup, outside the recorded scene/action window.
         owner_hooks:clear_hover()
         assert(not owner_hooks:has_pointer_capture())
     end)
     local cleaned, cleanup_error = true, nil
+    if options.sites then
+        options.sites.active = false
+        options.sites:restore()
+    end
+    profiler:stop()
+    if mode == 'gc-off' then
+        collectgarbage('restart')
+    end
     if app then
         restore_hooks()
         cleaned, cleanup_error = pcall(app.shutdown, app)
