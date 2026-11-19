@@ -142,6 +142,13 @@ peer 验证请求、clear 和恢复，不代表外部解码图像的像素验收
 
 ### 文本测量与性能证据边界
 
+共享hover行为工具用相同scene/直接PointerEvent与逻辑时间，推进生产MpFrameClock /
+Scheduler / App管线。仅Lua记录外部边界，real-host提交真实ASS并独立验证最终栅格bounds；
+原生mouse/media observers及key callback只在隔离工具中屏蔽。它核对实际帧、prepared文字/
+绘制位置、输入路径/区域/动作及owned cleanup，不发布性能计时，也不代替真实绑定路由。
+estimate-pair保证两端相同宽度回退；native请求回放、paced可见帧与阶段/类/表采样为独立
+测量模式。逻辑240Hz和batch更新次数不能称屏幕FPS；工具用法见tools README。
+
 真实 libass bounds 证明 ASS 可被宿主接收，并给出 renderer image rectangle；它不等于
 精确 glyph ink、逻辑 advance、baseline/ascent/descent 或光学居中。
 ASS 文本探针结合生产编码、viewport resize、字体变化及虚拟分辨率验证定位跨度；

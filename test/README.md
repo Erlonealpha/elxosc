@@ -14,6 +14,14 @@ It starts no production App and is not a player hover benchmark.
 
 ## Running
 
+The shared direct-pointer driver has focused Lua/Python regressions in
+`test_hover_driver.lua` / `test_hover_driver.py`; the real renderer comparison is
+`real_host/test_hover_driver_real.py`. It runs the same versioned scene through
+production clock/scheduler/app phases, compares per-frame ASS/input/Tooltip/actions,
+and verifies resource and process cleanup. The real-host scope is this one file;
+it does not use the physical mouse or replace native binding tests. Driver CLI and
+measurement limits are documented in [tools/README.md](../tools/README.md#hover-probes).
+
 ```sh
 cd scripts/elxosc
 git submodule update --init --recursive

@@ -102,6 +102,47 @@ does not supply runtime text measurement or update the framework estimator.
 
 ## Hover probes
 
+`hover_driver.py` validates one shared direct-pointer workload on bare LuaJIT and
+an isolated real host. It uses the production `MpFrameClock → Scheduler → App`
+pipeline: a scoped mp boundary supplies logical time and requested timer delivery,
+without replacing Scheduler state or manually duplicating render phases.
+
+```text
+uv run --group test python tools/hover_driver.py --frames 16 --adapter both --output tmp/hover-driver.json
+uv run --group test python tools/hover_driver.py --scenes playing burst --frames 64 --adapter lua --output tmp/hover-lua.json
+```
+
+The versioned scenes cover paused fixed/varying time labels, playing/stationary
+state updates, burst, clean frames, nested data, viewport/font replacement and
+preview capability/leave. The two adapters share composition, state, event order
+and logical frames. Both encode ASS; only the host submits real overlays and runs
+an independent final `compute_bounds`. Both use the same estimate fallback at the
+measurement boundary. Native text request record/replay and paced visible frames
+are separate follow-up capabilities. Logical 240Hz timestamps are not measured FPS.
+
+This command publishes behavior evidence, without performance timings: per-frame
+ASS, ordered regions, hit paths/local points, dispatch/capture, player snapshots,
+Tooltip/prepared text and actual draw positions/rows, preview actions, dirty/build/
+layout/prepare/paint/present counts and enabled sections. It checks pointer/state/
+requested timer conservation and compares normalized outputs. Heavy oracle work
+is deliberately outside any future timed mode. CLI reports contain source/trace/
+behavior/font hashes and runtime identity; dependencies changing during a run fail.
+
+Native mouse/media observers and key callbacks are isolated only in the staged
+driver. Input section/mouse-area policy and production frame/presenter deduplication
+still run. This is not proof of native input delivery latency or key binding routing.
+State updates precede pointer dispatch and the frame build, so a capability change
+can dispatch once through the previous callback before that build clears it; the
+oracle preserves this existing ordering.
+
+`--frames` is bounded to 0–512, `--timeout` to 0.1–60 seconds, and JSON reports to
+64 MiB. Timers, observer/event registrations, active sections, root/clock state and
+owned overlay IDs are checked after shutdown; boundary slots and instance hooks
+are restored on failure. The fixture exits via owned process cleanup. `--host` or
+`ELXOSC_MPV_BINARY` selects the executable; local defaults come from `project.conf`.
+Use `test/test_hover_driver.py` and `test/real_host/test_hover_driver_real.py` for
+the related behavior/timeout/real renderer regressions.
+
 `benchmark_player_hover.lua` investigates the offline Lua path;
 `benchmark_real_player_hover.py` and `player_hover_probe.lua` measure real-player
 input through ASS submission. Run the host probe separately from input tests and
