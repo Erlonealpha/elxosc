@@ -120,3 +120,36 @@ F.test('duplicate dirty requests coalesce traversal and paint-only skips layout'
     F.eq(paints, 2, 'paint-only draws again')
     owner:dispose()
 end)
+
+F.test('dirty propagation preserves custom ancestors and unscheduled owner notifications', function()
+    local root = content()
+    local leaf = root:children()[1]
+    local owner = owner_mod.PipelineOwner(root)
+    owner:set_viewport(Constraints.loose(100, 100))
+    owner:flush_layout()
+    owner:flush_paint(RecordCanvas())
+    local requests, parent_calls = 0, 0
+    owner.on_dirty = function()
+        requests = requests + 1
+    end
+    local original = root.mark_needs_layout
+    root.mark_needs_layout = function(self)
+        parent_calls = parent_calls + 1
+        return original(self)
+    end
+    leaf:mark_needs_layout()
+    leaf:mark_needs_layout()
+    F.eq(parent_calls, 2, 'custom ancestor receives each call')
+    F.eq(requests, 2, 'already-dirty nodes still notify the owner')
+    owner:set_root(root, false)
+    F.ok(not owner:needs_layout(), 'owner may be unscheduled while root remains dirty')
+    root:mark_needs_layout()
+    F.ok(owner:needs_layout(), 'dirty root still schedules its owner')
+    local before = parent_calls
+    owner:flush_layout()
+    owner:flush_paint(RecordCanvas())
+    leaf:mark_needs_paint()
+    F.ok(owner:needs_paint() and not owner:needs_layout(), 'paint-only classification preserved')
+    F.eq(parent_calls, before, 'paint propagation does not call custom layout method')
+    owner:dispose()
+end)

@@ -139,6 +139,43 @@ F.test('inverse round-trips points and singular transforms are explicit', functi
     F.eq(Matrix2D.scale(0, 2):inverse(), nil, 'singular transform has no inverse')
 end)
 
+F.test('rectangle bounds support reflection, shear, empty and unordered corners', function()
+    F.ok(Matrix2D(-2, 1, 3, -4, 5, 6):transform_rect(Rect(-1, 2, 4, 7))
+        == Rect(3, -23, 28, 2), 'general affine bounds include all four corners')
+    F.ok(Matrix2D(-2, 1, 3, -4, 5, 6):transform_rect(Rect(4, 7, -1, 2))
+        == Rect(3, -23, 28, 2), 'unordered corners preserve bounding semantics')
+    F.ok(Matrix2D(0, 1, -1, 0, 0, 0):transform_rect(Rect(2, 3, 2, 3))
+        == Rect(-3, 2, -3, 2), 'zero-area point bounds')
+    F.ok(Matrix2D(0, 0, 0, 0, 9, -7):transform_rect(Rect(-4, 2, 6, 8))
+        == Rect(9, -7, 9, -7), 'singular forward mapping still has bounds')
+    F.ok(Matrix2D(1e100, 0, 0, -1e100, 0, 0):transform_rect(Rect(-1e100, -2e100, 3e100, 4e100))
+        == Rect(-1e200, -4e200, 3e200, 2e200), 'finite extremes retain arithmetic behavior')
+end)
+
+F.test('rectangle mapping returns independent values without editing inputs', function()
+    local matrix = Matrix2D.translation(4, 5)
+    local rect = Rect(1, 2, 3, 4)
+    local first = matrix:transform_rect(rect)
+    local second = matrix:transform_rect(rect)
+    F.ok(not rawequal(first, second) and not rawequal(first, rect), 'each result is fresh')
+    first.left = 100
+    F.ok(second == Rect(5, 7, 7, 9), 'later result does not alias earlier result')
+    F.ok(rect == Rect(1, 2, 3, 4), 'input rectangle preserved')
+    F.ok(matrix == Matrix2D.translation(4, 5), 'input matrix preserved')
+end)
+
+F.test('rectangle mapping honors a custom point transform', function()
+    local custom = Matrix2D.identity()
+    local calls = 0
+    ---@diagnostic disable-next-line: redundant-parameter
+    custom.transform_offset = function(_, point)
+        calls = calls + 1
+        return Offset(point.x * 2 + 4, point.y * 3 - 5)
+    end
+    F.ok(custom:transform_rect(Rect(1, 2, 3, 4)) == Rect(6, 1, 10, 7), 'custom mapping retained')
+    F.eq(calls, 4, 'all four corners pass through the custom transform')
+end)
+
 F.section('render: OffsetBox')
 
 F.test('offset preserves layout size and translates ASS drawing output', function()
