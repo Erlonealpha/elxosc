@@ -657,6 +657,30 @@ F.test('AutoHide keeps a modal child visible past the timeout', function()
     scheduler:dispose()
 end)
 
+F.test('AutoHide reads current visibility requests after content replacement', function()
+    local clock = ManualClock()
+    local scheduler = Scheduler(clock)
+    local controller = AutoHideController()
+    local owner, binding = mount(AutoHide({
+        controller = controller,
+        timeout = 0.1,
+        fade_duration = 0,
+        child = ModalProbe(),
+    }), scheduler)
+    local element = find_widget_element(binding.root_element, AutoHide)
+    local state = element.state
+    F.ok(state:_child_requests_visibility(), 'initial modal requests visibility')
+    local modal = find_widget_element(binding.root_element, ModalProbe)
+    modal.state.keep_auto_hide_visible = function()
+        return false
+    end
+    F.ok(not state:_child_requests_visibility(), 'live false request is not cached as true')
+    binding:set_root_widget(AutoHide({ controller = controller, timeout = 0, child = Text('new') }))
+    F.ok(not state:_child_requests_visibility(), 'removed modal cannot keep visibility')
+    binding:dispose()
+    scheduler:dispose()
+end)
+
 F.test('AutoHide drops non-maintained content only after fade completion', function()
     local clock = ManualClock()
     local scheduler = Scheduler(clock)

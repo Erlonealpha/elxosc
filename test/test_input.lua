@@ -133,6 +133,37 @@ F.test('retains the visible part of a partially clipped region', function()
     F.ok(regions[1].rect == Rect(8, 3, 10, 10), 'region is clipped to the parent')
 end)
 
+F.test('passive subtrees preserve earlier sibling regions', function()
+    local passive = box(10, 10)
+    passive.input_region_rect = function()
+        return Rect(0, 0, 10, 10)
+    end
+    passive:layout(Constraints.loose(100, 100))
+    local previous = { node = passive, rect = Rect(50, 60, 70, 80), down = true, wheel = false }
+    local output = { previous }
+    passive:collect_pointer_regions(output)
+    F.eq(#output, 1, 'earlier sibling region retained')
+    F.eq(output[1], previous, 'earlier sibling record remains untouched')
+    F.ok(previous.rect == Rect(50, 60, 70, 80), 'earlier sibling geometry remains untouched')
+end)
+
+F.test('custom region collectors retain their transform and are ancestor clipped', function()
+    local child = box(10, 10)
+    local calls = 0
+    child.collect_pointer_regions = function(self, output, mapping)
+        output = output or {}
+        calls = calls + 1
+        output[#output + 1] = { node = self, rect = mapping:transform_rect(Rect(-5, -5, 20, 20)),
+            down = true, wheel = false }
+        return output
+    end
+    local root = RenderPadding(EdgeInsets.all(2), child)
+    local regions = laid_out(root):pointer_regions()
+    F.eq(calls, 1, 'custom collector called once')
+    F.eq(#regions, 1, 'custom region retained')
+    F.ok(regions[1].rect == Rect(0, 0, 14, 14), 'custom output clipped to the ancestor bounds')
+end)
+
 F.test('maps FittedBox letterboxing and crop to hit regions', function()
     local contain = RenderFittedBox(RenderGesture(box(200, 50), {
         on_tap = function() end,

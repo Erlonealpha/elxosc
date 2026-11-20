@@ -542,6 +542,88 @@ F.test('host keyboard routing reaches the open description panel', function()
     app:shutdown()
 end)
 
+F.test('keyboard routing reads live capabilities across root replacements', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Column({ children = { Text('first'), Text('second') } }))
+    app:render()
+    local layer_state
+    ---@class KeyboardCacheProbeState : State
+    ---@field enabled boolean
+    ---@overload fun(): self
+    local ProbeState = std.class.new('KeyboardCacheProbeState', State)
+    function ProbeState:__init()
+        State.__init(self)
+        self.enabled = false
+        layer_state = self
+    end
+    function ProbeState:can_handle_key()
+        return self.enabled
+    end
+    function ProbeState:handle_key()
+        return true
+    end
+    function ProbeState:build()
+        return Text('keyboard probe')
+    end
+    ---@class KeyboardCacheProbe : StatefulWidget
+    ---@overload fun(): self
+    local Probe = std.class.new('KeyboardCacheProbe', StatefulWidget)
+    function Probe:create_state()
+        return ProbeState()
+    end
+    app:set_root_widget(Probe())
+    app:render()
+    F.ok(not app:_can_handle_key(), 'new target initially has no capability')
+    layer_state.enabled = true
+    F.ok(app:_can_handle_key(), 'live capability change needs no geometry or rebuild')
+    F.ok(app:_handle_key(KeyEvent({ key = 'ESC', type = 'press' })), 'live target handles key')
+    layer_state.enabled = false
+    F.ok(not app:_can_handle_key(), 'live capability loss releases claim')
+    app:set_root_widget(Text('replacement'))
+    app:render()
+    F.ok(not app:_can_handle_key(), 'removed State cannot keep keyboard claim')
+    app:shutdown()
+end)
+
+F.test('keyboard routing preserves reverse child priority and forward Navigator fallback', function()
+    mp_stub.reset()
+    local app = mpv_app.App(Column({ children = {
+        Navigator({ key = 'first-nav', pages = { Page({ key = 'first', builder = function() return Text('first') end }) } }),
+        Navigator({ key = 'second-nav', pages = { Page({ key = 'second', builder = function() return Text('second') end }) } }),
+    } }))
+    app:render()
+    local states = {}
+    local function collect(element)
+        if element.widget.__class == Navigator then
+            states[#states + 1] = element.state
+        end
+        for _, child in ipairs(element:element_children()) do
+            collect(child)
+        end
+    end
+    collect(app.binding.root_element)
+    F.eq(app:_navigation_state(), states[1], 'Navigator fallback retains forward preorder')
+    local called = {}
+    for index, state in ipairs(states) do
+        state.can_handle_key = function()
+            return true
+        end
+        state.handle_key = function()
+            called[#called + 1] = index
+            return index == 1
+        end
+    end
+    F.ok(app:_handle_key(KeyEvent({ key = 'ESC', type = 'press' })), 'lower target handles after false')
+    F.eq(table.concat(called, ','), '2,1', 'key targets retain reverse child order')
+    local first_widget = states[1].widget --[[@as Widget]]
+    local second_widget = states[2].widget --[[@as Widget]]
+    app:set_root_widget(Column({ children = { second_widget, first_widget } }))
+    app:render()
+    F.eq(app:_navigation_state(), states[2], 'keyed reorder retains the original State instance')
+    F.eq(app:_navigation_state().widget, second_widget, 'fallback follows the new first child')
+    app:shutdown()
+end)
+
 F.test('ModernX bottom hover policy reveals Main only in the hover zone', function()
     mp_stub.reset()
     local app = player_app.PlayerHostApp(build_test_app(Text('extension')))
