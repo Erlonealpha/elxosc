@@ -132,9 +132,14 @@ RenderOwner 不能单独证明默认绑定不穿透。交互区域的 `mbtn_left
 无 interactive area 的背景继续执行用户绑定；坐标缩放、resize、区域空隙和 capture
 需要按目标宿主验证。
 
-Windows 鼠标操作限于 fixture 拥有的窗口，结束后恢复位置。输入测试、hover benchmark
-和内存探针使用同一物理鼠标，应单独运行；通知、焦点和窗口遮挡属于实际执行记录，
-不能通过扩大测试范围掩盖，也不能把环境失败写成产品通过。
+real-host fixture默认quiet：无console、最小化、不主动获取前台。App输入回归以staged
+测试桥接向生产MpInput发送坐标和事件，逐事件确认，物理mouse observer和位置刷新只在
+staging隔离；活动、capture、dispatch和真实frame/presenter保持。原生section与key解析
+另用mpv IPC验证；直接事件不能替代默认绑定优先级证明。背景回退记录调用，不切fullscreen。
+文本resize在桌面外以非激活方式恢复自有VO窗口并等待OSD匹配，保留native/libass。
+自动用例不使用桌面鼠标。明确要求真实鼠标的工具才显式quiet=False，操作限自有窗口并
+恢复位置；这类可见工具应单独运行。通知、焦点和窗口遮挡属于实际执行记录，不能把
+环境失败写成产品通过。
 
 Demo 检查覆盖注入按钮、Page/Popup、ESC、结果和 State 保留；thumbfast 检查使用协议
 peer 验证请求、clear 和恢复，不代表外部解码图像的像素验收。自动化生命周期/路由
@@ -152,8 +157,8 @@ estimate-pair保证两端相同宽度回退；native请求在measure_ass边界�
 仍为未观测。phase计时包括探针开销；inclusive/exclusive记录与baseline轮分别解释。
 逻辑240Hz和batch更新次数不能称屏幕FPS，source事件/heap净增长不等于物理分配。
 
-不依赖真实鼠标的host工具优先使用quiet fixture（最小化、不抢焦点、Windows无console），
-保持真实VO/ASS/libass。需要窗口输入/截图/人工视觉时显式用可见配置；quiet结果与可见
+能直接发送事件的host用例使用quiet fixture（最小化或屏幕外、不抢焦点、Windows无console），
+保持真实VO/ASS/libass。需要截图/真实鼠标/人工视觉时显式用可见配置；quiet结果与可见
 窗口测量环境分别记录，不能将最小化的呈现行为推断为桌面实际可见帧。工具用法见tools README。
 
 真实 libass bounds 证明 ASS 可被宿主接收，并给出 renderer image rectangle；它不等于

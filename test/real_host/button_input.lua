@@ -20,6 +20,13 @@ local basic = require 'material'
 local count, dispatched = 0, 0
 mp.set_property('user-data/elxosc-test-clicks', '0')
 mp.set_property('user-data/elxosc-test-dispatched', '0')
+mp.set_property('user-data/elxosc-test-background-double', 'ready')
+-- Establish a native host fallback before App enables its interactive sections.
+-- mpv.net's own default mouse binding can override an input.conf-only observer.
+mp.set_key_bindings({ { 'mbtn_left_dbl', function()
+    mp.set_property('user-data/elxosc-test-background-double', 'yes')
+end } }, 'elxosc-test-background', 'force')
+mp.enable_key_bindings('elxosc-test-background', 'allow-hide-cursor')
 
 local app = app_mod.start(function()
     return layout.Column({

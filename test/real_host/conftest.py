@@ -214,7 +214,7 @@ class IpcClient:
 
 
 @contextmanager
-def _running_host(tmp_path, extra_args=(), *, quiet=False):
+def _running_host(tmp_path, extra_args=(), *, quiet=True, direct_input=False):
     executable = find_host()
     if not executable:
         pytest.skip("no mpvnet.com/mpv executable available (ELXOSC_MPV_BINARY may override)")
@@ -259,6 +259,15 @@ def _running_host(tmp_path, extra_args=(), *, quiet=False):
                                    "text_consumers.lua", "multiline_text.lua", "text_cache_endurance.lua", "hover_driver.lua"}:
                     fixture = staged_elxosc / "main.lua"
                     shutil.copy2(script, fixture)
+                if direct_input:
+                    if script.name not in ('main.lua', 'text_consumers.lua'):
+                        raise ValueError('direct input requires a supported App fixture')
+                    entry = staged_elxosc / 'main.lua'
+                    content = entry.read_text(encoding='utf-8')
+                    if content.count('local app = ') != 1:
+                        raise ValueError('staged App entry has no recognized local app')
+                    entry.write_text(content + "\nrequire('direct_input').install(app)\n", encoding='utf-8')
+                    shutil.copy2(Path(__file__).with_name('direct_input.lua'), staged_elxosc / 'direct_input.lua')
                 if script.name == "multiline_text.lua":
                     shutil.copy2(script.with_name("multiline_preview.lua"),
                                  staged_elxosc / "multiline_preview.lua")
@@ -343,6 +352,7 @@ def _running_host(tmp_path, extra_args=(), *, quiet=False):
                 pytest.fail(f"host exited ({process.returncode}); log: {log.read_text(errors='replace')[-2000:]}")
             if quiet:
                 _settle_quiet_windows(process, previous_foreground)
+                settle_quiet_host(client, process)
             yield client, config, process, log
         finally:
             owned.cleanup(lambda: client.command("quit", timeout=2), timeout=5)
@@ -357,6 +367,6 @@ def real_host(tmp_path):
 @pytest.fixture
 def real_host_factory(tmp_path):
     """Start an isolated host with extra command-line options when needed."""
-    def start(*extra_args, quiet=False):
-        return _running_host(tmp_path, extra_args, quiet=quiet)
+    def start(*extra_args, quiet=True, direct_input=False):
+        return _running_host(tmp_path, extra_args, quiet=quiet, direct_input=direct_input)
     return start

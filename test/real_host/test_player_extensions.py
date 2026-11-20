@@ -1,4 +1,4 @@
-"""Native input through both append-only bottom player control slots."""
+"""Direct production input through both append-only player control slots."""
 
 from pathlib import Path
 import time
@@ -7,11 +7,11 @@ import wave
 import pytest
 
 from test_elxosc import wait_for_property
-from window_input import WindowInput
+from direct_input import DirectInput
 
 
 @pytest.mark.real_host
-def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory, tmp_path):
+def test_left_and_right_appended_buttons_receive_direct_clicks(real_host_factory, tmp_path):
     script = Path(__file__).parents[2] / 'main.lua'
     peer = tmp_path / 'extension_buttons.lua'
     peer.write_text(
@@ -59,7 +59,7 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
         stream.setparams((1, 2, 48000, 0, 'NONE', 'not compressed'))
         stream.writeframes(bytes(48000 * 2 * 12))
     with real_host_factory(f'--script={script}', f'--scripts-append={peer}', '--force-window=yes',
-                           '--geometry=1920x1080') as (client, _, process, log):
+                           '--geometry=1920x1080', direct_input=True) as (client, _, process, log):
         wait_for_property(client, process, log, 'user-data/elxosc-demo-open', 'false')
         wait_for_property(client, process, log, 'user-data/extensions-modules', 'true')
         client.command('set_property', 'pause', True)
@@ -67,7 +67,7 @@ def test_left_and_right_appended_buttons_receive_native_clicks(real_host_factory
         wait_for_property(client, process, log, 'idle-active', False)
         dimensions = client.command('get_property', 'osd-dimensions')
         width, height = dimensions['w'], dimensions['h']
-        with WindowInput(process, client) as pointer:
+        with DirectInput(process, client) as pointer:
             y = int(height - 40 * 1.5)
             # 80px volume slider ends at 235; left controls start at 268.
             for x, property_name, expected in (

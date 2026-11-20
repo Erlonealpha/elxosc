@@ -41,8 +41,41 @@ def _descendants(root):
         owned = extended
 
 
+def owned_window_pid(process):
+    """Find the video window's process without activating it or moving input."""
+    if os.name != 'nt':
+        return process.pid
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user.IsWindowVisible.argtypes = [wintypes.HWND]
+    owned = _descendants(process.pid)
+    candidates = []
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def visit(hwnd, _):
+        pid = wintypes.DWORD()
+        user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        window_class = ctypes.create_unicode_buffer(256)
+        user.GetClassNameW(hwnd, window_class, len(window_class))
+        if pid.value in owned and user.IsWindowVisible(hwnd) and window_class.value != 'ConsoleWindowClass':
+            rect = wintypes.RECT()
+            user.GetClientRect(hwnd, ctypes.byref(rect))
+            video_class = window_class.value.startswith('WindowsForms10.Window.8') or window_class.value in ('mpv', 'mpv.exe')
+            candidates.append((video_class, (rect.right - rect.left) * (rect.bottom - rect.top), pid.value))
+        return True
+
+    user.EnumWindows(callback_type(visit), 0)
+    if not candidates:
+        raise RuntimeError('isolated host has no owned video window')
+    return max(candidates)[2]
+
+
 class WindowInput:
     def __init__(self, process, client):
+        if getattr(process, '_quiet_host', False):
+            raise RuntimeError('quiet hosts require DirectInput; desktop input is explicitly visible-only')
         self.process, self.client = process, client
         self.user = None
         self.hwnd = None
@@ -136,3 +169,72 @@ class WindowInput:
         if self.user:
             self.user.SetCursorPos(self.original_cursor.x, self.original_cursor.y)
             self.kernel.CloseHandle(self.window_process)
+
+
+def resize_owned_window(process, width, height):
+    """Resize the owned video window without moving the cursor or activating it."""
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.SetProcessDpiAwarenessContext.argtypes = [wintypes.HANDLE]
+    user.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
+    user.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user.IsWindowVisible.argtypes = [wintypes.HWND]
+    user.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+                                  ctypes.c_int, ctypes.c_int, wintypes.UINT]
+    owned = _descendants(process.pid)
+    candidates = []
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def visit(hwnd, _):
+        pid = wintypes.DWORD()
+        user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        window_class = ctypes.create_unicode_buffer(256)
+        user.GetClassNameW(hwnd, window_class, len(window_class))
+        rect = wintypes.RECT()
+        if pid.value in owned and window_class.value != 'ConsoleWindowClass':
+            user.GetClientRect(hwnd, ctypes.byref(rect))
+            area = (rect.right - rect.left) * (rect.bottom - rect.top)
+            if user.IsWindowVisible(hwnd):
+                video_class = window_class.value.startswith('WindowsForms10.Window.8') or window_class.value in ('mpv', 'mpv.exe')
+                candidates.append((video_class, area, hwnd, pid.value))
+        return True
+
+    user.EnumWindows(callback_type(visit), 0)
+    if not candidates:
+        raise RuntimeError('isolated host has no owned video window to resize')
+    _, _, hwnd, expected_pid = max(candidates)
+    pid = wintypes.DWORD()
+    user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    if pid.value != expected_pid or process.poll() is not None:
+        raise RuntimeError('resize window no longer belongs to the isolated host')
+    if getattr(process, '_quiet_host', False):
+        class Placement(ctypes.Structure):
+            _fields_ = [('length', wintypes.UINT), ('flags', wintypes.UINT),
+                       ('show', wintypes.UINT), ('min', wintypes.POINT),
+                       ('max', wintypes.POINT), ('normal', wintypes.RECT)]
+        user.GetWindowPlacement.argtypes = [wintypes.HWND, ctypes.POINTER(Placement)]
+        user.SetWindowPlacement.argtypes = [wintypes.HWND, ctypes.POINTER(Placement)]
+        placement = Placement()
+        placement.length = ctypes.sizeof(placement)
+        if not user.GetWindowPlacement(hwnd, ctypes.byref(placement)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        # Update the restore rectangle and show mode in a single operation, so
+        # no frame is first restored over the user's desktop.
+        x = user.GetSystemMetrics(76) + user.GetSystemMetrics(78) + 1024
+        y = user.GetSystemMetrics(77) + user.GetSystemMetrics(79) + 1024
+        placement.flags = 0
+        placement.show = 4  # SW_SHOWNOACTIVATE
+        placement.normal = wintypes.RECT(x, y, x + width, y + height)
+        if not user.SetWindowPlacement(hwnd, ctypes.byref(placement)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        flags = 0x14  # SWP_NOZORDER | SWP_NOACTIVATE
+    else:
+        x = y = 0
+        flags = 0x16  # SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+    if not user.SetWindowPos(hwnd, None, x, y, width, height, flags):
+        raise ctypes.WinError(ctypes.get_last_error())
+    rect = wintypes.RECT()
+    if not user.GetClientRect(hwnd, ctypes.byref(rect)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return rect.right - rect.left, rect.bottom - rect.top

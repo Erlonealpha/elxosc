@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from test_ass_text_probe import measure_tool, resize_viewport
-from window_input import WindowInput
+from direct_input import DirectInput
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -37,7 +37,7 @@ def center(rect):
 def test_player_text_regions_and_tooltip_preparation(real_host_factory):
     script = Path(__file__).with_name('text_consumers.lua')
     with real_host_factory(f'--script={script}', '--force-window=yes', '--osd-font=Arial',
-            f'--osd-fonts-dir={ROOT / "lib" / "fonts"}') as (client, _, process, log):
+            f'--osd-fonts-dir={ROOT / "lib" / "fonts"}', direct_input=True) as (client, _, process, log):
         measure_tool.wait_property(client, process, log, 'user-data/elxosc-consumers-ready', 10)
         resize_viewport(client, process, log, 1280, 720)
         initial = report(client, process, log)
@@ -45,7 +45,7 @@ def test_player_text_regions_and_tooltip_preparation(real_host_factory):
         assert initial['right']['right'] - initial['right']['left'] < 90
         desc, bounds = initial['description'], initial['description_bounds']
         assert desc['right'] - desc['left'] < bounds['right'] - bounds['left']
-        with WindowInput(process, client) as pointer:
+        with DirectInput(process, client) as pointer:
             pointer.click(int(bounds['right'] - 2), int((bounds['top'] + bounds['bottom']) / 2))
             assert not report(client, process, log)['panel_open']
             pointer.click(*center(desc))

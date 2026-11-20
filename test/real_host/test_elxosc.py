@@ -3,7 +3,7 @@
 from pathlib import Path
 import time
 import wave
-from window_input import WindowInput
+from direct_input import DirectInput
 
 import pytest
 
@@ -28,7 +28,7 @@ def wait_for_property(client, process, log, name, expected, timeout=5):
 def test_elxosc_script_loads_and_accepts_demo_message(real_host_factory):
     script = Path(__file__).parents[2] / "main.lua"
     with real_host_factory(f"--script={script}", "--force-window=yes",
-                           "--geometry=1280x720") as (client, _, process, log):
+                           "--geometry=1280x720", direct_input=True) as (client, _, process, log):
         # The command must be accepted while the script is loaded. The Lua
         # handler increments DemoState; the host remaining alive is the
         # portable observable result available through mpv IPC.
@@ -67,14 +67,14 @@ def test_define_demo_button_opens_closes_and_reopens(real_host_factory, tmp_path
         stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
         stream.writeframes(bytes(48000 * 2 * 12))
     with real_host_factory(f"--script={script}", "--force-window=yes",
-                           "--geometry=1280x720") as (client, _, process, log):
+                           "--geometry=1280x720", direct_input=True) as (client, _, process, log):
         wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
         client.command("set_property", "pause", True)
         client.command("loadfile", str(media))
         wait_for_property(client, process, log, "idle-active", False)
         dimensions = client.command("get_property", "osd-dimensions")
         width, height = dimensions["w"], dimensions["h"]
-        with WindowInput(process, client) as pointer:
+        with DirectInput(process, client) as pointer:
             x, y = int(width - 127 * 1.5), int(height - 40 * 1.5)
             pointer.move(x, y)
             deadline = time.monotonic() + 5
@@ -130,7 +130,7 @@ def test_autohide_clears_thumbfast_without_a_pointer_leave(real_host_factory, tm
         stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
         stream.writeframes(bytes(48000 * 2 * 12))
     with real_host_factory(f"--script={script}", "--force-window=yes",
-                           "--geometry=1280x720") as (client, _, process, log):
+                           "--geometry=1280x720", direct_input=True) as (client, _, process, log):
         wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
         client.command("load-script", str(peer))
         wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "ready")
@@ -141,7 +141,7 @@ def test_autohide_clears_thumbfast_without_a_pointer_leave(real_host_factory, tm
         time.sleep(0.3)
         dimensions = client.command("get_property", "osd-dimensions")
         width, height = dimensions["w"], dimensions["h"]
-        with WindowInput(process, client) as pointer:
+        with DirectInput(process, client) as pointer:
             x, y = int(width * 0.3), int(height - 100 * 1.5)
             pointer.move(x, y)
             wait_for_property(client, process, log, "user-data/elxosc-test-thumb-state", "visible")
@@ -178,7 +178,7 @@ def test_timeline_click_drag_resume_and_thumbfast_follow(real_host_factory, tmp_
         stream.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
         stream.writeframes(bytes(48000 * 2 * 60))
     with real_host_factory(f"--script={script}", "--force-window=yes",
-                           "--geometry=1280x720") as (client, _, process, log):
+                           "--geometry=1280x720", direct_input=True) as (client, _, process, log):
         wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
         client.command("load-script", str(peer))
         wait_for_property(client, process, log, "user-data/elxosc-test-thumb-time", "-1")
@@ -192,19 +192,19 @@ def test_timeline_click_drag_resume_and_thumbfast_follow(real_host_factory, tmp_
         width, height = dimensions["w"], dimensions["h"]
         left, span = 25 * 1.5, width - 50 * 1.5
         x, target_x, y = int(left + span * 0.2), int(left + span * 0.5), int(height - 100 * 1.5)
-        with WindowInput(process, client) as pointer:
+        with DirectInput(process, client) as pointer:
             pointer.move(x, y)
             time.sleep(0.3)
-            client.command("keydown", "MBTN_LEFT")
+            pointer.down()
             try:
                 time.sleep(0.2)
                 assert client.command("get_property", "pause") is False, "press alone must not pause"
             finally:
-                client.command("keyup", "MBTN_LEFT")
+                pointer.up()
             wait_for_property(client, process, log, "pause", False)
             assert 60 * 0.15 < client.command("get_property", "time-pos") < 60 * 0.3
 
-            client.command("keydown", "MBTN_LEFT")
+            assert pointer.down()['capture'], 'timeline press did not acquire capture'
             try:
                 pointer.move(target_x, y)
                 wait_for_property(client, process, log, "pause", True)
@@ -222,19 +222,19 @@ def test_timeline_click_drag_resume_and_thumbfast_follow(real_host_factory, tmp_
                     assert time.monotonic() < deadline, f"drag preview stayed at {preview}"
                     time.sleep(0.05)
             finally:
-                client.command("keyup", "MBTN_LEFT")
+                pointer.up()
             wait_for_property(client, process, log, "pause", False)
             assert abs(client.command("get_property", "time-pos") - 60 * 0.6) < 2
 
             client.command("set_property", "pause", True)
             time.sleep(0.3)
             pointer.move(x, y)
-            client.command("keydown", "MBTN_LEFT")
+            pointer.down()
             try:
                 pointer.move(int(left + span * 0.4), y)
                 time.sleep(0.3)
             finally:
-                client.command("keyup", "MBTN_LEFT")
+                pointer.up()
             wait_for_property(client, process, log, "pause", True)
             assert abs(client.command("get_property", "time-pos") - 60 * 0.4) < 1
 
@@ -254,7 +254,7 @@ def test_demo_navigation_returns_results_and_releases_escape(real_host_factory, 
         encoding="utf-8",
     )
     with real_host_factory(f"--script={script}", "--force-window=yes",
-                           "--geometry=1280x720") as (client, _, process, log):
+                           "--geometry=1280x720", direct_input=True) as (client, _, process, log):
         wait_for_property(client, process, log, "user-data/elxosc-demo-open", "false")
         client.command("script-message", "elxosc-demo-open")
         wait_for_property(client, process, log, "user-data/elxosc-demo-route", "home")

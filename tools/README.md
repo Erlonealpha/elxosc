@@ -144,7 +144,8 @@ are restored on failure. The fixture exits via owned process cleanup. `--host` o
 Direct-pointer hosts opt into fixture `quiet=True`: minimize the video window,
 disable focus-on-open, and keep logs in a file. Windows launches no console.
 Real VO/ASS/libass remain active; this is not `vo=null` or an offscreen estimate.
-The factory retains `quiet=False` for mouse/keyboard/screenshots/visual inspection.
+The fixture defaults to quiet. `quiet=False` is an explicit opt-in for physical
+mouse input, screenshots or visual inspection; keyboard IPC needs no foreground.
 After script readiness, the fixture checks stable minimization and handles startup
 activation only for owned windows. It restores the previous foreground only if
 the test window still holds focus, preserving a user switch to another window.
@@ -344,7 +345,9 @@ from the measured interval's delta. `memory_host_probe.lua` is never loaded
 by production. The old case replaces only the snapshot module, keeping all other
 code and dependencies equal; it is not a historical full-application benchmark.
 
-Run alone: these cases and real-host input tests share the physical mouse. Reports
+The memory driver uses quiet hosts and direct staged App input, with owned video
+process lookup that does not activate a window. It shares no desktop cursor.
+Run measurements alone to avoid host/CPU load contaminating timing. Reports
 retain versions, source hashes and finite samples; no user media is needed. Short
 runs can identify retained Lua objects but cannot prove absence of long-term
 native leaks. Process memory also includes decoder, GPU and libass allocations.

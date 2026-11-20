@@ -24,9 +24,11 @@ measurement limits are documented in [tools/README.md](../tools/README.md#hover-
 `test_hover_profiler.lua` covers nested/recursive scope accounting, multiple returns,
 exceptions, bounded capacity and hook restoration. `test_hover_measure.py` checks
 separate modes against validation and rejects unknown native replay requests.
-Direct-pointer hosts use `quiet=True`; window-minimized and focus retention are
-checked independently of raster/behavior parity. Visible input fixtures can retain
-`quiet=False`.
+The real-host fixture defaults to `quiet=True`; window minimization and focus
+retention are separate from raster/behavior parity. App input tests use
+`direct_input=True` and `DirectInput`, which serializes coordinates and events
+into the staged production `MpInput`, acknowledges every event and avoids the
+desktop cursor. Physical input tools must explicitly request `quiet=False`.
 
 ```sh
 cd scripts/elxosc
@@ -143,20 +145,29 @@ The suite also includes elxosc integration tests. It loads
 `main.lua`, opens the injected Demo with `elxosc-demo-open`, sends `elxosc-demo`, checks that the host remains alive, and reads
 back `osd-dimensions`. The navigation demo test opens Page/Popup routes, sends real ESC
 keypresses, checks results and retained State, then verifies that home releases ESC
-to a separate host-script binding. The button fixture also sends real mpv `mouse` commands
-through an isolated user `input.conf` to verify interactive double-click capture
-and background fullscreen passthrough. These tests are not pixel-level OSD checks.
+to a separate host-script binding. The button fixture sends real mpv `mouse`
+commands and checks interactive double-click capture against a lower native
+fallback section. The fallback records delivery without changing fullscreen.
+This retains native section selection coverage; it does not prove every user's
+input.conf precedence or desktop clicks. These tests are not pixel-level OSD checks.
 The Demo launcher test loads generated paused media and clicks the injected right
-control and Close Demo button. On Windows, cursor input is restricted to a visible
-window in the isolated process tree; it restores the cursor after the test and waits
-for Main's input sections to become active. Button edges use mpv IPC keydown/keyup
-at that native cursor position, exercising section-area selection and production
-dispatch without relying on global desktop click injection. Other hosts use mpv
-mouse/key commands. Native desktop button acceptance remains a manual check.
-The thumbfast test loads a temporary protocol peer, keeps the native pointer
+control and Close Demo button. Demo, timeline drag, extension buttons and text
+consumers send direct move/down/up events through a test-only bridge installed
+in the staged App. The bridge isolates physical mouse observers and position
+refresh, retains production activity/capture/dispatch and frame scheduling, and
+confirms down before a drag move. It adds no production input API. Native section
+and keyboard transport are independently checked; desktop acceptance remains manual.
+The thumbfast test loads a temporary protocol peer, keeps the direct pointer
 stationary over the timeline until AutoHide, checks one clear, and checks recovery
 on a new move. It verifies the production transport and lifecycle; frame geometry
 and ASS output are covered by Lua tests, without claiming external decoder pixels.
+
+Text resize selects the owned video window and sets its restore rectangle outside
+the virtual desktop with a nonactivating show mode. It waits for matching OSD
+dimensions and retains real VO/libass. This path moves no cursor; its resized
+window is offscreen instead of minimized. `WindowInput` rejects quiet processes
+before touching desktop input. Screenshots and the explicitly native mouse
+benchmark require a visible opt-in and are separate from automatic quiet tests.
 
 `test_ass_measure.py` loads the standalone measurement driver and exercises the
 host service with bundled fonts, repeat stability, custom JSON, clipping, empty

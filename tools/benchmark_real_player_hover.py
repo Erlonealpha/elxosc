@@ -156,7 +156,7 @@ def run_case(temp, media, rate, mode, playback, debug, seconds, *, warmup=1, sca
             f"--script={ROOT / 'main.lua'}", "--force-window=yes", f"--geometry={geometry}", f'--osd-font={font}',
             "--osc=no", "--vo=gpu", "--hwdec=no", "--audio=no",
             f"--script-opts=elxosc-bench-input={mode}",
-        )) as (client, config, process, log):
+        ), quiet=False) as (client, config, process, log):
             wait_property(client, process, "user-data/elxosc-demo-open", "false")
             if title:
                 client.command('set_property', 'force-media-title', title)

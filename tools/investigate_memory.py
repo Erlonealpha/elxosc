@@ -15,13 +15,15 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import nullcontext
 from pathlib import Path
 from ctypes import wintypes
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'test' / 'real_host'))
 import conftest as host_helpers
-from window_input import WindowInput
+from direct_input import DirectInput
+from window_input import owned_window_pid
 
 
 class MemoryCounters(ctypes.Structure):
@@ -99,7 +101,7 @@ def run_case(directory, media, name, seconds, warmup, interval, legacy_ref, coll
             '--script-opts=elxosc-memory-hidden=' + ('yes' if 'hidden' in name else 'no'),
             '--script-opts-append=elxosc-memory-no-present=' + ('yes' if name.endswith('no_present') else 'no'),
             '--script-opts-append=elxosc-memory-ass=' + (name.removeprefix('ass_') if name.startswith('ass_') else 'no'),
-        )) as (client, config, process, log):
+        ), direct_input=script.name == 'main.lua') as (client, config, process, log):
             client.command('loadfile', str(media))
             client.command('set_property', 'pause', False)
             deadline = time.monotonic() + 10
@@ -110,10 +112,12 @@ def run_case(directory, media, name, seconds, warmup, interval, legacy_ref, coll
             # Allow Define's initialization remount to finish before selecting
             # the visibility controller used by the measured tree.
             time.sleep(1)
-            with WindowInput(process, client) as pointer:
+            window_pid = owned_window_pid(process)
+            with (DirectInput(process, client) if script.name == 'main.lua' else nullcontext()) as pointer:
                 dimensions = client.command('get_property', 'osd-dimensions')
-                pointer.move(dimensions['w'] // 2,
-                             dimensions['h'] - 45 if 'visible' in name else dimensions['h'] // 2)
+                if pointer:
+                    pointer.move(dimensions['w'] // 2,
+                                 dimensions['h'] - 45 if 'visible' in name else dimensions['h'] // 2)
                 if 'hidden' in name:
                     client.command('script-message', 'elxosc-memory-hide')
                 time.sleep(warmup)
@@ -137,7 +141,7 @@ def run_case(directory, media, name, seconds, warmup, interval, legacy_ref, coll
                         if time.monotonic() - started > 5:
                             raise TimeoutError('Lua sample did not arrive')
                         time.sleep(0.02)
-                    value.update(memory(pointer.window_pid))
+                    value.update(memory(window_pid))
                     value['elapsed_seconds'] = time.monotonic() - start
                     samples.append(value)
                     print(json.dumps({'case': name, **value}), flush=True)

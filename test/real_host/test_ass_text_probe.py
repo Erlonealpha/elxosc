@@ -1,16 +1,14 @@
 """Capture real ASS alignment spans before adopting them as layout metrics."""
 import importlib.util
-import ctypes
 import hashlib
 import json
 import os
 import time
-from ctypes import wintypes
 from pathlib import Path
 
 import pytest
 from fontTools.ttLib import TTFont
-from window_input import WindowInput
+from window_input import resize_owned_window
 
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('text_probe_measure', ROOT / 'tools' / 'ass_measure.py')
@@ -87,15 +85,13 @@ def resize_viewport(client, process, log, width, height):
     client.command('set_property', 'fullscreen', False)
     client.command('set_property', 'window-maximized', False)
     if os.name == 'nt':
-        with WindowInput(process, client) as window:
-            pid = wintypes.DWORD()
-            window.user.GetWindowThreadProcessId(window.hwnd, ctypes.byref(pid))
-            assert pid.value == window.window_pid
-            window.user.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
-            window.user.ShowWindow(window.hwnd, 9)
-            window.user.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int,
-                ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT]
-            assert window.user.SetWindowPos(window.hwnd, None, 0, 0, width, height, 0x16)
+        expected_width, expected_height = resize_owned_window(process, width, height)
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            viewport = measure_tool.wait_viewport(client, process, 5)
+            if abs(viewport['w'] - expected_width) <= 2 and abs(viewport['h'] - expected_height) <= 2:
+                return viewport
+        raise TimeoutError('OSD dimensions did not match the resized owned video window')
     else:
         client.command('set_property', 'geometry', f'{width}x{height}')
     time.sleep(0.15)

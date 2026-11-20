@@ -48,7 +48,8 @@ local function encode(request, anchor, x, y)
     if request.environment_font then
         style = style:copy_with({ font_family = mp.get_property('osd-font') })
     end
-    local paragraph = Paragraph(request.text, style, Size(0, 0), { request.text }, style:line_height_px())
+    local text = request.text == '' and request.literal_ass and '|' or request.text
+    local paragraph = Paragraph(text, style, Size(0, 0), { text }, style:line_height_px())
     local canvas = AssCanvas()
     local scale = request.scale or 1
     canvas:scale(scale, scale)
@@ -56,7 +57,9 @@ local function encode(request, anchor, x, y)
         canvas:clip_rect(geometry.Rect.from_ltwh(x - 8, y - 32, 32, 64))
     end
     canvas:draw_text(paragraph, Offset(x, y), TextPaint({ anchor = anchor }))
-    local event = assert(canvas.events[1])
+    -- Empty diagnostic text must still carry an explicit static ASS event;
+    -- production Canvas correctly emits nothing for an empty paragraph.
+    local event = canvas.events[1] or ('{\\an5\\pos(' .. tostring(x) .. ',' .. tostring(y) .. ')}')
     if zero_font then
         event = event:gsub('\\fs1', '\\fs0', 1)
     end
