@@ -329,6 +329,43 @@ F.test('Main maps PlayerSnapshot time values into an interactive seek bar', func
     F.ok(owner.root ~= nil, 'player shell keeps one render root')
 end)
 
+F.test('Main updates time and media fields across Store replacement without losing time State', function()
+    local app_source = require 'player.src.app'
+    local layout_class = require('player.src.layout').PlayerLayout
+    local text_display = require('player.src.text_controls').PlayerTimeDisplay
+    local store = PlayerStore({ time_pos = 10, percent_pos = 10, duration = 100, pause = false,
+        media_title = 'Initial', idle_active = false })
+    local calls = {}
+    local actions = HostActions({ seek_to = function(seconds)
+        calls[#calls + 1] = { 'seek', seconds }
+    end, set_pause = function(paused)
+        calls[#calls + 1] = { 'pause', paused }
+    end })
+    local owner, binding = mount(WidgetsApp({ actions = actions,
+        child = PlayerScope({ store = store, child = app_source.DefaultApp({ auto_hide_enabled = false }) }) }))
+    local timeline = find_widget_element(binding.root_element, Timeline)
+    local display = find_widget_element(binding.root_element, text_display)
+    local display_state = display.state
+    store:replace(store:get():copy({ time_pos = 25, percent_pos = 25 }))
+    binding:flush_build()
+    owner:layout()
+    F.close(timeline.widget.progress, 0.25, 'local progress receives percent')
+    F.eq(display.widget.value, 25, 'time receives position')
+    F.eq(display.state, display_state, 'time toggle State survives')
+    store:replace(store:get():copy({ media_title = 'Next', duration = 200, pause = true }))
+    binding:flush_build()
+    owner:layout()
+    F.eq(find_widget_element(binding.root_element, layout_class).widget.title, 'Next', 'metadata is current')
+    local current_seek = timeline.widget.on_seek
+    current_seek(0.5, 'start', 'exact')
+    current_seek(0.6, 'update', 'exact')
+    current_seek(0.6, 'end', 'exact')
+    F.eq(calls[1][2], 100, 'new duration reaches new interaction')
+    F.eq(#calls, 3, 'initially paused seek never acquires playback pause')
+    binding:dispose()
+    F.eq(#store._subscriptions, 0, 'all local subscriptions detach')
+end)
+
 F.test('seek dragging pauses once, deduplicates motion and restores playback', function()
     local calls = {}
     local actions = HostActions({
