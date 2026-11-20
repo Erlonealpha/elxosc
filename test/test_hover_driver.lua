@@ -107,6 +107,25 @@ F.test('boundary rejects nested runs and cancels pending timers', function()
     F.ok(not pcall(scene.build, 'playing', 513), 'unbounded scene rejected')
 end)
 
+F.test('explicit style trace changes painted colors with the same pointer and time sequence', function()
+    local plain = scene.build('paused-ms', 8)
+    local changed = scene.build('paused-ms', 8, { style_updates = true })
+    for index = 1, 8 do
+        F.eq(changed.steps[index].time, plain.steps[index].time, 'logical clock unchanged')
+        F.eq(changed.steps[index].moves[1].x, plain.steps[index].moves[1].x, 'pointer unchanged')
+    end
+    F.eq(changed.steps[4].style_variant, 2, 'first explicit palette')
+    F.eq(changed.steps[8].style_variant, 1, 'original palette restored')
+    local report = driver.run(mp, 'paused-ms', 8, false, { trace_options = { style_updates = true } })
+    F.eq(report.pointer_events, 8, 'all pointer events retained')
+    F.eq(report.counts.callbacks, 8, 'normal production frames')
+    F.ok(report.frames[4].ass:find('&HD5E59F&', 1, true) ~= nil, 'new time color reaches ASS')
+    for _, count in pairs(report.cleanup) do
+        F.eq(count, 0, 'style trace resources released')
+    end
+    F.ok(not pcall(scene.build, 'paused-ms', 8, { style_updates = 'yes' }), 'invalid variant rejected')
+end)
+
 for _, name in ipairs(host_modules) do
     package.loaded[name] = saved_host_modules[name]
 end

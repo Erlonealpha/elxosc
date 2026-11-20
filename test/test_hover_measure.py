@@ -41,7 +41,8 @@ def test_unknown_native_replay_request_fails_without_silent_estimate(tmp_path):
 
 def test_explicit_data_burst_and_scale_variants_match_measurement(tmp_path):
     for scene, variants in [('data-pressure', {'data_entries': 32}), ('burst', {'burst_moves': 16}),
-                            ('environment', {'environment_scale': True})]:
+                            ('environment', {'environment_scale': True}),
+                            ('paused-ms', {'style_updates': True})]:
         config = {'warmup': 8, 'trace_options': variants}
         validation = tool.driver.run_lua(scene, 16, tmp_path, 20, config)
         measured = tool.driver.run_lua(scene, 16, tmp_path, 20, dict(config, mode='baseline'))

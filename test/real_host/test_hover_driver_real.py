@@ -39,6 +39,11 @@ def test_shared_hover_traces_and_resource_cleanup(real_host_factory, tmp_path):
             host = tool.run_host(client, process, log, scene, 12, tmp_path, 20)
             assert tool.compare(lua, host)['equivalent']
             assert host['native_submissions']
+        variants = {'trace_options': {'style_updates': True}}
+        lua = tool.run_lua('paused-ms', 16, tmp_path, 20, variants)
+        host = tool.run_host(client, process, log, 'paused-ms', 16, tmp_path, 20, variants)
+        assert tool.compare(lua, host)['equivalent']
+        assert host['trace']['variants']['style_updates'] is True
     assert process.poll() is not None, 'owned host should exit without manual intervention'
 
 

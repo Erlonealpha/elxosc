@@ -13,6 +13,9 @@
 消费者回归验证Tooltip同帧合并/固定label零测量、paint无native、队列取消及失败顺序，
 播放器时间/描述/文件大小内容命中、时间占位与本地toggle。真实输入用例覆盖对应区域
 点击、AutoHide/thumbfast及拖动，局部成本与整帧成本分别记录；多行推进按其支持范围验证。
+共用hover驱动的显式style_updates trace经production root更换文字颜色，保留原指针/
+时钟序列；phase模式将初始App服务的文本layout单列，区分布局调用、native测量和包含
+探针的服务成本。显式服务或环境替换后的新服务不由此instance探针覆盖，不能以缺项称零调用。
 
 代码更改必须运行完整 Lua suite 和生产 EmmyLua 检查。真实宿主测试按受影响的行为
 选择文件或用例：script loading、presentation、input、Define wiring 和 player integration

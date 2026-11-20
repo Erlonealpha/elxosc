@@ -154,6 +154,7 @@ def main(argv=None):
     parser.add_argument('--burst-moves', type=int, choices=(1, 4, 16))
     parser.add_argument('--data-entries', type=int, choices=(4, 32, 128))
     parser.add_argument('--environment-scale', action='store_true')
+    parser.add_argument('--style-updates', action='store_true')
     parser.add_argument('--host')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
@@ -165,7 +166,8 @@ def main(argv=None):
     try:
         variants = {key: value for key, value in {
             'burst_moves': args.burst_moves, 'data_entries': args.data_entries,
-            'environment_scale': args.environment_scale or None}.items() if value is not None}
+            'environment_scale': args.environment_scale or None,
+            'style_updates': args.style_updates or None}.items() if value is not None}
         report = run(args.scenes, args.modes, args.frames, args.warmup, args.rounds, args.adapter, args.timeout,
                      args.output.with_suffix('.partial.json'), variants)
         if args.native_pair:

@@ -138,6 +138,13 @@ function M.run(mp, name, frames, real_host, options)
             thumbfast_clear = function() action('clear') end })
         app = PlayerHostApp(composition.build_app(), { player_store = store, actions = host_actions,
             player_theme = PlayerThemeData({ time_ms = trace.milliseconds }), delay = 1 / 240 })
+        local style_themes
+        if scene_options.style_updates then
+            local Color = require('src.foundation.color').Color
+            style_themes = { app.player_theme, PlayerThemeData({ time_ms = trace.milliseconds,
+                title_color = Color.hex('#F4B8D8'), time_color = Color.hex('#9FE5D5'),
+                description_color = Color.hex('#AED1FF') }) }
+        end
         local app_hooks = app --[[@as table]]
         local render = app_hooks.render
         app_hooks.render = function(instance)
@@ -213,9 +220,14 @@ function M.run(mp, name, frames, real_host, options)
             profiler:wrap(owner_hooks, 'paint', 'paint')
             profiler:wrap(app.presenter --[[@as table]], 'present', 'present')
             profiler:wrap(store --[[@as table]], 'replace', 'store_notify')
+            profiler:wrap(app.text_layout --[[@as table]], 'layout', 'text_layout')
         end
         local function perform_step(step, offset)
             boundary.time = offset + step.time
+            if step.style_variant then
+                app.player_theme = assert(style_themes)[step.style_variant]
+                app:set_root_widget(app.root_widget)
+            end
             if step.environment then
                 boundary.width, boundary.height, boundary.font = step.environment.width,
                     step.environment.height, step.environment.font

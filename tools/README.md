@@ -166,6 +166,11 @@ uv run --group test python tools/hover_measure.py --scenes environment preview -
 
 `--data-entries 4|32|128` fixes metadata/chapter/track/cache pressure; `--burst-moves
 1|4|16` fixes moves per frame, and `--environment-scale` adds scale replacement.
+`--style-updates` alternates title/time/description colors every four steps through
+the production root update while keeping pointer positions and logical time unchanged.
+The phase mode also records text-layout calls on the initially active App service
+beneath build/layout/prepare. Explicit layouts and services created by environment
+replacement need separate instrumentation; an absent phase does not imply zero calls.
 Variants are recorded in the trace and compared separately from the defaults.
 
 Warmup replays the same scene with a monotonic logical-time offset. `service`

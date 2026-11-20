@@ -364,6 +364,49 @@ F.test('Store consumers receive read-only snapshot views', function()
     F.ok(store:get().metadata.enabled, 'mutable copies do not alter the store')
 end)
 
+F.test('Snapshot copy isolates nested history and exports while preserving override aliases', function()
+    local shared = { nested = { value = 1 } }
+    local original = PlayerSnapshot({ first = shared, second = shared })
+    F.ok(rawequal(original.first, original.second), 'constructor preserves input aliases')
+    local inherited = original:copy()
+    F.ok(not rawequal(inherited.first, inherited.second), 'exported fields keep their existing separate copies')
+    inherited.first.nested.value = 2
+    F.eq(original.first.nested.value, 1, 'history has independent nested data')
+    F.eq(inherited.second.nested.value, 1, 'separate exported fields are independent')
+    local override = { nested = { value = 3 } }
+    local next_snapshot = original:copy({ first = override, second = override })
+    F.ok(rawequal(next_snapshot.first, next_snapshot.second), 'override aliases survive copying')
+    override.nested.value = 4
+    F.eq(next_snapshot.first.nested.value, 3, 'caller override stays isolated')
+    local exported = next_snapshot:to_table()
+    exported.first.nested.value = 5
+    F.eq(next_snapshot.first.nested.value, 3, 'export remains independent')
+    local view = next_snapshot:readonly():copy({ label = 'copied' })
+    F.eq(view.first.nested.value, 3, 'readonly copy preserves data')
+    F.raises(function()
+        view.first.nested.value = 6
+    end, 'RuntimeError', 'readonly copy remains protected')
+end)
+
+F.test('Snapshot copy validates overrides and merged capabilities before publication', function()
+    local original = PlayerSnapshot({ capabilities = { test = { status = 'available' } } })
+    local cyclic = {}
+    cyclic.self = cyclic
+    for _, fields in ipairs({ { data = cyclic }, { data = math.huge },
+        { capabilities = { test = { status = 'invalid' } } }, { _reserved = true } }) do
+        F.raises(function()
+            original:copy(fields)
+        end, 'ValueError', 'invalid override rejected')
+    end
+    F.eq(original:capability('test').status, 'available', 'failed copy leaves history intact')
+    -- Raw snapshots retain the existing data-object API. The merged copy must
+    -- validate retained capabilities even when there is no override for them.
+    original.capabilities.test.status = 'invalid'
+    F.raises(function()
+        original:copy({ label = 'next' })
+    end, 'ValueError', 'merged retained capabilities are revalidated')
+end)
+
 F.test('PlayerSnapshot rejects invalid data at its boundary', function()
     F.raises(function()
         PlayerSnapshot('not a table' --[[@as player._PlayerSnapshotOptions]])
@@ -522,6 +565,65 @@ F.test('subscriber errors do not prevent later subscribers', function()
     store:replace({ value = 1 })
     F.eq(errors, 1, 'subscriber error is reported')
     F.eq(calls, 1, 'later subscribers still receive the update')
+end)
+
+F.test('Store compaction preserves disposal and new subscriber order during notification', function()
+    local events = {}
+    local store = PlayerStore({ value = 0 }, { on_error = function()
+        events[#events + 1] = 'error'
+    end })
+    local next_subscription
+    local last_subscription
+    local first = store:subscribe(function(snapshot)
+        events[#events + 1] = 'first:' .. snapshot.value
+        if snapshot.value == 1 then
+            next_subscription:dispose()
+            last_subscription = store:subscribe(function(current)
+                events[#events + 1] = 'added:' .. current.value
+            end)
+        end
+    end)
+    next_subscription = store:subscribe(function()
+        events[#events + 1] = 'disposed'
+    end)
+    local failing = store:subscribe(function(snapshot)
+        events[#events + 1] = 'failing:' .. snapshot.value
+        error('expected notification failure')
+    end)
+    local tail = store:subscribe(function(snapshot)
+        events[#events + 1] = 'tail:' .. snapshot.value
+    end)
+    store:replace({ value = 1 })
+    F.eq(table.concat(events, ','), 'first:1,failing:1,tail:1,error', 'new listener waits and disposed listener skips')
+    events = {}
+    store:replace({ value = 2 })
+    F.eq(table.concat(events, ','), 'first:2,failing:2,tail:2,added:2,error', 'registration order after compaction')
+    first:dispose()
+    failing:dispose()
+    tail:dispose()
+    last_subscription:dispose()
+    F.eq(#store._subscriptions, 0, 'no stale tail references')
+    F.ok(next_subscription:dispose() == false, 'disposed handle stays idempotent')
+end)
+
+F.test('Store nested replacement retains snapshot arguments and registration order without mutations', function()
+    local store = PlayerStore({ value = 0 })
+    local events = {}
+    local first = store:subscribe(function(snapshot, previous)
+        events[#events + 1] = 'first:' .. snapshot.value .. ':' .. previous.value
+        if snapshot.value == 1 then
+            store:replace({ value = 2 })
+        end
+    end)
+    local second = store:subscribe(function(snapshot, previous)
+        events[#events + 1] = 'second:' .. snapshot.value .. ':' .. previous.value
+    end)
+    store:replace({ value = 1 })
+    F.eq(table.concat(events, ','), 'first:1:0,first:2:1,second:2:1,second:1:0', 'nested and outer arguments remain distinct')
+    F.eq(store:get().value, 2, 'latest nested replacement is current')
+    first:dispose()
+    second:dispose()
+    F.eq(#store._subscriptions, 0, 'nested notifications release all handles')
 end)
 
 F.section('player context: scope lifecycle')

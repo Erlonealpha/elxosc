@@ -10,6 +10,8 @@ M.names = { 'paused-fixed', 'paused-ms', 'playing', 'stationary', 'burst', 'clea
 ---@return table
 function M.build(name, frames, options)
     options = options or {}
+    assert(options.style_updates == nil or type(options.style_updates) == 'boolean',
+        'style_updates must be a boolean')
     local known = false
     for _, candidate in ipairs(M.names) do
         known = known or name == candidate
@@ -33,6 +35,9 @@ function M.build(name, frames, options)
         end
         if playing and index % 4 == 0 then
             step.state = { time_pos = 100 + step.time, percent_pos = (100 + step.time) / 6 }
+        end
+        if options.style_updates and index % 4 == 0 then
+            step.style_variant = index % 8 == 0 and 1 or 2
         end
         if name == 'data-pressure' and step.state then
             local metadata = {}
@@ -82,7 +87,7 @@ function M.build(name, frames, options)
     return { schema_version = 1, scene_version = 1, name = name, frames = frames,
         milliseconds = name ~= 'paused-fixed', playing = playing, steps = steps,
         variants = next(options) and { burst_moves = options.burst_moves, data_entries = options.data_entries,
-            environment_scale = options.environment_scale } or nil }
+            environment_scale = options.environment_scale, style_updates = options.style_updates } or nil }
 end
 
 return M
