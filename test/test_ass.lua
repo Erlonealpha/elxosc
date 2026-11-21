@@ -41,6 +41,41 @@ F.test('converts to ASS BGR digits and inverted alpha', function()
     F.eq(ass_canvas.ass_alpha(Color.rgba255(0, 0, 0, 0x00)), 'FF', 'transparent -> FF')
 end)
 
+F.test('ASS encoding preserves byte boundaries and out-of-range format behavior', function()
+    for value = 0, 255 do
+        local sample = Color.rgba255(value, 255 - value, value % 37, value)
+        F.eq(ass_canvas.ass_rgb(sample), string.format('%02X%02X%02X', value % 37, 255 - value, value),
+            'byte components use the same BGR representation')
+        F.eq(ass_canvas.ass_alpha(sample), string.format('%02X', 255 - value), 'byte alpha representation')
+    end
+    for _, value in ipairs({ -256, -1, 256, 300, 4096 }) do
+        local sample = Color.rgba255(value, 256, -1, value)
+        F.eq(ass_canvas.ass_rgb(sample), string.format('%02X%02X%02X', -1, 256, value), 'existing wide hex format')
+        F.eq(ass_canvas.ass_alpha(sample), string.format('%02X', 255 - value), 'existing wide alpha format')
+    end
+end)
+
+F.test('ASS drawing rereads mutable color and opacity after reset and across canvases', function()
+    local sample = Color(1, 0, 0, 1)
+    local brush = Paint(sample)
+    local canvas = AssCanvas()
+    canvas:draw_rect(Rect(0, 0, 4, 4), brush)
+    F.contains(canvas:text(), '\\1c&H0000FF&\\1a&H00&', 'initial color')
+    sample.r = 0
+    sample.g = 1
+    sample.a = 0.5
+    canvas:reset()
+    canvas:opacity(0.5)
+    canvas:draw_rect(Rect(0, 0, 4, 4), brush)
+    F.contains(canvas:text(), '\\1c&H00FF00&\\1a&HBF&', 'current raw fields and scope opacity')
+    local other = AssCanvas()
+    other:draw_rect(Rect(0, 0, 4, 4), brush)
+    F.contains(other:text(), '\\1a&H7F&', 'other canvas has independent opacity')
+    canvas:reset()
+    canvas:draw_rect(Rect(0, 0, 4, 4), brush)
+    F.contains(canvas:text(), '\\1a&H7F&', 'reset keeps color and resets opacity')
+end)
+
 --== shapes ================================================================
 
 F.section('ass: shapes')
@@ -92,6 +127,29 @@ F.test('a line is lowered to a filled quad honoring the stroke width', function(
     local ev = canvas.events[1]
     F.contains(ev, '\\bord0', 'filled, not outlined')
     F.contains(ev, 'm 0 16 l 800 16 l 800 -16 l 0 -16 c', 'quad of width 4 (8x)')
+end)
+
+F.test('path drawing reads current transform, verbs and subpixel state on each call', function()
+    local canvas = AssCanvas()
+    local path = Path():move_to(1, 2):line_to(3, 4)
+    local brush = Paint(Color(1, 1, 1))
+    canvas:draw_path(path, brush)
+    F.contains(canvas.events[1], 'm 8 16 l 24 32', 'initial transform')
+    canvas:translate(10, 20)
+    canvas:scale(2, 3)
+    path:line_to(5, 6)
+    canvas.subpixel = 2
+    canvas:draw_path(path, brush)
+    F.contains(canvas.events[2], 'm 24 52 l 32 64 l 40 76', 'changed transform and path')
+    canvas:reset()
+    canvas:draw_path(path, brush)
+    F.contains(canvas.events[1], 'm 2 4 l 6 8 l 10 12', 'reset transform with retained subpixel')
+    local supplied = Path():move_to(7, 8):line_to(9, 10):verbs()
+    path.verbs = function()
+        return supplied
+    end
+    canvas:draw_path(path, brush)
+    F.contains(canvas.events[2], 'm 14 16 l 18 20', 'instance verbs override still dispatched')
 end)
 
 F.test('images are not supported by the ASS backend', function()
