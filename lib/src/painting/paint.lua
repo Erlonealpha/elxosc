@@ -10,7 +10,7 @@
 ---@namespace elxosc
 ---@using elxosc
 
-local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local color = require 'src.foundation.color'
 
 local Color = color.Color
@@ -47,7 +47,7 @@ M.StrokeJoin = {
     BEVEL = 'bevel',
 }
 
----@class Paint : std.object
+---@class Paint : dataclass.Object
 ---@field color Color
 ---@field style PaintStyle
 ---@field stroke_width number only used when `style == 'stroke'`
@@ -56,7 +56,15 @@ M.StrokeJoin = {
 ---@field antialias boolean hint for backends that support it
 ---@field blur_radius number non-negative backend-neutral blur intent
 ---@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): self
-local Paint = std.class.new('Paint')
+local Paint = dataclass.new('Paint', nil, { eq = false, repr = false })({
+    dataclass.field('color', nil),
+    dataclass.field('style', M.Style.FILL),
+    dataclass.field('stroke_width', 1),
+    dataclass.field('stroke_cap', M.StrokeCap.BUTT),
+    dataclass.field('stroke_join', M.StrokeJoin.MITER),
+    dataclass.field('antialias', true),
+    dataclass.field('blur_radius', 0),
+})
 
 function Paint:__init(color_, style, stroke_width)
     self.color = color_ or Color.argb(0xFF000000)
@@ -81,6 +89,8 @@ function Paint:copy()
     c.blur_radius = self.blur_radius
     return c
 end
+
+dataclass.finish(Paint)
 
 M.Paint = Paint
 

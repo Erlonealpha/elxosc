@@ -15,6 +15,9 @@ source/collector保持类identity，custom init/operator保持现有调用行为
 Color 使用生成初始化和通道转换器，保持现有 nil/false 默认处理；其额外位置参数
 现在报 dataclass 错误。其它已迁移基础值继续使用原 custom init 参数行为。
 
+Paint 也使用独立 dataclass。其默认 Color 每次构造，copy 保持原 Color 引用并复制
+Paint 字段；不新增冻结或深拷贝。不使用 std reflection/继承，hooks在finish前定义。
+
 框架位于 lib，player 与 Define 分别拥有媒体领域和初始化协议。通用 WidgetsApp 与
 host App 不默认加载或订阅 player。widgets 扁平组织并与 Material 分层；来源级 export、
 静态 catalog 和生产 namespace 的规则见下文。扩展类型提示见

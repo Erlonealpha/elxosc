@@ -10,6 +10,9 @@ Source modules load as `src.painting.*`; the host-independent collector is
 
 - `canvas.lua` — `Canvas` state, transform, clip, primitive, text, and image contract.
 - `paint.lua` — fill/stroke style, stroke width, cap, join, and color.
+  Paint is an independent dataclass with direct mutable fields and shared methods;
+  `copy()` returns a new Paint while retaining the supplied Color reference.
+  Default Color construction stays per instance. Type guards/subclasses use dataclass.
 - `path.lua` — path verbs and primitive lowering.
 - `text_paint.lua` — explicit text anchor and visual offset.
 

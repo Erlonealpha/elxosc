@@ -17,6 +17,20 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('Paint retains fresh defaults and copy Color identity', function()
+    local Paint = require('src.painting.paint').Paint
+    local value = Paint()
+    local other = Paint()
+    F.ok(dc.isinstance(value, Paint), 'independent paint guard')
+    F.ok(not rawequal(value.color, other.color), 'default Color constructed per instance')
+    value.stroke_width = 4
+    local copied = value:copy()
+    F.ok(not rawequal(value, copied), 'Paint copy is new')
+    F.ok(rawequal(value.color, copied.color), 'copy retains Color reference')
+    F.eq(copied.stroke_width, 4, 'current field copied')
+    F.eq(require('painting').Paint, Paint, 'painting collector identity')
+end)
+
 F.test('generated Color initialization keeps channel defaults and rejects extra arguments', function()
     local Color = require('src.foundation.color').Color
     local value = Color(nil, nil, nil, nil)
