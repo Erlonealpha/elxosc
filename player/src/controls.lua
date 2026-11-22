@@ -389,44 +389,36 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             Container({ alignment = Offset(0, 0.5), child = title_child }))
     end
     children[#children + 1] = positioned(layout_geometry.time_left, Container({
-        child = PlayerSelector({
+        child = PlayerTimeDisplay({
             selector = time_value,
-            builder = function(value)
-                return PlayerTimeDisplay({
-                    value = value,
-                    duration = duration,
-                    show_milliseconds = theme.time_ms,
-                    unicode_minus = theme.unicode_minus,
-                    fixed = theme.time_format == 'fixed',
-                    toggle_mode = 'milliseconds',
-                    style = label_style,
-                    hover_color = theme.hover_color,
-                    hover_shadow_color = theme.hover_glow_color,
-                    hover_shadow_radius = theme.button_glow_amount,
-                    alignment = Offset(0, 0.5),
-                })
-            end,
+            value = snapshot_number(snapshot, 'time_pos'),
+            duration = duration,
+            show_milliseconds = theme.time_ms,
+            unicode_minus = theme.unicode_minus,
+            fixed = theme.time_format == 'fixed',
+            toggle_mode = 'milliseconds',
+            style = label_style,
+            hover_color = theme.hover_color,
+            hover_shadow_color = theme.hover_glow_color,
+            hover_shadow_radius = theme.button_glow_amount,
+            alignment = Offset(0, 0.5),
         }),
     }))
     children[#children + 1] = positioned(layout_geometry.time_right, Container({
-        child = PlayerSelector({
+        child = PlayerTimeDisplay({
             selector = time_value,
-            builder = function(value)
-                return PlayerTimeDisplay({
-                    value = value,
-                    duration = duration,
-                    show_remaining = not theme.time_total,
-                    unicode_minus = theme.unicode_minus,
-                    fixed = theme.time_format == 'fixed',
-                    toggle_mode = 'remaining',
-                    suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
-                    style = label_style,
-                    hover_color = theme.hover_color,
-                    hover_shadow_color = theme.hover_glow_color,
-                    hover_shadow_radius = theme.button_glow_amount,
-                    alignment = Offset(1, 0.5),
-                })
-            end,
+            value = snapshot_number(snapshot, 'time_pos'),
+            duration = duration,
+            show_remaining = not theme.time_total,
+            unicode_minus = theme.unicode_minus,
+            fixed = theme.time_format == 'fixed',
+            toggle_mode = 'remaining',
+            suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
+            style = label_style,
+            hover_color = theme.hover_color,
+            hover_shadow_color = theme.hover_glow_color,
+            hover_shadow_radius = theme.button_glow_amount,
+            alignment = Offset(1, 0.5),
         }),
     }))
     if layout_geometry.visibility.chapter then

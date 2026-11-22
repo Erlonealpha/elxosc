@@ -618,7 +618,7 @@ function PlayerStoreProvider:update_should_notify(old_widget)
 end
 
 ---@alias player.PlayerSelectorFunction fun(snapshot: PlayerSnapshot): any?
----@alias player.PlayerSelectorBuilder fun(selected: any?, snapshot: PlayerSnapshot, context: BuildContext): Widget?
+---@alias player.PlayerSelectorBuilder fun(selected: any?, snapshot: PlayerSnapshot?, context: BuildContext): Widget?
 
 ---@class player._PlayerSelectorOptions
 ---@field selector PlayerSelectorFunction
@@ -693,7 +693,8 @@ function PlayerSelectorState:did_update_widget(old_widget)
     end
 end
 
-function PlayerSelectorState:build(context)
+---@param context BuildContext
+function PlayerSelectorState:read_selection(context)
     local widget = self.widget --[[@as PlayerSelector]]
     local player_element = context:find_inherited_exact(PlayerProvider --[[@as std.class]])
     local store_element = context:find_inherited_exact(PlayerStoreProvider --[[@as std.class]])
@@ -719,6 +720,11 @@ function PlayerSelectorState:build(context)
             self.selected = widget.selector(self.snapshot)
         end
     end
+end
+
+function PlayerSelectorState:build(context)
+    self:read_selection(context)
+    local widget = self.widget --[[@as PlayerSelector]]
     return builder_mod.validate_result(
         widget.builder(self.selected, self.snapshot, context), 'PlayerSelector.builder')
 end
@@ -875,5 +881,6 @@ M.PlayerCapability = PlayerCapability
 M.PlayerScopeState = PlayerScopeState
 M.PlayerScope = PlayerScope
 M.PlayerSelector = PlayerSelector
+M.PlayerSelectorState = PlayerSelectorState
 
 return M

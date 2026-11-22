@@ -12,6 +12,7 @@ local Offset = geometry.Offset
 local StatefulWidget = widget_mod.StatefulWidget
 local widget_state_mod = require 'src.widgets.state'
 local State = widget_state_mod.State
+local PlayerSelectorState = require('player.src.context').PlayerSelectorState
 
 local raise = std.raise
 local HoverText = require('src.widgets.hover_text').HoverText
@@ -84,6 +85,7 @@ end
 ---@alias player._PlayerHoverTextOptions _HoverTextOptions
 
 ---@class player._PlayerTimeDisplayOptions
+---@field selector PlayerSelectorFunction?
 ---@field value number?
 ---@field duration number?
 ---@field show_remaining boolean?
@@ -100,6 +102,8 @@ end
 ---@field key any?
 
 ---@class player.PlayerTimeDisplay : StatefulWidget
+---@field selector PlayerSelectorFunction?
+---@field equals? fun(left: any?, right: any?): boolean
 ---@field value number?
 ---@field duration number?
 ---@field show_remaining boolean
@@ -121,6 +125,7 @@ function PlayerTimeDisplay:__init(options)
     options = options or {}
     self.key = options.key
     self.value = options.value
+    self.selector = options.selector
     self.duration = options.duration
     self.show_remaining = options.show_remaining == true
     self.show_milliseconds = options.show_milliseconds == true
@@ -138,11 +143,11 @@ function PlayerTimeDisplay:__init(options)
     self.hover_shadow_radius = options.hover_shadow_radius or 0
 end
 
----@class player.PlayerTimeDisplayState : State
+---@class player.PlayerTimeDisplayState : PlayerSelectorState
 ---@field show_remaining boolean
 ---@field show_milliseconds boolean
 ---@overload fun(): self
-local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', State)
+local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', PlayerSelectorState)
 
 function PlayerTimeDisplayState:init_state()
     local widget = self.widget --[[@as PlayerTimeDisplay]]
@@ -152,6 +157,7 @@ function PlayerTimeDisplayState:init_state()
 end
 
 function PlayerTimeDisplayState:did_update_widget(old_widget)
+    PlayerSelectorState.did_update_widget(self, old_widget)
     local widget = self.widget --[[@as PlayerTimeDisplay]]
     if old_widget.show_remaining ~= widget.show_remaining then
         self.show_remaining = widget.show_remaining
@@ -164,6 +170,10 @@ end
 function PlayerTimeDisplayState:build(context)
     local widget = self.widget --[[@as PlayerTimeDisplay]]
     local value = widget.value
+    if widget.selector then
+        self:read_selection(context)
+        value = self.selected
+    end
     local prefix = ''
     local label
     if value == nil then
