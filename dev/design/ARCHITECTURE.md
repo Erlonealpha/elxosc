@@ -6,7 +6,7 @@
 
 ## 当前组织
 
-基础几何值 Offset/Point/Size/Rect/EdgeInsets 使用独立 `elxlibs.dataclass`：direct mutable fields、shared methods、
+基础几何值 Offset/Point/Size/Rect/EdgeInsets/Matrix2D 使用独立 `elxlibs.dataclass`：direct mutable fields、shared methods、
 cached constructor；类型守卫/继承使用 dataclass 接口，不兼容 std reflection/MRO。
 source/collector保持类identity，custom init/operator保持现有调用行为；hooks在finish
 前定义，ordinary methods仍动态查找。Define复制保留识别的值对象，普通配置表继续

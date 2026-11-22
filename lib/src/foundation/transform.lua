@@ -15,7 +15,7 @@
 ---@namespace elxosc
 ---@using elxosc
 
-local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 
 local Offset = geometry.Offset
@@ -27,7 +27,7 @@ local format = string.format
 ---@class mod.src.foundation.transform
 local M = {}
 
----@class Matrix2D : std.object
+---@class Matrix2D : dataclass.Object
 ---@field a number x basis x component
 ---@field b number y basis x component
 ---@field c number x basis y component
@@ -35,7 +35,14 @@ local M = {}
 ---@field tx number x translation
 ---@field ty number y translation
 ---@overload fun(a: number?, b: number?, c: number?, d: number?, tx: number?, ty: number?): self
-local Matrix2D = std.class.new('Matrix2D')
+local Matrix2D = dataclass.new('Matrix2D', nil, { eq = false, repr = false })({
+    dataclass.field('a', 1),
+    dataclass.field('b', 0),
+    dataclass.field('c', 0),
+    dataclass.field('d', 1),
+    dataclass.field('tx', 0),
+    dataclass.field('ty', 0),
+})
 
 ---@param a number?
 ---@param b number?
@@ -168,6 +175,8 @@ end
 function Matrix2D:is_identity()
     return self == Matrix2D.identity()
 end
+
+dataclass.finish(Matrix2D)
 
 M.Matrix2D = Matrix2D
 
