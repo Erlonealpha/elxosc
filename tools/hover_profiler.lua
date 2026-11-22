@@ -18,7 +18,8 @@ M.distribution = distribution
 ---@return table
 function M.new(mode)
     local profiler = { mode = mode, active = false, stack = {}, nodes = {}, constructors = {},
-        sites = {}, restores = {}, samples = {}, states = {}, class_identities = {}, sample_count = 0, dropped_samples = 0,
+        sites = {}, restores = {}, samples = {}, states = {}, class_identities = {}, dataclass_targets = {},
+        sample_count = 0, dropped_samples = 0,
         max_keys = 2048, keys = 0, frame_id = 0, batch_id = 0 } --[[@as table]]
     local function pack(...)
         return { n = select('#', ...), ... }
@@ -92,32 +93,63 @@ function M.new(mode)
             target[slot] = previous
         end
     end
+    function profiler:count_constructor(cls, callback, kind)
+        if not self.active then
+            return
+        end
+        local name = cls.__name
+        if self.class_identities[name] and self.class_identities[name] ~= cls then
+            error('constructor class name collision: ' .. name)
+        end
+        self.class_identities[name] = cls
+        local counts = self.constructors[name]
+        if not counts then
+            assert(self.keys < self.max_keys, 'constructor key capacity exceeded')
+            local definition = debug.getinfo(callback, 'S') --[[@as table]]
+            counts = { entries = 0, stages = {}, kind = kind, init_source = definition.source:gsub('\\', '/')
+                :gsub('^@.*[/]elxosc[/]', ''):gsub('^@.*[/]elxlib[/]', 'elxlib/')
+                :gsub('^@', ''):gsub('^%./', ''), init_line = definition.linedefined }
+            self.constructors[name] = counts
+            self.keys = self.keys + 1
+        end
+        counts.entries = counts.entries + 1
+        local stage = self.stage or 'service'
+        counts.stages[stage] = (counts.stages[stage] or 0) + 1
+    end
+    -- Register explicit classes after imports and before warmup. Completion is
+    -- outside timed service; custom __new and cached init remain untouched.
+    function profiler:track_dataclass(cls)
+        if self.active then
+            error('register dataclass before starting profiler')
+        end
+        if self.mode ~= 'class-count' then
+            return
+        end
+        local dataclass = require 'elxlibs.dataclass'
+        if self.dataclass_targets[cls] then
+            return
+        end
+        dataclass.finish(cls)
+        local mt = getmetatable(cls)
+        local original = mt.__call
+        local initializer = cls.__dataclass.initializer
+        self.dataclass_targets[cls] = true
+        mt.__call = function(...)
+            self:count_constructor(cls, initializer, 'dataclass-call')
+            return original(...)
+        end
+        self.restores[#self.restores + 1] = function()
+            mt.__call = original
+            self.dataclass_targets[cls] = nil
+        end
+    end
     function profiler:start()
         self.active = true
         if self.mode == 'class-count' then
             local object = require('elxlibs.std.class').object
             local original = object.__new --[[@as function]]
             object.__new = function(cls, ...)
-                if self.active then
-                    local name = cls.__name
-                    if self.class_identities[name] and self.class_identities[name] ~= cls then
-                        error('constructor class name collision: ' .. name)
-                    end
-                    self.class_identities[name] = cls
-                    local counts = self.constructors[name]
-                    if not counts then
-                        assert(self.keys < self.max_keys, 'constructor key capacity exceeded')
-                        local definition = debug.getinfo(cls.__init, 'S') --[[@as table]]
-                        counts = { entries = 0, stages = {}, init_source = definition.source:gsub('\\', '/')
-                            :gsub('^@.*[/]elxosc[/]', ''):gsub('^@.*[/]elxlib[/]', 'elxlib/')
-                            :gsub('^@', ''):gsub('^%./', ''), init_line = definition.linedefined }
-                        self.constructors[name] = counts
-                        self.keys = self.keys + 1
-                    end
-                    counts.entries = counts.entries + 1
-                    local stage = self.stage or 'service'
-                    counts.stages[stage] = (counts.stages[stage] or 0) + 1
-                end
+                self:count_constructor(cls, cls.__init, 'std-default-new')
                 return original(cls, ...)
             end
             self.restores[#self.restores + 1] = function()
@@ -180,7 +212,7 @@ function M.new(mode)
             dropped_samples = self.dropped_samples, max_keys = self.max_keys,
             sampling_spec = self.sampling_spec, profile_available = self.profile_available,
             unfinished_scopes = self.unfinished_scopes,
-            coverage = 'phase wrappers include their own clock/pcall/return-table cost; source constructor entries are not physical allocations' }
+            coverage = 'phase wrappers include clock/pcall/return-table cost; std default __new and registered dataclass calls only; direct allocate, unregistered classes and custom std __new excluded; entries are not physical allocations' }
     end
     return profiler
 end

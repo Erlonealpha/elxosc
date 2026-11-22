@@ -17,6 +17,12 @@
 时钟序列；phase模式将初始App服务的文本layout单列，区分布局调用、native测量和包含
 探针的服务成本。显式服务或环境替换后的新服务不由此instance探针覆盖，不能以缺项称零调用。
 
+共用 hover class-count 同时统计 std 的 default object.__new 和显式登记的独立
+dataclass cached class-call；finish 在 warmup 前，停止时恢复 call，原 custom
+allocation/init 不改。直接 allocate、未登记 dataclass 和 custom std __new 不在
+覆盖内，失败调用仍算一次入口。数量不是 physical allocations；无探针 baseline
+不改变类完成/调用路径，计数模式的调用开销必须单独比较。
+
 代码更改必须运行完整 Lua suite 和生产 EmmyLua 检查。真实宿主测试按受影响的行为
 选择文件或用例：script loading、presentation、input、Define wiring 和 player integration
 变化需要对应 real-host；纯文档或没有相关宿主影响的更改不需要 real-host。

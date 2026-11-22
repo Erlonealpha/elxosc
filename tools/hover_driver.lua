@@ -222,6 +222,17 @@ function M.run(mp, name, frames, real_host, options)
             profiler:wrap(store --[[@as table]], 'replace', 'store_notify')
             profiler:wrap(app.text_layout --[[@as table]], 'layout', 'text_layout')
         end
+        if mode == 'class-count' then
+            local dataclass = require 'elxlibs.dataclass'
+            for _, module in ipairs({ 'src.foundation.geometry', 'src.foundation.transform',
+                'src.layout.constraints', 'src.foundation.color' }) do
+                for _, cls in pairs(require(module)) do
+                    if dataclass.isclass(cls) then
+                        profiler:track_dataclass(cls)
+                    end
+                end
+            end
+        end
         local function perform_step(step, offset)
             boundary.time = offset + step.time
             if step.style_variant then
