@@ -14,7 +14,6 @@
 ---@namespace elxosc
 ---@using elxosc
 
-local std = require 'elxlibs.std'
 local dataclass = require 'elxlibs.dataclass'
 
 local math = math
@@ -31,11 +30,14 @@ local M = {}
 -- Offset
 --==========================================================================
 
----@class Offset : std.object
+---@class Offset : dataclass.Object
 ---@field x number
 ---@field y number
 ---@overload fun(x: number?, y: number?): self
-local Offset = std.class.new('Offset')
+local Offset = dataclass.new('Offset', nil, { eq = false, repr = false })({
+    dataclass.field('x', 0),
+    dataclass.field('y', 0),
+})
 
 function Offset:__init(x, y)
     self.x = x or 0
@@ -107,11 +109,14 @@ function Offset.zero()
     return Offset(0, 0)
 end
 
----@class Point : std.object
+---@class Point : dataclass.Object
 ---@field x int
 ---@field y int
 ---@overload fun(x: int?, y: int?): self
-local Point = std.class.new('Point')
+local Point = dataclass.new('Point', nil, { eq = false, repr = false })({
+    dataclass.field('x', 0),
+    dataclass.field('y', 0),
+})
 
 function Point:__init(x, y)
     self.x = x or 0
@@ -265,13 +270,18 @@ dataclass.finish(Size)
 --==========================================================================
 
 --- A rectangle stored as left/top/right/bottom edges (Flutter's LTRB form).
----@class Rect : std.object
+---@class Rect : dataclass.Object
 ---@field left number
 ---@field top number
 ---@field right number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
-local Rect = std.class.new('Rect')
+local Rect = dataclass.new('Rect', nil, { eq = false, repr = false })({
+    dataclass.field('left', 0),
+    dataclass.field('top', 0),
+    dataclass.field('right', 0),
+    dataclass.field('bottom', 0),
+})
 
 function Rect:__init(left, top, right, bottom)
     self.left = left or 0
@@ -412,13 +422,18 @@ end
 -- EdgeInsets
 --==========================================================================
 
----@class EdgeInsets : std.object
+---@class EdgeInsets : dataclass.Object
 ---@field left number
 ---@field top number
 ---@field right number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
-local EdgeInsets = std.class.new('EdgeInsets')
+local EdgeInsets = dataclass.new('EdgeInsets', nil, { eq = false, repr = false })({
+    dataclass.field('left', 0),
+    dataclass.field('top', 0),
+    dataclass.field('right', 0),
+    dataclass.field('bottom', 0),
+})
 
 function EdgeInsets:__init(left, top, right, bottom)
     self.left = left or 0
@@ -498,6 +513,11 @@ end
 function EdgeInsets.zero()
     return EdgeInsets(0, 0, 0, 0)
 end
+
+dataclass.finish(Offset)
+dataclass.finish(Point)
+dataclass.finish(Rect)
+dataclass.finish(EdgeInsets)
 
 M.Offset = Offset
 M.Point = Point

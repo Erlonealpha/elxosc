@@ -16,3 +16,19 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.ok(value * 2 == Size(4, 6), 'arithmetic returns new value')
     F.eq(value.width, 2, 'receiver retained')
 end)
+
+F.test('geometry values retain direct module identity and custom inherited comparison', function()
+    local geometry = require 'src.foundation.geometry'
+    for _, name in ipairs({ 'Offset', 'Point', 'Rect', 'EdgeInsets' }) do
+        local cls = geometry[name]
+        F.ok(dc.isinstance(cls(), cls), name .. ' independent guard')
+        F.eq(require('foundation')[name], cls, name .. ' collector identity')
+    end
+    ---@class DerivedSize : Size
+    ---@overload fun(width: number?, height: number?): self
+    local DerivedSize = dc.new('DerivedSize', Size, { init = false, eq = false, repr = false })({})
+    DerivedSize.__init = Size.__init
+    dc.finish(DerivedSize)
+    F.ok(dc.isinstance(DerivedSize(2, 3), Size), 'dataclass inheritance')
+    F.ok(DerivedSize(2, 3) == Size(2, 3), 'custom inherited equality')
+end)

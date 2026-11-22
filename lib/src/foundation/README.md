@@ -29,8 +29,8 @@ Source modules load as `src.foundation.*`; the host-independent collector is
   progress rejects initialization/attachment until cleanup finishes.
 
 Value helpers return new objects and do not mutate caller-owned geometry.
-Size uses independent `elxlibs.dataclass`, with direct mutable fields and shared
-methods. Size type guards/subclasses use dataclass interfaces; std reflection and
+Geometry values use independent `elxlibs.dataclass`, with direct mutable fields and shared
+methods. Their type guards/subclasses use dataclass interfaces; std reflection and
 std `__dict` storage do not apply. Positional defaults, custom comparison, helper
 results and ignored extra arguments remain. Define preserves recognized value identity.
 

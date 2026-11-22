@@ -10,6 +10,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local color_mod = require 'src.foundation.color'
 local geometry = require 'src.foundation.geometry'
 
@@ -197,7 +198,7 @@ function TextStyle:__init(options)
         raise(std.TypeError('TextStyle.shadow_color must be a Color'))
     end
     if self.shadow_offset ~= nil then
-        if not std.isinstance(self.shadow_offset, Offset) then
+        if not dataclass.isinstance(self.shadow_offset, Offset) then
             raise(std.TypeError('TextStyle.shadow_offset must be an Offset'))
         end
         check_finite('shadow_offset.x', self.shadow_offset.x)
