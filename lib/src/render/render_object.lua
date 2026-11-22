@@ -294,8 +294,18 @@ function RenderObject:collect_pointer_regions(out, local_to_root)
     local child_start = #out
     for _, child in ipairs(self._children) do
         local child_offset = child.parent_data and child.parent_data.offset or Offset.zero()
-        child:collect_pointer_regions(out,
-            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)))
+        local child_mapping
+        if local_to_root.multiply == Matrix2D.multiply then
+            local a, b, c, d = local_to_root.a, local_to_root.b, local_to_root.c, local_to_root.d
+            child_mapping = Matrix2D(
+                a * 1 + c * 0, b * 1 + d * 0,
+                a * 0 + c * 1, b * 0 + d * 1,
+                a * child_offset.x + c * child_offset.y + local_to_root.tx,
+                b * child_offset.x + d * child_offset.y + local_to_root.ty)
+        else
+            child_mapping = local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y))
+        end
+        child:collect_pointer_regions(out, child_mapping)
     end
     self:_clip_pointer_regions(out, child_start, local_to_root)
     return out
