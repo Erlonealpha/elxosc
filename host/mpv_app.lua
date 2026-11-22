@@ -175,7 +175,7 @@ function App:_initialize(root_widget, options)
 end
 
 --- Cache traversal order, while querying live State capabilities every time.
----@return Element[]
+---@return State[]
 function App:_keyboard_targets()
     local root = self.binding and self.binding.root_element
     local cache = self._keyboard_cache
@@ -200,7 +200,7 @@ function App:_keyboard_targets()
             visit(children[index])
         end
         if element.state then
-            elements[#elements + 1] = element
+            elements[#elements + 1] = element.state
         end
     end
     if root then
@@ -233,8 +233,7 @@ end
 ---@param event KeyEvent
 ---@return boolean
 function App:_handle_key(event)
-    for _, element in ipairs(self:_keyboard_targets()) do
-        local state = element.state
+    for _, state in ipairs(self:_keyboard_targets()) do
         if state and type(state.can_handle_key) == 'function'
             and state:can_handle_key(event)
             and type(state.handle_key) == 'function' then
@@ -249,8 +248,7 @@ end
 
 ---@return boolean
 function App:_can_handle_key()
-    for _, element in ipairs(self:_keyboard_targets()) do
-        local state = element.state
+    for _, state in ipairs(self:_keyboard_targets()) do
         if state and type(state.can_handle_key) == 'function' and state:can_handle_key() then
             return true
         end

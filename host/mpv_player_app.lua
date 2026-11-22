@@ -46,7 +46,7 @@ local function notify_activity(app, x, y, viewport)
         local elements = {}
         local function visit(element)
             if element.state then
-                elements[#elements + 1] = element
+                elements[#elements + 1] = element.state
             end
             for _, child in ipairs(element:element_children()) do
                 visit(child)
@@ -57,8 +57,7 @@ local function notify_activity(app, x, y, viewport)
         end
         cache.value = { root = root, elements = elements }
     end
-    for _, element in ipairs(cache.value.elements) do
-        local state = element.state
+    for _, state in ipairs(cache.value.elements) do
         if state and type(state.notify_activity) == 'function' then
             state:notify_activity(x, y, viewport)
         end

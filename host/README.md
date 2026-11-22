@@ -105,4 +105,3 @@ targets. Their BuildOwner clears retained targets immediately on lifecycle or
 child-order changes. Capability and policy methods are read on every query;
 shutdown drops the consumer's cache container. Navigator fallback keeps forward
 preorder, while key target priority keeps reverse child order.
-
