@@ -17,6 +17,21 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('generated Color initialization keeps channel defaults and rejects extra arguments', function()
+    local Color = require('src.foundation.color').Color
+    local value = Color(nil, nil, nil, nil)
+    F.eq(value.r, 0, 'explicit nil channel default')
+    F.eq(value.a, 1, 'explicit nil alpha default')
+    --- Historical false input has channel defaults and preserves false alpha.
+    ---@diagnostic disable-next-line: param-type-mismatch
+    F.eq(Color(false, false, false, false).r, 0, 'false channel default')
+    F.ok(not pcall(function()
+        --- Boundary probe deliberately exceeds the generated constructor signature.
+        ---@diagnostic disable-next-line: redundant-parameter
+        Color(0, 0, 0, 1, 'extra')
+    end), 'generated constructor rejects extra arguments')
+end)
+
 F.test('Color retains typed consumers, custom encoding and mutable channels', function()
     local Color = require('src.foundation.color').Color
     local TextStyle = require('src.text.text_style').TextStyle

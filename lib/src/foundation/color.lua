@@ -29,25 +29,26 @@ local function to_byte(channel)
     return floor(channel * 255 + 0.5)
 end
 
+local function default_channel(value)
+    return value or 0
+end
+
+local function default_alpha(value)
+    return value == nil and 1 or value
+end
+
 ---@class Color : dataclass.Object
 ---@field r number 0..1
 ---@field g number 0..1
 ---@field b number 0..1
 ---@field a number 0..1 (1 = opaque)
 ---@overload fun(r: number?, g: number?, b: number?, a: number?): self
-local Color = dataclass.new('Color', nil, { eq = false, repr = false })({
-    dataclass.field('r', 0),
-    dataclass.field('g', 0),
-    dataclass.field('b', 0),
-    dataclass.field('a', 1),
+local Color = dataclass.new('Color', nil, { init = true, eq = false, repr = false })({
+    dataclass.field('r', 0, { converter = default_channel }),
+    dataclass.field('g', 0, { converter = default_channel }),
+    dataclass.field('b', 0, { converter = default_channel }),
+    dataclass.field('a', 1, { converter = default_alpha }),
 })
-
-function Color:__init(r, g, b, a)
-    self.r = r or 0
-    self.g = g or 0
-    self.b = b or 0
-    self.a = a == nil and 1 or a
-end
 
 function Color:__tostring()
     return format('Color(%.3f, %.3f, %.3f, %.3f)', self.r, self.g, self.b, self.a)
