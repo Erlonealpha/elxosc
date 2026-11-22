@@ -52,7 +52,10 @@ accept only finite positive axis-aligned scales and map input through the invers
 
 `RenderOwner:pointer_regions()` returns non-empty, root-space rectangles for nodes
 that claim down/up or wheel input. Child mappings are composed through offsets and
-supported paint/layout transforms, then clipped by every ancestor's rectangular
+supported paint/layout transforms. Built-in collectors carry accumulated ancestor
+clips and crop each appended region; custom two-argument collectors keep their
+existing entry point and have their results clipped at the boundary. Output stays
+ordered and independent. Regions are clipped by every ancestor's rectangular
 hit bounds. `RenderOwner:has_pointer_capture()` reports whether the captured node
 is still mounted; it cancels a detached capture before returning false, and the
 cancelled sequence's stale up/cancel is not retargeted to the replacement tree.

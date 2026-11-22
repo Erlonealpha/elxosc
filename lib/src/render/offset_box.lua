@@ -126,21 +126,22 @@ end
 
 ---@param out PointerRegion[]?
 ---@param local_to_root Matrix2D?
+---@param ancestor_clip Rect? internal ancestor clipping bounds
 ---@return PointerRegion[]
-function RenderOffsetBox:collect_pointer_regions(out, local_to_root)
+function RenderOffsetBox:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
     local_to_root = local_to_root or Matrix2D.identity()
-    self:_append_pointer_region(out, local_to_root)
+    self:_append_pointer_region(out, local_to_root, ancestor_clip)
     local child = self._children[1]
     if child then
         local child_offset = self:_child_offset(child.parent_data and child.parent_data.offset)
-        local child_start = #out
-        child:collect_pointer_regions(out,
-            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)))
-        self:_clip_pointer_regions(out, child_start, local_to_root)
+        child:_collect_clipped_pointer_regions(out,
+            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)),
+            self:_pointer_child_clip(local_to_root, ancestor_clip))
     end
     return out
 end
+RenderOffsetBox._clipped_region_collector = RenderOffsetBox.collect_pointer_regions
 
 ---@param controller AnimationController
 ---@param tween Tween<Offset>

@@ -128,14 +128,16 @@ end
 
 ---@param out PointerRegion[]?
 ---@param local_to_root Matrix2D?
+---@param ancestor_clip Rect? internal ancestor clipping bounds
 ---@return PointerRegion[]
-function RenderOpacity:collect_pointer_regions(out, local_to_root)
+function RenderOpacity:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
     if self.hidden then
         return out
     end
-    return RenderObject.collect_pointer_regions(self, out, local_to_root)
+    return RenderObject.collect_pointer_regions(self, out, local_to_root, ancestor_clip)
 end
+RenderOpacity._clipped_region_collector = RenderOpacity.collect_pointer_regions
 
 M.RenderOpacity = RenderOpacity
 

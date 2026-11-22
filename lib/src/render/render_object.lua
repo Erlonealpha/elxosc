@@ -284,14 +284,15 @@ end
 --- their local-to-parent mapping.
 ---@param out PointerRegion[]?
 ---@param local_to_root Matrix2D?
+---@param ancestor_clip Rect? internal ancestor clipping bounds
 ---@return PointerRegion[]
-function RenderObject:collect_pointer_regions(out, local_to_root)
+function RenderObject:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
     local_to_root = local_to_root or Matrix2D.identity()
 
-    self:_append_pointer_region(out, local_to_root)
+    self:_append_pointer_region(out, local_to_root, ancestor_clip)
 
-    local child_start = #out
+    local child_clip = #self._children > 0 and self:_pointer_child_clip(local_to_root, ancestor_clip) or nil
     for _, child in ipairs(self._children) do
         local child_offset = child.parent_data and child.parent_data.offset or Offset.zero()
         local child_mapping
@@ -305,21 +306,55 @@ function RenderObject:collect_pointer_regions(out, local_to_root)
         else
             child_mapping = local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y))
         end
-        child:collect_pointer_regions(out, child_mapping)
+        child:_collect_clipped_pointer_regions(out, child_mapping, child_clip)
     end
-    self:_clip_pointer_regions(out, child_start, local_to_root)
     return out
+end
+
+---@param local_to_root Matrix2D
+---@param ancestor_clip Rect?
+---@return Rect
+function RenderObject:_pointer_child_clip(local_to_root, ancestor_clip)
+    local clip = local_to_root:transform_rect(self:input_region_rect())
+    return ancestor_clip and clip:intersect(ancestor_clip) or clip
 end
 
 ---@param out PointerRegion[]
 ---@param local_to_root Matrix2D
-function RenderObject:_append_pointer_region(out, local_to_root)
+---@param ancestor_clip Rect?
+function RenderObject:_collect_clipped_pointer_regions(out, local_to_root, ancestor_clip)
+    if self.collect_pointer_regions == self._clipped_region_collector then
+        self:collect_pointer_regions(out, local_to_root, ancestor_clip)
+        return
+    end
+    -- Custom collectors keep their existing two-argument behavior.
+    local start = #out
+    self:collect_pointer_regions(out, local_to_root)
+    if ancestor_clip then
+        for index = #out, start + 1, -1 do
+            local rect = out[index].rect:intersect(ancestor_clip)
+            if rect:is_empty() then
+                table.remove(out, index)
+            else
+                out[index].rect = rect
+            end
+        end
+    end
+end
+RenderObject._clipped_region_collector = RenderObject.collect_pointer_regions
+
+---@param out PointerRegion[]
+---@param local_to_root Matrix2D
+function RenderObject:_append_pointer_region(out, local_to_root, ancestor_clip)
     local wants_down = self:wants_pointer('down') or self:wants_pointer('up')
     local wants_wheel = self:wants_pointer('wheel')
     if not wants_down and not wants_wheel then
         return
     end
     local rect = local_to_root:transform_rect(self:input_region_rect())
+    if ancestor_clip then
+        rect = rect:intersect(ancestor_clip)
+    end
     if rect:is_empty() then
         return
     end

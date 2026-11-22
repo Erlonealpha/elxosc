@@ -84,14 +84,16 @@ end
 
 ---@param out PointerRegion[]?
 ---@param local_to_root Matrix2D?
+---@param ancestor_clip Rect? internal ancestor clipping bounds
 ---@return PointerRegion[]
-function RenderOffstage:collect_pointer_regions(out, local_to_root)
+function RenderOffstage:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
     if self.offstage then
         return out
     end
-    return RenderObject.collect_pointer_regions(self, out, local_to_root)
+    return RenderObject.collect_pointer_regions(self, out, local_to_root, ancestor_clip)
 end
+RenderOffstage._clipped_region_collector = RenderOffstage.collect_pointer_regions
 
 M.RenderOffstage = RenderOffstage
 
