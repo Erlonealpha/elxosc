@@ -295,8 +295,13 @@ function RenderObject:collect_pointer_regions(out, local_to_root, ancestor_clip)
     local child_clip = #self._children > 0 and self:_pointer_child_clip(local_to_root, ancestor_clip) or nil
     for _, child in ipairs(self._children) do
         local child_offset = child.parent_data and child.parent_data.offset or Offset.zero()
-        local child_mapping
-        if local_to_root.multiply == Matrix2D.multiply then
+        local child_mapping = local_to_root
+        if child_offset.x == 0 and child_offset.y == 0
+            and child.collect_pointer_regions == child._clipped_region_collector
+            and local_to_root.multiply == Matrix2D.multiply then
+            -- Built-in collectors only read the incoming mapping. Custom ones
+            -- still receive an independent matrix through their legacy path.
+        elseif local_to_root.multiply == Matrix2D.multiply then
             local a, b, c, d = local_to_root.a, local_to_root.b, local_to_root.c, local_to_root.d
             child_mapping = Matrix2D(
                 a * 1 + c * 0, b * 1 + d * 0,
