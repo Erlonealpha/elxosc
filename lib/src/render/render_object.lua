@@ -325,6 +325,9 @@ end
 ---@param start integer number of entries already present before this node's children
 ---@param local_to_root Matrix2D
 function RenderObject:_clip_pointer_regions(out, start, local_to_root)
+    if #out == start then
+        return
+    end
     local clip = local_to_root:transform_rect(self:input_region_rect())
     for index = #out, start + 1, -1 do
         local rect = out[index].rect:intersect(clip)
