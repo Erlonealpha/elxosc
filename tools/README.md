@@ -190,8 +190,9 @@ when dependencies change. It does not measure physical allocator bytes or exact
 constructor self time; function/line samples provide separate class-call evidence.
 
 Class mode also registers independent dataclasses exported by geometry, transform,
-constraints and color. It completes them before warmup and wraps each cached class
-call, preserving custom allocation/init and restoring the original call on stop.
+constraints, color, Paint, TextPaint and Paragraph. It completes them before warmup
+and wraps each cached class call, preserving custom allocation/init and restoring
+the original call on stop.
 Calls that throw count as entries; direct `dataclass.allocate`, unregistered classes
 and custom std allocators are outside coverage. Inherited init is not another
 instance. Baseline mode does not finish or wrap these classes. Probe timing includes
