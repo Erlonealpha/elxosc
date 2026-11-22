@@ -18,6 +18,9 @@ Color 使用生成初始化和通道转换器，保持现有 nil/false 默认处
 Paint 也使用独立 dataclass。其默认 Color 每次构造，copy 保持原 Color 引用并复制
 Paint 字段；不新增冻结或深拷贝。不使用 std reflection/继承，hooks在finish前定义。
 
+TextPaint 使用独立 dataclass，继续校验 exact TextPaint/Offset identity、有限坐标与
+显式anchor标志，copy_with返回新值；视觉offset不改变layout/hit testing。
+
 框架位于 lib，player 与 Define 分别拥有媒体领域和初始化协议。通用 WidgetsApp 与
 host App 不默认加载或订阅 player。widgets 扁平组织并与 Material 分层；来源级 export、
 静态 catalog 和生产 namespace 的规则见下文。扩展类型提示见

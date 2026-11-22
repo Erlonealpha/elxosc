@@ -225,7 +225,8 @@ function M.run(mp, name, frames, real_host, options)
         if mode == 'class-count' then
             local dataclass = require 'elxlibs.dataclass'
             for _, module in ipairs({ 'src.foundation.geometry', 'src.foundation.transform',
-                'src.layout.constraints', 'src.foundation.color', 'src.painting.paint' }) do
+                'src.layout.constraints', 'src.foundation.color', 'src.painting.paint',
+                'src.painting.text_paint' }) do
                 for _, cls in pairs(require(module)) do
                     if dataclass.isclass(cls) then
                         profiler:track_dataclass(cls)

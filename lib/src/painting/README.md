@@ -15,6 +15,8 @@ Source modules load as `src.painting.*`; the host-independent collector is
   Default Color construction stays per instance. Type guards/subclasses use dataclass.
 - `path.lua` — path verbs and primitive lowering.
 - `text_paint.lua` — explicit text anchor and visual offset.
+  TextPaint is an independent dataclass retaining exact-class resolution,
+  validated finite Offset, explicit-anchor intent and fresh `copy_with` results.
 
 Coordinates are logical pixels. `TextPaint.offset` affects visual painting only;
 layout and hit testing remain RenderObject responsibilities. Concrete backends belong

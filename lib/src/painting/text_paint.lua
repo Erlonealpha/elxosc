@@ -9,6 +9,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 local anchor_mod = require 'src.foundation.anchor'
 
@@ -24,12 +25,16 @@ local M = {}
 ---@field anchor? AnchorName defaults to top_left
 ---@field offset? Offset finite logical-pixel visual offset; does not affect layout or hit testing
 
----@class TextPaint : std.object
+---@class TextPaint : dataclass.Object
 ---@field anchor AnchorName
 ---@field offset Offset
 ---@field _anchor_explicit boolean
 ---@overload fun(options?: _TextPaintOptions): self
-local TextPaint = std.class.new('TextPaint')
+local TextPaint = dataclass.new('TextPaint', nil, { eq = false, repr = false })({
+    dataclass.field('anchor', Anchor.TOP_LEFT),
+    dataclass.field('offset', nil),
+    dataclass.field('_anchor_explicit', false),
+})
 
 local option_names = {
     anchor = true,
@@ -124,6 +129,8 @@ function TextPaint:__eq(other)
     return self.anchor == other.anchor and self.offset == other.offset
         and self._anchor_explicit == other._anchor_explicit
 end
+
+dataclass.finish(TextPaint)
 
 M.TextPaint = TextPaint
 

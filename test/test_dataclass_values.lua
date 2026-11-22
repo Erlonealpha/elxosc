@@ -17,6 +17,22 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('TextPaint retains exact resolution, offsets and explicit anchor copies', function()
+    local mod = require 'src.painting.text_paint'
+    local Offset = require('src.foundation.geometry').Offset
+    local value = mod.TextPaint({ offset = Offset(2, 3) })
+    F.ok(dc.isinstance(value, mod.TextPaint), 'independent text paint guard')
+    F.eq(mod.resolve(value), value, 'exact instance resolution')
+    F.eq(value._anchor_explicit, false, 'default anchor intent')
+    local copy = value:copy_with({ anchor = 'bottom_right' })
+    F.eq(copy._anchor_explicit, true, 'explicit anchor intent')
+    F.eq(copy.offset, value.offset, 'offset value retained')
+    F.ok(not rawequal(copy, value), 'copy returns new value')
+    --- Deliberately probe the exact-class boundary with an invalid plain table.
+    ---@diagnostic disable-next-line: missing-fields, param-type-mismatch
+    F.ok(not pcall(mod.resolve, {}), 'struct table rejected')
+end)
+
 F.test('Paint retains fresh defaults and copy Color identity', function()
     local Paint = require('src.painting.paint').Paint
     local value = Paint()
