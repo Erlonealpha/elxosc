@@ -76,6 +76,12 @@ Main 标题栏、窗口控制和底部播放器骨架不是扩展的隐式 targe
 
 ## ModernX 默认播放器
 
+Main 的时间/进度消费使用 player.src.context.PlayerSelector 和 Store 身份 Provider，
+与 Main shell 的其他 snapshot 字段依赖分开。DefaultAppState 持有默认 Main 描述，
+时间变化只重建相关 Timeline/时间标签；theme、display、metadata 等仍走原依赖。
+selector 自有订阅在 Store replacement 和 dispose 时释放；手动无 Store 的
+PlayerProvider 保持完整 snapshot 回退，不绕过 Snapshot 的 readonly/复制保护。
+
 默认播放器采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默认能力包括：
 
 - 顶部媒体标题、窗口最小化/全屏/关闭按钮；

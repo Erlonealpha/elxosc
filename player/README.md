@@ -58,3 +58,10 @@ The extension [meta entry](../meta/README.md) selects the host-augmented player 
 for `import_as('player')`, including disposable snapshot subscriptions.
 
 See [player design](../dev/design/PLAYER.md) and [host lifecycle](../dev/design/HOST.md).
+## Local snapshot consumers
+
+`player.src.context.PlayerSelector` subscribes to selected Store values and owns
+replacement/disposal of its subscription. Without a Store provider it reads the
+nearest manual PlayerProvider snapshot. Main holds its default description;
+timeline progress and time labels rebuild through local consumers. Other snapshot
+changes, theme and display dependencies retain normal rebuild behavior.

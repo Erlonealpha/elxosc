@@ -596,6 +596,140 @@ function PlayerProvider.snapshot_of(context)
     return PlayerProvider.of(context).snapshot
 end
 
+-- Store identity is independent of the snapshot notification stream. Selectors
+-- listen here so unrelated fields do not rebuild their Widget descriptions.
+---@class player._PlayerStoreProviderOptions
+---@field store PlayerStore
+---@field child Widget?
+
+---@class player.PlayerStoreProvider : Provider
+---@field store PlayerStore
+---@field child Widget?
+---@overload fun(options: _PlayerStoreProviderOptions): self
+local PlayerStoreProvider = std.class.new('PlayerStoreProvider', Provider)
+
+function PlayerStoreProvider:__init(options)
+    self.store = options.store
+    self.child = options.child
+end
+
+function PlayerStoreProvider:update_should_notify(old_widget)
+    return self.store ~= old_widget.store
+end
+
+---@alias player.PlayerSelectorFunction fun(snapshot: PlayerSnapshot): any?
+---@alias player.PlayerSelectorBuilder fun(selected: any?, snapshot: PlayerSnapshot, context: BuildContext): Widget?
+
+---@class player._PlayerSelectorOptions
+---@field selector PlayerSelectorFunction
+---@field builder PlayerSelectorBuilder
+---@field equals? fun(left: any?, right: any?): boolean
+---@field key any?
+
+---@class player.PlayerSelector : StatefulWidget
+---@field selector PlayerSelectorFunction
+---@field builder PlayerSelectorBuilder
+---@field equals? fun(left: any?, right: any?): boolean
+---@overload fun(options: _PlayerSelectorOptions): self
+local PlayerSelector = std.class.new('PlayerSelector', StatefulWidget)
+
+function PlayerSelector:__init(options)
+    if type(options) ~= 'table' then
+        raise(std.TypeError('PlayerSelector expects an options table'))
+    end
+    builder_mod.validate_callback(options.selector, 'PlayerSelector.selector')
+    builder_mod.validate_callback(options.builder, 'PlayerSelector.builder')
+    if options.equals ~= nil then
+        builder_mod.validate_callback(options.equals, 'PlayerSelector.equals')
+    end
+    self.key = options.key
+    self.selector = options.selector
+    self.builder = options.builder
+    self.equals = options.equals
+end
+
+---@class player.PlayerSelectorState : State
+---@field store PlayerStore?
+---@field subscription PlayerSubscription?
+---@field snapshot PlayerSnapshot?
+---@field selected any?
+---@overload fun(): self
+local PlayerSelectorState = std.class.new('PlayerSelectorState', State)
+
+function PlayerSelectorState:__init()
+    State.__init(self)
+    self.store = nil
+    self.subscription = nil
+    self.snapshot = nil
+    self.selected = nil
+end
+
+---@param store PlayerStore?
+function PlayerSelectorState:_attach(store)
+    if self.subscription then
+        self.subscription:dispose()
+        self.subscription = nil
+    end
+    self.store = store
+    if store then
+        local widget = self.widget --[[@as PlayerSelector]]
+        self.snapshot = store:get()
+        self.selected = widget.selector(self.snapshot)
+        self.subscription = store:subscribe_selector(widget.selector, function(selected, _, snapshot)
+            if self:is_mounted() then
+                self:set_state(function()
+                    self.selected = selected
+                    self.snapshot = snapshot
+                end)
+            end
+        end, widget.equals)
+    end
+end
+
+function PlayerSelectorState:did_update_widget(old_widget)
+    local widget = self.widget --[[@as PlayerSelector]]
+    if old_widget.selector ~= widget.selector or old_widget.equals ~= widget.equals then
+        self:_attach(self.store)
+    end
+end
+
+function PlayerSelectorState:build(context)
+    local widget = self.widget --[[@as PlayerSelector]]
+    local provider = Provider.maybe_of(context, PlayerStoreProvider --[[@as std.class]])
+        --[[@as PlayerStoreProvider?]]
+    local store = provider and provider.store or nil
+    if store ~= self.store then
+        self:_attach(store)
+    end
+    if store then
+        self.snapshot = store:get()
+        self.selected = widget.selector(self.snapshot)
+    else
+        local player = PlayerProvider.maybe_of(context)
+        self.snapshot = player and player.snapshot or nil
+        self.selected = nil
+        if self.snapshot then
+            self.selected = widget.selector(self.snapshot)
+        end
+    end
+    return builder_mod.validate_result(
+        widget.builder(self.selected, self.snapshot, context), 'PlayerSelector.builder')
+end
+
+function PlayerSelectorState:dispose()
+    if self.subscription then
+        self.subscription:dispose()
+        self.subscription = nil
+    end
+    self.store = nil
+    self.snapshot = nil
+    self.selected = nil
+end
+
+function PlayerSelector:create_state()
+    return PlayerSelectorState()
+end
+
 ---@alias player.PlayerCapabilityBuilder fun(info: player.CapabilityInfo, snapshot: player.PlayerSnapshot, context: BuildContext): Widget?
 
 ---@class player._PlayerCapabilityOptions
@@ -689,9 +823,12 @@ end
 ---@return Widget
 function PlayerScopeState:build(context)
     local scope = self.widget --[[@as PlayerScope]]
-    return PlayerProvider({
-        snapshot = self.snapshot,
-        child = scope.child,
+    return PlayerStoreProvider({
+        store = scope.store,
+        child = PlayerProvider({
+            snapshot = self.snapshot,
+            child = scope.child,
+        }),
     })
 end
 
@@ -730,5 +867,6 @@ M.PlayerProvider = PlayerProvider
 M.PlayerCapability = PlayerCapability
 M.PlayerScopeState = PlayerScopeState
 M.PlayerScope = PlayerScope
+M.PlayerSelector = PlayerSelector
 
 return M

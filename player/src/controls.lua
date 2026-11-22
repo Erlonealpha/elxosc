@@ -12,6 +12,7 @@ local timeline_mod = require 'player.src.timeline'
 local tooltip_mod = require 'player.src.tooltip'
 local metadata_mod = require 'player.src.metadata'
 local paint_mod = require 'src.painting.paint'
+local PlayerSelector = require('player.src.context').PlayerSelector
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
@@ -63,6 +64,18 @@ local positioned = visuals_mod.positioned
 ---@class mod.player.src.controls
 local M = {}
 
+---@param snapshot PlayerSnapshot?
+---@return number
+local function progress_value(snapshot)
+    return player_progress(snapshot)
+end
+
+---@param snapshot PlayerSnapshot?
+---@return number?
+local function time_value(snapshot)
+    return snapshot_number(snapshot, 'time_pos')
+end
+
 ---@param theme PlayerThemeData
 ---@param actions HostActions
 ---@param snapshot PlayerSnapshot?
@@ -111,7 +124,6 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     local is_eof = snapshot and snapshot:get('eof_reached') == true
     local is_paused = snapshot and snapshot:get('pause') == true
     local play_icon = is_eof and 'replay' or (is_paused and 'play' or 'pause')
-    local progress = player_progress(snapshot)
     local markers = theme.show_chapter_markers and chapter_markers(snapshot, duration) or {}
     local cache_ranges = seek_ranges(snapshot, duration)
     local ranges = {}
@@ -166,18 +178,23 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         panel(theme, theme.controller_color, theme.controller_border_color,
             theme.controller_blur_radius, false))
     if layout_geometry.visibility.persistent_progress then
-        children[#children + 1] = positioned(layout_geometry.persistent_progress, Timeline({
-            progress = progress,
-            buffered = 0,
-            height = theme.persistent_progress_height,
-            handle_size = 0,
-            track_color = ColorTransparent,
-            buffered_color = theme.seekbar_buffer_color,
-            progress_color = theme.seekbar_progress_color,
-            handle_color = theme.seekbar_progress_color,
-            ranges = theme.persistent_buffer and cache_ranges or {},
-            range_expand = 7,
-            enabled = false,
+        children[#children + 1] = positioned(layout_geometry.persistent_progress, PlayerSelector({
+            selector = progress_value,
+            builder = function(progress)
+                return Timeline({
+                    progress = progress,
+                    buffered = 0,
+                    height = theme.persistent_progress_height,
+                    handle_size = 0,
+                    track_color = ColorTransparent,
+                    buffered_color = theme.seekbar_buffer_color,
+                    progress_color = theme.seekbar_progress_color,
+                    handle_color = theme.seekbar_progress_color,
+                    ranges = theme.persistent_buffer and cache_ranges or {},
+                    range_expand = 7,
+                    enabled = false,
+                })
+            end,
         }))
     end
     if not (theme.show_chapter_markers and theme.chapter_marker_style == 'gap') then
@@ -229,32 +246,37 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
         end
     end
-    local seekbar = Timeline({
-        progress = progress,
-        buffered = 0,
-        height = theme.progress_bar_height,
-        track_color = theme.show_chapter_markers and theme.chapter_marker_style == 'gap'
-            and theme.seekbar_track_color or ColorTransparent,
-        buffered_color = theme.seekbar_buffer_color,
-        progress_color = theme.seekbar_progress_color,
-        handle_color = theme.seekbar_progress_color,
-        hover_track_color = nil,
-        hover_buffered_color = nil,
-        hover_progress_color = nil,
-        hover_handle_color = nil,
-        hover_handle_size = 0.8,
-        range_expand = 7,
-        hover_expand = theme.seekbar_hit_expand,
-        seek_mode = theme.seekbar_keyframes and 'keyframe' or 'exact',
-        markers = markers,
-        ranges = ranges,
-        marker_color = theme.chapter_marker_color,
-        current_marker_color = theme.chapter_marker_current_color,
-        range_color = theme.seek_range_color,
-        marker_style = theme.chapter_marker_style,
-        on_seek = seek_callback,
-        on_context_seek = chapter_seek_callback,
-        enabled = seek_callback ~= nil,
+    local seekbar = PlayerSelector({
+        selector = progress_value,
+        builder = function(progress)
+            return Timeline({
+                progress = progress,
+                buffered = 0,
+                height = theme.progress_bar_height,
+                track_color = theme.show_chapter_markers and theme.chapter_marker_style == 'gap'
+                    and theme.seekbar_track_color or ColorTransparent,
+                buffered_color = theme.seekbar_buffer_color,
+                progress_color = theme.seekbar_progress_color,
+                handle_color = theme.seekbar_progress_color,
+                hover_track_color = nil,
+                hover_buffered_color = nil,
+                hover_progress_color = nil,
+                hover_handle_color = nil,
+                hover_handle_size = 0.8,
+                range_expand = 7,
+                hover_expand = theme.seekbar_hit_expand,
+                seek_mode = theme.seekbar_keyframes and 'keyframe' or 'exact',
+                markers = markers,
+                ranges = ranges,
+                marker_color = theme.chapter_marker_color,
+                current_marker_color = theme.chapter_marker_current_color,
+                range_color = theme.seek_range_color,
+                marker_style = theme.chapter_marker_style,
+                on_seek = seek_callback,
+                on_context_seek = chapter_seek_callback,
+                enabled = seek_callback ~= nil,
+            })
+        end,
     })
     children[#children + 1] = positioned(layout_geometry.seekbar, seekbar)
     children[#children + 1] = positioned(layout_geometry.seekbar, PlayerTimeTooltip({
@@ -367,34 +389,44 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             Container({ alignment = Offset(0, 0.5), child = title_child }))
     end
     children[#children + 1] = positioned(layout_geometry.time_left, Container({
-        child = PlayerTimeDisplay({
-            value = snapshot_number(snapshot, 'time_pos'),
-            duration = duration,
-            show_milliseconds = theme.time_ms,
-            unicode_minus = theme.unicode_minus,
-            fixed = theme.time_format == 'fixed',
-            toggle_mode = 'milliseconds',
-            style = label_style,
-            hover_color = theme.hover_color,
-            hover_shadow_color = theme.hover_glow_color,
-            hover_shadow_radius = theme.button_glow_amount,
-            alignment = Offset(0, 0.5),
+        child = PlayerSelector({
+            selector = time_value,
+            builder = function(value)
+                return PlayerTimeDisplay({
+                    value = value,
+                    duration = duration,
+                    show_milliseconds = theme.time_ms,
+                    unicode_minus = theme.unicode_minus,
+                    fixed = theme.time_format == 'fixed',
+                    toggle_mode = 'milliseconds',
+                    style = label_style,
+                    hover_color = theme.hover_color,
+                    hover_shadow_color = theme.hover_glow_color,
+                    hover_shadow_radius = theme.button_glow_amount,
+                    alignment = Offset(0, 0.5),
+                })
+            end,
         }),
     }))
     children[#children + 1] = positioned(layout_geometry.time_right, Container({
-        child = PlayerTimeDisplay({
-            value = snapshot_number(snapshot, 'time_pos'),
-            duration = duration,
-            show_remaining = not theme.time_total,
-            unicode_minus = theme.unicode_minus,
-            fixed = theme.time_format == 'fixed',
-            toggle_mode = 'remaining',
-            suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
-            style = label_style,
-            hover_color = theme.hover_color,
-            hover_shadow_color = theme.hover_glow_color,
-            hover_shadow_radius = theme.button_glow_amount,
-            alignment = Offset(1, 0.5),
+        child = PlayerSelector({
+            selector = time_value,
+            builder = function(value)
+                return PlayerTimeDisplay({
+                    value = value,
+                    duration = duration,
+                    show_remaining = not theme.time_total,
+                    unicode_minus = theme.unicode_minus,
+                    fixed = theme.time_format == 'fixed',
+                    toggle_mode = 'remaining',
+                    suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
+                    style = label_style,
+                    hover_color = theme.hover_color,
+                    hover_shadow_color = theme.hover_glow_color,
+                    hover_shadow_radius = theme.button_glow_amount,
+                    alignment = Offset(1, 0.5),
+                })
+            end,
         }),
     }))
     if layout_geometry.visibility.chapter then

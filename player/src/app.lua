@@ -32,6 +32,7 @@ local ThemeData = theme_mod.ThemeData
 local Theme = theme_mod.Theme
 local HostActions = actions_mod.HostActions
 local PlayerProvider = player_context.PlayerProvider
+local PlayerSelector = player_context.PlayerSelector
 local PlayerThemeData = player_theme_mod.PlayerThemeData
 local PlayerTheme = player_theme_mod.PlayerTheme
 local PlayerLayout = player_layout_mod.PlayerLayout
@@ -154,15 +155,31 @@ local function top_bar_visible(snapshot, mode)
     return top_hover_enabled(snapshot)
 end
 
+local function main_fields(snapshot)
+    local fields = snapshot:to_table()
+    fields.time_pos = nil
+    fields.percent_pos = nil
+    return fields
+end
+
 ---@param context BuildContext
 function Main:build(context)
+    return PlayerSelector({
+        selector = main_fields,
+        builder = function(_, snapshot, selected_context)
+            return self:_build_shell(selected_context, snapshot)
+        end,
+    })
+end
+
+---@param context BuildContext
+---@param snapshot PlayerSnapshot?
+function Main:_build_shell(context, snapshot)
     local theme_scope = Theme.maybe_of(context)
     local theme = theme_scope and theme_scope.data or ThemeData()
     local player_theme_scope = PlayerTheme.maybe_of(context)
     local player_theme = player_theme_scope and player_theme_scope.data or PlayerThemeData()
     local actions = HostActions.maybe_of(context) or HostActions()
-    local player = PlayerProvider.maybe_of(context)
-    local snapshot = player and player.snapshot or nil
     local mode = self.window_top_bar or player_theme.window_top_bar
     local scale = self.scale or theme.scale
     return LayoutScaleBox(PlayerLayout({
@@ -297,6 +314,7 @@ end
 ---@field main_entry OverlayEntry
 ---@field extension_entry OverlayEntry
 ---@field window_entry OverlayEntry
+---@field default_main Main
 ---@overload fun(): self
 local DefaultAppState = std.class.new('DefaultAppState', State)
 
@@ -306,10 +324,12 @@ function DefaultAppState:__init()
     self.main_entry = nil
     self.extension_entry = nil
     self.window_entry = nil
+    self.default_main = nil
 end
 
 function DefaultAppState:init_state()
     local app = self.widget --[[@as DefaultApp]]
+    self.default_main = Main({ title = app.title, scale = app.scale })
     self.main_controller = app.auto_hide_controller
     self.extension_entry = OverlayEntry({
         key = 'default-app-extension',
@@ -322,8 +342,7 @@ function DefaultAppState:init_state()
         key = 'default-app-main',
         builder = function(context)
             local current_app = self.widget --[[@as DefaultApp]]
-            local main = current_app.main
-                or Main({ title = current_app.title, scale = current_app.scale })
+            local main = current_app.main or self.default_main
             local player = PlayerProvider.maybe_of(context)
             local snapshot = player and player.snapshot or nil
             local theme_scope = Theme.maybe_of(context)
@@ -363,6 +382,9 @@ end
 
 function DefaultAppState:did_update_widget(old_widget)
     local app = self.widget --[[@as DefaultApp]]
+    if old_widget.title ~= app.title or old_widget.scale ~= app.scale then
+        self.default_main = Main({ title = app.title, scale = app.scale })
+    end
     self.main_controller = app.auto_hide_controller
     if self.main_entry then
         self.main_entry:mark_needs_build()

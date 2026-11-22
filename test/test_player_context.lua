@@ -677,3 +677,42 @@ F.test('unmounted Provider dependents are removed immediately', function()
     owner:layout()
     F.eq(next(provider_element.dependents), nil, 'unmounted reader was removed')
 end)
+
+F.test('PlayerSelector retains unrelated fields and replaces and disposes Store subscriptions', function()
+    local PlayerSelector = player_context.PlayerSelector
+    local builds = 0
+    local selector = PlayerSelector({
+        selector = function(snapshot)
+            return snapshot:get('value')
+        end,
+        builder = function(value)
+            builds = builds + 1
+            return Text(tostring(value))
+        end,
+    })
+    local first = PlayerStore({ value = 1 })
+    local owner, binding = mount(PlayerScope({ store = first, child = selector }))
+    local initial_builds = builds
+    first:replace({ value = 1, unrelated = 9 })
+    binding:flush_build()
+    owner:layout()
+    F.eq(builds, initial_builds, 'unrelated Store fields preserve the consumer')
+    first:replace({ value = 2 })
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, '2', 'selected value updates')
+    local second = PlayerStore({ value = 3 })
+    binding:set_root_widget(PlayerScope({ store = second, child = selector }))
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, '3', 'replacement Store selected')
+    first:replace({ value = 4 })
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, '3', 'old Store cannot update retained consumer')
+    binding:set_root_widget(Text('gone'))
+    binding:flush_build()
+    owner:layout()
+    second:replace({ value = 5 })
+    F.ok(not binding.build_owner:has_dirty(), 'unmounted selector unsubscribes')
+end)
