@@ -155,6 +155,7 @@ function AutoHide:__init(options)
 end
 
 ---@class player.AutoHideState : State
+---@field private _policy_cache _TreeQueryCache?
 ---@field elapsed number
 ---@field opacity number
 ---@field hidden boolean
@@ -194,40 +195,55 @@ function AutoHideState:_apply_render_state()
     render_object:set_hidden(self.hidden)
 end
 
----@return boolean
-function AutoHideState:_child_requests_visibility()
+---@return Element[]
+function AutoHideState:_policy_targets()
     local context = self.context
-    local function visit(element)
-        local state = element.state
-        if state and type(state.keep_auto_hide_visible) == 'function'
-            and state:keep_auto_hide_visible() then
-            return true
+    local cache = self._policy_cache
+    if cache == nil then
+        cache = {}
+        self._policy_cache = cache
+        if context and context.owner then
+            context.owner:_register_tree_cache(cache)
         end
-        for _, child in ipairs(element:element_children()) do
-            if visit(child) then
-                return true
+    end
+    if cache.value == nil or context ~= cache.value.context then
+        local elements = {}
+        local function visit(element)
+            if element.state then
+                elements[#elements + 1] = element
+            end
+            for _, child in ipairs(element:element_children()) do
+                visit(child)
             end
         end
-        return false
+        if context then
+            visit(context)
+        end
+        cache.value = { context = context, elements = elements }
     end
-    return context ~= nil and visit(context)
+    return cache.value.elements
+end
+
+---@return boolean
+function AutoHideState:_child_requests_visibility()
+    for _, element in ipairs(self:_policy_targets()) do
+        local state = element.state
+        if state and type(state.keep_auto_hide_visible) == 'function' and state:keep_auto_hide_visible() then
+            return true
+        end
+    end
+    return false
 end
 
 -- Retained children may own external hover resources. Notify only when the
 -- visibility policy changes, before fading; keep ordinary input unchanged.
 function AutoHideState:_notify_child_visibility()
-    local function visit(element)
-        local state = element.state
-        if state and type(state.refresh_hover_visibility) == 'function' then
-            state:refresh_hover_visibility()
-        end
-        for _, child in ipairs(element:element_children()) do
-            visit(child)
-        end
-    end
-    if self.context then
-        for _, child in ipairs(self.context:element_children()) do
-            visit(child)
+    for _, element in ipairs(self:_policy_targets()) do
+        if element ~= self.context then
+            local state = element.state
+            if state and type(state.refresh_hover_visibility) == 'function' then
+                state:refresh_hover_visibility()
+            end
         end
     end
 end
@@ -466,6 +482,7 @@ function AutoHideState:did_update_widget(old_widget)
 end
 
 function AutoHideState:dispose()
+    self._policy_cache = nil
     if self._remove_listener then
         self._remove_listener()
         self._remove_listener = nil

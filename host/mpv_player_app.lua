@@ -27,22 +27,41 @@ local mpv_actions = require 'host.mpv_actions'
 ---@field theme material.ThemeData
 ---@field player_theme player.PlayerThemeData
 ---@field actions player.HostActions
+---@field private _activity_cache _TreeQueryCache?
 ---@overload fun(root_widget: Widget, options?: _PlayerHostAppOptions): self
 local PlayerHostApp = std.class.new('PlayerHostApp', App)
 
 -- Input activity is a player policy, kept outside the generic frame owner.
 local function notify_activity(app, x, y, viewport)
-    local function visit(element)
+    local root = app.binding and app.binding.root_element
+    local cache = app._activity_cache
+    if cache == nil then
+        cache = {}
+        app._activity_cache = cache
+        if app.binding then
+            app.binding.build_owner:_register_tree_cache(cache)
+        end
+    end
+    if cache.value == nil or root ~= cache.value.root then
+        local elements = {}
+        local function visit(element)
+            if element.state then
+                elements[#elements + 1] = element
+            end
+            for _, child in ipairs(element:element_children()) do
+                visit(child)
+            end
+        end
+        if root then
+            visit(root)
+        end
+        cache.value = { root = root, elements = elements }
+    end
+    for _, element in ipairs(cache.value.elements) do
         local state = element.state
         if state and type(state.notify_activity) == 'function' then
             state:notify_activity(x, y, viewport)
         end
-        for _, child in ipairs(element:element_children()) do
-            visit(child)
-        end
-    end
-    if app.binding and app.binding.root_element then
-        visit(app.binding.root_element)
     end
 end
 
@@ -60,6 +79,7 @@ function PlayerHostApp:__init(root_widget, options)
             return
         end
         disposed = true
+        self._activity_cache = nil
         if context then
             context:dispose()
         end

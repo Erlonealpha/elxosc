@@ -98,6 +98,11 @@ tree handle 不得共享 dirty queue、BuildOwner、PipelineOwner、GlobalKey re
 frame state；它们共享 concrete Binding composition。App shutdown 只释放自己的 tree/owner，
 不自动 dispose 共享 Binding。
 
+BuildOwner 内部树查询缓存只保存遍历目标；mount/unmount、activate/deactivate 和
+child-order 变化立即清空目标引用。cache 容器由消费者持有，owner 弱持有，不能因
+隐藏或等待下一次查询延长已卸载 Element 的寿命。键盘能力和 AutoHide policy 的
+判断仍实时调用 State 方法，不能缓存判定结果。
+
 dispose/finalize 在 BuildOwner 的锁定阶段执行；该阶段的 `set_state`、dirty scheduling、
 直接 rebuild 和 root update 必须在产生副作用前报错。异常仍释放 State resources、
 GlobalKey 和 Element/tree 引用，锁定状态在异常后恢复。已卸载 State 的 `set_state`

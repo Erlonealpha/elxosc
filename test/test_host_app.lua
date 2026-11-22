@@ -579,10 +579,13 @@ F.test('keyboard routing reads live capabilities across root replacements', func
     F.ok(app:_handle_key(KeyEvent({ key = 'ESC', type = 'press' })), 'live target handles key')
     layer_state.enabled = false
     F.ok(not app:_can_handle_key(), 'live capability loss releases claim')
+    local retained_cache = app._keyboard_cache
     app:set_root_widget(Text('replacement'))
+    F.eq(retained_cache.value, nil, 'replacement immediately releases cached target references')
     app:render()
     F.ok(not app:_can_handle_key(), 'removed State cannot keep keyboard claim')
     app:shutdown()
+    F.eq(app._keyboard_cache, nil, 'shutdown releases the cache container')
 end)
 
 F.test('keyboard routing preserves reverse child priority and forward Navigator fallback', function()

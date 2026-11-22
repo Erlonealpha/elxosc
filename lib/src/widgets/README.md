@@ -8,6 +8,9 @@ other sources directly; they do not load collectors, Material, player or Define.
   reconciliation and lifecycle. Each class has one defining source.
 - `binding.lua`, `widgets_binding.lua`, `build_owner.lua`, `build_scope.lua`
   connect the shared Binding composition to independently owned trees.
+  BuildOwner invalidates registered traversal caches immediately on mount,
+  unmount, active-state or child-order changes. Owners hold cache containers
+  weakly; consumers query live State capabilities rather than caching decisions.
 - Layout wrappers, Text, CustomPaint, Icon, GestureDetector, Provider, Visibility,
   Overlay and Navigator are basic widgets. Display/DefaultTextStyle belong to
   `ambient.lua`; design Theme belongs to Material.

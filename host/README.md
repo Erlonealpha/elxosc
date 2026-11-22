@@ -98,3 +98,11 @@ request coordinates, affected by the actual viewport and font configuration.
 
 See [host design](../dev/design/HOST.md), [input](../dev/design/INPUT.md),
 [player application](../dev/design/PLAYER.md), and [testing](../dev/design/TESTING.md).
+## Traversal caches
+
+App caches keyboard target traversal order, and PlayerHostApp caches activity
+targets. Their BuildOwner clears retained targets immediately on lifecycle or
+child-order changes. Capability and policy methods are read on every query;
+shutdown drops the consumer's cache container. Navigator fallback keeps forward
+preorder, while key target priority keeps reverse child order.
+

@@ -73,6 +73,7 @@ end
 ---@param parent Element?
 ---@param owner BuildOwner
 function Element:mount(parent, owner)
+    owner:_tree_changed()
     self.parent = parent
     self.owner = owner
     self.depth = parent and (parent.depth + 1) or 0
@@ -96,6 +97,9 @@ end
 function Element:unmount()
     if not self.mounted then
         return
+    end
+    if self.owner then
+        self.owner:_tree_changed()
     end
     self.mounted = false
     self.active = false
@@ -131,6 +135,9 @@ function Element:deactivate()
     if not self.mounted or not self.active then
         return false
     end
+    if self.owner then
+        self.owner:_tree_changed()
+    end
     self.active = false
     self.dirty = false
     for _, child in ipairs(self:element_children()) do
@@ -146,6 +153,9 @@ end
 function Element:activate(parent)
     if not self.mounted or self.active then
         return false
+    end
+    if self.owner then
+        self.owner:_tree_changed()
     end
     self.parent = parent
     self.depth = parent and (parent.depth + 1) or 0
@@ -804,7 +814,19 @@ function MultiChildRenderObjectElement:rebuild()
             end
         end
         self.children = retained
+        if self.owner then
+            self.owner:_tree_changed()
+        end
         error(err, 0)
+    end
+    if self.owner then
+        local changed = #previous ~= #children
+        for index, child in ipairs(children) do
+            changed = changed or previous[index] ~= child
+        end
+        if changed then
+            self.owner:_tree_changed()
+        end
     end
     self.children = children
     self:sync_render_children()

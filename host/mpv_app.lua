@@ -93,6 +93,7 @@ local M = {}
 ---@field text_layout_generation integer
 ---@field private _text_sessions AssMeasure[]
 ---@field private _text_font string?
+---@field private _keyboard_cache _TreeQueryCache?
 ---@field default_text_style TextStyle?
 ---@overload fun(root_widget: Widget, options?: _AppOptions): self
 local App = std.class.new('App')
@@ -173,46 +174,74 @@ function App:_initialize(root_widget, options)
     })
 end
 
----@return NavigatorState?
-function App:_navigation_state()
+--- Cache traversal order, while querying live State capabilities every time.
+---@return Element[]
+function App:_keyboard_targets()
     local root = self.binding and self.binding.root_element
+    local cache = self._keyboard_cache
+    if cache == nil then
+        cache = {}
+        self._keyboard_cache = cache
+        if self.binding then
+            self.binding.build_owner:_register_tree_cache(cache)
+        end
+    end
+    if cache.value and root == cache.value.root then
+        return cache.value.elements
+    end
+    local elements = {}
+    local navigation
     local function visit(element)
+        if navigation == nil and element.widget and element.widget.__class == Navigator then
+            navigation = element.state
+        end
+        local children = element:element_children()
+        for index = #children, 1, -1 do
+            visit(children[index])
+        end
+        if element.state then
+            elements[#elements + 1] = element
+        end
+    end
+    if root then
+        visit(root)
+    end
+    -- Navigator fallback uses forward preorder, unlike key target priority.
+    local function first_navigator(element)
         if element.widget and element.widget.__class == Navigator then
             return element.state
         end
         for _, child in ipairs(element:element_children()) do
-            local found = visit(child)
+            local found = first_navigator(child)
             if found then
                 return found
             end
         end
         return nil
     end
-    return root and visit(root) or nil
+    cache.value = { root = root, elements = elements,
+        navigator = navigation and root and first_navigator(root) or nil }
+    return elements
+end
+
+---@return NavigatorState?
+function App:_navigation_state()
+    self:_keyboard_targets()
+    return self._keyboard_cache and self._keyboard_cache.value and self._keyboard_cache.value.navigator or nil
 end
 
 ---@param event KeyEvent
 ---@return boolean
 function App:_handle_key(event)
-    local root = self.binding and self.binding.root_element
-    local function visit(element)
-        local children = element:element_children()
-        for index = #children, 1, -1 do
-            local handled = visit(children[index])
-            if handled then
-                return true
-            end
-        end
+    for _, element in ipairs(self:_keyboard_targets()) do
         local state = element.state
         if state and type(state.can_handle_key) == 'function'
             and state:can_handle_key(event)
             and type(state.handle_key) == 'function' then
-            return state:handle_key(event) == true
+            if state:handle_key(event) == true then
+                return true
+            end
         end
-        return false
-    end
-    if root and visit(root) then
-        return true
     end
     local navigation = self:_navigation_state()
     return navigation ~= nil and navigation:handle_key(event) or false
@@ -220,22 +249,11 @@ end
 
 ---@return boolean
 function App:_can_handle_key()
-    local root = self.binding and self.binding.root_element
-    local function visit(element)
-        local children = element:element_children()
-        for index = #children, 1, -1 do
-            if visit(children[index]) then
-                return true
-            end
-        end
+    for _, element in ipairs(self:_keyboard_targets()) do
         local state = element.state
-        if state and type(state.can_handle_key) == 'function' then
-            return state:can_handle_key()
+        if state and type(state.can_handle_key) == 'function' and state:can_handle_key() then
+            return true
         end
-        return false
-    end
-    if root and visit(root) then
-        return true
     end
     local navigation = self:_navigation_state()
     return navigation ~= nil and navigation:can_pop() or false
@@ -396,6 +414,7 @@ function App:shutdown()
         return false
     end
     self._shutdown = true
+    self._keyboard_cache = nil
     local failure
     ---@param callback fun()
     local function release(callback)

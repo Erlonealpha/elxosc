@@ -19,6 +19,9 @@ local M = {}
 local BuildScope = build_scope_mod.BuildScope
 local GlobalKey = key_mod.GlobalKey
 
+---@class _TreeQueryCache
+---@field value table? owner invalidates the cached traversal immediately on tree changes
+
 ---@class BuildOwner : std.object
 ---@field render_owner RenderOwner?
 ---@field scheduler Scheduler?
@@ -34,6 +37,8 @@ local GlobalKey = key_mod.GlobalKey
 ---@field _building boolean
 ---@field _state_lock_depth integer
 ---@field _post_finalize fun()[]
+---@field _tree_generation integer internal Element lifecycle/child-order revision
+---@field private _tree_caches table<_TreeQueryCache, true>
 ---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): self
 local BuildOwner = std.class.new('BuildOwner')
 
@@ -52,6 +57,20 @@ function BuildOwner:__init(render_owner, scheduler)
     self._building = false
     self._state_lock_depth = 0
     self._post_finalize = {}
+    self._tree_generation = 0
+    self._tree_caches = setmetatable({}, { __mode = 'k' })
+end
+
+---@param cache _TreeQueryCache
+function BuildOwner:_register_tree_cache(cache)
+    self._tree_caches[cache] = true
+end
+
+function BuildOwner:_tree_changed()
+    self._tree_generation = self._tree_generation + 1
+    for cache in pairs(self._tree_caches) do
+        cache.value = nil
+    end
 end
 
 --- Disposal may observe the tree, but cannot build or schedule mutations.
