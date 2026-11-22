@@ -16,6 +16,9 @@ Source modules load as `src.text.*`; the host-independent collector is
   and a synthetic ellipsis consume no source bytes. Arrays and records are copied;
   `with_style` preserves prepared results for paint effects. Manually constructed
   legacy paragraphs may omit line metrics.
+  Paragraph uses independent dataclass storage/shared methods. Its custom
+  constructor and `with_style` still copy lines and metric records; shallow
+  dataclass export/replace is not a substitute for these protection boundaries.
 - `text_layout.lua` — whole-line measurement and shared finite wrapping. CR/LF/CRLF
   retain empty rows; a tab becomes four spaces with its original byte range.
   Other spaces remain intact. Empty source has no rows. A line limit measures at

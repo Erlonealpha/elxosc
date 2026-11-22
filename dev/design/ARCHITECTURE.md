@@ -21,6 +21,9 @@ Paint 字段；不新增冻结或深拷贝。不使用 std reflection/继承，h
 TextPaint 使用独立 dataclass，继续校验 exact TextPaint/Offset identity、有限坐标与
 显式anchor标志，copy_with返回新值；视觉offset不改变layout/hit testing。
 
+Paragraph 使用独立 dataclass，保留 custom init 对 lines/metrics 的复制，以及
+with_style 的 prepared-result保护；不以浅层dataclass replace/asdict替代这些复制。
+
 框架位于 lib，player 与 Define 分别拥有媒体领域和初始化协议。通用 WidgetsApp 与
 host App 不默认加载或订阅 player。widgets 扁平组织并与 Material 分层；来源级 export、
 静态 catalog 和生产 namespace 的规则见下文。扩展类型提示见

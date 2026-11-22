@@ -17,6 +17,28 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('Paragraph protects line and metric arrays while sharing the intended style', function()
+    local Paragraph = require('src.text.paragraph').Paragraph
+    local TextStyle = require('src.text.text_style').TextStyle
+    local lines = { 'first' }
+    ---@type TextLineMetrics[]
+    local metrics = { { width = 3, start_byte = 1, end_byte = 6, source = 'backend', truncated = false } }
+    local style = TextStyle()
+    local value = Paragraph('first', style, Size(3, 4), lines, 4, { line_metrics = metrics })
+    F.ok(dc.isinstance(value, Paragraph), 'independent paragraph guard')
+    lines[1] = 'changed'
+    assert(metrics[1]).width = 9
+    F.eq(value.lines[1], 'first', 'input lines copied')
+    local original_metric = assert(value.line_metrics[1])
+    F.eq(original_metric.width, 3, 'input metric copied')
+    local copy = value:with_style(TextStyle({ font_size = 20 }))
+    copy.lines[1] = 'copy changed'
+    assert(copy.line_metrics[1]).width = 11
+    F.eq(value.lines[1], 'first', 'with_style line protection')
+    F.eq(original_metric.width, 3, 'with_style metric protection')
+    F.eq(require('text').Paragraph, Paragraph, 'text collector identity')
+end)
+
 F.test('TextPaint retains exact resolution, offsets and explicit anchor copies', function()
     local mod = require 'src.painting.text_paint'
     local Offset = require('src.foundation.geometry').Offset

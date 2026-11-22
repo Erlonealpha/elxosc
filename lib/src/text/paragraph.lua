@@ -10,7 +10,7 @@
 ---@namespace elxosc
 ---@using elxosc
 
-local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 
 ---@class mod.src.text.paragraph
 local M = {}
@@ -30,7 +30,7 @@ local M = {}
 ---@field overflow TextOverflow?
 ---@field truncated boolean?
 
----@class Paragraph : std.object
+---@class Paragraph : dataclass.Object
 ---@field text string the original, unwrapped string
 ---@field style TextStyle
 ---@field size Size natural logical size after wrapping, before parent constraints
@@ -41,7 +41,17 @@ local M = {}
 ---@field overflow TextOverflow
 ---@field truncated boolean
 ---@overload fun(text: string, style: TextStyle, size: Size, lines: string[], line_height: number, options?: _ParagraphOptions): self
-local Paragraph = std.class.new('Paragraph')
+local Paragraph = dataclass.new('Paragraph', nil, { eq = false, repr = false })({
+    dataclass.field('text', nil),
+    dataclass.field('style', nil),
+    dataclass.field('size', nil),
+    dataclass.field('lines', nil),
+    dataclass.field('line_height', nil),
+    dataclass.field('line_metrics', nil),
+    dataclass.field('max_width', math.huge),
+    dataclass.field('overflow', nil),
+    dataclass.field('truncated', false),
+})
 
 function Paragraph:__init(text, style, size, lines, line_height, options)
     options = options or {}
@@ -84,6 +94,8 @@ end
 function Paragraph:is_empty()
     return #self.lines == 0
 end
+
+dataclass.finish(Paragraph)
 
 M.Paragraph = Paragraph
 
