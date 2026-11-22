@@ -22,7 +22,7 @@
 ---@namespace elxosc
 ---@using elxosc
 
-local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 
 local Size = geometry.Size
@@ -48,13 +48,18 @@ local function clamp(value, low, high)
     return value
 end
 
----@class Constraints : std.object
+---@class Constraints : dataclass.Object
 ---@field min_width number
 ---@field max_width number
 ---@field min_height number
 ---@field max_height number
 ---@overload fun(min_width: number?, max_width: number?, min_height: number?, max_height: number?): self
-local Constraints = std.class.new('Constraints')
+local Constraints = dataclass.new('Constraints', nil, { eq = false, repr = false })({
+    dataclass.field('min_width', 0),
+    dataclass.field('max_width', huge),
+    dataclass.field('min_height', 0),
+    dataclass.field('max_height', huge),
+})
 
 function Constraints:__init(min_width, max_width, min_height, max_height)
     self.min_width = min_width or 0
@@ -291,6 +296,8 @@ function Constraints.tight_for(options)
         width == nil and 0 or width, width == nil and huge or width,
         height == nil and 0 or height, height == nil and huge or height)
 end
+
+dataclass.finish(Constraints)
 
 M.Constraints = Constraints
 

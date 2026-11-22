@@ -17,6 +17,18 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('Constraints retains infinity, zero bounds and direct mutable storage', function()
+    local Constraints = require('src.layout.constraints').Constraints
+    local value = Constraints()
+    F.ok(dc.isinstance(value, Constraints), 'independent constraints guard')
+    F.eq(require('layout').Constraints, Constraints, 'layout collector identity')
+    F.eq(value.max_width, math.huge, 'default upper bound')
+    F.eq(Constraints(0, 0, 0, 0).max_width, 0, 'zero bound retained')
+    F.ok(Constraints.expand():has_infinite_width(), 'tight infinity retained')
+    value.max_width = 7
+    F.eq(rawget(value, 'max_width'), 7, 'direct mutation')
+end)
+
 F.test('Matrix2D keeps affine inverse and scalar mapping after type migration', function()
     local Matrix2D = require('src.foundation.transform').Matrix2D
     local Offset = require('src.foundation.geometry').Offset
