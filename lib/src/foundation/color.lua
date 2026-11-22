@@ -12,6 +12,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 
 local raise = std.raise
 local math = math
@@ -28,13 +29,18 @@ local function to_byte(channel)
     return floor(channel * 255 + 0.5)
 end
 
----@class Color : std.object
+---@class Color : dataclass.Object
 ---@field r number 0..1
 ---@field g number 0..1
 ---@field b number 0..1
 ---@field a number 0..1 (1 = opaque)
 ---@overload fun(r: number?, g: number?, b: number?, a: number?): self
-local Color = std.class.new('Color')
+local Color = dataclass.new('Color', nil, { eq = false, repr = false })({
+    dataclass.field('r', 0),
+    dataclass.field('g', 0),
+    dataclass.field('b', 0),
+    dataclass.field('a', 1),
+})
 
 function Color:__init(r, g, b, a)
     self.r = r or 0
@@ -129,6 +135,8 @@ function Color.hex(hex)
     end
     raise(std.ValueError('invalid hex colour: ' .. tostring(hex)))
 end
+
+dataclass.finish(Color)
 
 M.Color = Color
 

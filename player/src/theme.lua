@@ -5,6 +5,7 @@
 ---@using elxosc.player
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local color_mod = require 'src.foundation.color'
 local widget_mod = require 'src.widgets.framework'
 
@@ -78,7 +79,7 @@ local function boolean(name, value)
 end
 
 local function colour(name, value)
-    if not std.isinstance(value, Color) then
+    if not dataclass.isinstance(value, Color) then
         raise(std.TypeError('PlayerThemeData.' .. name .. ' must be a Color'))
     end
     return value

@@ -3,6 +3,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 local Color = require('src.foundation.color').Color
 local Paint = require('src.painting.paint').Paint
@@ -46,7 +47,7 @@ function M.normalize(options)
     end
     local foreground = options.color
     local background = options.background_color
-    if not std.isinstance(foreground, Color) or not std.isinstance(background, Color) then
+    if not dataclass.isinstance(foreground, Color) or not dataclass.isinstance(background, Color) then
         raise(std.TypeError('LinearProgressIndicator colors must be Color values'))
     end
     return { key = options.key, value = value, color = foreground, background_color = background,

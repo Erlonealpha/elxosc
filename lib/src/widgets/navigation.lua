@@ -12,6 +12,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local color_mod = require 'src.foundation.color'
 local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'src.widgets.builder'
@@ -143,7 +144,7 @@ function PopupPage:__init(options)
     end
     page_options.opaque = false
     std.super(PopupPage, self, Page).__init(self, page_options)
-    if options.barrier_color ~= nil and not std.isinstance(options.barrier_color, Color) then
+    if options.barrier_color ~= nil and not dataclass.isinstance(options.barrier_color, Color) then
         raise(std.TypeError('PopupPage.barrier_color must be a Color or nil'))
     end
     if options.barrier_dismissible ~= nil and type(options.barrier_dismissible) ~= 'boolean' then
@@ -172,7 +173,7 @@ function ModalBarrier:__init(options)
     options = options or {}
     self.key = options.key
     self.color = options.color
-    if self.color ~= nil and not std.isinstance(self.color, Color) then
+    if self.color ~= nil and not dataclass.isinstance(self.color, Color) then
         raise(std.TypeError('ModalBarrier.color must be a Color or nil'))
     end
     self.dismissible = options.dismissible ~= false

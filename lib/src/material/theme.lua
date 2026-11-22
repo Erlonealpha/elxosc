@@ -12,6 +12,7 @@
 ---@using elxosc.material
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local color_mod = require 'src.foundation.color'
 local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
@@ -69,9 +70,9 @@ function ThemeData:__init(options)
     self.surface_color = options.surface_color or Color.rgba(0x202832EE)
     self.accent_color = options.accent_color or Color.rgba(0x68A0FFFF)
     self.text_style = options.text_style or TextStyle({ font_size = 14 })
-    if not std.isinstance(self.background_color, Color)
-        or not std.isinstance(self.surface_color, Color)
-        or not std.isinstance(self.accent_color, Color) then
+    if not dataclass.isinstance(self.background_color, Color)
+        or not dataclass.isinstance(self.surface_color, Color)
+        or not dataclass.isinstance(self.accent_color, Color) then
         raise(std.TypeError('ThemeData colors must be Color values'))
     end
     if not std.isinstance(self.text_style, TextStyle) then

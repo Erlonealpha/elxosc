@@ -185,16 +185,16 @@ function TextStyle:__init(options)
         raise(std.ValueError('TextStyle size and effect values must be non-negative'))
     end
     check_finite('line_height_px', self:line_height_px())
-    if not std.isinstance(self.color, Color) then
+    if not dataclass.isinstance(self.color, Color) then
         raise(std.TypeError('TextStyle.color must be a Color'))
     end
     if self.font_family ~= nil and type(self.font_family) ~= 'string' then
         raise(std.TypeError('TextStyle.font_family must be a string'))
     end
-    if self.outline_color ~= nil and not std.isinstance(self.outline_color, Color) then
+    if self.outline_color ~= nil and not dataclass.isinstance(self.outline_color, Color) then
         raise(std.TypeError('TextStyle.outline_color must be a Color'))
     end
-    if self.shadow_color ~= nil and not std.isinstance(self.shadow_color, Color) then
+    if self.shadow_color ~= nil and not dataclass.isinstance(self.shadow_color, Color) then
         raise(std.TypeError('TextStyle.shadow_color must be a Color'))
     end
     if self.shadow_offset ~= nil then

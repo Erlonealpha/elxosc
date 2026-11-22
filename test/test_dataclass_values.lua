@@ -17,6 +17,17 @@ F.test('Size retains constructor, raw mutation, arithmetic and collector identit
     F.eq(value.width, 2, 'receiver retained')
 end)
 
+F.test('Color retains typed consumers, custom encoding and mutable channels', function()
+    local Color = require('src.foundation.color').Color
+    local TextStyle = require('src.text.text_style').TextStyle
+    local value = Color(1, 0, 0)
+    F.ok(dc.isinstance(value, Color), 'independent color guard')
+    F.eq(TextStyle({ color = value }).color, value, 'typed color accepted')
+    value.g = 0.5
+    F.eq(rawget(value, 'g'), 0.5, 'mutable channel')
+    F.ok(value:with_alpha(0) == Color(1, 0.5, 0, 0), 'custom value helper')
+end)
+
 F.test('Constraints retains infinity, zero bounds and direct mutable storage', function()
     local Constraints = require('src.layout.constraints').Constraints
     local value = Constraints()

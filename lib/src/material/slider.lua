@@ -4,6 +4,7 @@
 ---@using elxosc.material
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local widget_mod = require 'src.widgets.framework'
 local slider_mod = require 'src.render.slider'
 
@@ -46,7 +47,7 @@ local function normalize(options)
         height = 48, track_height = 4, track_inset = 20,
         thumb_radius = 10, overlay_radius = 20,
     }
-    if std.isinstance(active, Color) then
+    if dataclass.isinstance(active, Color) then
         defaults.secondary_active_color = active:with_alpha(0.4)
         defaults.overlay_color = active:with_alpha(0.15)
     end

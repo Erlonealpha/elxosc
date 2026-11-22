@@ -10,6 +10,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 local anchor_mod = require 'src.foundation.anchor'
 local text_paint_mod = require 'src.painting.text_paint'
@@ -66,7 +67,7 @@ end
 
 ---@param color Color?
 function RenderText:set_color_override(color)
-    if color ~= nil and not std.isinstance(color, Color) then
+    if color ~= nil and not dataclass.isinstance(color, Color) then
         raise(std.TypeError('RenderText.color_override must be a Color'))
     end
     if self.color_override == color then
@@ -79,7 +80,7 @@ end
 ---@param color Color?
 ---@param radius number?
 function RenderText:set_shadow_override(color, radius)
-    if color ~= nil and not std.isinstance(color, Color) then
+    if color ~= nil and not dataclass.isinstance(color, Color) then
         raise(std.TypeError('RenderText.shadow_color_override must be a Color'))
     end
     if radius ~= nil and (type(radius) ~= 'number' or radius < 0
@@ -97,7 +98,7 @@ end
 ---@param color Color?
 ---@param radius number?
 function RenderText:set_glow_override(color, radius)
-    if color ~= nil and not std.isinstance(color, Color) then
+    if color ~= nil and not dataclass.isinstance(color, Color) then
         raise(std.TypeError('RenderText.glow_color_override must be a Color'))
     end
     if radius ~= nil and (type(radius) ~= 'number' or radius < 0

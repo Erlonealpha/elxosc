@@ -10,6 +10,7 @@
 ---@using elxosc.player
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 local color_mod = require 'src.foundation.color'
 local paint_mod = require 'src.painting.paint'
@@ -59,7 +60,7 @@ local function validate_fraction(value, name)
 end
 
 local function validate_color(value, name)
-    if not std.isinstance(value, Color) then
+    if not dataclass.isinstance(value, Color) then
         raise(std.TypeError(name .. ' must be a Color'))
     end
     return value
