@@ -716,3 +716,24 @@ F.test('PlayerSelector retains unrelated fields and replaces and disposes Store 
     second:replace({ value = 5 })
     F.ok(not binding.build_owner:has_dirty(), 'unmounted selector unsubscribes')
 end)
+
+F.test('PlayerSelector respects a manually nested PlayerProvider', function()
+    local store = PlayerStore({ value = 1 })
+    local selector = player_context.PlayerSelector({
+        selector = function(snapshot)
+            return snapshot:get('value')
+        end,
+        builder = function(value)
+            return Text(tostring(value))
+        end,
+    })
+    local owner, binding = mount(PlayerScope({
+        store = store,
+        child = PlayerProvider({ snapshot = PlayerSnapshot({ value = 9 }), child = selector }),
+    }))
+    F.eq(owner.root.paragraph.text, '9', 'nearest manual snapshot wins')
+    store:replace({ value = 2 })
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, '9', 'outer Store does not override manual provider')
+end)

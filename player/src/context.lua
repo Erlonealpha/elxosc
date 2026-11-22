@@ -695,10 +695,17 @@ end
 
 function PlayerSelectorState:build(context)
     local widget = self.widget --[[@as PlayerSelector]]
-    local provider = Provider.maybe_of(context, PlayerStoreProvider --[[@as std.class]])
-        --[[@as PlayerStoreProvider?]]
+    local player_element = context:find_inherited_exact(PlayerProvider --[[@as std.class]])
+    local store_element = context:find_inherited_exact(PlayerStoreProvider --[[@as std.class]])
+    local provider
+    -- A manually nested PlayerProvider overrides the outer scope's snapshot.
+    -- Only the directly associated Scope provider can use its Store subscription.
+    if player_element and player_element.parent == store_element then
+        provider = Provider.maybe_of(context, PlayerStoreProvider --[[@as std.class]])
+            --[[@as PlayerStoreProvider?]]
+    end
     local store = provider and provider.store or nil
-    if store ~= self.store then
+    if store ~= self.store or store and self.subscription == nil then
         self:_attach(store)
     end
     if store then
