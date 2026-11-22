@@ -113,15 +113,32 @@ end
 ---@param rect Rect
 ---@return Rect axis-aligned bounds of the transformed corners
 function Matrix2D:transform_rect(rect)
-    local top_left = self:transform_offset(Offset(rect.left, rect.top))
-    local top_right = self:transform_offset(Offset(rect.right, rect.top))
-    local bottom_left = self:transform_offset(Offset(rect.left, rect.bottom))
-    local bottom_right = self:transform_offset(Offset(rect.right, rect.bottom))
+    if self.transform_offset ~= Matrix2D.transform_offset then
+        local top_left = self:transform_offset(Offset(rect.left, rect.top))
+        local top_right = self:transform_offset(Offset(rect.right, rect.top))
+        local bottom_left = self:transform_offset(Offset(rect.left, rect.bottom))
+        local bottom_right = self:transform_offset(Offset(rect.right, rect.bottom))
+        return Rect(
+            min(top_left.x, top_right.x, bottom_left.x, bottom_right.x),
+            min(top_left.y, top_right.y, bottom_left.y, bottom_right.y),
+            max(top_left.x, top_right.x, bottom_left.x, bottom_right.x),
+            max(top_left.y, top_right.y, bottom_left.y, bottom_right.y))
+    end
+    local a, b, c, d, tx, ty = self.a, self.b, self.c, self.d, self.tx, self.ty
+    local left, top, right, bottom = rect.left, rect.top, rect.right, rect.bottom
+    local top_left_x = a * left + c * top + tx
+    local top_left_y = b * left + d * top + ty
+    local top_right_x = a * right + c * top + tx
+    local top_right_y = b * right + d * top + ty
+    local bottom_left_x = a * left + c * bottom + tx
+    local bottom_left_y = b * left + d * bottom + ty
+    local bottom_right_x = a * right + c * bottom + tx
+    local bottom_right_y = b * right + d * bottom + ty
     return Rect(
-        min(top_left.x, top_right.x, bottom_left.x, bottom_right.x),
-        min(top_left.y, top_right.y, bottom_left.y, bottom_right.y),
-        max(top_left.x, top_right.x, bottom_left.x, bottom_right.x),
-        max(top_left.y, top_right.y, bottom_left.y, bottom_right.y))
+        min(top_left_x, top_right_x, bottom_left_x, bottom_right_x),
+        min(top_left_y, top_right_y, bottom_left_y, bottom_right_y),
+        max(top_left_x, top_right_x, bottom_left_x, bottom_right_x),
+        max(top_left_y, top_right_y, bottom_left_y, bottom_right_y))
 end
 
 ---@return number
