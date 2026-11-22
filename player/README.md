@@ -61,7 +61,9 @@ See [player design](../dev/design/PLAYER.md) and [host lifecycle](../dev/design/
 ## Local snapshot consumers
 
 `player.src.context.PlayerSelector` subscribes to selected Store values and owns
-replacement/disposal of its subscription. Without a Store provider it reads the
+replacement/disposal of its subscription. Without a Store association it reads the
 nearest manual PlayerProvider snapshot. Main holds its default description;
 timeline progress and time labels rebuild through local consumers. Other snapshot
 changes, theme and display dependencies retain normal rebuild behavior.
+PlayerProviderElement separates Store identity from full snapshot notification;
+full lookups upgrade dependencies, and ordinary unmount clears registrations.

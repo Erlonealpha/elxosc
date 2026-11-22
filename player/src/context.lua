@@ -19,6 +19,7 @@ local Provider = provider_mod.Provider
 local State = state_mod.State
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
+local InheritedElement = require('src.widgets.element').InheritedElement
 
 ---@class mod.player.src.context
 local M = {}
@@ -541,11 +542,13 @@ end
 
 ---@class player._PlayerProviderOptions
 ---@field snapshot PlayerSnapshot
+---@field store PlayerStore?
 ---@field child Widget?
 ---@field key any?
 
 ---@class player.PlayerProvider : Provider
 ---@field snapshot PlayerSnapshot
+---@field store PlayerStore?
 ---@field child Widget?
 ---@field key any?
 ---@overload fun(options: _PlayerProviderOptions): self
@@ -557,13 +560,54 @@ function PlayerProvider:__init(options)
     end
     self.key = options.key
     self.snapshot = normalize_snapshot(options.snapshot):readonly()
+    self.store = options.store
     self.child = options.child
 end
 
 ---@param old_widget InheritedWidget
 ---@return boolean
 function PlayerProvider:update_should_notify(old_widget)
-    return self.snapshot ~= old_widget.snapshot
+    return self.snapshot ~= old_widget.snapshot or self.store ~= old_widget.store
+end
+
+---@alias player.PlayerProviderDependency true|'store'
+
+---@class player.PlayerProviderElement : InheritedElement
+---@field store_changed boolean
+---@field dependents table<Element, PlayerProviderDependency>
+---@overload fun(widget: PlayerProvider): self
+local PlayerProviderElement = std.class.new('PlayerProviderElement', InheritedElement)
+
+function PlayerProviderElement:__init(widget)
+    InheritedElement.__init(self, widget)
+    self.store_changed = false
+end
+
+function PlayerProviderElement:update(new_widget)
+    self.store_changed = self.widget.store ~= new_widget.store
+    InheritedElement.update(self, new_widget)
+end
+
+function PlayerProviderElement:notify_dependents(dependents)
+    if dependents == nil then
+        dependents = {}
+        for dependent in pairs(self.dependents) do
+            dependents[#dependents + 1] = dependent
+        end
+    end
+    for _, dependent in ipairs(dependents) do
+        if dependent.mounted then
+            if self.dependents[dependent] ~= 'store' or self.store_changed then
+                dependent:dependency_changed()
+            end
+        else
+            self.dependents[dependent] = nil
+        end
+    end
+end
+
+function PlayerProvider:create_element()
+    return PlayerProviderElement(self)
 end
 
 ---@param context BuildContext
@@ -594,27 +638,6 @@ end
 ---@return PlayerSnapshot
 function PlayerProvider.snapshot_of(context)
     return PlayerProvider.of(context).snapshot
-end
-
--- Store identity is independent of the snapshot notification stream. Selectors
--- listen here so unrelated fields do not rebuild their Widget descriptions.
----@class player._PlayerStoreProviderOptions
----@field store PlayerStore
----@field child Widget?
-
----@class player.PlayerStoreProvider : Provider
----@field store PlayerStore
----@field child Widget?
----@overload fun(options: _PlayerStoreProviderOptions): self
-local PlayerStoreProvider = std.class.new('PlayerStoreProvider', Provider)
-
-function PlayerStoreProvider:__init(options)
-    self.store = options.store
-    self.child = options.child
-end
-
-function PlayerStoreProvider:update_should_notify(old_widget)
-    return self.store ~= old_widget.store
 end
 
 ---@alias player.PlayerSelectorFunction fun(snapshot: PlayerSnapshot): any?
@@ -697,15 +720,13 @@ end
 function PlayerSelectorState:read_selection(context)
     local widget = self.widget --[[@as PlayerSelector]]
     local player_element = context:find_inherited_exact(PlayerProvider --[[@as std.class]])
-    local store_element = context:find_inherited_exact(PlayerStoreProvider --[[@as std.class]])
-    local provider
-    -- A manually nested PlayerProvider overrides the outer scope's snapshot.
-    -- Only the directly associated Scope provider can use its Store subscription.
-    if player_element and player_element.parent == store_element then
-        provider = Provider.maybe_of(context, PlayerStoreProvider --[[@as std.class]])
-            --[[@as PlayerStoreProvider?]]
+    local player = PlayerProvider.maybe_of(context)
+    local store = player and player.store or nil
+    if store and player_element then
+        -- The framework clears this registration through its ordinary inherited
+        -- dependency lifecycle. A later full lookup by the builder restores true.
+        player_element.dependents[context] = 'store'
     end
-    local store = provider and provider.store or nil
     if store ~= self.store or store and self.subscription == nil then
         self:_attach(store)
     end
@@ -713,7 +734,6 @@ function PlayerSelectorState:read_selection(context)
         self.snapshot = store:get()
         self.selected = widget.selector(self.snapshot)
     else
-        local player = PlayerProvider.maybe_of(context)
         self.snapshot = player and player.snapshot or nil
         self.selected = nil
         if self.snapshot then
@@ -836,12 +856,10 @@ end
 ---@return Widget
 function PlayerScopeState:build(context)
     local scope = self.widget --[[@as PlayerScope]]
-    return PlayerStoreProvider({
+    return PlayerProvider({
         store = scope.store,
-        child = PlayerProvider({
-            snapshot = self.snapshot,
-            child = scope.child,
-        }),
+        snapshot = self.snapshot,
+        child = scope.child,
     })
 end
 

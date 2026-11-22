@@ -737,3 +737,21 @@ F.test('PlayerSelector respects a manually nested PlayerProvider', function()
     owner:layout()
     F.eq(owner.root.paragraph.text, '9', 'outer Store does not override manual provider')
 end)
+
+F.test('PlayerSelector full Provider lookup receives nonselected field changes', function()
+    local store = PlayerStore({ value = 1, title = 'first' })
+    local selector = player_context.PlayerSelector({
+        selector = function(snapshot)
+            return snapshot:get('value')
+        end,
+        builder = function(value, _snapshot, context)
+            local snapshot = PlayerProvider.of(context).snapshot
+            return Text(tostring(value) .. ':' .. tostring(snapshot:get('title')))
+        end,
+    })
+    local owner, binding = mount(PlayerScope({ store = store, child = selector }))
+    store:replace({ value = 1, title = 'second' })
+    binding:flush_build()
+    owner:layout()
+    F.eq(owner.root.paragraph.text, '1:second', 'full dependency upgrades store-only registration')
+end)

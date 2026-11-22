@@ -76,11 +76,15 @@ Main 标题栏、窗口控制和底部播放器骨架不是扩展的隐式 targe
 
 ## ModernX 默认播放器
 
-Main 的时间/进度消费使用 player.src.context.PlayerSelector 和 Store 身份 Provider，
+Main 的时间/进度消费使用 player.src.context.PlayerSelector 和 PlayerProvider 的 Store 身份依赖，
 与 Main shell 的其他 snapshot 字段依赖分开。DefaultAppState 持有默认 Main 描述，
 时间变化只重建相关 Timeline/时间标签；theme、display、metadata 等仍走原依赖。
 selector 自有订阅在 Store replacement 和 dispose 时释放；手动无 Store 的
 PlayerProvider 保持完整 snapshot 回退，不绕过 Snapshot 的 readonly/复制保护。
+
+PlayerProviderElement 区分完整 snapshot 与 store-only 依赖。store-only 目标只在 Store
+更换时因 Provider 通知重建，selected 值仍由自有 Store 订阅更新；builder 进行完整
+Provider 查询时升级为完整依赖。时间标签将此订阅复用到既有 State，保留本地 toggle。
 
 默认播放器采用 ModernX 的产品行为，但不复制其 mpv/ASS 单体实现。默认能力包括：
 
