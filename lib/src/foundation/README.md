@@ -28,8 +28,13 @@ Source modules load as `src.foundation.*`; the host-independent collector is
   Explicit `WidgetsBinding.shutdown()` releases the concrete registry; shutdown in
   progress rejects initialization/attachment until cleanup finishes.
 
-Value helpers return new objects and do not mutate caller-owned geometry. This layer
-does not know about layout, ASS, widgets, focus, routing, or `mp`. Pointer events
+Value helpers return new objects and do not mutate caller-owned geometry.
+Size uses independent `elxlibs.dataclass`, with direct mutable fields and shared
+methods. Size type guards/subclasses use dataclass interfaces; std reflection and
+std `__dict` storage do not apply. Positional defaults, custom comparison, helper
+results and ignored extra arguments remain. Define preserves recognized value identity.
+
+This layer does not know about layout, ASS, widgets, focus, routing, or `mp`. Pointer events
 also expose `legacy_data()`: an explicit non-`nil` payload wins, buttons are used
 for button events, and wheel deltas retain the historical scalar vertical form
 when no horizontal movement is present.

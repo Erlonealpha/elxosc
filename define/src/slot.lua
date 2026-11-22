@@ -13,6 +13,7 @@
 ---@using elxosc.define
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'define.src.builder'
 local framework_builder_mod = require 'src.widgets.builder'
@@ -29,7 +30,8 @@ local M = {}
 ---@alias define.SlotPosition 'first'|'last'|table<string, string>
 
 local function copy_value(value)
-    if type(value) ~= 'table' or std.kindof(value) ~= nil then
+    if type(value) ~= 'table' or std.kindof(value) ~= nil
+        or dataclass.isclass(rawget(value, '__class')) then
         return value
     end
     local result = {}

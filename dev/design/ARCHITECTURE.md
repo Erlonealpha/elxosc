@@ -6,6 +6,12 @@
 
 ## 当前组织
 
+基础值 Size 使用独立 `elxlibs.dataclass`：direct mutable fields、shared methods、
+cached constructor；类型守卫/继承使用 dataclass 接口，不兼容 std reflection/MRO。
+source/collector保持类identity，custom init/operator保持现有调用行为；hooks在finish
+前定义，ordinary methods仍动态查找。Define复制保留识别的值对象，普通配置表继续
+递归复制，不替代PlayerSnapshot深拷贝。Widget/runtime hierarchy继续使用std。
+
 框架位于 lib，player 与 Define 分别拥有媒体领域和初始化协议。通用 WidgetsApp 与
 host App 不默认加载或订阅 player。widgets 扁平组织并与 Material 分层；来源级 export、
 静态 catalog 和生产 namespace 的规则见下文。扩展类型提示见

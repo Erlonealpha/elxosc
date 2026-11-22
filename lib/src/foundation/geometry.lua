@@ -15,6 +15,7 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+local dataclass = require 'elxlibs.dataclass'
 
 local math = math
 local string = string
@@ -186,11 +187,14 @@ end
 -- Size
 --==========================================================================
 
----@class Size : std.object
+---@class Size : dataclass.Object
 ---@field width number
 ---@field height number
 ---@overload fun(width: number?, height: number?): self
-local Size = std.class.new('Size')
+local Size = dataclass.new('Size', nil, { eq = false, repr = false })({
+    dataclass.field('width', 0),
+    dataclass.field('height', 0),
+})
 
 function Size:__init(width, height)
     self.width = width or 0
@@ -253,6 +257,8 @@ end
 function Size.square(extent)
     return Size(extent, extent)
 end
+
+dataclass.finish(Size)
 
 --==========================================================================
 -- Rect

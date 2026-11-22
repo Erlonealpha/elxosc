@@ -190,3 +190,16 @@ F.test('sealed contributions reject new bind calls', function()
         registry:add('title', Text('two'), nil, 'scope')
     end, 'RuntimeError', 'sealed registry')
 end)
+
+F.test('Slot options retain dataclass values inside independent surrounding tables', function()
+    local Size = require('src.foundation.geometry').Size
+    local value = Size(3, 4)
+    local opts = { nested = { size = value } }
+    local registry = ContributionRegistry()
+    registry:add('title', Text('one'), opts, 'scope')
+    opts.nested.size = Size(8, 9)
+    local saved = registry:snapshot()[1].opts
+    F.ok(saved.nested ~= opts.nested, 'plain options copied')
+    F.ok(rawequal(saved.nested.size, value), 'dataclass value identity retained')
+    F.eq(saved.nested.size:area(), 12, 'methods preserved')
+end)

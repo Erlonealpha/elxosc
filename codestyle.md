@@ -42,6 +42,10 @@
 
 ## 排版约定
 
+- 独立 `elxlibs.dataclass` 值类显式声明实例字段、构造 overload 和
+  `dataclass.Object` 基类；自定义 hooks/operators 在 `dataclass.finish` 前定义。
+  类型守卫/继承使用该模块接口，不能标为 `std.object` 或假称兼容 std 反射。
+
 - 模块导入、类型别名和局部字段分组时使用空行分隔，保持视觉层次清晰。
 - 类声明的 `---@overload` 使用返回类型 `self` 表示构造器返回当前类；不要为
   `__init` 添加无意义的 `---@return nil`。
