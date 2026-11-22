@@ -274,15 +274,17 @@ function AssCanvas:_emit_path(path, paint, force_fill)
 
     local k = 2 ^ (self.subpixel - 1)
     local matrix = self._matrix
+    local scale_x, scale_y = matrix.a, matrix.d
+    local translate_x, translate_y = matrix.tx, matrix.ty
     ---@param x number
     ---@return string
     local function ax(x)
-        return ris((matrix.a * x + matrix.tx) * k)
+        return ris((scale_x * x + translate_x) * k)
     end
     ---@param y number
     ---@return string
     local function ay(y)
-        return ris((matrix.d * y + matrix.ty) * k)
+        return ris((scale_y * y + translate_y) * k)
     end
 
     local parts = {}
