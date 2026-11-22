@@ -155,10 +155,19 @@ local function top_bar_visible(snapshot, mode)
     return top_hover_enabled(snapshot)
 end
 
+local shell_fields = {
+    'fullscreen', 'border', 'title_bar', 'idle_active', 'media_title', 'title', 'filename',
+    'is_url', 'url', 'path', 'metadata', 'is_live', 'description', 'media_description', 'file_size',
+    'duration', 'eof_reached', 'pause', 'chapter_list', 'chapter', 'chapter_title', 'buffering',
+    'seekable_ranges', 'cache_state', 'sponsor_segments', 'capabilities', 'track_list',
+    'volume', 'volume_max', 'mute', 'playlist_count', 'playlist_pos', 'loop_file', 'ontop',
+}
+
 local function main_fields(snapshot)
-    local fields = snapshot:to_table()
-    fields.time_pos = nil
-    fields.percent_pos = nil
+    local fields = {}
+    for _, name in ipairs(shell_fields) do
+        fields[name] = snapshot:get(name)
+    end
     return fields
 end
 
