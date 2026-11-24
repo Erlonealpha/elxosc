@@ -155,6 +155,7 @@ function AutoHide:__init(options)
 end
 
 ---@class player.AutoHideState : State
+---@field widget AutoHide
 ---@field private _policy_cache _TreeQueryCache?
 ---@field elapsed number
 ---@field opacity number
@@ -195,7 +196,11 @@ function AutoHideState:_apply_render_state()
     render_object:set_hidden(self.hidden)
 end
 
----@return State[]
+---@class player._AutoHidePolicyTarget : State
+---@field keep_auto_hide_visible? fun(self: self): boolean
+---@field refresh_hover_visibility? fun(self: self)
+
+---@return _AutoHidePolicyTarget[]
 function AutoHideState:_policy_targets()
     local context = self.context
     local cache = self._policy_cache

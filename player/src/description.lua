@@ -94,6 +94,7 @@ function PlayerDescriptionLayerState:init_state()
     self.selected_link = 1
 end
 
+---@param old_widget PlayerDescriptionLayer
 function PlayerDescriptionLayerState:did_update_widget(old_widget)
     local widget = self.widget --[[@as PlayerDescriptionLayer]]
     if old_widget.text ~= widget.text then

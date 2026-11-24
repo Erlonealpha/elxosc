@@ -60,6 +60,7 @@ local M = { PlayerTooltip = PlayerTooltip }
 ---@overload fun(options?: _PlayerTooltipOptions): self
 local PlayerTimeTooltip = std.class.new('PlayerTimeTooltip', widget_mod.StatefulWidget)
 
+---@param options _PlayerTooltipOptions?
 function PlayerTimeTooltip:__init(options)
     self.key = options and options.key
     self.config = {}

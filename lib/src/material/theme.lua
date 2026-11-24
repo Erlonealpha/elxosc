@@ -104,6 +104,7 @@ function Theme:__init(options)
     end
 end
 
+---@param old_widget Theme
 function Theme:update_should_notify(old_widget)
     return self.data ~= old_widget.data
 end

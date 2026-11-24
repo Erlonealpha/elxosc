@@ -98,6 +98,7 @@ function DisplayScope:__init(options)
     end
 end
 
+---@param old_widget DisplayScope
 function DisplayScope:update_should_notify(old_widget)
     return self.snapshot ~= old_widget.snapshot
 end
@@ -146,6 +147,7 @@ function DefaultTextStyle:__init(options)
     end
 end
 
+---@param old_widget DefaultTextStyle
 function DefaultTextStyle:update_should_notify(old_widget)
     return self.style ~= old_widget.style
 end
@@ -186,6 +188,7 @@ M.DefaultTextStyle = DefaultTextStyle
 local TextLayoutScope = std.class.new('TextLayoutScope', InheritedWidget)
 local TextLayoutScopeClass = TextLayoutScope --[[@as std.class]]
 
+---@param options _TextLayoutScopeOptions
 function TextLayoutScope:__init(options)
     self.key = options.key
     self.child = options.child
@@ -200,6 +203,7 @@ function TextLayoutScope:__init(options)
     end
 end
 
+---@param old_widget TextLayoutScope
 function TextLayoutScope:update_should_notify(old_widget)
     return not rawequal(self.layout, old_widget.layout) or self.generation ~= old_widget.generation
 end

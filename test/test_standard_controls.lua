@@ -357,7 +357,7 @@ F.test('indeterminate progress uses owned ticker without rebuilds and releases i
     owner:set_viewport(Constraints.tight(200, 4))
     owner:layout()
     owner:paint(RecordCanvas())
-    local state = tree.root_element.state
+    local state = tree.root_element.state --[[@as material.LinearProgressIndicatorState]]
     F.ok(state._ticker:is_active(), 'indeterminate ticker starts')
     clock:tick(0)
     clock:tick(0.5)

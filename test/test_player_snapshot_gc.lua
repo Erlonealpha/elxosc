@@ -16,7 +16,8 @@ F.test('discarded snapshots and nested readonly views are collectible', function
     local function create()
         local raw = PlayerSnapshot({ tracks = { { id = 7 } } })
         local view = raw:readonly()
-        refs[1], refs[2], refs[3], refs[4] = raw, view, view.tracks, view.tracks[1]
+        local tracks = assert(view.tracks)
+        refs[1], refs[2], refs[3], refs[4] = raw, view, tracks, tracks[1]
     end
     create()
     collect()
@@ -27,7 +28,7 @@ F.test('retained snapshot view keeps its backing snapshot usable', function()
     local view = PlayerSnapshot({ time_pos = 7, tracks = { { id = 3 } } }):readonly()
     collect()
     F.eq(view.time_pos, 7, 'retained view remains readable')
-    F.eq(view.tracks[1].id, 3, 'nested data remains readable')
+    F.eq(assert(view.tracks)[1].id, 3, 'nested data remains readable')
     F.eq(view:readonly(), view, 'retained view identity is stable')
     F.eq(view:copy({ time_pos = 8 }).time_pos, 8, 'copy works after collection')
 end)

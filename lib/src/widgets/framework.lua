@@ -96,6 +96,7 @@ end
 --- A proxy that only contributes parent data to its child's render object
 --- (Flutter's `ParentDataWidget`, e.g. `Flexible`).
 ---@class ParentDataWidget : ProxyWidget
+---@field clear_parent_data fun(self: self, render_object: RenderObject)? optional cleanup hook
 ---@overload fun(child: Widget?, key: any?): self
 local ParentDataWidget = std.class.new('ParentDataWidget', ProxyWidget)
 

@@ -174,8 +174,12 @@ function App:_initialize(root_widget, options)
     })
 end
 
+---@class host._KeyboardTarget : State
+---@field can_handle_key? fun(self: self, event: KeyEvent?): boolean
+---@field handle_key? fun(self: self, event: KeyEvent): boolean
+
 --- Cache traversal order, while querying live State capabilities every time.
----@return State[]
+---@return _KeyboardTarget[]
 function App:_keyboard_targets()
     local root = self.binding and self.binding.root_element
     local cache = self._keyboard_cache

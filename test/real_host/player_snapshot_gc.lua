@@ -14,7 +14,8 @@ local function create()
         local raw = player_mod.PlayerSnapshot({ time_pos = index, tracks = { { id = index } } })
         local view = raw:readonly()
         refs[index * 4], refs[index * 4 + 1] = raw, view
-        refs[index * 4 + 2], refs[index * 4 + 3] = view.tracks, view.tracks[1]
+        local tracks = assert(view.tracks)
+        refs[index * 4 + 2], refs[index * 4 + 3] = tracks, tracks[1]
         store:replace(raw)
     end
     store:replace({ time_pos = 201 })
@@ -28,6 +29,6 @@ for _ in pairs(refs) do
     survivors = survivors + 1
 end
 mp.set_property_native('user-data/elxosc-snapshot-gc', {
-    survivors = survivors, retained_id = retained.tracks[1].id,
+    survivors = survivors, retained_id = assert(retained.tracks)[1].id,
     store_time = store:get().time_pos, runtime = jit.version,
 })

@@ -502,6 +502,7 @@ function PlayerTheme:__init(options)
     end
 end
 
+---@param old_widget PlayerTheme
 function PlayerTheme:update_should_notify(old_widget)
     return self.data ~= old_widget.data
 end

@@ -31,6 +31,7 @@ function GestureDetector:create_render_object()
     return RenderGesture(nil, self.handlers)
 end
 
+---@param render_object RenderGesture
 function GestureDetector:update_render_object(render_object)
     render_object:set_handlers(self.handlers)
 end

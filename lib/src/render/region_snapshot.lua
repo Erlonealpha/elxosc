@@ -35,6 +35,7 @@ end
 ---@overload fun(options: _RegionSnapshotOptions): self
 local RegionSnapshot = std.class.new('RegionSnapshot')
 
+---@param options _RegionSnapshotOptions
 function RegionSnapshot:__init(options)
     self.generation = options.generation
     self.root = options.root

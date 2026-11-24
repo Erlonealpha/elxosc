@@ -77,9 +77,16 @@ end
 ---@field thumb_radius number
 ---@field overlay_radius number
 
+---@class _RenderSliderConfig : _RenderSliderOptions
+---@field min number
+---@field max number
+---@field value number
+---@field hit_expand number
+---@field enabled boolean
+
 --- Normalize once at construction/update boundaries, keeping caller data untouched.
 ---@param options _RenderSliderOptions
----@return _RenderSliderOptions
+---@return _RenderSliderConfig
 function M.normalize(options)
     options = options or {}
     local lower = finite(options.min == nil and 0 or options.min, 'min')
@@ -135,7 +142,7 @@ local fields = {
     'overlay_color', 'height', 'track_height', 'track_inset', 'thumb_radius', 'overlay_radius', 'hit_expand',
 }
 
----@class RenderSlider : RenderObject, _RenderSliderOptions
+---@class RenderSlider : RenderObject, _RenderSliderConfig
 ---@field hovered boolean
 ---@field dragging boolean
 ---@field _last_fraction number?

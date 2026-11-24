@@ -38,6 +38,10 @@ local M = {}
 ---@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, scheduler: Scheduler?): self
 local WidgetTree = std.class.new('WidgetTree')
 
+---@param binding WidgetsBinding
+---@param root_widget Widget
+---@param render_owner RenderOwner
+---@param scheduler Scheduler?
 function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.binding = binding
     self.render_owner = render_owner

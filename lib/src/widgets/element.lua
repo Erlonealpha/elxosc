@@ -41,6 +41,7 @@ local M = {}
 
 ---@class Element : std.object
 ---@field widget Widget
+---@field state State? present only on StatefulElement
 ---@field parent Element?
 ---@field owner BuildOwner?
 ---@field depth int
@@ -57,6 +58,7 @@ local Element = std.class.new('Element')
 --- handle *is* the element itself.
 ---@alias BuildContext Element
 
+---@param widget Widget
 function Element:__init(widget)
     self.widget = widget
     self.parent = nil
@@ -398,10 +400,12 @@ end
 --== composite ============================================================
 
 ---@class StatelessElement : Element
+---@field widget StatelessWidget
 ---@field child Element?
----@overload fun(widget:Widget):self
+---@overload fun(widget:StatelessWidget):self
 local StatelessElement = std.class.new('StatelessElement', Element)
 
+---@param widget StatelessWidget
 function StatelessElement:__init(widget)
     std.super(StatelessElement, self, Element).__init(self, widget)
     self.child = nil
@@ -428,18 +432,21 @@ function StatelessElement:rebuild()
     self:_sync_render_children_upwards()
 end
 
+---@param new_widget StatelessWidget
 function StatelessElement:update(new_widget)
     self.widget = new_widget
     self:rebuild()
 end
 
 ---@class StatefulElement : Element
+---@field widget StatefulWidget
 ---@field child Element?
 ---@field state State
 ---@field _dependencies_changed boolean
----@overload fun(widget: Widget):self
+---@overload fun(widget: StatefulWidget):self
 local StatefulElement = std.class.new('StatefulElement', Element)
 
+---@param widget StatefulWidget
 function StatefulElement:__init(widget)
     std.super(StatefulElement, self, Element).__init(self, widget)
     self.child = nil
@@ -457,6 +464,7 @@ function StatefulElement:mount(parent, owner)
     self._dependencies_changed = true
 end
 
+---@param new_widget StatefulWidget
 function StatefulElement:update(new_widget)
     local old_widget = self.widget
     self.widget = new_widget
@@ -533,10 +541,12 @@ function StatefulElement:dependency_changed(initial)
 end
 
 ---@class ProxyElement : Element
+---@field widget ProxyWidget
 ---@field child Element?
----@overload fun(widget: Widget):self
+---@overload fun(widget: ProxyWidget):self
 local ProxyElement = std.class.new('ProxyElement', Element)
 
+---@param widget ProxyWidget
 function ProxyElement:__init(widget)
     std.super(ProxyElement, self, Element).__init(self, widget)
     self.child = nil
@@ -557,13 +567,15 @@ function ProxyElement:rebuild()
     self:_sync_render_children_upwards()
 end
 
+---@param new_widget ProxyWidget
 function ProxyElement:update(new_widget)
     self.widget = new_widget
     self:rebuild()
 end
 
 ---@class ParentDataElement : ProxyElement
----@overload fun(widget: Widget):self
+---@field widget ParentDataWidget
+---@overload fun(widget: ParentDataWidget):self
 local ParentDataElement = std.class.new('ParentDataElement', ProxyElement)
 
 function ParentDataElement:unmount()
@@ -583,16 +595,19 @@ function ParentDataElement:rebuild()
     end
 end
 
+---@param new_widget ParentDataWidget
 function ParentDataElement:update(new_widget)
     self.widget = new_widget
     self:rebuild()
 end
 
 ---@class InheritedElement : ProxyElement
+---@field widget InheritedWidget
 ---@field dependents table<Element, true>
 ---@overload fun(widget: InheritedWidget): self
 local InheritedElement = std.class.new('InheritedElement', ProxyElement)
 
+---@param widget InheritedWidget
 function InheritedElement:__init(widget)
     std.super(InheritedElement, self, ProxyElement).__init(self, widget)
     self.dependents = {}
@@ -602,6 +617,7 @@ function InheritedElement:is_inherited_element()
     return true
 end
 
+---@param new_widget InheritedWidget
 function InheritedElement:update(new_widget)
     local old_widget = self.widget
     local dependents = {}
@@ -636,10 +652,12 @@ end
 --== render object elements ===============================================
 
 ---@class RenderObjectElement : Element
+---@field widget RenderObjectWidget
 ---@field render_object RenderObject
----@overload fun(widget: Widget):self
+---@overload fun(widget: RenderObjectWidget):self
 local RenderObjectElement = std.class.new('RenderObjectElement', Element)
 
+---@param widget RenderObjectWidget
 function RenderObjectElement:__init(widget)
     std.super(RenderObjectElement, self, Element).__init(self, widget)
     self.render_object = nil
@@ -653,6 +671,7 @@ function RenderObjectElement:mount(parent, owner)
     end
 end
 
+---@param new_widget RenderObjectWidget
 function RenderObjectElement:update(new_widget)
     self.widget = new_widget
     new_widget:update_render_object(self.render_object)
@@ -682,15 +701,18 @@ function RenderObjectElement:rebuild()
 end
 
 ---@class LeafRenderObjectElement : RenderObjectElement
----@overload fun(widget: Widget):self
+---@field widget LeafRenderObjectWidget
+---@overload fun(widget: LeafRenderObjectWidget):self
 local LeafRenderObjectElement = std.class.new('LeafRenderObjectElement', RenderObjectElement)
 
 ---@class SingleChildRenderObjectElement : RenderObjectElement
+---@field widget SingleChildRenderObjectWidget
 ---@field child Element?
----@overload fun(widget: Widget):self
+---@overload fun(widget: SingleChildRenderObjectWidget):self
 local SingleChildRenderObjectElement =
     std.class.new('SingleChildRenderObjectElement', RenderObjectElement)
 
+---@param widget SingleChildRenderObjectWidget
 function SingleChildRenderObjectElement:__init(widget)
     std.super(SingleChildRenderObjectElement, self, RenderObjectElement).__init(self, widget)
     self.child = nil
@@ -712,17 +734,20 @@ function SingleChildRenderObjectElement:rebuild()
     self:sync_render_children()
 end
 
+---@param new_widget SingleChildRenderObjectWidget
 function SingleChildRenderObjectElement:update(new_widget)
     RenderObjectElement.update(self, new_widget)
     self:rebuild()
 end
 
 ---@class MultiChildRenderObjectElement : RenderObjectElement
+---@field widget MultiChildRenderObjectWidget
 ---@field children Element[]
----@overload fun(widget: Widget):self
+---@overload fun(widget: MultiChildRenderObjectWidget):self
 local MultiChildRenderObjectElement =
     std.class.new('MultiChildRenderObjectElement', RenderObjectElement)
 
+---@param widget MultiChildRenderObjectWidget
 function MultiChildRenderObjectElement:__init(widget)
     std.super(MultiChildRenderObjectElement, self, RenderObjectElement).__init(self, widget)
     self.children = {}
@@ -832,6 +857,7 @@ function MultiChildRenderObjectElement:rebuild()
     self:sync_render_children()
 end
 
+---@param new_widget MultiChildRenderObjectWidget
 function MultiChildRenderObjectElement:update(new_widget)
     RenderObjectElement.update(self, new_widget)
     self:rebuild()
@@ -841,34 +867,42 @@ end
 -- `widget/widget.lua` cannot reference the element classes (Lua's `require`
 -- has no cycles), so the mapping is installed here, once.
 
+---@return StatelessElement
 function StatelessWidget:create_element()
     return StatelessElement(self)
 end
 
+---@return StatefulElement
 function StatefulWidget:create_element()
     return StatefulElement(self)
 end
 
+---@return ProxyElement
 function ProxyWidget:create_element()
     return ProxyElement(self)
 end
 
+---@return ParentDataElement
 function ParentDataWidget:create_element()
     return ParentDataElement(self)
 end
 
+---@return InheritedElement
 function InheritedWidget:create_element()
     return InheritedElement(self)
 end
 
+---@return LeafRenderObjectElement
 function LeafRenderObjectWidget:create_element()
     return LeafRenderObjectElement(self)
 end
 
+---@return SingleChildRenderObjectElement
 function SingleChildRenderObjectWidget:create_element()
     return SingleChildRenderObjectElement(self)
 end
 
+---@return MultiChildRenderObjectElement
 function MultiChildRenderObjectWidget:create_element()
     return MultiChildRenderObjectElement(self)
 end

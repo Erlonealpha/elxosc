@@ -26,6 +26,7 @@ local raise = std.raise
 ---@overload fun(options?: _PlayerControlBarOptions): self
 local PlayerControlBar = std.class.new('PlayerControlBar', StatelessWidget)
 
+---@param options _PlayerControlBarOptions?
 function PlayerControlBar:__init(options)
     self.key = options and options.key
     self.children = {}

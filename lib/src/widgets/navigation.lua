@@ -271,6 +271,8 @@ end
 ---@overload fun(page: Page, navigator: NavigatorState): self
 local Route = std.class.new('Route')
 
+---@param page Page
+---@param navigator NavigatorState
 function Route:__init(page, navigator)
     validate_page(page)
     self.page = page
@@ -436,6 +438,7 @@ function NavigatorScope:__init(options)
     end
 end
 
+---@param old_widget NavigatorScope
 function NavigatorScope:update_should_notify(old_widget)
     return self.state ~= old_widget.state
 end
@@ -446,7 +449,7 @@ function NavigatorScope.of(context)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('Navigator lookup expects a BuildContext'))
     end
-    local scope = context:depend_on_inherited_widget_of_exact_type(NavigatorScopeClass)
+    local scope = context:depend_on_inherited_widget_of_exact_type(NavigatorScopeClass) --[[@as NavigatorScope?]]
     if scope == nil then
         raise(std.RuntimeError('no Navigator ancestor was found'))
     end

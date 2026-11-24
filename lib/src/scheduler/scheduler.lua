@@ -36,6 +36,7 @@ end
 ---@overload fun(clock: FrameClock): self
 local Scheduler = std.class.new('Scheduler')
 
+---@param clock FrameClock
 function Scheduler:__init(clock)
     self.clock = clock
     ---@type table<fun(dt: number, time: number), true>

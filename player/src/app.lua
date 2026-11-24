@@ -273,7 +273,7 @@ end
 ---@overload fun(options?: _DefaultAppOptions): self
 local DefaultApp = std.class.new('DefaultApp', StatefulWidget)
 
----@param options _DefaultAppOptions
+---@param options _DefaultAppOptions?
 function DefaultApp:__init(options)
     options = options or {}
     self.key = options.key

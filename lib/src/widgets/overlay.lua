@@ -252,6 +252,7 @@ function OverlayEntryWidget:__init(options)
 end
 
 ---@class OverlayEntryMountState : State
+---@field widget OverlayEntryWidget
 ---@field entry OverlayEntry?
 ---@overload fun(): self
 local OverlayEntryMountState = std.class.new('OverlayEntryMountState', State)
@@ -334,6 +335,7 @@ function OverlayScope:__init(options)
     end
 end
 
+---@param old_widget OverlayScope
 function OverlayScope:update_should_notify(old_widget)
     return self.state ~= old_widget.state
 end
@@ -344,7 +346,7 @@ function OverlayScope.of(context)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('Overlay lookup expects a BuildContext'))
     end
-    local scope = context:depend_on_inherited_widget_of_exact_type(OverlayScopeClass)
+    local scope = context:depend_on_inherited_widget_of_exact_type(OverlayScopeClass) --[[@as OverlayScope?]]
     if scope == nil then
         raise(std.RuntimeError('no Overlay ancestor was found'))
     end
@@ -388,6 +390,7 @@ end
 ---@field entries OverlayPlanEntry[]
 
 ---@class OverlayState : State
+---@field widget Overlay
 ---@field entries OverlayEntry[]
 ---@field generation integer
 ---@field last_plan OverlayPlan?
@@ -409,6 +412,7 @@ function OverlayState:init_state()
     self:_notify_plan()
 end
 
+---@param old_widget Overlay
 function OverlayState:did_update_widget(old_widget)
     local widget = self.widget --[[@as Overlay]]
     self:_sync_initial_entries(widget.initial_entries)

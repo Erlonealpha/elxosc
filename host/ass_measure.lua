@@ -60,6 +60,7 @@ end
 ---@overload fun(options: _AssMeasureOptions): self
 local AssMeasure = std.class.new('AssMeasure')
 
+---@param options _AssMeasureOptions
 function AssMeasure:__init(options)
     self.res_x = resolution(options.res_x, 'res_x')
     self.res_y = resolution(options.res_y, 'res_y')

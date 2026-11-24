@@ -39,6 +39,7 @@ function CustomPaint:create_render_object()
     return RenderCustomPaint(self.draw, { preferred_size = self.preferred_size })
 end
 
+---@param render_object RenderCustomPaint
 function CustomPaint:update_render_object(render_object)
     render_object.draw = self.draw
     render_object.preferred_size = self.preferred_size

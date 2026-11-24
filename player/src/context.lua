@@ -187,6 +187,8 @@ local function copy_fields(fields)
 end
 
 ---@class player.PlayerSnapshot : std.object
+---@field capabilities table<string, CapabilityInfo>?
+---@field [string] PlayerSnapshotValue? dynamic snapshot fields
 ---@field private _fields table<string, true>
 ---@overload fun(fields: _PlayerSnapshotOptions?): self
 local PlayerSnapshot = std.class.new('PlayerSnapshot')
@@ -245,18 +247,22 @@ local snapshot_view_mt = {
     end,
 }
 
+---@return PlayerSnapshot
 function PlayerSnapshot:readonly()
     local view = snapshot_views[self]
     if view then
-        return view
+        return view --[[@as PlayerSnapshot]]
     end
     view = {}
     snapshot_views[self] = view
     snapshot_view_values[view] = self
     setmetatable(view, snapshot_view_mt)
-    return view
+    -- The read-only facade delegates the public snapshot API; it is not a
+    -- second class instance or a copy of private backing fields.
+    return view --[[@as PlayerSnapshot]]
 end
 
+---@param fields _PlayerSnapshotOptions?
 function PlayerSnapshot:__init(fields)
     local values = copy_fields(fields)
     self._fields = {}
@@ -332,6 +338,7 @@ local PlayerSubscription = std.class.new('PlayerSubscription')
 ---@field equals? fun(left: any?, right: any?): boolean
 ---@field selected? any
 
+---@param options _PlayerSubscriptionOptions
 function PlayerSubscription:__init(options)
     self._active = true
     self._listener = options.listener
@@ -564,7 +571,7 @@ function PlayerProvider:__init(options)
     self.child = options.child
 end
 
----@param old_widget InheritedWidget
+---@param old_widget PlayerProvider
 ---@return boolean
 function PlayerProvider:update_should_notify(old_widget)
     return self.snapshot ~= old_widget.snapshot or self.store ~= old_widget.store
@@ -573,16 +580,19 @@ end
 ---@alias player.PlayerProviderDependency true|'store'
 
 ---@class player.PlayerProviderElement : InheritedElement
+---@field widget PlayerProvider
 ---@field store_changed boolean
 ---@field dependents table<Element, PlayerProviderDependency>
 ---@overload fun(widget: PlayerProvider): self
 local PlayerProviderElement = std.class.new('PlayerProviderElement', InheritedElement)
 
+---@param widget PlayerProvider
 function PlayerProviderElement:__init(widget)
     InheritedElement.__init(self, widget)
     self.store_changed = false
 end
 
+---@param new_widget PlayerProvider
 function PlayerProviderElement:update(new_widget)
     self.store_changed = self.widget.store ~= new_widget.store
     InheritedElement.update(self, new_widget)
@@ -709,6 +719,9 @@ function PlayerSelectorState:_attach(store)
     end
 end
 
+---@alias player._PlayerSelectionWidget { selector?: PlayerSelectorFunction, equals?: fun(left: any?, right: any?): boolean }
+
+---@param old_widget _PlayerSelectionWidget
 function PlayerSelectorState:did_update_widget(old_widget)
     local widget = self.widget --[[@as PlayerSelector]]
     if old_widget.selector ~= widget.selector or old_widget.equals ~= widget.equals then
@@ -719,7 +732,7 @@ end
 ---@param context BuildContext
 function PlayerSelectorState:read_selection(context)
     local widget = self.widget --[[@as PlayerSelector]]
-    local player_element = context:find_inherited_exact(PlayerProvider --[[@as std.class]])
+    local player_element = context:find_inherited_exact(PlayerProvider --[[@as std.class]]) --[[@as PlayerProviderElement?]]
     local player = PlayerProvider.maybe_of(context)
     local store = player and player.store or nil
     if store and player_element then

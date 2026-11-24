@@ -156,6 +156,7 @@ function PlayerTimeDisplayState:init_state()
     self._time_width = PlayerTimeWidth()
 end
 
+---@param old_widget PlayerTimeDisplay
 function PlayerTimeDisplayState:did_update_widget(old_widget)
     PlayerSelectorState.did_update_widget(self, old_widget)
     local widget = self.widget --[[@as PlayerTimeDisplay]]

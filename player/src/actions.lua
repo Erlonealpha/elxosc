@@ -390,6 +390,7 @@ function HostActionsScope:__init(options)
     end
 end
 
+---@param old_widget HostActionsScope
 function HostActionsScope:update_should_notify(old_widget)
     return self.actions ~= old_widget.actions
 end
@@ -413,7 +414,7 @@ function HostActions.maybe_of(context)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('HostActions lookup expects a BuildContext'))
     end
-    local scope = context:depend_on_inherited_widget_of_exact_type(HostActionsScopeClass)
+    local scope = context:depend_on_inherited_widget_of_exact_type(HostActionsScopeClass) --[[@as HostActionsScope?]]
     return scope and scope.actions or nil --[[@as HostActions?]]
 end
 

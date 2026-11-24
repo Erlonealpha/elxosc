@@ -36,6 +36,7 @@ local output = assert(arg[3])
 ---@field tick integer
 ---@overload fun(options: _BenchmarkRootOptions): self
 local BenchmarkRoot = std.class.new('BenchmarkRoot', StatefulWidget)
+---@param options _BenchmarkRootOptions
 function BenchmarkRoot:__init(options)
     self.scene = options.scene
     self.tick = options.tick

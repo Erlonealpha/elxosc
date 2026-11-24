@@ -58,8 +58,10 @@ local second
 ---@param node RenderObject
 ---@param out table
 local function collect_text(node, out)
-    if node.paragraph then
-        out[node.paragraph.text] = node.paragraph.size.width
+    -- Traverse mixed RenderObjects; paragraph is an optional text capability.
+    local paragraph = (node --[[@as { paragraph?: Paragraph }]]).paragraph
+    if paragraph then
+        out[paragraph.text] = paragraph.size.width
     end
     for _, next_node in ipairs(node:children()) do
         collect_text(next_node, out)
