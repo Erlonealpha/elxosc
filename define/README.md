@@ -17,6 +17,10 @@ Each failed payload rolls back all contributions and publications without consum
 its scope. The first successful payload commits; later payloads warn and are ignored.
 At seal the host assembles once before mount. This protocol has no runtime unbind,
 scope shutdown, mounted-tree rollback, root manager or source hot reload.
+Assembly snapshots initialized Widget data without invoking constructors again.
+Direct and dict instance storage are supported through the existing class identity
+and the actual metatable; callbacks and class/value objects retain
+identity, while ordinary configuration tables and child arrays are copied.
 
 `import` injects exports; `import_as` and its `require` alias return a shallow package
 without environment injection. They preserve nested/class/array identity and run loaders within the

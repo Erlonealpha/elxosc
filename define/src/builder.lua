@@ -8,11 +8,11 @@ local builder_mod = require 'src.widgets.builder'
 ---@class mod.define.src.builder
 local M = {}
 
----@alias define.SlotBuilder fun(value: Widget|Widget[]|nil, opts: table<string, any>?): Widget?
+---@alias define.SlotBuilder fun(value: Widget|Widget[]|nil, opts: SpecOptions?): Widget?
 
 ---@param callback SlotBuilder
 ---@param value Widget|Widget[]|nil
----@param opts table<string, any>?
+---@param opts SpecOptions?
 ---@param name string
 ---@return Widget?
 function M.call_slot(callback, value, opts, name)

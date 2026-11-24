@@ -22,6 +22,6 @@ export('define', require 'define.src.sandbox', true)
 --- mod.define.src.sandbox
 ---@field DefineSession DefineSession
 ---@field ModuleRegistry ModuleRegistry
----@field call_slot fun(callback: SlotBuilder, value: Widget|Widget[]|nil, opts: table<string, any>?, name: string): Widget?
+---@field call_slot fun(callback: SlotBuilder, value: Widget|Widget[]|nil, opts: SpecOptions?, name: string): Widget?
 local M = exports.get('define')
 return M

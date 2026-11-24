@@ -21,17 +21,35 @@ local framework_builder_mod = require 'src.widgets.builder'
 local Widget = widget_mod.Widget
 local StatelessWidget = widget_mod.StatelessWidget
 local raise = std.raise
+local type = type
+local rawget = rawget
+local rawset = rawset
+local pairs = pairs
+local ipairs = ipairs
+local string = string
+local next = next
+local table = table
+local tostring = tostring
+local pcall = pcall
+local setmetatable = debug.setmetatable
+local getmetatable = debug.getmetatable
 
 ---@class mod.define.src.slot
 local M = {}
 
----@alias define.SlotOperation 'replace'|'set'|'append'
+---@alias define.SlotOperation
+--- | 'replace'
+--- | 'set'
+--- | 'append'
 
----@alias define.SlotPosition 'first'|'last'|table<string, string>
+---@alias define.SlotPosition
+--- | 'first'
+--- | 'last'
+--- | table<string, string>
 
+---@param value any
 local function copy_value(value)
-    if type(value) ~= 'table' or std.kindof(value) ~= nil
-        or dataclass.isclass(rawget(value, '__class')) then
+    if type(value) ~= 'table' or std.kindof(value) ~= nil or dataclass.isclass(rawget(value, '__class')) then
         return value
     end
     local result = {}
@@ -41,42 +59,57 @@ local function copy_value(value)
     return result
 end
 
+---@param value string
 local function is_operation(value)
     return value == 'replace' or value == 'set' or value == 'append'
 end
 
----@class define.SlotSpecOptions
----@field id string
----@field allow SlotOperation[]|table<SlotOperation, boolean>?
----@field default_op SlotOperation?
----@field default_opts table<string, any>?
----@field default_value Widget|Widget[]?
----@field builder? SlotBuilder
----@field append_limit integer?
----@field identity? fun(opts: table<string, any>, contribution: Contribution): string?
----@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
+---@class define.SpecOptions
+---@field op       SlotOperation?
+---@field pos      SlotPosition?
+---@field priority number?
+---@field name     string?
+---@field key      any?
+---@field [string] any
 
----@class define.SlotSpec : std.object
----@field id string
----@field allow table<SlotOperation, true>
----@field default_op SlotOperation?
----@field default_opts table<string, any>
----@field default_value Widget|Widget[]?
----@field builder SlotBuilder
----@field append_limit integer?
----@field identity fun(opts: table<string, any>, contribution: Contribution): string?
----@field validate? fun(value: Widget, opts: table<string, any>, contribution: Contribution): boolean|string
+---@class define.SlotSpecOptions
+---@field id            string
+---@field allow         SlotOperation[] | table<SlotOperation, boolean>?
+---@field default_op    SlotOperation?
+---@field default_opts  SpecOptions?
+---@field default_value Widget | Widget[]?
+---@field builder?      SlotBuilder
+---@field append_limit  integer?
+---@field identity?     fun(opts: SpecOptions, contribution: Contribution): string?
+---@field validate?     fun(value: Widget, opts: SpecOptions, contribution: Contribution): boolean | string
+
+---@class define.SlotSpec: std.object
+---@field id            string
+---@field allow         table<SlotOperation, true>
+---@field default_op    SlotOperation?
+---@field default_opts  SpecOptions
+---@field default_value Widget | Widget[]?
+---@field builder       SlotBuilder
+---@field append_limit  integer?
+---@field identity      fun(opts: SpecOptions, contribution: Contribution): string?
+---@field validate?     fun(value: Widget, opts: SpecOptions, contribution: Contribution): boolean | string
 ---@overload fun(options: SlotSpecOptions): self
 local SlotSpec = std.class.new('SlotSpec')
 
+---@param source table?
 local function copy_table(source)
+    if source == nil then
+        return {}
+    end
     local result = {}
-    for key, value in pairs(source or {}) do
+    for key, value in pairs(source) do
         result[key] = copy_value(value)
     end
     return result
 end
 
+---@param allow      table<SlotOperation, boolean> | SlotOperation[]?
+---@param default_op SlotOperation?
 local function normalize_allow(allow, default_op)
     local result = {}
     if type(allow) == 'table' then
@@ -108,6 +141,7 @@ local function normalize_allow(allow, default_op)
     return result
 end
 
+---@param options SlotSpecOptions
 function SlotSpec:__init(options)
     options = options or {}
     if type(options.id) ~= 'string' or options.id == '' then
@@ -117,21 +151,18 @@ function SlotSpec:__init(options)
         framework_builder_mod.validate_callback(options.builder, 'SlotSpec.builder')
     end
     if options.append_limit ~= nil
-        and (type(options.append_limit) ~= 'number' or options.append_limit < 0
-            or options.append_limit % 1 ~= 0) then
+        and (type(options.append_limit) ~= 'number' or options.append_limit < 0 or options.append_limit % 1 ~= 0) then
         raise(std.ValueError('SlotSpec.append_limit must be a non-negative integer'))
     end
 
     self.id = options.id
     if options.default_op ~= nil and not is_operation(options.default_op) then
-        raise(std.ValueError(string.format(
-            "unknown Slot operation '%s'", tostring(options.default_op))))
+        raise(std.ValueError(string.format("unknown Slot operation '%s'", tostring(options.default_op))))
     end
     self.allow = normalize_allow(options.allow, options.default_op)
     self.default_op = options.default_op
     if self.default_op ~= nil and not self.allow[self.default_op] then
-        raise(std.ValueError(string.format(
-            "SlotSpec.default_op '%s' is not allowed", self.default_op)))
+        raise(std.ValueError(string.format("SlotSpec.default_op '%s' is not allowed", self.default_op)))
     end
     if self.default_op == nil then
         local only
@@ -148,9 +179,10 @@ function SlotSpec:__init(options)
     end
     self.default_opts = copy_table(options.default_opts)
     self.default_value = copy_value(options.default_value)
-    self.builder = options.builder or function(value)
-        return value --[[@as Widget?]]
-    end
+    self.builder = options.builder
+        or function (value)
+            return value --[[@as Widget?]]
+        end
     self.append_limit = options.append_limit
     self.identity = options.identity
     self.validate = options.validate
@@ -162,28 +194,28 @@ function SlotSpec:allows(operation)
     return self.allow[operation] == true
 end
 
----@param value Widget|Widget[]|nil
----@param opts table<string, any>?
+---@param value Widget | Widget[]?
+---@param opts  SpecOptions?
 ---@return Widget?
 function SlotSpec:build(value, opts)
-    return builder_mod.call_slot(self.builder, value, opts,
-        string.format("SlotSpec '%s' builder", self.id))
+    return builder_mod.call_slot(self.builder, value, opts, string.format("SlotSpec '%s' builder", self.id))
 end
 
----@class define.SlotWrap : StatelessWidget
----@field spec SlotSpec
----@field default_value Widget|Widget[]?
----@overload fun(spec: SlotSpec, default_value: Widget|Widget[]?): self
+---@class define.SlotWrap: StatelessWidget
+---@field spec          SlotSpec
+---@field default_value Widget | Widget[]?
+---@overload fun(spec: SlotSpec, default_value: (Widget | Widget[])?): self
 local SlotWrap = std.class.new('SlotWrap', StatelessWidget)
 
+---@param spec          SlotSpec
+---@param default_value Widget | Widget[]?
 function SlotWrap:__init(spec, default_value)
     if not std.isinstance(spec, SlotSpec) then
         raise(std.TypeError('SlotWrap.spec must be a SlotSpec'))
     end
     self.key = nil
     self.spec = spec
-    self.default_value = default_value == nil and copy_value(spec.default_value)
-        or copy_value(default_value)
+    self.default_value = default_value == nil and copy_value(spec.default_value) or copy_value(default_value)
 end
 
 function SlotWrap:child_widgets()
@@ -210,17 +242,32 @@ function SlotWrap:build()
     return self.spec:build(self.default_value)
 end
 
----@class define.Contribution : std.object
----@field slot_id string
----@field widget Widget
----@field op SlotOperation?
----@field opts table<string, any>
----@field scope_id string
----@field sequence integer
+---@class define.Contribution: std.object
+---@field slot_id        string
+---@field widget         Widget
+---@field op             SlotOperation?
+---@field opts           SpecOptions
+---@field scope_id       string
+---@field sequence       integer
 ---@field scope_sequence integer
----@overload fun(slot_id: string, widget: Widget, op: SlotOperation?, opts: table<string, any>?, scope_id: string, sequence: integer, scope_sequence: integer): self
+---@overload fun(
+---     slot_id: string,
+---     widget: Widget,
+---     op: SlotOperation?,
+---     opts: SpecOptions?,
+---     scope_id: string,
+---     sequence: integer,
+---     scope_sequence: integer
+--- ): self
 local Contribution = std.class.new('Contribution')
 
+---@param slot_id        string
+---@param widget         Widget
+---@param op             SlotOperation?
+---@param opts           SpecOptions?
+---@param scope_id       string
+---@param sequence       integer
+---@param scope_sequence integer
 function Contribution:__init(slot_id, widget, op, opts, scope_id, sequence, scope_sequence)
     if type(slot_id) ~= 'string' or slot_id == '' then
         raise(std.ValueError('Contribution.slot_id must be a non-empty string'))
@@ -240,12 +287,12 @@ function Contribution:__init(slot_id, widget, op, opts, scope_id, sequence, scop
     self.scope_sequence = scope_sequence
 end
 
----@class define.ContributionRegistry : std.object
----@field _entries Contribution[]
+---@class define.ContributionRegistry: std.object
+---@field _entries         Contribution[]
 ---@field _scope_sequences table<string, integer>
----@field _next_sequence integer
----@field _sealed boolean
----@field _snapshot Contribution[]?
+---@field _next_sequence   integer
+---@field _sealed          boolean
+---@field _snapshot        Contribution[]?
 ---@overload fun(): self
 local ContributionRegistry = std.class.new('ContributionRegistry')
 
@@ -266,13 +313,9 @@ function ContributionRegistry:fork()
     end
     for _, contribution in ipairs(self._entries) do
         child._entries[#child._entries + 1] = Contribution(
-            contribution.slot_id,
-            contribution.widget,
-            contribution.op,
-            contribution.opts,
-            contribution.scope_id,
-            contribution.sequence,
-            contribution.scope_sequence)
+            contribution.slot_id, contribution.widget, contribution.op, contribution.opts, contribution.scope_id,
+            contribution.sequence, contribution.scope_sequence
+        )
     end
     return child
 end
@@ -285,13 +328,9 @@ function ContributionRegistry:commit_from(transaction)
     for index = #self._entries + 1, #transaction._entries do
         local contribution = transaction._entries[index]
         self._entries[#self._entries + 1] = Contribution(
-            contribution.slot_id,
-            contribution.widget,
-            contribution.op,
-            contribution.opts,
-            contribution.scope_id,
-            contribution.sequence,
-            contribution.scope_sequence)
+            contribution.slot_id, contribution.widget, contribution.op, contribution.opts, contribution.scope_id,
+            contribution.sequence, contribution.scope_sequence
+        )
     end
     self._next_sequence = transaction._next_sequence
     for scope_id, sequence in pairs(transaction._scope_sequences) do
@@ -318,9 +357,9 @@ function ContributionRegistry:clear_scope(scope_id)
     self:remove_scope(scope_id)
 end
 
----@param slot_id string
----@param widget Widget
----@param opts table<string, any>?
+---@param slot_id  string
+---@param widget   Widget
+---@param opts     SpecOptions?
 ---@param scope_id string?
 ---@return Contribution
 function ContributionRegistry:add(slot_id, widget, opts, scope_id)
@@ -338,22 +377,14 @@ function ContributionRegistry:add(slot_id, widget, opts, scope_id)
     end
     ---@type SlotOperation?
     local operation = opts and opts.op or nil
-    if operation ~= nil and operation ~= 'replace' and operation ~= 'set'
-        and operation ~= 'append' then
+    if operation ~= nil and operation ~= 'replace' and operation ~= 'set' and operation ~= 'append' then
         raise(std.ValueError(string.format("unknown Slot operation '%s'", tostring(operation))))
     end
     local owner = scope_id or '<anonymous>'
     local scope_sequence = (self._scope_sequences[owner] or 0) + 1
     self._scope_sequences[owner] = scope_sequence
     self._next_sequence = self._next_sequence + 1
-    local contribution = Contribution(
-        slot_id,
-        widget,
-        operation,
-        opts,
-        owner,
-        self._next_sequence,
-        scope_sequence)
+    local contribution = Contribution(slot_id, widget, operation, opts, owner, self._next_sequence, scope_sequence)
     self._entries[#self._entries + 1] = contribution
     return contribution
 end
@@ -364,13 +395,9 @@ function ContributionRegistry:snapshot()
     local result = {}
     for _, contribution in ipairs(source) do
         result[#result + 1] = Contribution(
-            contribution.slot_id,
-            contribution.widget,
-            contribution.op,
-            contribution.opts,
-            contribution.scope_id,
-            contribution.sequence,
-            contribution.scope_sequence)
+            contribution.slot_id, contribution.widget, contribution.op, contribution.opts, contribution.scope_id,
+            contribution.sequence, contribution.scope_sequence
+        )
     end
     return result
 end
@@ -417,22 +444,54 @@ function ContributionRegistry:entries_for_scope(scope_id)
     return result
 end
 
----@class define.CompositionAssembler : std.object
+---@class define._CompositionAssemblerDiagnostic
+---@field level    string
+---@field slot_id  string
+---@field message  string
+---@field scope_id string?
+---@field sequence int?
+
+---@class define._CompositionAssemblerContribution
+---@field widget       Widget
+---@field opts         SpecOptions
+---@field operation    SlotOperation
+---@field contribution Contribution
+---@field identity     string?
+
+---@class define.CompositionAssembler: std.object
 ---@field contributions Contribution[]
----@field diagnostics table[]
----@field on_warning fun(diagnostic: table)?
----@field _used table<Contribution, true>
----@overload fun(contributions: Contribution[]?, options: { on_warning: fun(diagnostic: table)? }?): self
+---@field diagnostics   _CompositionAssemblerDiagnostic[]
+---@field on_warning    fun(diagnostic: _CompositionAssemblerDiagnostic)?
+---@field _used         table<Contribution, true>
+---@overload fun(
+---     contributions: Contribution[]?,
+---     options: { on_warning: fun(diagnostic: _CompositionAssemblerDiagnostic)? }?
+--- ): self
 local CompositionAssembler = std.class.new('CompositionAssembler')
 
+---@param widget Widget
+---@return table
+local function widget_data(widget)
+    return (rawget(
+        widget, --[[@as table]]
+        '__dict'
+    ) or widget) --[[@as table]]
+end
+
+---@param widget Widget
+---@return Widget
 local function widget_copy(widget)
-    local clone = widget.__class:__new()
-    local source = rawget(widget --[[@as table]], '__dict') or {}
-    local target = rawget(clone --[[@as table]], '__dict') or {}
-    for key, value in pairs(source) do
-        target[key] = copy_value(value)
+    -- Snapshot initialized data. __new also runs __init and cannot clone a
+    -- description with required arguments or constructor side effects.
+    -- Copy the raw instance shell as well as any dict backing; direct storage
+    -- keeps its business fields on that shell. Class and callback identity stay.
+    local clone = {}
+    for key, value in next, widget --[[@as table]]
+    do
+        clone[key] = copy_value(value)
     end
-    return clone
+    setmetatable(clone, getmetatable(widget))
+    return clone --[[@as Widget]]
 end
 
 local function widget_array(value)
@@ -468,6 +527,8 @@ local function merge_options(defaults, supplied)
     return result
 end
 
+---@param contributions Contribution[]
+---@param options       { on_warning: fun(diagnostic: table)? }?
 function CompositionAssembler:__init(contributions, options)
     options = options or {}
     self.contributions = contributions or {}
@@ -476,20 +537,24 @@ function CompositionAssembler:__init(contributions, options)
     self._used = {}
 end
 
+---@param slot_id      string
+---@param message      string
+---@param contribution Contribution?
 function CompositionAssembler:_warn(slot_id, message, contribution)
     local diagnostic = {
         level = 'warning',
         slot_id = slot_id,
         message = message,
         scope_id = contribution and contribution.scope_id or nil,
-        sequence = contribution and contribution.sequence or nil,
-    }
+        sequence = contribution and contribution.sequence or nil
+    } --[[@as _CompositionAssemblerDiagnostic]]
     self.diagnostics[#self.diagnostics + 1] = diagnostic
     if self.on_warning then
         self.on_warning(diagnostic)
     end
 end
 
+---@param spec SlotSpec
 function CompositionAssembler:_matching(spec)
     local result = {}
     for _, contribution in ipairs(self.contributions) do
@@ -501,6 +566,9 @@ function CompositionAssembler:_matching(spec)
     return result
 end
 
+---@param spec         SlotSpec
+---@param contribution Contribution
+---@return _CompositionAssemblerContribution?
 function CompositionAssembler:_normalize(spec, contribution)
     local operation = contribution.op or spec.default_op
     if operation == nil then
@@ -528,16 +596,12 @@ function CompositionAssembler:_normalize(spec, contribution)
             return nil
         end
     end
-    return {
-        contribution = contribution,
-        widget = contribution.widget,
-        operation = operation,
-        opts = opts,
-    }
+    return { contribution = contribution, widget = contribution.widget, operation = operation, opts = opts }
 end
 
+---@param items _CompositionAssemblerContribution[]
 local function sort_by_priority(items)
-    table.sort(items, function(left, right)
+    table.sort(items, function (left, right)
         local left_priority = left.opts.priority or 0
         local right_priority = right.opts.priority or 0
         if left_priority ~= right_priority then
@@ -547,6 +611,8 @@ local function sort_by_priority(items)
     end)
 end
 
+---@param spec    SlotSpec
+---@param entries _CompositionAssemblerContribution[]
 function CompositionAssembler:_append_value(spec, entries)
     local items = {}
     local identities = {}
@@ -565,13 +631,10 @@ function CompositionAssembler:_append_value(spec, entries)
         end
     end
 
+    ---@type _CompositionAssemblerContribution[]
     local pending = {}
     for _, entry in ipairs(entries) do
-        local item = {
-            widget = entry.widget,
-            opts = entry.opts,
-            contribution = entry.contribution,
-        }
+        local item = { widget = entry.widget, opts = entry.opts, contribution = entry.contribution }
         local identity
         if spec.identity ~= nil then
             local ok, result = pcall(spec.identity, entry.opts, entry.contribution)
@@ -624,12 +687,13 @@ function CompositionAssembler:_append_value(spec, entries)
             elseif position == 'last' then
                 insert_item(item, #items + 1)
                 progressed = true
-            elseif type(position) == 'table'
-                and (position.before ~= nil or position.after ~= nil) then
+            elseif type(position) == 'table' and (position.before ~= nil or position.after ~= nil) then
                 local target = position.before or position.after
                 if not known[target] then
-                    self:_warn(spec.id, string.format(
-                        "append position target '%s' is unresolved", tostring(target)), item.contribution)
+                    self:_warn(
+                        spec.id, string.format("append position target '%s' is unresolved", tostring(target)),
+                        item.contribution
+                    )
                     progressed = true
                 elseif by_identity[target] == nil then
                     next_round[#next_round + 1] = item
@@ -656,8 +720,7 @@ function CompositionAssembler:_append_value(spec, entries)
 
     if spec.append_limit ~= nil and #items > spec.append_limit then
         for index = spec.append_limit + 1, #items do
-            self:_warn(spec.id, 'append contribution exceeds SlotSpec.append_limit',
-                items[index].contribution)
+            self:_warn(spec.id, 'append contribution exceeds SlotSpec.append_limit', items[index].contribution)
         end
         while #items > spec.append_limit do
             table.remove(items)
@@ -671,6 +734,8 @@ function CompositionAssembler:_append_value(spec, entries)
     return value
 end
 
+---@param spec          SlotSpec
+---@param default_value Widget | Widget[]?
 function CompositionAssembler:_resolve(spec, default_value)
     local matching = self:_matching(spec)
     local entries = {}
@@ -681,11 +746,11 @@ function CompositionAssembler:_resolve(spec, default_value)
         end
     end
 
-    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
+    ---@type _CompositionAssemblerContribution[]
     local replacements = {}
-    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
+    ---@type _CompositionAssemblerContribution[]
     local sets = {}
-    ---@type { widget: Widget, opts: table<string, any>, operation: SlotOperation, contribution: Contribution }[]
+    ---@type _CompositionAssemblerContribution[]
     local appends = {}
     for _, entry in ipairs(entries) do
         if entry.operation == 'replace' then
@@ -716,8 +781,7 @@ function CompositionAssembler:_resolve(spec, default_value)
         value = sets[1].widget
         selected_opts = sets[1].opts
         for index = 2, #sets do
-            self:_warn(spec.id, 'later set contribution ignored; the first valid set wins',
-                sets[index].contribution)
+            self:_warn(spec.id, 'later set contribution ignored; the first valid set wins', sets[index].contribution)
         end
         for _, entry in ipairs(appends) do
             self:_warn(spec.id, 'append contribution ignored because set won', entry.contribution)
@@ -729,6 +793,7 @@ function CompositionAssembler:_resolve(spec, default_value)
     return spec:build(value, selected_opts)
 end
 
+---@param widget Widget?
 function CompositionAssembler:_assemble_widget(widget)
     if widget == nil then
         return nil
@@ -749,16 +814,18 @@ function CompositionAssembler:_assemble_widget(widget)
         replacements[child] = self:_assemble_widget(child)
     end
     local clone = widget_copy(widget)
-    local target = rawget(clone --[[@as table]], '__dict') or {}
+    local target = widget_data(clone)
     for key, value in pairs(target) do
-        target[key] = copy_child_value(value, replacements)
+        if key ~= '__class' then
+            target[key] = copy_child_value(value, replacements)
+        end
     end
     return clone
 end
 
 ---@param root Widget
 ---@return Widget root
----@return table[] diagnostics
+---@return _CompositionAssemblerDiagnostic[] diagnostics
 function CompositionAssembler:assemble(root)
     if not std.isinstance(root, Widget) then
         raise(std.TypeError('CompositionAssembler.root must be a Widget'))

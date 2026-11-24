@@ -325,7 +325,7 @@ end
 
 ---@param id string
 ---@param widget Widget|Widget[]|nil
----@param opts table<string, any>?
+---@param opts define.SpecOptions?
 function Builtins.bind(id, widget, opts)
 end
 

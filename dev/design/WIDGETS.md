@@ -206,6 +206,10 @@ Define 的公共组合边界由 `SlotSpec` 声明。`SlotWrap(SlotSpec(...))` �
 fresh Widget 描述，mounted tree 不保留 Slot wrapper。普通 Widget 的 `id`、
 `child/children` 不是自动公开的 Define target。
 
+组装复制已初始化的 Widget 数据，不再次调用 `__new`/`__init`；支持实例 direct/dict
+两种存储，使用实际元表保留类行为。普通配置表和 child 数组独立，
+class、callback、controller 及框架值对象保持引用身份；这不是 runtime owner 的克隆协议。
+
 `bind(slot_id, widget, opts)` 收集不可变 `Contribution` 快照。允许的操作是：
 
 - `replace`：最后一个有效贡献胜出，并重新读取 replacement 的 SlotSpec；

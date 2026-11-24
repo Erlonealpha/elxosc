@@ -160,6 +160,48 @@ F.test('the entry point builds one DefaultApp without the old grid contract', fu
     F.eq(#root:child_widgets(), 3, 'main, extension and window layer are explicit children')
 end)
 
+F.test('composition inputs survive assembly and reach the mounted AutoHide policy', function()
+    local source = main_layout.build_app_description()
+    local assembled = CompositionAssembler():assemble(source)
+    F.eq(assembled.main.scale, 1.5, 'composition Main scale survives assembly')
+    F.eq(assembled.auto_hide_bottom_hover, true, 'composition bottom policy survives assembly')
+    F.eq(assembled.auto_hide_top_hover, true, 'composition top policy survives assembly')
+    F.eq(assembled.auto_hide_hover_zone, 175, 'composition bottom zone survives assembly')
+    F.eq(assembled.auto_hide_top_hover_zone, 40, 'composition top zone survives assembly')
+    F.eq(assembled.auto_hide_fade_duration, 0.15, 'composition fade survives assembly')
+    F.eq(assembled.auto_hide_controller, source.auto_hide_controller, 'controller identity survives assembly')
+    local owner, binding = mount(WidgetsApp({ child = assembled }))
+    local hide = find_widget_element(binding.root_element, AutoHide)
+    F.ok(hide ~= nil, 'assembled Main owns AutoHide')
+    if hide ~= nil then
+        F.eq(hide.widget.bottom_hover, true, 'mounted policy reads explicit bottom flag')
+        F.eq(hide.widget.top_hover, true, 'mounted policy reads explicit top flag')
+        F.eq(hide.widget.hover_zone, 262.5, 'bottom wake zone uses composition scale')
+        F.eq(hide.widget.top_hover_zone, 60, 'top wake zone uses composition scale')
+    end
+    binding:dispose()
+end)
+
+F.test('assembly retains explicit disabled and zero AutoHide options', function()
+    local controller = AutoHideController()
+    local source = DefaultApp({ main = Main({ scale = 2.5 }), scale = 0.75, title = 'configured',
+        auto_hide_enabled = false, auto_hide_timeout = 0, auto_hide_fade_duration = 0,
+        auto_hide_bottom_hover = true, auto_hide_hover_zone = 123,
+        auto_hide_top_hover = true, auto_hide_top_hover_enabled = false, auto_hide_top_hover_zone = 17,
+        auto_hide_controller = controller })
+    local result = CompositionAssembler():assemble(source)
+    F.eq(result.title, 'configured', 'title retained')
+    F.eq(result.scale, 0.75, 'app scale retained separately from Main')
+    F.eq(result.main.scale, 2.5, 'Main scale retained')
+    F.eq(result.auto_hide_enabled, false, 'explicit disabled retained')
+    F.eq(result.auto_hide_timeout, 0, 'zero timeout retained')
+    F.eq(result.auto_hide_fade_duration, 0, 'zero fade retained')
+    F.eq(result.auto_hide_hover_zone, 123, 'custom bottom zone retained')
+    F.eq(result.auto_hide_top_hover_zone, 17, 'custom top zone retained')
+    F.eq(result.auto_hide_top_hover_enabled, false, 'explicit top policy disable retained')
+    F.eq(result.auto_hide_controller, controller, 'provided controller retained')
+end)
+
 F.test('the production description exposes one Extension content boundary', function()
     local ids = {}
     collect_slot_ids(main_layout.build_app_description(), ids)

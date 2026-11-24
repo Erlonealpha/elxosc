@@ -24,15 +24,15 @@ local raise = std.raise
 ---@class mod.define.src.modules
 local M = {}
 
----@class define.DefinePackageDescriptor : export.Package<table>
+---@class define.DefinePackageDescriptor: export.Package<table>
 ---@field loader fun(exports: table, scope_id: string)? scope-specific additions
 
----@class define.DefinePackage<T> : define.DefinePackageDescriptor
+---@class define.DefinePackage<T>: define.DefinePackageDescriptor
 ---@field exports T
 
 --- Register a standard export descriptor as a protected host package.
 ---@param registry ModuleRegistry
----@param package DefinePackageDescriptor
+---@param package  DefinePackageDescriptor
 function M.register_package(registry, package)
     if type(package) ~= 'table' then
         raise(std.TypeError('Define package must be a table'))
@@ -50,9 +50,9 @@ function M.register_package(registry, package)
     registry:protect(package.name)
 end
 
----@class define.ModuleRegistry : std.object
----@field mods table<string, table>
----@field loaders table<string, fun(env: table, scope_id: string)>
+---@class define.ModuleRegistry: std.object
+---@field mods            table<string, table>
+---@field loaders         table<string, fun(env: table, scope_id: string)>
 ---@field protected_names table<string, true>
 ---@overload fun(): self
 local ModuleRegistry = std.class.new('ModuleRegistry')
@@ -114,7 +114,7 @@ function ModuleRegistry:publish(name, data)
 end
 
 --- Install the loader that runs on every `import(name)`.
----@param name string
+---@param name   string
 ---@param loader fun(env: table, scope_id: string)
 function ModuleRegistry:add_loader(name, loader)
     if type(loader) ~= 'function' then
@@ -154,15 +154,14 @@ function ModuleRegistry:get(name)
 end
 
 --- Resolve into a fresh package table without injecting into the caller environment.
----@param name string
+---@param name     string
 ---@param scope_id string
 ---@return table
 function ModuleRegistry:import_as(name, scope_id)
     local data = self.mods[name]
     local loader = self.loaders[name]
     if data == nil and loader == nil then
-        raise(std.ImportError(string.format(
-            "import_as('%s'): module '%s' has not been published", name, name)))
+        raise(std.ImportError(string.format("import_as('%s'): module '%s' has not been published", name, name)))
     end
     local package = {}
     for key, value in pairs(data or {}) do
@@ -175,15 +174,14 @@ function ModuleRegistry:import_as(name, scope_id)
 end
 
 --- Flatten `name` into `env`, then run its loader.
----@param name string
----@param env table<string, any>
+---@param name     string
+---@param env      table<string, any>
 ---@param scope_id string
 function ModuleRegistry:import_into(name, env, scope_id)
     local data = self.mods[name]
     local loader = self.loaders[name]
     if data == nil and loader == nil then
-        raise(std.ImportError(string.format(
-            "import('%s'): module '%s' has not been published", name, name)))
+        raise(std.ImportError(string.format("import('%s'): module '%s' has not been published", name, name)))
     end
     if data ~= nil then
         for key, value in pairs(data) do

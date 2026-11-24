@@ -273,6 +273,7 @@ end
 ---@overload fun(options?: _DefaultAppOptions): self
 local DefaultApp = std.class.new('DefaultApp', StatefulWidget)
 
+---@param options _DefaultAppOptions
 function DefaultApp:__init(options)
     options = options or {}
     self.key = options.key
@@ -389,6 +390,7 @@ function DefaultAppState:init_state()
     })
 end
 
+---@param old_widget DefaultApp
 function DefaultAppState:did_update_widget(old_widget)
     local app = self.widget --[[@as DefaultApp]]
     if old_widget.title ~= app.title or old_widget.scale ~= app.scale then

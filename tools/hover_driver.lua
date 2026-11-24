@@ -52,15 +52,25 @@ local function set_visible(element, visible)
 end
 
 local function root_with_scale(root, scale)
-    local app_options, main_options = {}, {}
-    for key, value in pairs(rawget(root, '__dict')) do
-        app_options[key] = value
-    end
-    for key, value in pairs(rawget(root.main, '__dict')) do
-        main_options[key] = value
-    end
-    main_options.scale = scale
-    app_options.main = root.main.__class(main_options)
+    -- Rebuild through the two known Options contracts rather than treating
+    -- private instance storage or structural class markers as constructor data.
+    local main = root.main
+    local main_options = {
+        key = main.key, title = main.title, title_bar = main.title_bar,
+        window_controls = main.window_controls, window_top_bar = main.window_top_bar,
+        layout_option = main.layout_option, bottom = main.bottom,
+        left_controls = main.left_controls, right_controls = main.right_controls, scale = scale,
+    }
+    local app_options = {
+        key = root.key, title = root.title, scale = root.scale,
+        main = main.__class(main_options), extension = root.extension, window_layer = root.window_layer,
+        auto_hide_timeout = root.auto_hide_timeout, auto_hide_enabled = root.auto_hide_enabled,
+        auto_hide_fade_duration = root.auto_hide_fade_duration,
+        auto_hide_bottom_hover = root.auto_hide_bottom_hover, auto_hide_hover_zone = root.auto_hide_hover_zone,
+        auto_hide_top_hover = root.auto_hide_top_hover,
+        auto_hide_top_hover_enabled = root.auto_hide_top_hover_enabled,
+        auto_hide_top_hover_zone = root.auto_hide_top_hover_zone, auto_hide_controller = root.auto_hide_controller,
+    }
     return root.__class(app_options)
 end
 

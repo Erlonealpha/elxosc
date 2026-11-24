@@ -191,6 +191,51 @@ F.test('sealed contributions reject new bind calls', function()
     end, 'RuntimeError', 'sealed registry')
 end)
 
+F.test('assembly preserves direct and dict data without calling constructors again', function()
+    for _, dict in ipairs({ false, true }) do
+        local initialized = 0
+        ---@class SnapshotWidget : StatelessWidget
+        ---@field child Widget?
+        ---@field scale number
+        ---@field enabled boolean
+        ---@field config { nested: { timeout: number } }
+        ---@field on_click fun()
+        ---@overload fun(options: table): self
+        local SnapshotWidget = std.class.new('SnapshotWidget', StatelessWidget, nil, { dict = dict })
+        function SnapshotWidget:__init(options)
+            initialized = initialized + 1
+            assert(options ~= nil, 'required construction options')
+            self.child = options.child
+            self.scale = options.scale
+            self.enabled = options.enabled
+            self.config = options.config
+            self.on_click = options.on_click
+        end
+        function SnapshotWidget:child_widgets()
+            return self.child and { self.child } or {}
+        end
+        local original_child = SlotWrap(SlotSpec({ id = 'body', allow = { 'set' } }), Text('default'))
+        local callback = function() end
+        local source = SnapshotWidget({ child = original_child, scale = 2.25, enabled = false,
+            config = { nested = { timeout = 0 } }, on_click = callback })
+        local registry = ContributionRegistry()
+        registry:add('body', Text('replacement'), nil, 'scope')
+        local result = assemble(source, registry)
+
+        F.eq(initialized, 1, 'assembly does not rerun required constructor or its side effects')
+        F.ok(not rawequal(result, source), 'assembled description remains fresh')
+        F.eq(result.__class, source.__class, 'class identity retained')
+        F.eq(result.scale, 2.25, 'explicit scale retained')
+        F.eq(result.enabled, false, 'false retained')
+        F.eq(result.config.nested.timeout, 0, 'zero retained')
+        F.eq(result.on_click, callback, 'callback identity retained')
+        F.eq(result.child.text, 'replacement', 'child replacement reaches both storage modes')
+        F.eq(source.child, original_child, 'source child is not modified')
+        result.config.nested.timeout = 9
+        F.eq(source.config.nested.timeout, 0, 'ordinary configuration tables remain isolated')
+    end
+end)
+
 F.test('Slot options retain dataclass values inside independent surrounding tables', function()
     local Size = require('src.foundation.geometry').Size
     local value = Size(3, 4)

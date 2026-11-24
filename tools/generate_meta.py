@@ -108,7 +108,7 @@ def render(packages, root=ROOT):
         '',
         '---@param id string',
         '---@param widget elxosc.Widget|elxosc.Widget[]|nil',
-        '---@param opts table<string, any>?',
+        '---@param opts elxosc.define.SpecOptions?',
         'function Builtins.bind(id, widget, opts)',
         'end',
         '',

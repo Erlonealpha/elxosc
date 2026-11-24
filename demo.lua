@@ -622,6 +622,7 @@ end
 ---@overload fun(options?: _DemoLauncherOptions): self
 local DemoLauncher = std.class.new('DemoLauncher', StatefulWidget)
 
+---@param options _DemoLauncherOptions
 function DemoLauncher:__init(options)
     self.key = options and options.key or 'demo-launcher'
     self.controller = options and options.controller or DemoControlLink()
@@ -692,6 +693,7 @@ end
 ---@overload fun(options: _DemoButtonOptions): self
 local DemoButton = std.class.new('DemoButton', widget_mod.StatelessWidget)
 
+---@param options _DemoButtonOptions
 function DemoButton:__init(options)
     self.controller = options and options.controller or DemoControlLink()
 end
