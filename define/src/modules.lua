@@ -19,6 +19,10 @@
 
 local std = require 'elxlibs.std'
 
+local type = type
+local tostring = tostring
+local pairs = pairs
+local string = string
 local raise = std.raise
 
 ---@class mod.define.src.modules

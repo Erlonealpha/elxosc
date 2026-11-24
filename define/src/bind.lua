@@ -24,9 +24,9 @@ M.ContributionRegistry = slot_mod.ContributionRegistry
 M.CompositionAssembler = slot_mod.CompositionAssembler
 
 ---@param registry ContributionRegistry
----@param slot_id string
----@param widget Widget
----@param opts SpecOptions?
+---@param slot_id  string
+---@param widget   Widget
+---@param opts     SpecOptions?
 ---@param scope_id string?
 function M.bind(registry, slot_id, widget, opts, scope_id)
     return registry:add(slot_id, widget, opts, scope_id)

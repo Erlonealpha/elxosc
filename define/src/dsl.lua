@@ -23,7 +23,7 @@ local M = {}
 --- A StatefulWidget subclass a script can complete with create_state.
 ---@generic T: StatefulWidget
 ---@[constructor('__init', 'object')]
----@param name `T`
+---@param name   `T`
 ---@param parent StatefulWidget? defaults to StatefulWidget
 ---@return T
 function M.new_widget(name, parent)
@@ -35,7 +35,7 @@ end
 --- A State subclass a script can complete with __init / build.
 ---@generic T: State
 ---@[constructor('__init', 'object')]
----@param name `T`
+---@param name   `T`
 ---@param parent State? defaults to State
 ---@return T
 function M.new_state(name, parent)

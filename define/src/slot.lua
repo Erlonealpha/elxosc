@@ -18,9 +18,6 @@ local widget_mod = require 'src.widgets.framework'
 local builder_mod = require 'define.src.builder'
 local framework_builder_mod = require 'src.widgets.builder'
 
-local Widget = widget_mod.Widget
-local StatelessWidget = widget_mod.StatelessWidget
-local raise = std.raise
 local type = type
 local rawget = rawget
 local rawset = rawset
@@ -33,6 +30,9 @@ local tostring = tostring
 local pcall = pcall
 local setmetatable = debug.setmetatable
 local getmetatable = debug.getmetatable
+local Widget = widget_mod.Widget
+local StatelessWidget = widget_mod.StatelessWidget
+local raise = std.raise
 
 ---@class mod.define.src.slot
 local M = {}

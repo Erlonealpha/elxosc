@@ -15,13 +15,13 @@ export('define', require 'define.src.modules', true).show('ModuleRegistry')
 export('define', require 'define.src.builder', true).show('call_slot')
 export('define', require 'define.src.sandbox', true)
 
----@class mod.define :
+---@class mod.define:
 --- mod.define.src.slot,
 --- mod.define.src.bind,
 --- mod.define.src.dsl,
 --- mod.define.src.sandbox
----@field DefineSession DefineSession
+---@field DefineSession  DefineSession
 ---@field ModuleRegistry ModuleRegistry
----@field call_slot fun(callback: SlotBuilder, value: Widget|Widget[]|nil, opts: SpecOptions?, name: string): Widget?
+---@field call_slot      fun(callback: SlotBuilder, value: Widget | Widget[] | nil, opts: SpecOptions?, name: string): Widget?
 local M = exports.get('define')
 return M

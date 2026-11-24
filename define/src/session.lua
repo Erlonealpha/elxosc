@@ -23,6 +23,13 @@ local sandbox = require 'define.src.sandbox'
 local modules_mod = require 'define.src.modules'
 local bind_mod = require 'define.src.bind'
 
+local pairs = pairs
+local string = string
+local ipairs = ipairs
+local type = type
+local tostring = tostring
+local pcall = pcall
+local rawset = rawset
 local raise = std.raise
 local ModuleRegistry = modules_mod.ModuleRegistry
 local ContributionRegistry = bind_mod.ContributionRegistry
@@ -31,36 +38,38 @@ local ContributionRegistry = bind_mod.ContributionRegistry
 local M = {}
 
 ---@class define.DefineOptions
----@field builtins table<string, any>? names every scope can read as-is
----@field modules ModuleRegistry? shared module registry
----@field contributions ContributionRegistry? shared contribution registry
----@field protected_names table<string, true>? names a chunk may not overwrite
+---@field builtins        table<string, any>?   names every scope can read as-is
+---@field modules         ModuleRegistry?       shared module registry
+---@field contributions   ContributionRegistry? shared contribution registry
+---@field protected_names table<string, true>?  names a chunk may not overwrite
 
 ---@alias define.DefineSessionPhase
---- |>'idle'
+--- |> 'idle'
 --- | 'defining'
 --- | 'sealed'
 
 --- One define phase: the scopes it declared, plus the DSL builtins that need to
 --- know which scope is currently running.
----@class define.DefineSession : std.object
----@field modules ModuleRegistry
----@field contributions ContributionRegistry
----@field api table<string, any>
----@field protected_names table<string, true>
----@field phase DefineSessionPhase
----@field current_define string?
----@field current_env table?
----@field on_error fun(scope_id: string, err: any)? called instead of raising when set
----@field on_payload_begin fun(scope_id: string)?
----@field on_payload_commit fun(scope_id: string)?
----@field on_payload_rollback fun(scope_id: string)?
----@field _scopes table<string, table>
----@field _defined_scopes table<string, true> scopes with an accepted initial payload
+---@class define.DefineSession: std.object
+---@field modules               ModuleRegistry
+---@field contributions         ContributionRegistry
+---@field api                   table<string, any>
+---@field protected_names       table<string, true>
+---@field phase                 DefineSessionPhase
+---@field defining_count        integer
+---@field current_define        string?
+---@field current_env           table?
+---@field on_error              fun(scope_id: string, err: any)? called instead of raising when set
+---@field on_payload_begin      fun(scope_id: string)?
+---@field on_payload_commit     fun(scope_id: string)?
+---@field on_payload_rollback   fun(scope_id: string)?
+---@field _scopes               table<string, table>
+---@field _defined_scopes       table<string, true>              scopes with an accepted initial payload
 ---@field _sealed_contributions Contribution[]?
 ---@overload fun(options: DefineOptions?): self
 local DefineSession = std.class.new('DefineSession')
 
+---@param options DefineOptions?
 function DefineSession:__init(options)
     options = options or {}
     self.modules = options.modules or ModuleRegistry()
@@ -84,17 +93,17 @@ function DefineSession:__init(options)
     for name, value in pairs(options.builtins or {}) do
         api[name] = value
     end
-    api['import'] = function(name)
+    api['import'] = function (name)
         self:_import(name)
     end
-    api['import_as'] = function(name)
+    api['import_as'] = function (name)
         return self:_import_as(name)
     end
     api['require'] = api['import_as']
-    api['mod'] = function(name, data)
+    api['mod'] = function (name, data)
         self:_mod(name, data)
     end
-    api['bind'] = function(id, widget, opts)
+    api['bind'] = function (id, widget, opts)
         if self.phase == 'sealed' then
             raise(std.RuntimeError('bind(...) is not allowed after define_end'))
         end
@@ -120,10 +129,13 @@ end
 function DefineSession:_import(name)
     local env = self.current_env
     if env == nil then
-        raise(std.RuntimeError(string.format(
-            "import('%s') outside of a define payload", name)))
+        raise(std.RuntimeError(string.format("import('%s') outside of a define payload", name)))
     end
-    self.modules:import_into(name, env, self.current_define --[[@as string]])
+    self.modules:import_into(
+        name,
+        env,
+        self.current_define --[[@as string]]
+    )
     -- Define packages also expose a registry-based bind helper. Keep the
     -- payload's scope-aware construction protocol after flattening a package.
     for _, builtin in ipairs({ 'import', 'import_as', 'require', 'mod', 'bind' }) do
@@ -135,10 +147,12 @@ end
 ---@return table
 function DefineSession:_import_as(name)
     if self.current_env == nil then
-        raise(std.RuntimeError(string.format(
-            "import_as('%s') outside of a define payload", name)))
+        raise(std.RuntimeError(string.format("import_as('%s') outside of a define payload", name)))
     end
-    return self.modules:import_as(name, self.current_define --[[@as string]])
+    return self.modules:import_as(
+        name,
+        self.current_define --[[@as string]]
+    )
 end
 
 ---@param name string
@@ -152,7 +166,7 @@ function DefineSession:_mod(name, data)
 end
 
 ---@param scope_id string
----@param err any
+---@param err      any
 function DefineSession:_fail(scope_id, err)
     if self.on_error ~= nil then
         self.on_error(scope_id, err)
@@ -173,7 +187,7 @@ end
 
 --- Run one `define` payload against `scope_id`'s environment.
 ---@param scope_id string
----@param code string
+---@param code     string
 ---@return table env
 function DefineSession:define(scope_id, code)
     if self.phase ~= 'defining' then
@@ -187,8 +201,7 @@ function DefineSession:define(scope_id, code)
     end
     if self._defined_scopes[scope_id] then
         if self.on_error ~= nil then
-            self.on_error(scope_id, std.RuntimeError(
-                string.format("define('%s'): duplicate scope ignored", scope_id)))
+            self.on_error(scope_id, std.RuntimeError(string.format("define('%s'): duplicate scope ignored", scope_id)))
         end
         return self:env_for(scope_id)
     end

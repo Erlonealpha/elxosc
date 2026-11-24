@@ -5,15 +5,17 @@
 
 local builder_mod = require 'src.widgets.builder'
 
+local type = type
+
 ---@class mod.define.src.builder
 local M = {}
 
----@alias define.SlotBuilder fun(value: Widget|Widget[]|nil, opts: SpecOptions?): Widget?
+---@alias define.SlotBuilder fun(value: Widget | Widget[] | nil, opts: SpecOptions?): Widget?
 
 ---@param callback SlotBuilder
----@param value Widget|Widget[]|nil
----@param opts SpecOptions?
----@param name string
+---@param value    Widget | Widget[] | nil
+---@param opts     SpecOptions?
+---@param name     string
 ---@return Widget?
 function M.call_slot(callback, value, opts, name)
     name = type(name) == 'string' and name ~= '' and name or 'SlotBuilder'

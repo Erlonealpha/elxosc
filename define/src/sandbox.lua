@@ -15,12 +15,18 @@
 
 local std = require 'elxlibs.std'
 
+local load = load
+local rawget = rawget
+local setmetatable = setmetatable
+local string = string
+local rawset = rawset
+local _G = _G
 local raise = std.raise
 
 ---@class mod.define.src.sandbox
 local M = {}
 
---== load shim =============================================================
+-- == load shim =============================================================
 
 --- Compile `code` and force `env` to be its environment.
 ---
@@ -29,9 +35,9 @@ local M = {}
 --- dropped and the chunk would run against the *real* globals — a sandbox that
 --- silently does nothing. So apply the 5.1 escape hatch (`setfenv`) whenever it
 --- exists, and otherwise rely on the 5.2 signature.
----@param code string
+---@param code      string
 ---@param chunkname string
----@param env table
+---@param env       table
 ---@return function? chunk
 ---@return string? err
 function M.load_chunk(code, chunkname, env)
@@ -46,7 +52,7 @@ function M.load_chunk(code, chunkname, env)
     return chunk
 end
 
---== environment ===========================================================
+-- == environment ===========================================================
 
 --- Build a sandboxed environment.
 ---
@@ -56,21 +62,25 @@ end
 --- environment and the scope's "module-level variables" — reading `env[k]` from
 --- the host side returns exactly what the chunk wrote, and reading an `api` name
 --- that the chunk never shadowed falls through.
----@param api table<string, any>
+---@param api             table<string, any>
 ---@param protected_names table<string, true>?
----@param label string? used in the guard's error message
+---@param label           string?              used in the guard's error message
 ---@return table env
 function M.new_env(api, protected_names, label)
     return setmetatable({}, {
         __index = api,
-        __newindex = function(env, key, value)
+        __newindex = function (env, key, value)
             if protected_names ~= nil and protected_names[key] then
-                raise(std.RuntimeError(string.format(
-                    "define('%s'): '%s' is provided by elxosc and cannot be overwritten",
-                    label or '?', key)))
+                raise(
+                    std.RuntimeError(
+                        string.format(
+                            "define('%s'): '%s' is provided by elxosc and cannot be overwritten", label or '?', key
+                        )
+                    )
+                )
             end
             rawset(env, key, value)
-        end,
+        end
     })
 end
 
