@@ -1,0 +1,13 @@
+# Local planning, scratch, environments and third-party development dependency.
+.git/**
+.plan/**
+tmp/**
+.venv/**
+mpv-luatest/**
+
+# Generated annotation data; change the owning generator instead.
+meta/elxosc.lua
+lib/fonts/fluent_icon_names.lua
+
+# Historical design sources are preserved as references.
+dev/design/old/**

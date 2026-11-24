@@ -38,9 +38,17 @@ allocation/init 不改。直接 allocate、未登记 dataclass 和 custom std __
 
 ```text
 git submodule update --init --recursive
+python tools/format_lua.py check
 luajit test/run.lua
 emmylua_check .
 ```
+
+EmmyLua `luafmt` 的配置为根目录 `luafmt.toml`，工具名读取 `project.conf`。
+默认选择 Git 中暂存、修改和未跟踪的 Lua 文件；显式路径选择对应文件或目录。
+运行 `python tools/format_lua.py write` 写入、`check` 只读检查；指定路径时使用
+`write <paths>` 和 `check <paths>`。
+`.luafmtignore` 保护生成文件、第三方依赖和历史材料；注释排版通过不等于类型完整。
+直接 CLI、写入和检查语义见 [工具说明](../../tools/README.md#lua-formatting)。
 
 Lua suite 依赖根目录固定版本的 `mpv-luatest` 开发子模块。`test/run.lua` 只负责项目
 适配；共享 runner/assertion/stub 的更改归独立子模块。更新 gitlink 前先独立验证依赖，
@@ -124,7 +132,7 @@ suppression；生产文件不得用文件级 suppression 掩盖问题。类型�
 生产分析范围排除 ignored 临时内容和独立编辑器 meta：
 
 ```text
-emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'
+emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**,**/.plan/**'
 ```
 
 meta 生成一致性、独立扩展分析和编辑器提示属于单独验证范围，不用生产诊断结果替代。

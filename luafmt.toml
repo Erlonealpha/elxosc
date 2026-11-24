@@ -1,0 +1,63 @@
+[syntax]
+level = "LuaJIT"
+
+[indent]
+kind = "Space"
+width = 4
+
+[layout]
+max_line_width = 120
+max_blank_lines = 1
+table_expand = "Auto"
+call_args_expand = "Auto"
+func_params_expand = "Auto"
+prefer_call_args_layout_from_source = false
+prefer_table_layout_from_source = false
+prefer_chain_break_on_statement_tail = false
+prefer_binary_chain_operand_per_line = false
+
+[output]
+insert_final_newline = true
+preserve_statement_semicolon = false
+trailing_comma = "Never"
+trailing_table_separator = "Inherit"
+quote_style = "Preserve"
+single_arg_call_parens = "Preserve"
+simple_lambda_single_line = "Preserve"
+end_of_line = "Preserve"
+
+[spacing]
+space_before_call_paren = false
+space_before_func_paren = false
+space_before_lambda_func_paren = true
+space_inside_braces = true
+space_inside_parens = false
+space_inside_brackets = false
+space_around_math_operator = true
+space_around_concat_operator = true
+space_around_assign_operator = true
+
+[comments]
+align_line_comments = true
+align_in_statements = false
+align_in_table_fields = true
+align_in_call_args = true
+align_in_params = true
+align_across_standalone_comments = false
+align_same_kind_only = false
+space_after_comment_dash = true
+line_comment_min_spaces_before = 1
+line_comment_min_column = 0
+
+[emmy_doc]
+align_tag_columns = true
+align_declaration_tags = true
+align_reference_tags = true
+align_multiline_alias_descriptions = true
+space_between_tag_columns = false
+space_after_description_dash = true
+compact_type_or = false
+
+[align]
+continuous_assign_statement = false
+table_field = true

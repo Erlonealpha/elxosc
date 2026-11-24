@@ -2,6 +2,7 @@
 # adjust only for this machine; project.conf is intentionally not committed.
 mpv = mpv
 emmylua_check = emmylua_check
+luafmt = luafmt
 lua = lua
 luajit = luajit
 uv = uv

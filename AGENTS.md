@@ -169,7 +169,10 @@ Widget construction protocol, not a runtime tree manager:
    module README or design direction when a public contract changes.
 3. Add tests for public behavior, invalid boundaries, lifecycle/dirty behavior,
    module loading, and aggregate/direct-module identity as applicable.
-4. For code changes, run the complete Lua suite and EmmyLua checks listed below.
+4. Format changed Lua files with `python tools/format_lua.py write` and verify
+   them with `python tools/format_lua.py check`. Explicit paths select files or
+   directories; without paths, the tool selects staged, modified and untracked Lua files.
+   For code changes, run the complete Lua suite and EmmyLua checks listed below.
    Select real-host tests by affected behavior; normally run only the related
    files or cases rather than the full real-host suite.
 5. Review `git diff --check`, `git diff --stat`, and `git status --short`. Stage
@@ -184,6 +187,7 @@ the current machine. The commands below use the default WSL tool names.
 
 ```text
 git submodule update --init --recursive
+python tools/format_lua.py check
 luajit test/run.lua
 emmylua_check .
 ```
@@ -193,6 +197,14 @@ in the active local plan's acceptance records, or local work notes when no plan
 applies. Report the checks actually run in the commit or handoff. Update design
 and testing documents when strategy, coverage responsibilities, supported behavior,
 or tool usage changes; test counts alone do not require design changes.
+
+`luafmt.toml` configures EmmyLua `luafmt` for LuaJIT; its executable comes from
+the `luafmt` entry in `project.conf`, with PATH as fallback. Explicit paths select
+Lua files/directories; the default scope is the current Git changes.
+`.luafmtignore` excludes local plans, scratch, generated metadata and third-party
+sources. Formatting aligns annotations; completeness and correctness still need
+code review and EmmyLua analysis. Details and direct CLI usage are in
+`tools/README.md`.
 
 Run real-host tests when changes affect behavior they cover, such as script
 loading, presentation, input, Define wiring, or player integration. In most cases,

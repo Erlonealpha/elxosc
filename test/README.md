@@ -70,6 +70,11 @@ imports rejected, then mounts, paints text, dispatches input and disposes. Run
 
 ## Static analysis
 
+Check Lua formatting with `python tools/format_lua.py check`; it selects staged,
+modified and untracked Lua files by default. Explicit paths select files or directories.
+Formatter configuration, writing and checking are described in
+[tools/README.md](../tools/README.md#lua-formatting).
+
 The project is also checked with the EmmyLua analyzer; run it from the project
 root so `.emmyrc.json` (library paths, `runtime.special.raise`, ...) applies:
 
@@ -87,7 +92,7 @@ test files disable the codes that stem from limits of the `std.class` model
 (see the header in `test_widget.lua`).
 
 Production analysis uses
-`emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**'`; metadata generation
+`emmylua_check . --warnings-as-errors -i '**/tmp/**,**/meta/**,**/.plan/**'`; metadata generation
 and editor acceptance are separate scopes. Runtime checks do not prove editor hints.
 
 The isolated framework test checks initial require orders, catalog identity,

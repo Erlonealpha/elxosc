@@ -4,6 +4,47 @@ These tools are explicitly invoked for development. They are not loaded by the
 production entry, do not change Widget/layout contracts, and do not add a Define
 content entry point.
 
+## Lua formatting
+
+`format_lua.py` runs EmmyLua `luafmt` using `project.conf`'s `luafmt` executable
+or PATH. The committed `luafmt.toml` selects LuaJIT syntax, four-space indentation,
+120-column layout and EmmyLua annotation alignment. Existing quote choices, call
+parentheses and line endings are preserved; semantic style and complete type
+contracts still require review and static analysis.
+
+```text
+python tools/format_lua.py check
+python tools/format_lua.py write
+python tools/format_lua.py check --json
+python tools/format_lua.py write lib/src/layout
+python tools/format_lua.py check lib/src/layout
+python tools/format_lua.py write host/mpv_define.lua
+python tools/format_lua.py check host/mpv_define.lua
+```
+
+Run from any working directory; paths are relative to the repository root.
+With no paths, the tool selects staged, modified and untracked Lua files from Git;
+deleted files and Git-ignored untracked files are excluded. Explicit paths select
+files/directories independently of Git changes. `check` is read-only and
+returns 1 for required changes, including JSON mode (the wrapper corrects
+luafmt 0.25.1's zero exit code for JSON differences); `write` invokes
+`--write --verify`. Run `check` after writing, then the Lua and EmmyLua checks
+required by the repository guide. An empty default selection succeeds without
+starting the formatter. These rules apply equally to every source directory.
+
+Equivalent direct commands are:
+
+```text
+luafmt --config luafmt.toml --recursive --check lib/src/layout
+luafmt --config luafmt.toml --recursive --write --verify lib/src/layout
+luafmt --explain-config lib/src/layout/constraints.lua
+```
+
+`.luafmtignore` excludes local planning/scratch/environments, the third-party
+test runner, generated metadata and historical design sources. Preserve those
+boundaries when selecting explicit paths. Formatting does not supply missing
+type annotations or establish runtime equivalence.
+
 ## Extension metadata
 
 `generate_meta.py` derives package/type hints from the three owning catalogs and
