@@ -45,6 +45,30 @@ test runner, generated metadata and historical design sources. Preserve those
 boundaries when selecting explicit paths. Formatting does not supply missing
 type annotations or establish runtime equivalence.
 
+## Annotation review
+
+`audit_lua_annotations.py` lists likely missing named-function parameter and return
+annotations, constructor overloads, and unlocalized global reads. `--fields` adds
+approximate own/inherited instance-field coverage. It uses a small Lua lexer so
+strings and comments do not produce fake declarations; the output is a review
+list, not proof of complete types. Inline callbacks normally inherit a field/call
+signature, exact overrides may inherit annotations, and generic/dynamic table
+contracts still need manual inspection.
+
+```text
+python tools/audit_lua_annotations.py player lib
+python tools/audit_lua_annotations.py host define --fields --json
+python tools/audit_lua_annotations.py player lib --compare-ref HEAD --allow-local-aliases --json
+```
+
+Paths default to `player` and `lib`; generated glyph annotations are excluded.
+The optional comparison checks executable token sequences without running Lua.
+`--allow-local-aliases` removes `local name = name` declarations from comparison;
+it does not prove that caching a global is behaviorally equivalent. Import
+reordering or normal formatting changes can also produce differences and need
+review. The command is read-only; exit 1 indicates token differences and 2 an
+input/tool error. Annotation findings alone do not set a failing exit code.
+
 ## Extension metadata
 
 `generate_meta.py` derives package/type hints from the three owning catalogs and
