@@ -4,10 +4,19 @@
 ---@using elxosc
 ---@using elxosc.player
 
+local color_mod = require 'src.foundation.color'
+
+local ipairs = ipairs
+local math = math
+local string = string
+local table = table
+local tonumber = tonumber
+local tostring = tostring
+local type = type
+
 local max = math.max
 local min = math.min
 local huge = math.huge
-local color_mod = require 'src.foundation.color'
 local Color = color_mod.Color
 local SPONSOR_COLORS = {
     sponsor = Color.hex('#6BCB77'),
@@ -16,12 +25,20 @@ local SPONSOR_COLORS = {
     interaction = Color.hex('#C77DFF'),
     selfpromo = Color.hex('#FF9F1C'),
     preview = Color.hex('#00B4D8'),
-    filler = Color.hex('#8D99AE'),
+    filler = Color.hex('#8D99AE')
 }
 
 ---@class mod.player.src.data
 local M = {}
 
+---@alias player.PlayerTrackKind
+--- | 'audio'
+--- | 'sub'
+
+---@param snapshot PlayerSnapshot?
+---@param names    string[]
+---@param fallback string
+---@return string
 local function snapshot_text(snapshot, names, fallback)
     if snapshot then
         for _, name in ipairs(names) do
@@ -34,6 +51,9 @@ local function snapshot_text(snapshot, names, fallback)
     return fallback
 end
 
+---@param snapshot PlayerSnapshot?
+---@param name     string
+---@return number?
 local function snapshot_number(snapshot, name)
     local value = snapshot and snapshot:get(name) or nil
     if type(value) ~= 'number' or value ~= value or value == huge or value == -huge then
@@ -43,7 +63,7 @@ local function snapshot_number(snapshot, name)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param name string
+---@param name     string
 ---@return boolean
 local function capability_available(snapshot, name)
     if snapshot == nil or type(snapshot.capability) ~= 'function' then
@@ -53,15 +73,14 @@ local function capability_available(snapshot, name)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param name string
+---@param name     string
 ---@return CapabilityInfo?
 local function capability_info(snapshot, name)
     if snapshot == nil then
         return nil
     end
     local capabilities = snapshot:get('capabilities')
-    if type(capabilities) ~= 'table' or capabilities[name] == nil
-        or type(snapshot.capability) ~= 'function' then
+    if type(capabilities) ~= 'table' or capabilities[name] == nil or type(snapshot.capability) ~= 'function' then
         return nil
     end
     return snapshot:capability(name)
@@ -94,7 +113,7 @@ local function chapter_entries(snapshot)
             entries[#entries + 1] = chapter
         end
     end
-    table.sort(entries, function(left, right)
+    table.sort(entries, function (left, right)
         return (tonumber(left.time) or huge) < (tonumber(right.time) or huge)
     end)
     return entries
@@ -122,10 +141,16 @@ local function current_chapter_title(snapshot)
     return ''
 end
 
+---@param value number
+---@return number
 local function clamp_fraction(value)
     return max(0, min(1, value))
 end
 
+---@param value             number?
+---@param show_milliseconds boolean?
+---@param fixed             boolean?
+---@return string
 local function format_time(value, show_milliseconds, fixed)
     if value == nil or value < 0 then
         return '--:--'
@@ -180,6 +205,8 @@ local function chapter_title_at_fraction(snapshot, fraction, duration)
     end
     return nil
 end
+---@param snapshot PlayerSnapshot?
+---@return number
 local function player_progress(snapshot)
     local percent = snapshot_number(snapshot, 'percent_pos')
     if percent ~= nil then
@@ -210,7 +237,7 @@ local function chapter_markers(snapshot, duration)
                 markers[#markers + 1] = {
                     fraction = clamp_fraction(time / duration),
                     current = current ~= nil and current == index - 1,
-                    index = index - 1,
+                    index = index - 1
                 }
             end
         end
@@ -241,7 +268,7 @@ local function seek_ranges(snapshot, duration)
             if start and finish then
                 ranges[#ranges + 1] = {
                     start = clamp_fraction(start / duration),
-                    ['end'] = clamp_fraction(finish / duration),
+                    ['end'] = clamp_fraction(finish / duration)
                 }
             end
         end
@@ -269,7 +296,7 @@ local function sponsor_ranges(snapshot, duration)
                 ranges[#ranges + 1] = {
                     start = clamp_fraction(start / duration),
                     ['end'] = clamp_fraction(finish / duration),
-                    color = SPONSOR_COLORS[segment.category],
+                    color = SPONSOR_COLORS[segment.category]
                 }
             end
         end
@@ -278,7 +305,7 @@ local function sponsor_ranges(snapshot, duration)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param kind 'audio'|'sub'
+---@param kind     'audio' | 'sub'
 ---@return number[]
 local function track_ids(snapshot, kind)
     local ids = {}
@@ -299,7 +326,7 @@ local function track_ids(snapshot, kind)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param kind 'audio'|'sub'
+---@param kind     'audio' | 'sub'
 ---@return number
 local function current_track(snapshot, kind)
     local tracks = snapshot and snapshot:get('track_list') or nil
@@ -314,7 +341,7 @@ local function current_track(snapshot, kind)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param kind 'audio'|'sub'
+---@param kind     'audio' | 'sub'
 ---@return string
 local function track_tooltip(snapshot, kind)
     local label = kind == 'audio' and 'Audio' or 'Subtitles'
@@ -355,7 +382,7 @@ local function track_tooltip(snapshot, kind)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param kind 'audio'|'sub'
+---@param kind     'audio' | 'sub'
 ---@return string
 local function track_list_message(snapshot, kind)
     local label = kind == 'audio' and 'Audio' or 'Subtitles'
@@ -380,8 +407,8 @@ local function track_list_message(snapshot, kind)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param kind 'audio'|'sub'
----@param delta number
+---@param kind     'audio' | 'sub'
+---@param delta    number
 ---@return number?
 local function next_track(snapshot, kind, delta)
     local ids = track_ids(snapshot, kind)

@@ -5,21 +5,33 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
-local State = require('src.widgets.state').State
+local state_mod = require 'src.widgets.state'
+local opacity_mod = require 'src.render.opacity'
+local visibility_mod = require 'src.widgets.visibility'
+
+local State = state_mod.State
+local RenderOpacity = opacity_mod.RenderOpacity
+local Opacity = visibility_mod.Opacity
+local error = error
+local ipairs = ipairs
+local math = math
+local pairs = pairs
+local type = type
+
 local StatefulWidget = widget_mod.StatefulWidget
-local RenderOpacity = require('src.render.opacity').RenderOpacity
-local Opacity = require('src.widgets.visibility').Opacity
 
 ---@class mod.player.src.auto_hide
 local M = {}
 
---== AutoHide ===============================================================
+-- == AutoHide ===============================================================
 
----@class player.AutoHideController : std.object
----@field visible boolean
+---@class player.AutoHideController: std.object
+---@field visible            boolean
+---@field private _listeners table<fun(event: 'activity' | 'visibility', visible: boolean, x: number?, y: number?, viewport: Rect?), true>
 ---@overload fun(visible: boolean?): self
 local AutoHideController = std.class.new('AutoHideController')
 
+---@param visible boolean?
 function AutoHideController:__init(visible)
     if visible ~= nil and type(visible) ~= 'boolean' then
         error('AutoHideController.visible must be a boolean', 2)
@@ -28,7 +40,7 @@ function AutoHideController:__init(visible)
     self._listeners = {}
 end
 
----@param callback fun(event: 'activity'|'visibility', visible: boolean, x: number?, y: number?, viewport: Rect?)
+---@param callback fun(event: 'activity' | 'visibility', visible: boolean, x: number?, y: number?, viewport: Rect?)
 ---@return fun()
 function AutoHideController:add_listener(callback)
     if type(callback) ~= 'function' then
@@ -36,7 +48,7 @@ function AutoHideController:add_listener(callback)
     end
     self._listeners[callback] = true
     local active = true
-    return function()
+    return function ()
         if not active then
             return false
         end
@@ -47,6 +59,7 @@ function AutoHideController:add_listener(callback)
 end
 
 ---@param visible boolean
+---@return boolean
 function AutoHideController:set_visible(visible)
     if type(visible) ~= 'boolean' then
         error('AutoHideController:set_visible expects a boolean', 2)
@@ -65,16 +78,18 @@ function AutoHideController:set_visible(visible)
     return true
 end
 
+---@return boolean
 function AutoHideController:show()
     return self:set_visible(true)
 end
 
+---@return boolean
 function AutoHideController:hide()
     return self:set_visible(false)
 end
 
----@param x number?
----@param y number?
+---@param x        number?
+---@param y        number?
 ---@param viewport Rect?
 function AutoHideController:activity(x, y, viewport)
     local listeners = {}
@@ -87,34 +102,35 @@ function AutoHideController:activity(x, y, viewport)
 end
 
 ---@class player._AutoHideOptions
----@field child Widget?
----@field controller AutoHideController?
----@field timeout number? seconds of inactivity before hiding; zero disables timeout
----@field enabled boolean?
----@field maintain_state boolean?
----@field fade_duration number? seconds for frame-clock fade; zero disables fade
----@field bottom_hover boolean? reveal and retain only from the bottom hover zone
----@field hover_zone number? bottom hover zone height in logical pixels
----@field top_hover boolean? reveal and retain only from the top hover zone
----@field top_hover_enabled boolean? application policy gate for the top zone
----@field top_hover_zone number? top hover zone height in logical pixels
----@field key any?
+---@field child             Widget?
+---@field controller        AutoHideController?
+---@field timeout           number?             seconds of inactivity before hiding; zero disables timeout
+---@field enabled           boolean?
+---@field maintain_state    boolean?
+---@field fade_duration     number?             seconds for frame-clock fade; zero disables fade
+---@field bottom_hover      boolean?            reveal and retain only from the bottom hover zone
+---@field hover_zone        number?             bottom hover zone height in logical pixels
+---@field top_hover         boolean?            reveal and retain only from the top hover zone
+---@field top_hover_enabled boolean?            application policy gate for the top zone
+---@field top_hover_zone    number?             top hover zone height in logical pixels
+---@field key               any?
 
----@class player.AutoHide : StatefulWidget
----@field child Widget?
----@field controller AutoHideController
----@field timeout number
----@field enabled boolean
----@field maintain_state boolean
----@field fade_duration number
----@field bottom_hover boolean
----@field hover_zone number
----@field top_hover boolean
+---@class player.AutoHide: StatefulWidget
+---@field child             Widget?
+---@field controller        AutoHideController
+---@field timeout           number
+---@field enabled           boolean
+---@field maintain_state    boolean
+---@field fade_duration     number
+---@field bottom_hover      boolean
+---@field hover_zone        number
+---@field top_hover         boolean
 ---@field top_hover_enabled boolean
----@field top_hover_zone number
+---@field top_hover_zone    number
 ---@overload fun(options?: _AutoHideOptions): self
 local AutoHide = std.class.new('AutoHide', StatefulWidget)
 
+---@param options _AutoHideOptions?
 function AutoHide:__init(options)
     options = options or {}
     self.key = options.key
@@ -127,14 +143,12 @@ function AutoHide:__init(options)
     self.bottom_hover = options.bottom_hover == true
     self.hover_zone = options.hover_zone == nil and 175 or options.hover_zone
     self.top_hover = options.top_hover == true
-    self.top_hover_enabled = options.top_hover_enabled == nil
-        and true or options.top_hover_enabled
+    self.top_hover_enabled = options.top_hover_enabled == nil and true or options.top_hover_enabled
     self.top_hover_zone = options.top_hover_zone == nil and 40 or options.top_hover_zone
     if type(self.top_hover_enabled) ~= 'boolean' then
         error('AutoHide.top_hover_enabled must be a boolean', 2)
     end
-    if type(self.timeout) ~= 'number' or self.timeout < 0
-        or self.timeout == math.huge or self.timeout ~= self.timeout then
+    if type(self.timeout) ~= 'number' or self.timeout < 0 or self.timeout == math.huge or self.timeout ~= self.timeout then
         error('AutoHide.timeout must be a finite non-negative number', 2)
     end
     if type(self.fade_duration) ~= 'number' or self.fade_duration < 0
@@ -154,16 +168,16 @@ function AutoHide:__init(options)
     end
 end
 
----@class player.AutoHideState : State
----@field widget AutoHide
+---@class player.AutoHideState: State
+---@field widget                AutoHide
 ---@field private _policy_cache _TreeQueryCache?
----@field elapsed number
----@field opacity number
----@field hidden boolean
----@field _remove_listener fun()?
----@field _ticker Ticker?
----@field _fade_controller AnimationController?
----@field _fade_listener fun(controller: AnimationController)?
+---@field elapsed               number
+---@field opacity               number
+---@field hidden                boolean
+---@field _remove_listener      fun()?
+---@field _ticker               Ticker?
+---@field _fade_controller      AnimationController?
+---@field _fade_listener        fun(controller: AnimationController)?
 ---@overload fun(): self
 local AutoHideState = std.class.new('AutoHideState', State)
 
@@ -178,6 +192,7 @@ function AutoHideState:__init()
     self._fade_listener = nil
 end
 
+---@return RenderOpacity?
 function AutoHideState:_render_opacity()
     local context = self.context
     local render_object = context and context:first_render_object()
@@ -196,8 +211,8 @@ function AutoHideState:_apply_render_state()
     render_object:set_hidden(self.hidden)
 end
 
----@class player._AutoHidePolicyTarget : State
----@field keep_auto_hide_visible? fun(self: self): boolean
+---@class player._AutoHidePolicyTarget: State
+---@field keep_auto_hide_visible?   fun(self: self): boolean
 ---@field refresh_hover_visibility? fun(self: self)
 
 ---@return _AutoHidePolicyTarget[]
@@ -213,6 +228,7 @@ function AutoHideState:_policy_targets()
     end
     if cache.value == nil or context ~= cache.value.context then
         local elements = {}
+        ---@param element Element
         local function visit(element)
             if element.state then
                 elements[#elements + 1] = element.state
@@ -290,6 +306,7 @@ function AutoHideState:_dispose_fade_controller()
     self._fade_listener = nil
 end
 
+---@return AnimationController?
 function AutoHideState:_ensure_fade_controller()
     local widget = self.widget --[[@as AutoHide]]
     if widget.fade_duration <= 0 then
@@ -305,7 +322,7 @@ function AutoHideState:_ensure_fade_controller()
         return nil
     end
     local controller = self:create_animation_controller({ duration = widget.fade_duration })
-    local listener = function(animation)
+    local listener = function (animation)
         self:_fade_changed(animation)
     end
     controller:add_listener(listener)
@@ -333,6 +350,7 @@ function AutoHideState:_finish_hidden()
     end
 end
 
+---@param visible boolean?
 function AutoHideState:_set_visibility(visible)
     local widget = self.widget --[[@as AutoHide]]
     self:_notify_child_visibility()
@@ -371,8 +389,7 @@ function AutoHideState:_restart_timer()
     self.elapsed = 0
     local ticker = self._ticker
     if ticker then
-        if self.widget.enabled and self.widget.timeout > 0
-            and self.widget.controller.visible then
+        if self.widget.enabled and self.widget.timeout > 0 and self.widget.controller.visible then
             ticker:start()
         else
             ticker:stop()
@@ -380,6 +397,11 @@ function AutoHideState:_restart_timer()
     end
 end
 
+---@param event    string
+---@param visible  boolean?
+---@param x        number?
+---@param y        number?
+---@param viewport Rect?
 function AutoHideState:_controller_event(event, visible, x, y, viewport)
     if event == 'activity' then
         local widget = self.widget --[[@as AutoHide]]
@@ -391,14 +413,12 @@ function AutoHideState:_controller_event(event, visible, x, y, viewport)
             return
         end
         local in_hover_zone = true
-        if (widget.bottom_hover or (widget.top_hover and widget.top_hover_enabled))
-            and x ~= nil and y ~= nil and viewport ~= nil then
+        if (widget.bottom_hover or (widget.top_hover and widget.top_hover_enabled)) and x ~= nil
+            and y ~= nil and viewport ~= nil then
             local in_viewport = y >= viewport.top and y < viewport.bottom
-            local in_bottom_zone = widget.bottom_hover
-                and y >= viewport.bottom - widget.hover_zone
+            local in_bottom_zone = widget.bottom_hover and y >= viewport.bottom - widget.hover_zone
             local in_top_zone = widget.top_hover and widget.top_hover_enabled
-                and y >= viewport.top
-                and y < viewport.top + widget.top_hover_zone
+                and y >= viewport.top and y < viewport.top + widget.top_hover_zone
             in_hover_zone = in_viewport and (in_bottom_zone or in_top_zone)
         end
         if not in_hover_zone then
@@ -430,14 +450,14 @@ function AutoHideState:init_state()
     local widget = self.widget --[[@as AutoHide]]
     self.hidden = not widget.controller.visible
     self.opacity = self.hidden and 0 or 1
-    self._remove_listener = widget.controller:add_listener(function(event, visible, x, y, viewport)
+    self._remove_listener = widget.controller:add_listener(function (event, visible, x, y, viewport)
         self:_controller_event(event, visible, x, y, viewport)
     end)
 
     local context = self.context
     local owner = context and context.owner
     if owner and owner.scheduler and widget.enabled and widget.timeout > 0 then
-        self._ticker = self:create_ticker(function(dt)
+        self._ticker = self:create_ticker(function (dt)
             local current_widget = self.widget --[[@as AutoHide]]
             local ticker = self._ticker
             if ticker == nil then
@@ -461,6 +481,7 @@ function AutoHideState:init_state()
     end
 end
 
+---@param old_widget AutoHide
 function AutoHideState:did_update_widget(old_widget)
     local old = old_widget --[[@as AutoHide]]
     local widget = self.widget --[[@as AutoHide]]
@@ -468,7 +489,7 @@ function AutoHideState:did_update_widget(old_widget)
         if self._remove_listener then
             self._remove_listener()
         end
-        self._remove_listener = widget.controller:add_listener(function(event, visible, x, y, viewport)
+        self._remove_listener = widget.controller:add_listener(function (event, visible, x, y, viewport)
             self:_controller_event(event, visible, x, y, viewport)
         end)
         self.hidden = not widget.controller.visible
@@ -497,6 +518,7 @@ function AutoHideState:dispose()
     self:_dispose_fade_controller()
 end
 
+---@return Widget?
 function AutoHideState:build()
     local widget = self.widget --[[@as AutoHide]]
     if self.hidden and not widget.maintain_state then
@@ -505,10 +527,11 @@ function AutoHideState:build()
     return Opacity({
         opacity = self.opacity,
         hidden = self.hidden,
-        child = widget.child,
+        child = widget.child
     })
 end
 
+---@return AutoHideState
 function AutoHide:create_state()
     return AutoHideState()
 end

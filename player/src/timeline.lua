@@ -17,66 +17,67 @@ local Slider = slider_mod.Slider
 local Color = color_mod.Color
 
 ---@class player._TimelineAppearanceOptions
----@field track_color Color?
----@field buffered_color Color?
----@field progress_color Color?
----@field handle_color Color?
----@field hover_track_color Color?
+---@field track_color          Color?
+---@field buffered_color       Color?
+---@field progress_color       Color?
+---@field handle_color         Color?
+---@field hover_track_color    Color?
 ---@field hover_buffered_color Color?
 ---@field hover_progress_color Color?
----@field hover_handle_color Color?
----@field height number?
----@field handle_size number?
----@field hover_handle_size number?
----@field hover_expand number?
----@field range_expand number?
+---@field hover_handle_color   Color?
+---@field height               number?
+---@field handle_size          number?
+---@field hover_handle_size    number?
+---@field hover_expand         number?
+---@field range_expand         number?
 
----@class player._TimelineOptions : player._TimelineAppearanceOptions
----@field progress number?
----@field buffered number?
----@field seek_mode SeekMode?
----@field markers table?
----@field ranges table?
----@field marker_color Color?
+---@class player._TimelineOptions: player._TimelineAppearanceOptions
+---@field progress             number?
+---@field buffered             number?
+---@field seek_mode            SeekMode?
+---@field markers              table?
+---@field ranges               table?
+---@field marker_color         Color?
 ---@field current_marker_color Color?
----@field range_color Color?
----@field marker_style TimelineMarkerStyle?
----@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
----@field on_context_seek fun(fraction: number)?
----@field on_wheel fun(delta: number)?
----@field enabled boolean?
----@field key any?
+---@field range_color          Color?
+---@field marker_style         TimelineMarkerStyle?
+---@field on_seek              fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
+---@field on_context_seek      fun(fraction: number)?
+---@field on_wheel             fun(delta: number)?
+---@field enabled              boolean?
+---@field key                  any?
 
----@class player.Timeline : material.Slider
----@field progress number
----@field buffered number
----@field track_color Color
----@field buffered_color Color
----@field progress_color Color
----@field handle_color Color
----@field hover_track_color Color?
+---@class player.Timeline: material.Slider
+---@field progress             number
+---@field buffered             number
+---@field track_color          Color
+---@field buffered_color       Color
+---@field progress_color       Color
+---@field handle_color         Color
+---@field hover_track_color    Color?
 ---@field hover_buffered_color Color?
 ---@field hover_progress_color Color?
----@field hover_handle_color Color?
----@field height number
----@field handle_size number
----@field hover_handle_size number
----@field hover_expand number
----@field range_expand number
----@field seek_mode SeekMode
----@field markers table[]
----@field ranges table[]
----@field marker_color Color
+---@field hover_handle_color   Color?
+---@field height               number
+---@field handle_size          number
+---@field hover_handle_size    number
+---@field hover_expand         number
+---@field range_expand         number
+---@field seek_mode            SeekMode
+---@field markers              table[]
+---@field ranges               table[]
+---@field marker_color         Color
 ---@field current_marker_color Color
----@field range_color Color
----@field marker_style TimelineMarkerStyle
----@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
----@field on_context_seek fun(fraction: number)?
----@field on_wheel fun(delta: number)?
----@field enabled boolean
+---@field range_color          Color
+---@field marker_style         TimelineMarkerStyle
+---@field on_seek              fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
+---@field on_context_seek      fun(fraction: number)?
+---@field on_wheel             fun(delta: number)?
+---@field enabled              boolean
 ---@overload fun(options?: _TimelineOptions): self
 local Timeline = std.class.new('Timeline', Slider)
 
+---@param options _TimelineOptions?
 function Timeline:__init(options)
     options = options or {}
     self.key = options.key
@@ -95,8 +96,7 @@ function Timeline:__init(options)
     self.hover_handle_color = options.hover_handle_color
     self.height = options.height == nil and 14 or options.height
     self.handle_size = options.handle_size == nil and 0.8 or options.handle_size
-    self.hover_handle_size = options.hover_handle_size == nil
-        and self.handle_size or options.hover_handle_size
+    self.hover_handle_size = options.hover_handle_size == nil and self.handle_size or options.hover_handle_size
     self.hover_expand = options.hover_expand == nil and 0 or options.hover_expand
     self.range_expand = options.range_expand == nil and 0 or options.range_expand
     self.seek_mode = options.seek_mode or 'keyframe'
@@ -112,6 +112,7 @@ function Timeline:__init(options)
     self.enabled = options.enabled ~= false
 end
 
+---@return RenderTimeline
 function Timeline:create_render_object()
     return RenderTimeline({
         progress = self.progress,
@@ -139,7 +140,7 @@ function Timeline:create_render_object()
         on_seek = self.on_seek,
         on_context_seek = self.on_context_seek,
         on_wheel = self.on_wheel,
-        enabled = self.enabled,
+        enabled = self.enabled
     })
 end
 
@@ -174,6 +175,8 @@ function Timeline:update_render_object(render_object)
 end
 
 ---@class mod.player.src.timeline
-local M = { Timeline = Timeline }
+local M = {
+    Timeline = Timeline
+}
 
 return M

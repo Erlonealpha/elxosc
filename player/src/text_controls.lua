@@ -7,26 +7,34 @@
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 local widget_mod = require 'src.widgets.framework'
+local widget_state_mod = require 'src.widgets.state'
+local context_mod = require 'player.src.context'
+local hover_text_mod = require 'src.widgets.hover_text'
+local data_mod = require 'player.src.data'
+local ambient_mod = require 'src.widgets.ambient'
+local text_layout_mod = require 'src.text.text_layout'
+
+local PlayerSelectorState = context_mod.PlayerSelectorState
+local HoverText = hover_text_mod.HoverText
+
+local math = math
+local pairs = pairs
+local rawequal = rawequal
+local tostring = tostring
 
 local Offset = geometry.Offset
 local StatefulWidget = widget_mod.StatefulWidget
-local widget_state_mod = require 'src.widgets.state'
 local State = widget_state_mod.State
-local PlayerSelectorState = require('player.src.context').PlayerSelectorState
 
 local raise = std.raise
-local HoverText = require('src.widgets.hover_text').HoverText
-local data_mod = require 'player.src.data'
 local format_time = data_mod.format_time
-local ambient_mod = require 'src.widgets.ambient'
-local text_layout_mod = require 'src.text.text_layout'
 
 ---@class mod.player.src.text_controls
 local M = {}
 
----@class player.PlayerTimeWidth : std.object
+---@class player.PlayerTimeWidth: std.object
 ---@field private _layout TextLayout?
----@field private _style TextStyle?
+---@field private _style  TextStyle?
 ---@field private _widths table<string, number>
 ---@overload fun(): self
 local PlayerTimeWidth = std.class.new('PlayerTimeWidth')
@@ -40,13 +48,12 @@ end
 --- Candidate digit runs provide a stable reservation; every real shaped label
 --- is checked too, so this never claims a font-independent digit upper bound.
 ---@param layout TextLayout
----@param label string
----@param style TextStyle
+---@param label  string
+---@param style  TextStyle
 ---@return number
 function PlayerTimeWidth:resolve(layout, label, style)
     local template = label:gsub('%d', '#')
-    if not rawequal(self._layout, layout)
-        or self._style == nil or self._style.font_family ~= style.font_family
+    if not rawequal(self._layout, layout) or self._style == nil or self._style.font_family ~= style.font_family
         or self._style.font_size ~= style.font_size or self._style.bold ~= style.bold
         or self._style.italic ~= style.italic or self._style.letter_spacing ~= style.letter_spacing then
         self._layout = layout
@@ -85,42 +92,43 @@ end
 ---@alias player._PlayerHoverTextOptions _HoverTextOptions
 
 ---@class player._PlayerTimeDisplayOptions
----@field selector PlayerSelectorFunction?
----@field value number?
----@field duration number?
----@field show_remaining boolean?
----@field show_milliseconds boolean?
----@field unicode_minus boolean?
----@field fixed boolean?
----@field toggle_mode PlayerTimeToggleMode
----@field suffix string?
----@field style TextStyle
----@field alignment Offset
----@field hover_color Color?
----@field hover_shadow_color Color?
+---@field selector            PlayerSelectorFunction?
+---@field value               number?
+---@field duration            number?
+---@field show_remaining      boolean?
+---@field show_milliseconds   boolean?
+---@field unicode_minus       boolean?
+---@field fixed               boolean?
+---@field toggle_mode         PlayerTimeToggleMode
+---@field suffix              string?
+---@field style               TextStyle
+---@field alignment           Offset
+---@field hover_color         Color?
+---@field hover_shadow_color  Color?
 ---@field hover_shadow_radius number?
----@field key any?
+---@field key                 any?
 
----@class player.PlayerTimeDisplay : StatefulWidget
----@field selector PlayerSelectorFunction?
----@field equals? fun(left: any?, right: any?): boolean
----@field value number?
----@field duration number?
----@field show_remaining boolean
----@field show_milliseconds boolean
----@field _time_width PlayerTimeWidth
----@field unicode_minus boolean
----@field fixed boolean
----@field toggle_mode PlayerTimeToggleMode
----@field suffix string
----@field style TextStyle
----@field alignment Offset
----@field hover_color Color?
----@field hover_shadow_color Color?
+---@class player.PlayerTimeDisplay: StatefulWidget
+---@field selector            PlayerSelectorFunction?
+---@field equals?             fun(left: any?, right: any?): boolean
+---@field value               number?
+---@field duration            number?
+---@field show_remaining      boolean
+---@field show_milliseconds   boolean
+---@field _time_width         PlayerTimeWidth
+---@field unicode_minus       boolean
+---@field fixed               boolean
+---@field toggle_mode         PlayerTimeToggleMode
+---@field suffix              string
+---@field style               TextStyle
+---@field alignment           Offset
+---@field hover_color         Color?
+---@field hover_shadow_color  Color?
 ---@field hover_shadow_radius number?
 ---@overload fun(options: _PlayerTimeDisplayOptions): self
 local PlayerTimeDisplay = std.class.new('PlayerTimeDisplay', StatefulWidget)
 
+---@param options _PlayerTimeDisplayOptions
 function PlayerTimeDisplay:__init(options)
     options = options or {}
     self.key = options.key
@@ -143,9 +151,10 @@ function PlayerTimeDisplay:__init(options)
     self.hover_shadow_radius = options.hover_shadow_radius or 0
 end
 
----@class player.PlayerTimeDisplayState : PlayerSelectorState
----@field show_remaining boolean
----@field show_milliseconds boolean
+---@class player.PlayerTimeDisplayState: PlayerSelectorState
+---@field private _time_width PlayerTimeWidth
+---@field show_remaining      boolean
+---@field show_milliseconds   boolean
 ---@overload fun(): self
 local PlayerTimeDisplayState = std.class.new('PlayerTimeDisplayState', PlayerSelectorState)
 
@@ -168,6 +177,8 @@ function PlayerTimeDisplayState:did_update_widget(old_widget)
     end
 end
 
+---@param context Element
+---@return Widget?
 function PlayerTimeDisplayState:build(context)
     local widget = self.widget --[[@as PlayerTimeDisplay]]
     local value = widget.value
@@ -211,18 +222,19 @@ function PlayerTimeDisplayState:build(context)
         hover_color = widget.hover_color,
         hover_shadow_color = widget.hover_shadow_color,
         hover_shadow_radius = widget.hover_shadow_radius,
-        on_tap = function()
-            self:set_state(function()
+        on_tap = function ()
+            self:set_state(function ()
                 if widget.toggle_mode == 'remaining' then
                     self.show_remaining = not self.show_remaining
                 else
                     self.show_milliseconds = not self.show_milliseconds
                 end
             end)
-        end,
+        end
     })
 end
 
+---@return PlayerTimeDisplayState
 function PlayerTimeDisplay:create_state()
     return PlayerTimeDisplayState()
 end

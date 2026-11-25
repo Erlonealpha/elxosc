@@ -16,7 +16,7 @@ local icon_mod = require 'player.src.icon_map'
 local auto_hide_mod = require 'player.src.auto_hide'
 local ambients_mod = require 'player.src.ambients'
 
----@class mod.player.src.components : mod.player.src.theme, mod.player.src.extension_controls, mod.player.src.text_controls, mod.player.src.tooltip, mod.player.src.timeline
+---@class mod.player.src.components: mod.player.src.theme, mod.player.src.extension_controls, mod.player.src.text_controls, mod.player.src.tooltip, mod.player.src.timeline
 local M = {
     Main = app_mod.Main,
     PlayerApp = ambients_mod.PlayerApp,
@@ -45,7 +45,7 @@ local M = {
     PlayerScope = context_mod.PlayerScope,
     AutoHide = auto_hide_mod.AutoHide,
     AutoHideController = auto_hide_mod.AutoHideController,
-    PlayerIcons = icon_mod,
+    PlayerIcons = icon_mod
 }
 
 return M

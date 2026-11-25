@@ -8,6 +8,11 @@
 local icon_widgets = require 'src.widgets.icon'
 local geometry = require 'src.foundation.geometry'
 
+local error = error
+local next = next
+local pairs = pairs
+local tostring = tostring
+
 local Icon = icon_widgets.Icon
 local Offset = geometry.Offset
 
@@ -53,23 +58,23 @@ local M = {}
 --- | 'close'
 
 ---@class player.ModernXIconSpec
----@field glyph FluentIconNames
----@field size number
----@field font_family FluentIconFontName
----@field fill number
----@field weight number
----@field grade number
----@field optical_size number
+---@field glyph          FluentIconNames
+---@field size           number
+---@field font_family    FluentIconFontName
+---@field fill           number
+---@field weight         number
+---@field grade          number
+---@field optical_size   number
 ---@field optical_offset Offset
 
 ---@class player._ModernXIconSeed
----@field glyph FluentIconNames
----@field size number
----@field font_family FluentIconFontName?
----@field fill number?
----@field weight number?
----@field grade number?
----@field optical_size number?
+---@field glyph          FluentIconNames
+---@field size           number
+---@field font_family    FluentIconFontName?
+---@field fill           number?
+---@field weight         number?
+---@field grade          number?
+---@field optical_size   number?
 ---@field optical_offset Offset?
 
 local ICON_FONT = 'Material Symbols Rounded'
@@ -112,7 +117,7 @@ local specs = {
     screenshot = { glyph = 'screenshot', size = 24 },
     minimize = { glyph = 'minimize', size = 18 },
     maximize = { glyph = 'maximize', size = 18 },
-    close = { glyph = 'close', size = 18 },
+    close = { glyph = 'close', size = 18 }
 }
 
 for _, spec in pairs(specs) do
@@ -124,6 +129,8 @@ for _, spec in pairs(specs) do
     spec.optical_offset = ZERO
 end
 
+---@param name ModernXIconName
+---@return ModernXIconSpec
 local function get_spec(name)
     local spec = specs[name]
     if spec == nil then
@@ -144,7 +151,7 @@ function M.spec(name)
         weight = source.weight,
         grade = source.grade,
         optical_size = source.optical_size,
-        optical_offset = Offset(source.optical_offset.x, source.optical_offset.y),
+        optical_offset = Offset(source.optical_offset.x, source.optical_offset.y)
     }
 end
 
@@ -154,7 +161,7 @@ function M.glyph_name(name)
     return get_spec(name).glyph
 end
 
----@param name ModernXIconName
+---@param name    ModernXIconName
 ---@param options _IconOptions?
 ---@return Icon
 function M.icon(name, options)
@@ -166,7 +173,7 @@ function M.icon(name, options)
         weight = spec.weight,
         grade = spec.grade,
         optical_size = spec.optical_size,
-        optical_offset = Offset(spec.optical_offset.x, spec.optical_offset.y),
+        optical_offset = Offset(spec.optical_offset.x, spec.optical_offset.y)
     }
     for key, value in pairs(options or {}) do
         merged[key] = value

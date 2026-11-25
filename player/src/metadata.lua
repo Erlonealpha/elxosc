@@ -4,9 +4,20 @@
 ---@using elxosc
 ---@using elxosc.player
 
+local ipairs = ipairs
+local math = math
+local string = string
+local table = table
+local tonumber = tonumber
+local tostring = tostring
+local type = type
+
 ---@class mod.player.src.metadata
 local M = {}
 
+---@param snapshot PlayerSnapshot?
+---@param name     string
+---@return PlayerSnapshotValue?
 local function snapshot_value(snapshot, name)
     if snapshot and type(snapshot.get) == 'function' then
         return snapshot:get(name)
@@ -14,6 +25,8 @@ local function snapshot_value(snapshot, name)
     return nil
 end
 
+---@param value PlayerSnapshotValue?
+---@return string?
 local function text(value)
     if type(value) ~= 'string' and type(value) ~= 'number' then
         return nil
@@ -22,11 +35,16 @@ local function text(value)
     return value ~= '' and value or nil
 end
 
+---@param snapshot PlayerSnapshot?
+---@return table
 local function metadata(snapshot)
     local value = snapshot_value(snapshot, 'metadata')
     return type(value) == 'table' and value or {}
 end
 
+---@param snapshot PlayerSnapshot?
+---@param names    string[]
+---@return string?
 local function metadata_value(snapshot, names)
     local values = metadata(snapshot)
     for _, name in ipairs(names) do
@@ -39,8 +57,8 @@ local function metadata_value(snapshot, names)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param direct string[]
----@param nested string[]?
+---@param direct   string[]
+---@param nested   string[]?
 ---@return string?
 local function first_text(snapshot, direct, nested)
     for _, name in ipairs(direct) do
@@ -105,7 +123,7 @@ local function format_count(value)
     return result
 end
 
----@param bytes number?
+---@param bytes PlayerSnapshotValue? normalized with tonumber
 ---@return string?
 function M.format_file_size(bytes)
     bytes = tonumber(bytes)
@@ -126,6 +144,7 @@ end
 
 ---@param snapshot PlayerSnapshot?
 ---@return string
+---@param fallback string?
 function M.title(snapshot, fallback)
     local value = first_text(snapshot, { 'media_title', 'title', 'filename' }, { 'title' })
     if value then
@@ -148,9 +167,9 @@ function M.description(snapshot)
     local artist = metadata_value(snapshot, { 'album_artist', 'artist', 'uploader' })
     local album = metadata_value(snapshot, { 'album' })
     local date = metadata_value(snapshot, { 'date', 'upload_date' })
-    local size = M.format_file_size(snapshot_value(snapshot, 'file_size'))
-        or M.format_file_size(metadata(snapshot).filesize)
-        or M.format_file_size(metadata(snapshot).filesize_approx)
+    local size = M.format_file_size(snapshot_value(snapshot, 'file_size')) or M.format_file_size(
+            metadata(snapshot).filesize
+        ) or M.format_file_size(metadata(snapshot).filesize_approx)
     local parts = {}
     if artist then
         parts[#parts + 1] = artist

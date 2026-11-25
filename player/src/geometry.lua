@@ -7,6 +7,10 @@
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
+local math = math
+local pairs = pairs
+local type = type
+
 local Rect = geometry.Rect
 
 local raise = std.raise
@@ -17,6 +21,9 @@ local huge = math.huge
 ---@class mod.player.src.geometry
 local M = {}
 
+---@param name  string
+---@param value number
+---@return number
 local function finite(name, value)
     if type(value) ~= 'number' or value ~= value or value == huge or value == -huge then
         raise(std.ValueError('PlayerLayout.' .. name .. ' must be finite'))
@@ -24,6 +31,9 @@ local function finite(name, value)
     return value
 end
 
+---@param name  string
+---@param value number
+---@return number
 local function non_negative(name, value)
     value = finite(name, value)
     if value < 0 then
@@ -32,6 +42,11 @@ local function non_negative(name, value)
     return value
 end
 
+---@param left   number
+---@param top    number
+---@param width  number
+---@param height number
+---@return Rect
 local function rect(left, top, width, height)
     return Rect.from_ltwh(left, top, max(0, width), max(0, height))
 end
@@ -39,14 +54,19 @@ end
 -- Rect already owns the root-relative edges.  This helper deliberately keeps
 -- geometry as Rect values so RecordCanvas tests and Positioned use the same
 -- source rather than maintaining a second coordinate representation.
+---@param left   number
+---@param top    number
+---@param right  number
+---@param bottom number
+---@return Rect
 local function safe_rect(left, top, right, bottom)
     return Rect(left, top, max(left, right), max(top, bottom))
 end
 
----@param layout_option PlayerLayoutOption
----@param viewport_width number
+---@param layout_option   PlayerLayoutOption
+---@param viewport_width  number
 ---@param viewport_height number
----@param options table
+---@param options         table
 ---@return table<string, any>
 local function geometry_for(layout_option, viewport_width, viewport_height, options)
     viewport_width = non_negative('viewport_width', viewport_width)
@@ -59,14 +79,12 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     local controller_height = options.controller_height or 180
     local seek_height = options.progress_bar_height or 16
     local center_bottom = layout_option == 'original' and 100 or 75
-    local seek_width = layout_option == 'original' and viewport_width - 50
-        or viewport_width - 200
+    local seek_width = layout_option == 'original' and viewport_width - 50 or viewport_width - 200
     local seek_left = (viewport_width - seek_width) / 2
     local jump_buttons = options.jump_buttons == true
     local chapter_skip_buttons = options.chapter_skip_buttons ~= false
     local track_nextprev_buttons = options.track_nextprev_buttons ~= false
-    local outeroffset = (chapter_skip_buttons and 0 or 100)
-        + (jump_buttons and 0 or 100)
+    local outeroffset = (chapter_skip_buttons and 0 or 100) + (jump_buttons and 0 or 100)
     local center_y = viewport_height - 40
     local seek_y = viewport_height - center_bottom
     local time_y = viewport_height - 84
@@ -79,17 +97,16 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
         controller = rect(0, controller_top, viewport_width, actual_controller_height),
         window_bar = rect(0, 0, viewport_width, options.window_bar_height or 60),
         window_controls = safe_rect(
-            viewport_width - (options.window_control_box_width or 138),
-            0,
-            viewport_width,
-            options.window_control_height or 30),
+            viewport_width - (options.window_control_box_width or 138), 0, viewport_width,
+            options.window_control_height or 30
+        ),
         window_title = safe_rect(12, 0, viewport_width - 150, 30),
-        seekbar_background = rect(
-            seek_left, seek_y - 1, seek_width, options.seekbar_height or 2),
+        seekbar_background = rect(seek_left, seek_y - 1, seek_width, options.seekbar_height or 2),
         seekbar = rect(seek_left, seek_y - seek_height / 2, seek_width, seek_height),
         persistent_progress = rect(
-            0, viewport_height - (options.persistent_progress_height or 17),
-            viewport_width, options.persistent_progress_height or 17),
+            0, viewport_height - (options.persistent_progress_height or 17), viewport_width,
+            options.persistent_progress_height or 17
+        ),
         title = nil,
         description = nil,
         time_left = rect(25, time_y - 10, 90, 20),
@@ -102,27 +119,32 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
         side = {},
         right = {},
         visibility = {},
-        outeroffset = outeroffset,
+        outeroffset = outeroffset
     }
 
     local title_y = viewport_height - (layout_option == 'original' and 117 or 97)
     local title_width = layout_option == 'original' and viewport_width - 50 or viewport_width - 170
     result.title = rect(25, title_y - 35, title_width, 35)
     if layout_option == 'original' then
-        result.chapter = rect(
-            77, time_y - 10, viewport_width - 200, 20)
+        result.chapter = rect(77, time_y - 10, viewport_width - 200, 20)
         result.separator = rect(65, time_y - 10, 30, 20)
         result.description = rect(25, viewport_height - 136, viewport_width - 50, 19)
     else
         result.chapter = rect(25, viewport_height - 144, 120, 19)
         result.description = safe_rect(
-            viewport_width - 145, viewport_height - 134, viewport_width - 25, viewport_height - 115)
+            viewport_width - 145, viewport_height - 134, viewport_width - 25, viewport_height - 115
+        )
     end
 
     if options.has_description == true and layout_option == 'original' then
         result.title = rect(25, title_y - 55, title_width, 35)
     end
 
+    ---@param x           number
+    ---@param y           number
+    ---@param item_width  number
+    ---@param item_height number
+    ---@return Rect
     local function centered(x, y, item_width, item_height)
         return rect(x - item_width / 2, y - item_height / 2, item_width, item_height)
     end
@@ -130,11 +152,11 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     local offset = jump_buttons and 60 or 0
     if track_nextprev_buttons then
         result.center.playlist_prev = centered(
-            viewport_width / 2 - (60 + (chapter_skip_buttons and 60 or 0)) - offset,
-            center_y, 30, 24)
+            viewport_width / 2 - (60 + (chapter_skip_buttons and 60 or 0)) - offset, center_y, 30, 24
+        )
         result.center.playlist_next = centered(
-            viewport_width / 2 + (60 + (chapter_skip_buttons and 60 or 0)) + offset,
-            center_y, 30, 24)
+            viewport_width / 2 + (60 + (chapter_skip_buttons and 60 or 0)) + offset, center_y, 30, 24
+        )
     end
     if chapter_skip_buttons then
         result.center.chapter_prev = centered(viewport_width / 2 - 60 - offset, center_y, 30, 24)
@@ -152,6 +174,8 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     result.volume_background = rect(155, center_y - 1, options.volume_width or 80, 2)
     result.volume = rect(155, center_y - 4, options.volume_width or 80, 8)
 
+    ---@param name string
+    ---@return number
     local function control_count(name)
         local count = non_negative(name, options[name] or 0)
         if count % 1 ~= 0 then
@@ -168,6 +192,9 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     end
 
     local right_center = viewport_width - 37
+    ---@param name      string
+    ---@param enabled   boolean
+    ---@param threshold number
     local function right_control(name, enabled, threshold)
         if enabled then
             result.right[name] = centered(right_center, center_y, 24, 24)
@@ -180,8 +207,7 @@ local function geometry_for(layout_option, viewport_width, viewport_height, opti
     right_control('loop', options.loop_button == true, 600)
     right_control('ontop', options.ontop_button ~= false, 700)
     if right_count > 0 then
-        local bounds = rect(right_center - 12 - (right_count - 1) * 45, center_y - 12,
-            24 + (right_count - 1) * 45, 24)
+        local bounds = rect(right_center - 12 - (right_count - 1) * 45, center_y - 12, 24 + (right_count - 1) * 45, 24)
         result.right.right_controls = bounds
         result.visibility.right_controls = bounds.left >= center_right + 21
         if result.visibility.right_controls then

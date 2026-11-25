@@ -8,10 +8,12 @@ local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
 local ambient_mod = require 'src.widgets.ambient'
 local theme_mod = require 'src.material.theme'
-local WidgetsApp = require('src.widgets.app').WidgetsApp
+local app_mod = require 'src.widgets.app'
 local player_theme_mod = require 'player.src.theme'
 local actions_mod = require 'player.src.actions'
 local layout_widgets = require 'widgets'
+
+local WidgetsApp = app_mod.WidgetsApp
 
 local TextStyle = text_style_mod.TextStyle
 local StatelessWidget = widget_mod.StatelessWidget
@@ -29,31 +31,34 @@ local raise = std.raise
 ---@class mod.player.src.ambients
 local M = {}
 
+---@param child Widget?
+---@return Widget
 local function child_or_empty(child)
     return child or SizedBox.shrink()
 end
 
---== PlayerApp =============================================================
+-- == PlayerApp =============================================================
 
 ---@class player._PlayerAppOptions
----@field child Widget?
----@field theme material.ThemeData?
----@field player_theme PlayerThemeData?
----@field display DisplaySnapshot?
+---@field child              Widget?
+---@field theme              material.ThemeData?
+---@field player_theme       PlayerThemeData?
+---@field display            DisplaySnapshot?
 ---@field default_text_style TextStyle?
----@field actions HostActions?
----@field key any?
+---@field actions            HostActions?
+---@field key                any?
 
----@class player.PlayerApp : StatelessWidget
----@field child Widget?
----@field theme material.ThemeData
----@field player_theme PlayerThemeData
----@field display DisplaySnapshot
+---@class player.PlayerApp: StatelessWidget
+---@field child              Widget?
+---@field theme              material.ThemeData
+---@field player_theme       PlayerThemeData
+---@field display            DisplaySnapshot
 ---@field default_text_style TextStyle
----@field actions HostActions
+---@field actions            HostActions
 ---@overload fun(options?: _PlayerAppOptions): self
 local PlayerApp = std.class.new('PlayerApp', StatelessWidget)
 
+---@param options _PlayerAppOptions?
 function PlayerApp:__init(options)
     options = options or {}
     self.key = options.key
@@ -80,6 +85,7 @@ function PlayerApp:__init(options)
     end
 end
 
+---@return Widget?
 function PlayerApp:build()
     return Theme({
         data = self.theme,
@@ -90,13 +96,12 @@ function PlayerApp:build()
                 child = WidgetsApp({
                     display = self.display,
                     default_text_style = self.default_text_style,
-                    child = child_or_empty(self.child),
-                }),
-            }),
-        }),
+                    child = child_or_empty(self.child)
+                })
+            })
+        })
     })
 end
-
 
 M.PlayerApp = PlayerApp
 return M

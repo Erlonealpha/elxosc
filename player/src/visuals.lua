@@ -10,6 +10,12 @@ local basic_widgets = require 'material'
 local layout_widgets = require 'widgets'
 local icon_map = require 'player.src.icon_map'
 local tooltip_mod = require 'player.src.tooltip'
+local color_mod = require 'src.foundation.color'
+local painting_paint_mod = require 'src.painting.paint'
+local text_controls_mod = require 'player.src.text_controls'
+
+local math = math
+local pairs = pairs
 
 local Rect = geometry.Rect
 local Offset = geometry.Offset
@@ -27,18 +33,31 @@ local Icon = icon_map.icon
 local PlayerTooltip = tooltip_mod.PlayerTooltip
 
 local max = math.max
-local color_mod = require 'src.foundation.color'
 local Color = color_mod.Color
-local painting_paint_mod = require 'src.painting.paint'
 local Paint = painting_paint_mod.Paint
 local PaintStyle = painting_paint_mod.Style
 local ColorTransparent = Color.rgba255(0, 0, 0, 0)
 local ColorBlack = Color.rgba255(0, 0, 0, 255)
-local text_controls_mod = require 'player.src.text_controls'
 local PlayerHoverText = text_controls_mod.PlayerHoverText
 
 ---@class mod.player.src.visuals
 local M = {}
+
+---@class player._PlayerControlInteraction
+---@field enabled                boolean?
+---@field on_click               fun()?
+---@field on_right_click         fun()?
+---@field on_shift_click         fun(button: PointerButton)?
+---@field on_wheel               fun(delta: number)?
+---@field soft_repeat            boolean?
+---@field on_repeat              fun()?
+---@field hover_foreground_color Color?
+---@field tooltip                string?
+---@field disabled_tooltip       string?
+---@field tooltip_bounds_width   number?
+---@field tooltip_bounds_height  number?
+---@field tooltip_anchor_left    number?
+---@field tooltip_anchor_top     number?
 
 ---@param theme PlayerThemeData
 ---@param title string
@@ -52,22 +71,29 @@ local function idle_view(theme, title)
             cross_alignment = 'center',
             children = {
                 Icon('idle', { color = theme.title_color }),
-                Text(label, { style = TextStyle({
-                    font_size = theme.title_font_size,
-                    color = theme.title_color,
-                    align = 'center',
-                    wrap = false,
-                }) }),
-                Text('Drop a file or open a media URL', { style = TextStyle({
-                    font_size = theme.description_font_size,
-                    color = theme.description_color,
-                    align = 'center',
-                    wrap = false,
-                }) }),
-            },
-        }),
+                Text(label, {
+                    style = TextStyle({
+                        font_size = theme.title_font_size,
+                        color = theme.title_color,
+                        align = 'center',
+                        wrap = false
+                    })
+                }),
+                Text('Drop a file or open a media URL', {
+                    style = TextStyle({
+                        font_size = theme.description_font_size,
+                        color = theme.description_color,
+                        align = 'center',
+                        wrap = false
+                    })
+                })
+            }
+        })
     })
 end
+---@param theme   PlayerThemeData
+---@param options _TextStyleOptions?
+---@return TextStyle
 local function text_style(theme, options)
     options = options or {}
     local values = {}
@@ -81,9 +107,15 @@ local function text_style(theme, options)
     return TextStyle(values)
 end
 
+---@param theme        PlayerThemeData
+---@param color        Color
+---@param border_color Color
+---@param blur_radius  number
+---@param top          boolean?
+---@return Widget
 local function panel(theme, color, border_color, blur_radius, top)
     return CustomPaint({
-        draw = function(canvas, offset, size)
+        draw = function (canvas, offset, size)
             -- ModernX uses a one-pixel edge box with a large blur. Painting a
             -- full opaque controller rectangle first creates an extra gray
             -- layer over the intended gradient.
@@ -91,19 +123,21 @@ local function panel(theme, color, border_color, blur_radius, top)
             -- Put the source outside the viewport, as ModernX does. Extend it
             -- horizontally so blurred corners cannot leave seams at the edges.
             local y = top and offset.y - 71 or offset.y + size.height
-            local edge = Rect.from_ltwh(offset.x - border_width, y,
-                size.width + border_width * 2, 1)
+            local edge = Rect.from_ltwh(offset.x - border_width, y, size.width + border_width * 2, 1)
             local fill = Paint(color)
             fill.blur_radius = blur_radius
             canvas:draw_rect(edge, fill)
-            local border = Paint(border_color, PaintStyle.STROKE,
-                border_width)
+            local border = Paint(border_color, PaintStyle.STROKE, border_width)
             border.blur_radius = blur_radius
             canvas:draw_rect(edge, border)
-        end,
+        end
     })
 end
 
+---@param theme                  PlayerThemeData
+---@param hover_foreground_color Color?
+---@param foreground_color       Color?
+---@return material.ButtonStyle
 local function control_style(theme, hover_foreground_color, foreground_color)
     local foreground = foreground_color or theme.side_button_color
     return ButtonStyle({
@@ -114,23 +148,34 @@ local function control_style(theme, hover_foreground_color, foreground_color)
         foreground_color = foreground,
         hover_foreground_color = hover_foreground_color or theme.hover_color,
         pressed_foreground_color = theme.held_color,
-        disabled_foreground_color = Color(foreground.r, foreground.g, foreground.b,
-            foreground.a * 40 / 255),
+        disabled_foreground_color = Color(foreground.r, foreground.g, foreground.b, foreground.a * 40 / 255),
         hover_shadow_color = hover_foreground_color or theme.hover_color,
         hover_shadow_radius = theme.button_glow_amount,
         padding = EdgeInsets.zero(),
         radius = 0,
-        hover_scale = theme.hover_scale,
+        hover_scale = theme.hover_scale
     })
 end
 
+---@param theme           PlayerThemeData
+---@param actions         HostActions
+---@param name            string
+---@param action_name     string?
+---@param icon_name       ModernXIconName
+---@param item_rect       Rect
+---@param icon_size       number
+---@param color           Color?
+---@param custom_callback fun()?
+---@param style           material.ButtonStyle?
+---@param interaction     _PlayerControlInteraction?
+---@return Widget
 local function icon_control(
-    theme, actions, name, action_name, icon_name, item_rect, icon_size, color, custom_callback, style,
-    interaction)
+    theme, actions, name, action_name, icon_name, item_rect, icon_size, color, custom_callback, style, interaction
+)
     interaction = interaction or {}
     local callback = custom_callback
     if callback == nil and action_name then
-        callback = function()
+        callback = function ()
             actions[action_name](actions)
         end
     end
@@ -138,7 +183,7 @@ local function icon_control(
         width = max(0, item_rect:width()),
         height = max(0, item_rect:height()),
         alignment = Offset(0.5, 0.5),
-        child = Icon(icon_name, { size = icon_size, color = color }),
+        child = Icon(icon_name, { size = icon_size, color = color })
     })
     local enabled = interaction.enabled ~= nil and interaction.enabled
         or (interaction.enabled == nil and (action_name == nil or actions:has(action_name)))
@@ -152,7 +197,7 @@ local function icon_control(
         on_wheel = interaction.on_wheel,
         soft_repeat = interaction.soft_repeat,
         on_repeat = interaction.on_repeat,
-        style = style or control_style(theme, interaction.hover_foreground_color, color),
+        style = style or control_style(theme, interaction.hover_foreground_color, color)
     })
     if interaction.tooltip or interaction.disabled_tooltip then
         return PlayerTooltip({
@@ -165,19 +210,22 @@ local function icon_control(
             anchor_left = interaction.tooltip_anchor_left or item_rect.left,
             anchor_top = interaction.tooltip_anchor_top or item_rect.top,
             anchor_width = item_rect:width(),
-            anchor_height = item_rect:height(),
+            anchor_height = item_rect:height()
         })
     end
     return button
 end
 
+---@param item_rect Rect
+---@param child     Widget?
+---@return Widget
 local function positioned(item_rect, child)
     return Positioned({
         left = item_rect.left,
         top = item_rect.top,
         width = item_rect:width(),
         height = item_rect:height(),
-        child = child,
+        child = child
     })
 end
 ---@param theme PlayerThemeData
@@ -194,52 +242,64 @@ local function default_title_bar(theme, title)
                 blur_radius = 1,
                 outline_width = 0.5,
                 outline_color = ColorBlack,
-                wrap = false,
+                wrap = false
             }),
             alignment = Offset(0, 0.5),
             hover_color = theme.hover_color,
             hover_shadow_color = theme.hover_glow_color,
-            hover_shadow_radius = theme.button_glow_amount,
-        }),
+            hover_shadow_radius = theme.button_glow_amount
+        })
     })
 end
 
----@param theme PlayerThemeData
----@param actions HostActions
+---@param theme    PlayerThemeData
+---@param actions  HostActions
 ---@return Widget
+---@param snapshot PlayerSnapshot?
 local function default_window_controls(theme, actions, snapshot)
+    ---@param name        string
+    ---@param icon_name   ModernXIconName
+    ---@param action_name string
+    ---@param hover_color Color?
+    ---@return Widget
     local function control(name, icon_name, action_name, hover_color)
         local item = Rect.from_ltwh(0, 0, theme.window_control_width, theme.window_control_height)
-        local style = control_style(
-            theme, hover_color or theme.window_control_color, theme.window_control_color)
+        local style = control_style(theme, hover_color or theme.window_control_color, theme.window_control_color)
         style.hover_scale = 1
         style.hover_shadow_color = nil
         style.hover_shadow_radius = 0
         return icon_control(
-            theme, actions, name, action_name, icon_name, item, theme.window_control_size,
-            theme.window_control_color, nil, style)
+            theme, actions, name, action_name, icon_name, item, theme.window_control_size, theme.window_control_color,
+            nil, style
+        )
     end
     return Stack({
         children = {
             Positioned({
-                left = 10, top = 0, width = theme.window_control_width,
+                left = 10,
+                top = 0,
+                width = theme.window_control_width,
                 height = theme.window_control_height,
-                child = control('minimize', 'minimize', 'minimize', Color.hex('#53A4FC')),
+                child = control('minimize', 'minimize', 'minimize', Color.hex('#53A4FC'))
             }),
             Positioned({
-                left = 54, top = 0, width = theme.window_control_width,
+                left = 54,
+                top = 0,
+                width = theme.window_control_width,
                 height = theme.window_control_height,
-                child = control('fullscreen',
-                    snapshot and snapshot:get('fullscreen') == true
-                        and 'fullscreen_exit' or 'fullscreen',
-                    'toggle_fullscreen', Color.hex('#53A4FC')),
+                child = control(
+                    'fullscreen', snapshot and snapshot:get('fullscreen') == true and 'fullscreen_exit' or 'fullscreen',
+                    'toggle_fullscreen', Color.hex('#53A4FC')
+                )
             }),
             Positioned({
-                left = 98, top = 0, width = theme.window_control_width,
+                left = 98,
+                top = 0,
+                width = theme.window_control_width,
                 height = theme.window_control_height,
-                child = control('close', 'close', 'close', Color.hex('#E81123')),
-            }),
-        },
+                child = control('close', 'close', 'close', Color.hex('#E81123'))
+            })
+        }
     })
 end
 

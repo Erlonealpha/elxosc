@@ -12,7 +12,20 @@ local timeline_mod = require 'player.src.timeline'
 local tooltip_mod = require 'player.src.tooltip'
 local metadata_mod = require 'player.src.metadata'
 local paint_mod = require 'src.painting.paint'
-local PlayerSelector = require('player.src.context').PlayerSelector
+local context_mod = require 'player.src.context'
+local color_mod = require 'src.foundation.color'
+local data_mod = require 'player.src.data'
+local visuals_mod = require 'player.src.visuals'
+local text_controls_mod = require 'player.src.text_controls'
+
+local PlayerSelector = context_mod.PlayerSelector
+
+local ipairs = ipairs
+local math = math
+local pairs = pairs
+local string = string
+local tonumber = tonumber
+local type = type
 
 local Offset = geometry.Offset
 local Rect = geometry.Rect
@@ -30,13 +43,9 @@ local player_metadata = metadata_mod
 
 local max = math.max
 local min = math.min
-local color_mod = require 'src.foundation.color'
 local Color = color_mod.Color
 local ColorTransparent = Color.rgba255(0, 0, 0, 0)
 local ColorBlack = Color.rgba255(0, 0, 0, 255)
-local data_mod = require 'player.src.data'
-local visuals_mod = require 'player.src.visuals'
-local text_controls_mod = require 'player.src.text_controls'
 local PlayerTimeDisplay = text_controls_mod.PlayerTimeDisplay
 local PlayerHoverText = text_controls_mod.PlayerHoverText
 local snapshot_number = data_mod.snapshot_number
@@ -76,14 +85,17 @@ local function time_value(snapshot)
     return snapshot_number(snapshot, 'time_pos')
 end
 
----@param theme PlayerThemeData
----@param actions HostActions
----@param snapshot PlayerSnapshot?
----@param title string
+---@param theme           PlayerThemeData
+---@param actions         HostActions
+---@param snapshot        PlayerSnapshot?
+---@param title           string
 ---@param layout_geometry table<string, any>
 ---@return Widget[]
 local function default_controller(theme, actions, snapshot, title, layout_geometry)
     local children = {}
+    ---@param interaction _PlayerControlInteraction?
+    ---@param item_rect   Rect
+    ---@return _PlayerControlInteraction?
     local function bounded_interaction(interaction, item_rect)
         if interaction == nil then
             return nil
@@ -98,22 +110,24 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         result.tooltip_anchor_top = item_rect.top
         return result
     end
+    ---@param message string
     local function show_message(message)
         if actions:has('show_message') then
             actions:show_message(message)
         end
     end
+    ---@param direction ModernXIconName
+    ---@param amount    number
+    ---@return ModernXIconName
     local function jump_icon(direction, amount)
         if not theme.jump_icon_number then
             return direction
         end
-        local names = direction == 'rewind' and {
-            [5] = 'rewind_5', [10] = 'rewind_10', [30] = 'rewind_30',
-        } or {
-            [5] = 'forward_5', [10] = 'forward_10', [30] = 'forward_30',
-        }
+        local names = direction == 'rewind' and { [5] = 'rewind_5', [10] = 'rewind_10', [30] = 'rewind_30' }
+            or { [5] = 'forward_5', [10] = 'forward_10', [30] = 'forward_30' }
         return names[amount] or direction
     end
+    ---@param seconds number
     local function jump_seek(seconds)
         if actions:has('seek') then
             actions:seek(seconds, theme.jump_mode)
@@ -133,9 +147,10 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     for _, range in ipairs(sponsor_ranges(snapshot, duration)) do
         ranges[#ranges + 1] = range
     end
-    local thumbfast_enabled = capability_available(snapshot, 'thumbfast')
-        and actions:has('thumbfast_request')
+    local thumbfast_enabled = capability_available(snapshot, 'thumbfast') and actions:has('thumbfast_request')
 
+    ---@return number? width
+    ---@return number? height
     local function thumbfast_size()
         local info = snapshot and snapshot:capability('thumbfast') or nil
         local detail = info and info.detail or nil
@@ -146,6 +161,8 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         return tonumber(width), tonumber(height)
     end
 
+    ---@param point Offset
+    ---@return Rect?
     local function thumbfast_rect(point)
         local width, height = thumbfast_size()
         if width == nil or height == nil or width <= 0 or height <= 0 then
@@ -155,19 +172,22 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         local width_logical = width / player_scale
         local margin = 18 / player_scale
         local cursor_x = layout_geometry.seekbar.left + point.x
-        local left = max(margin,
-            min(layout_geometry.viewport:width() - margin - width_logical,
-                cursor_x - width_logical / 2))
-        local top = max(0, layout_geometry.seekbar.top - theme.time_font_size
-            - (theme.thumbnail_border + 2 + height) / player_scale)
+        local left = max(
+            margin, min(layout_geometry.viewport:width() - margin - width_logical, cursor_x - width_logical / 2)
+        )
+        local top = max(
+            0, layout_geometry.seekbar.top - theme.time_font_size - (theme.thumbnail_border + 2 + height) / player_scale
+        )
         -- The external image uses integer host coordinates. Share that exact
         -- rectangle with the in-tree frame and centered time label.
         return Rect.from_ltwh(
-            math.floor(left * player_scale + 0.5) / player_scale,
-            math.floor(top * player_scale + 0.5) / player_scale,
-            width_logical, height / player_scale)
+            math.floor(left * player_scale + 0.5) / player_scale, math.floor(top * player_scale + 0.5) / player_scale,
+            width_logical, height / player_scale
+        )
     end
 
+    ---@param point Offset
+    ---@return number
     local function thumbfast_center(point)
         local rect = thumbfast_rect(point)
         return rect and (rect.left + rect:width() / 2 - layout_geometry.seekbar.left) or point.x
@@ -175,41 +195,40 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
 
     children[#children + 1] = positioned(
         layout_geometry.controller,
-        panel(theme, theme.controller_color, theme.controller_border_color,
-            theme.controller_blur_radius, false))
+        panel(theme, theme.controller_color, theme.controller_border_color, theme.controller_blur_radius, false)
+    )
     if layout_geometry.visibility.persistent_progress then
-        children[#children + 1] = positioned(layout_geometry.persistent_progress, PlayerSelector({
-            selector = progress_value,
-            builder = function(progress)
-                return Timeline({
-                    progress = progress,
-                    buffered = 0,
-                    height = theme.persistent_progress_height,
-                    handle_size = 0,
-                    track_color = ColorTransparent,
-                    buffered_color = theme.seekbar_buffer_color,
-                    progress_color = theme.seekbar_progress_color,
-                    handle_color = theme.seekbar_progress_color,
-                    ranges = theme.persistent_buffer and cache_ranges or {},
-                    range_expand = 7,
-                    enabled = false,
-                })
-            end,
-        }))
+        children[#children + 1] = positioned(
+            layout_geometry.persistent_progress,
+            PlayerSelector({
+                selector = progress_value,
+                builder = function (progress)
+                    return Timeline({
+                        progress = progress,
+                        buffered = 0,
+                        height = theme.persistent_progress_height,
+                        handle_size = 0,
+                        track_color = ColorTransparent,
+                        buffered_color = theme.seekbar_buffer_color,
+                        progress_color = theme.seekbar_progress_color,
+                        handle_color = theme.seekbar_progress_color,
+                        ranges = theme.persistent_buffer and cache_ranges or {},
+                        range_expand = 7,
+                        enabled = false
+                    })
+                end
+            })
+        )
     end
     if not (theme.show_chapter_markers and theme.chapter_marker_style == 'gap') then
         children[#children + 1] = positioned(
-            layout_geometry.seekbar_background,
-            Container({ color = theme.seekbar_track_color }))
+            layout_geometry.seekbar_background, Container({ color = theme.seekbar_track_color })
+        )
     end
     local seek_callback
-    local seek_state = {
-        was_playing = false,
-        pause_owned = false,
-        mode = 'keyframe',
-    }
+    local seek_state = { was_playing = false, pause_owned = false, mode = 'keyframe' }
     if duration ~= nil and duration > 0 and actions:has('seek_to') then
-        seek_callback = function(fraction, phase, mode)
+        seek_callback = function (fraction, phase, mode)
             if phase == 'start' then
                 seek_state.was_playing = snapshot ~= nil and snapshot:get('pause') ~= true
                 seek_state.mode = mode or 'keyframe'
@@ -239,7 +258,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     end
     local chapter_seek_callback
     if actions:has('set_chapter') and duration ~= nil and duration > 0 then
-        chapter_seek_callback = function(fraction)
+        chapter_seek_callback = function (fraction)
             local chapter = nearest_chapter(snapshot, fraction, duration)
             if chapter ~= nil then
                 actions:set_chapter(chapter)
@@ -248,7 +267,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     end
     local seekbar = PlayerSelector({
         selector = progress_value,
-        builder = function(progress)
+        builder = function (progress)
             return Timeline({
                 progress = progress,
                 buffered = 0,
@@ -274,91 +293,98 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                 marker_style = theme.chapter_marker_style,
                 on_seek = seek_callback,
                 on_context_seek = chapter_seek_callback,
-                enabled = seek_callback ~= nil,
+                enabled = seek_callback ~= nil
             })
-        end,
+        end
     })
     children[#children + 1] = positioned(layout_geometry.seekbar, seekbar)
-    children[#children + 1] = positioned(layout_geometry.seekbar, PlayerTimeTooltip({
-        child = SizedBox({
-            width = layout_geometry.seekbar:width(),
-            height = layout_geometry.seekbar:height(),
-        }),
-        enabled = duration ~= nil and duration > 0,
-        follow_pointer = true,
-        bounds_width = layout_geometry.viewport:width(),
-        bounds_height = layout_geometry.viewport:height(),
-        anchor_left = layout_geometry.seekbar.left,
-        anchor_top = layout_geometry.seekbar.top,
-        anchor_width = layout_geometry.seekbar:width(),
-        anchor_height = layout_geometry.seekbar:height(),
-        expand = theme.seekbar_hit_expand,
-        offset_x = 0,
-        gap = 0,
-        position_for_point = thumbfast_enabled and thumbfast_center or nil,
-        style = TextStyle({
-            font_size = theme.time_font_size,
-            color = theme.title_color,
-            blur_radius = 1,
-            outline_width = 0.5,
-            outline_color = ColorBlack,
-            wrap = false,
-        }),
-        text_for_point = function(point)
-            if duration == nil or duration <= 0 then
-                return nil
-            end
-            local fraction = clamp_fraction(point.x / layout_geometry.seekbar:width())
-            local value = duration * fraction
-            local text = format_time(value, theme.time_ms, theme.time_format == 'fixed')
-            if not thumbfast_enabled and theme.chapter_hover_subtitle then
-                local chapter = chapter_title_at_fraction(snapshot, fraction, duration)
-                if chapter then
-                    text = text .. ' · ' .. chapter
+    children[#children + 1] = positioned(
+        layout_geometry.seekbar,
+        PlayerTimeTooltip({
+            child = SizedBox({
+                width = layout_geometry.seekbar:width(),
+                height = layout_geometry.seekbar:height()
+            }),
+            enabled = duration ~= nil and duration > 0,
+            follow_pointer = true,
+            bounds_width = layout_geometry.viewport:width(),
+            bounds_height = layout_geometry.viewport:height(),
+            anchor_left = layout_geometry.seekbar.left,
+            anchor_top = layout_geometry.seekbar.top,
+            anchor_width = layout_geometry.seekbar:width(),
+            anchor_height = layout_geometry.seekbar:height(),
+            expand = theme.seekbar_hit_expand,
+            offset_x = 0,
+            gap = 0,
+            position_for_point = thumbfast_enabled and thumbfast_center or nil,
+            style = TextStyle({
+                font_size = theme.time_font_size,
+                color = theme.title_color,
+                blur_radius = 1,
+                outline_width = 0.5,
+                outline_color = ColorBlack,
+                wrap = false
+            }),
+            text_for_point = function (point)
+                if duration == nil or duration <= 0 then
+                    return nil
                 end
-            end
-            return text
-        end,
-        on_hover_point = thumbfast_enabled and function(point)
-            local fraction = clamp_fraction(point.x / layout_geometry.seekbar:width())
-            local rect = thumbfast_rect(point)
-            if rect == nil then
-                return
-            end
-            local player_scale = layout_geometry.scale or 1
-            actions:thumbfast_request(
-                duration * fraction,
-                math.floor(rect.left * player_scale + 0.5),
-                math.floor(rect.top * player_scale + 0.5))
-        end or nil,
-        paint_for_point = thumbfast_enabled and function(canvas, offset, point)
-            local rect = thumbfast_rect(point)
-            if rect == nil or theme.thumbnail_border <= 0 then
-                return
-            end
-            local player_scale = layout_geometry.scale or 1
-            local border = theme.thumbnail_border / player_scale
-            local outline = 1 / player_scale
-            local radius = min(theme.thumbnail_border_radius, theme.thumbnail_border) / player_scale
-            local origin = (offset - layout_geometry.seekbar:top_left()) --[[@as Offset]]
-            local image = rect:shift(origin)
-            canvas:draw_rrect(image:inflate(border + outline), radius + outline,
-                Paint(theme.thumbnail_border_outline))
-            canvas:draw_rrect(image:inflate(border), radius, Paint(theme.thumbnail_border_color))
-        end or nil,
-        on_hover_leave = thumbfast_enabled and function()
-            if actions:has('thumbfast_clear') then
-                actions:thumbfast_clear()
-            end
-        end or nil,
-    }))
+                local fraction = clamp_fraction(point.x / layout_geometry.seekbar:width())
+                local value = duration * fraction
+                local text = format_time(value, theme.time_ms, theme.time_format == 'fixed')
+                if not thumbfast_enabled and theme.chapter_hover_subtitle then
+                    local chapter = chapter_title_at_fraction(snapshot, fraction, duration)
+                    if chapter then
+                        text = text .. ' · ' .. chapter
+                    end
+                end
+                return text
+            end,
+            on_hover_point = thumbfast_enabled
+                and function (point)
+                    local fraction = clamp_fraction(point.x / layout_geometry.seekbar:width())
+                    local rect = thumbfast_rect(point)
+                    if rect == nil then
+                        return
+                    end
+                    local player_scale = layout_geometry.scale or 1
+                    actions:thumbfast_request(
+                        duration --[[@as number]]
+                    * fraction, math.floor(rect.left * player_scale + 0.5), math.floor(rect.top * player_scale + 0.5)
+                    )
+                end or nil,
+            paint_for_point = thumbfast_enabled
+                and function (canvas, offset, point)
+                    local rect = thumbfast_rect(point)
+                    if rect == nil or theme.thumbnail_border <= 0 then
+                        return
+                    end
+                    local player_scale = layout_geometry.scale or 1
+                    local border = theme.thumbnail_border / player_scale
+                    local outline = 1 / player_scale
+                    local radius = min(theme.thumbnail_border_radius, theme.thumbnail_border) / player_scale
+                    local origin = (offset - layout_geometry.seekbar:top_left()) --[[@as Offset]]
+                    local image = rect:shift(origin)
+                    canvas:draw_rrect(
+                        image:inflate(border + outline), radius + outline, Paint(theme.thumbnail_border_outline)
+                    )
+                    canvas:draw_rrect(image:inflate(border), radius, Paint(theme.thumbnail_border_color))
+                end or nil,
+            on_hover_leave = thumbfast_enabled
+                and function ()
+                    if actions:has('thumbfast_clear') then
+                        actions:thumbfast_clear()
+                    end
+                end or nil
+        })
+    )
 
     local label_style = TextStyle({
         font_size = theme.time_font_size,
         color = theme.time_color,
         outline_width = 1,
         outline_color = ColorBlack,
-        wrap = false,
+        wrap = false
     })
     if layout_geometry.visibility.title then
         local title_style = TextStyle({
@@ -367,7 +393,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             blur_radius = 1,
             outline_width = 0.5,
             outline_color = ColorBlack,
-            wrap = false,
+            wrap = false
         })
         local title_child = PlayerHoverText({
             text = title,
@@ -376,51 +402,57 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             hover_color = theme.hover_color,
             hover_shadow_color = theme.hover_glow_color,
             hover_shadow_radius = theme.button_glow_amount,
-            on_tap = function()
+            on_tap = function ()
                 if actions:has('show_stats') then
                     actions:show_stats()
                 elseif actions:has('show_message') then
                     actions:show_message('Player information unavailable')
                 end
-            end,
+            end
         })
         children[#children + 1] = positioned(
-            layout_geometry.title,
-            Container({ alignment = Offset(0, 0.5), child = title_child }))
+            layout_geometry.title, Container({ alignment = Offset(0, 0.5), child = title_child })
+        )
     end
-    children[#children + 1] = positioned(layout_geometry.time_left, Container({
-        child = PlayerTimeDisplay({
-            selector = time_value,
-            value = snapshot_number(snapshot, 'time_pos'),
-            duration = duration,
-            show_milliseconds = theme.time_ms,
-            unicode_minus = theme.unicode_minus,
-            fixed = theme.time_format == 'fixed',
-            toggle_mode = 'milliseconds',
-            style = label_style,
-            hover_color = theme.hover_color,
-            hover_shadow_color = theme.hover_glow_color,
-            hover_shadow_radius = theme.button_glow_amount,
-            alignment = Offset(0, 0.5),
-        }),
-    }))
-    children[#children + 1] = positioned(layout_geometry.time_right, Container({
-        child = PlayerTimeDisplay({
-            selector = time_value,
-            value = snapshot_number(snapshot, 'time_pos'),
-            duration = duration,
-            show_remaining = not theme.time_total,
-            unicode_minus = theme.unicode_minus,
-            fixed = theme.time_format == 'fixed',
-            toggle_mode = 'remaining',
-            suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
-            style = label_style,
-            hover_color = theme.hover_color,
-            hover_shadow_color = theme.hover_glow_color,
-            hover_shadow_radius = theme.button_glow_amount,
-            alignment = Offset(1, 0.5),
-        }),
-    }))
+    children[#children + 1] = positioned(
+        layout_geometry.time_left,
+        Container({
+            child = PlayerTimeDisplay({
+                selector = time_value,
+                value = snapshot_number(snapshot, 'time_pos'),
+                duration = duration,
+                show_milliseconds = theme.time_ms,
+                unicode_minus = theme.unicode_minus,
+                fixed = theme.time_format == 'fixed',
+                toggle_mode = 'milliseconds',
+                style = label_style,
+                hover_color = theme.hover_color,
+                hover_shadow_color = theme.hover_glow_color,
+                hover_shadow_radius = theme.button_glow_amount,
+                alignment = Offset(0, 0.5)
+            })
+        })
+    )
+    children[#children + 1] = positioned(
+        layout_geometry.time_right,
+        Container({
+            child = PlayerTimeDisplay({
+                selector = time_value,
+                value = snapshot_number(snapshot, 'time_pos'),
+                duration = duration,
+                show_remaining = not theme.time_total,
+                unicode_minus = theme.unicode_minus,
+                fixed = theme.time_format == 'fixed',
+                toggle_mode = 'remaining',
+                suffix = player_metadata.is_live(snapshot) and ' • LIVE' or '',
+                style = label_style,
+                hover_color = theme.hover_color,
+                hover_shadow_color = theme.hover_glow_color,
+                hover_shadow_radius = theme.button_glow_amount,
+                alignment = Offset(1, 0.5)
+            })
+        })
+    )
     if layout_geometry.visibility.chapter then
         local chapter = current_chapter_title(snapshot)
         if chapter ~= '' then
@@ -429,124 +461,158 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                 color = theme.chapter_color,
                 outline_width = 1,
                 outline_color = ColorBlack,
-                wrap = false,
+                wrap = false
             })
             if layout_geometry.separator then
-                children[#children + 1] = positioned(layout_geometry.separator, Container({
-                    alignment = Offset(0, 0.5),
-                    child = Text('·', { style = chapter_style }),
-                }))
+                children[#children + 1] = positioned(
+                    layout_geometry.separator,
+                    Container({
+                        alignment = Offset(0, 0.5),
+                        child = Text('·', { style = chapter_style })
+                    })
+                )
             end
-            children[#children + 1] = positioned(layout_geometry.chapter, Container({
-                alignment = layout_geometry.layout_option == 'original'
-                    and Offset(0, 0.5) or Offset(0, 0.5),
-                child = PlayerHoverText({
-                    text = chapter,
-                    style = chapter_style,
-                    hover_color = theme.hover_color,
-                    hover_shadow_color = theme.hover_glow_color,
-                    hover_shadow_radius = theme.button_glow_amount,
-                    on_tap = function()
-                        if actions:has('show_message') then
-                            actions:show_message('Chapter list')
+            children[#children + 1] = positioned(
+                layout_geometry.chapter,
+                Container({
+                    alignment = layout_geometry.layout_option == 'original' and Offset(0, 0.5) or Offset(0, 0.5),
+                    child = PlayerHoverText({
+                        text = chapter,
+                        style = chapter_style,
+                        hover_color = theme.hover_color,
+                        hover_shadow_color = theme.hover_glow_color,
+                        hover_shadow_radius = theme.button_glow_amount,
+                        on_tap = function ()
+                            if actions:has('show_message') then
+                                actions:show_message('Chapter list')
+                            end
                         end
-                    end,
-                }),
-            }))
+                    })
+                })
+            )
         end
     end
 
     if layout_geometry.visibility.volume_control and layout_geometry.visibility.volume_slider then
         children[#children + 1] = positioned(
-            layout_geometry.volume_background,
-            Container({ color = theme.volume_track_color }))
+            layout_geometry.volume_background, Container({ color = theme.volume_track_color })
+        )
     end
     if layout_geometry.visibility.volume_control and layout_geometry.visibility.volume_slider
         and actions:has('set_volume') then
         local volume = snapshot_number(snapshot, 'volume') or 0
         local volume_max = snapshot_number(snapshot, 'volume_max') or 100
         volume_max = volume_max > 0 and volume_max or 100
+        ---@param value number
+        ---@return number
         local function volume_to_fraction(value)
             if theme.volume_control_type == 'logarithmic' then
                 return math.sqrt(clamp_fraction(value / volume_max))
             end
             return clamp_fraction(value / volume_max)
         end
+        ---@param fraction number
+        ---@return number
         local function fraction_to_volume(fraction)
             if theme.volume_control_type == 'logarithmic' then
                 return clamp_fraction(fraction) * clamp_fraction(fraction) * volume_max
             end
             return clamp_fraction(fraction) * volume_max
         end
-        children[#children + 1] = positioned(layout_geometry.volume, GestureDetector(Slider({
-            value = volume_to_fraction(volume),
-            height = 8,
-            track_height = 2,
-            track_inset = 0,
-            thumb_radius = 8 * 0.45 * 0.8,
-            overlay_radius = 0,
-            hit_expand = theme.volume_hit_expand,
-            inactive_color = ColorTransparent,
-            active_color = theme.volume_progress_color,
-            thumb_color = theme.volume_progress_color,
-            on_changed = function(fraction)
-                actions:set_volume(fraction_to_volume(fraction))
-            end,
-        }), {
-            expand = theme.volume_hit_expand,
-            on_wheel = function(_, delta)
-                delta = type(delta) == 'table' and delta.y or delta
-                local next_volume = max(0, min(volume_max, volume + (delta > 0 and 5 or -5)))
-                actions:set_volume(next_volume)
-            end,
-        }))
-        children[#children + 1] = positioned(layout_geometry.volume, PlayerTooltip({
-            child = SizedBox({
-                width = layout_geometry.volume:width(),
-                height = layout_geometry.volume:height(),
-            }),
-            enabled = true,
-            follow_pointer = true,
-            bounds_width = layout_geometry.viewport:width(),
-            bounds_height = layout_geometry.viewport:height(),
-            anchor_left = layout_geometry.volume.left,
-            anchor_top = layout_geometry.volume.top,
-            anchor_width = layout_geometry.volume:width(),
-            anchor_height = layout_geometry.volume:height(),
-            text_for_point = function(point)
-                return string.format('%d%%', math.floor(
-                    fraction_to_volume(point.x / layout_geometry.volume:width()) + 0.5))
-            end,
-            style = TextStyle({
-                font_size = theme.time_font_size,
-                color = theme.title_color,
-                blur_radius = 1,
-                outline_width = 0.5,
-                outline_color = ColorBlack,
-                wrap = false,
-            }),
-        }))
+        children[#children + 1] = positioned(
+            layout_geometry.volume,
+            GestureDetector(Slider({
+                value = volume_to_fraction(volume),
+                height = 8,
+                track_height = 2,
+                track_inset = 0,
+                thumb_radius = 8 * 0.45 * 0.8,
+                overlay_radius = 0,
+                hit_expand = theme.volume_hit_expand,
+                inactive_color = ColorTransparent,
+                active_color = theme.volume_progress_color,
+                thumb_color = theme.volume_progress_color,
+                on_changed = function (fraction)
+                    actions:set_volume(fraction_to_volume(fraction))
+                end
+            }), {
+                expand = theme.volume_hit_expand,
+                on_wheel = function (_, delta)
+                    delta = type(delta) == 'table' and delta.y or delta
+                    local next_volume = max(0, min(volume_max, volume + (delta > 0 and 5 or -5)))
+                    actions:set_volume(next_volume)
+                end
+            })
+        )
+        children[#children + 1] = positioned(
+            layout_geometry.volume,
+            PlayerTooltip({
+                child = SizedBox({
+                    width = layout_geometry.volume:width(),
+                    height = layout_geometry.volume:height()
+                }),
+                enabled = true,
+                follow_pointer = true,
+                bounds_width = layout_geometry.viewport:width(),
+                bounds_height = layout_geometry.viewport:height(),
+                anchor_left = layout_geometry.volume.left,
+                anchor_top = layout_geometry.volume.top,
+                anchor_width = layout_geometry.volume:width(),
+                anchor_height = layout_geometry.volume:height(),
+                text_for_point = function (point)
+                    return string.format(
+                        '%d%%', math.floor(fraction_to_volume(point.x / layout_geometry.volume:width()) + 0.5)
+                    )
+                end,
+                style = TextStyle({
+                    font_size = theme.time_font_size,
+                    color = theme.title_color,
+                    blur_radius = 1,
+                    outline_width = 0.5,
+                    outline_color = ColorBlack,
+                    wrap = false
+                })
+            })
+        )
     end
 
+    ---@param name        string
+    ---@param action_name string?
+    ---@param icon_name   ModernXIconName
+    ---@param icon_size   number
+    ---@param color       Color?
+    ---@param callback    fun()?
+    ---@param interaction _PlayerControlInteraction?
     local function add_center(name, action_name, icon_name, icon_size, color, callback, interaction)
         local item_rect = layout_geometry.center[name]
         if item_rect then
-            children[#children + 1] = positioned(item_rect, icon_control(
-                theme, actions, name, action_name, icon_name, item_rect, icon_size, color,
-                callback, nil, bounded_interaction(interaction, item_rect)))
+            children[#children + 1] = positioned(
+                item_rect,
+                icon_control(
+                    theme, actions, name, action_name, icon_name, item_rect, icon_size, color, callback, nil,
+                    bounded_interaction(interaction, item_rect)
+                )
+            )
         end
     end
     if layout_geometry.center.playlist_prev then
         local playlist_count = snapshot_number(snapshot, 'playlist_count') or 0
         local playlist_pos = snapshot_number(snapshot, 'playlist_pos') or 0
-        add_center('playlist_prev', 'playlist_prev', 'previous', theme.middle_button_size,
-            theme.middle_button_color, nil, {
+        add_center(
+            'playlist_prev', -- Previous playlist item
+            'playlist_prev',
+            'previous',
+            theme.middle_button_size,
+            theme.middle_button_color,
+            nil,
+            {
                 enabled = actions:has('playlist_prev') and playlist_pos > 0,
-                on_right_click = actions:has('playlist_shuffle') and function()
-                    actions:playlist_shuffle()
-                    show_message('Playlist shuffled')
-                end or nil,
-                on_shift_click = function(button)
+                on_right_click = actions:has('playlist_shuffle')
+                    and function ()
+                        actions:playlist_shuffle()
+                        show_message('Playlist shuffled')
+                    end or nil,
+                on_shift_click = function (button)
                     if button == 'left' and actions:has('select_playlist') then
                         actions:select_playlist()
                     elseif button == 'left' then
@@ -556,16 +622,24 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                     elseif button == 'right' then
                         show_message('Playlist first-item action unavailable')
                     end
-                end,
-            })
-        add_center('playlist_next', 'playlist_next', 'next', theme.middle_button_size,
-            theme.middle_button_color, nil, {
+                end
+            }
+        )
+        add_center(
+            'playlist_next', -- Next playlist item
+            'playlist_next',
+            'next',
+            theme.middle_button_size,
+            theme.middle_button_color,
+            nil,
+            {
                 enabled = actions:has('playlist_next') and playlist_pos < playlist_count - 1,
-                on_right_click = actions:has('playlist_shuffle') and function()
-                    actions:playlist_shuffle()
-                    show_message('Playlist shuffled')
-                end or nil,
-                on_shift_click = function(button)
+                on_right_click = actions:has('playlist_shuffle')
+                    and function ()
+                        actions:playlist_shuffle()
+                        show_message('Playlist shuffled')
+                    end or nil,
+                on_shift_click = function (button)
                     if button == 'left' and actions:has('select_playlist') then
                         actions:select_playlist()
                     elseif button == 'left' then
@@ -575,12 +649,14 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                     elseif button == 'right' then
                         show_message('Playlist last-item action unavailable')
                     end
-                end,
-            })
+                end
+            }
+        )
     end
     if layout_geometry.center.chapter_prev then
         local chapters = chapter_entries(snapshot)
         local has_chapters = #chapters > 0
+        ---@param delta integer
         local function chapter_callback(delta)
             if theme.compact_mode and actions:has('seek') then
                 jump_seek(delta * theme.jump_amount)
@@ -592,15 +668,18 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                 show_message('Chapter navigation unavailable')
             end
         end
-        add_center('chapter_prev', nil, jump_icon('rewind', theme.jump_amount), theme.middle_button_size,
-            theme.middle_button_color, function()
+        add_center(
+            'chapter_prev', nil, jump_icon('rewind', theme.jump_amount), theme.middle_button_size,
+            theme.middle_button_color,
+            function ()
                 chapter_callback(-1)
-            end, {
+            end,
+            {
                 enabled = has_chapters or theme.compact_mode,
-                on_right_click = function()
+                on_right_click = function ()
                     jump_seek(-theme.jump_more_amount)
                 end,
-                on_shift_click = function(button)
+                on_shift_click = function (button)
                     if button == 'left' and actions:has('select_chapter') then
                         actions:select_chapter()
                     elseif button == 'left' then
@@ -611,17 +690,21 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                         show_message('Chapter navigation unavailable')
                     end
                 end,
-                soft_repeat = theme.chapter_softrepeat,
-            })
-        add_center('chapter_next', nil, jump_icon('forward', theme.jump_amount), theme.middle_button_size,
-            theme.middle_button_color, function()
+                soft_repeat = theme.chapter_softrepeat
+            }
+        )
+        add_center(
+            'chapter_next', nil, jump_icon('forward', theme.jump_amount), theme.middle_button_size,
+            theme.middle_button_color,
+            function ()
                 chapter_callback(1)
-            end, {
+            end,
+            {
                 enabled = has_chapters or theme.compact_mode,
-                on_right_click = function()
+                on_right_click = function ()
                     jump_seek(theme.jump_more_amount)
                 end,
-                on_shift_click = function(button)
+                on_shift_click = function (button)
                     if button == 'left' and actions:has('select_chapter') then
                         actions:select_chapter()
                     elseif button == 'left' then
@@ -632,56 +715,73 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
                         show_message('Chapter navigation unavailable')
                     end
                 end,
-                soft_repeat = theme.chapter_softrepeat,
-            })
+                soft_repeat = theme.chapter_softrepeat
+            }
+        )
     end
     if layout_geometry.center.jump_back then
         local jump_back_icon = jump_icon('rewind', theme.jump_amount)
         local jump_forward_icon = jump_icon('forward', theme.jump_amount)
-        add_center('jump_back', nil, jump_back_icon, theme.middle_button_size,
-            theme.middle_button_color, function()
+        add_center(
+            'jump_back', nil, jump_back_icon, theme.middle_button_size, theme.middle_button_color,
+            function ()
                 jump_seek(-theme.jump_amount)
-            end, {
+            end,
+            {
                 enabled = actions:has('seek'),
-                on_right_click = function()
+                on_right_click = function ()
                     jump_seek(-theme.jump_more_amount)
                 end,
-                on_shift_click = function()
+                on_shift_click = function ()
                     if actions:has('frame_back_step') then
                         actions:frame_back_step()
                     end
                 end,
-                soft_repeat = theme.jump_softrepeat,
-            })
-        add_center('jump_forward', nil, jump_forward_icon, theme.middle_button_size,
-            theme.middle_button_color, function()
+                soft_repeat = theme.jump_softrepeat
+            }
+        )
+        add_center(
+            'jump_forward', nil, jump_forward_icon, theme.middle_button_size, theme.middle_button_color,
+            function ()
                 jump_seek(theme.jump_amount)
-            end, {
+            end,
+            {
                 enabled = actions:has('seek'),
-                on_right_click = function()
+                on_right_click = function ()
                     jump_seek(theme.jump_more_amount)
                 end,
-                on_shift_click = function()
+                on_shift_click = function ()
                     if actions:has('frame_step') then
                         actions:frame_step()
                     end
                 end,
-                soft_repeat = theme.jump_softrepeat,
-            })
+                soft_repeat = theme.jump_softrepeat
+            }
+        )
     end
-    add_center('play', is_eof and 'replay' or 'play_pause', play_icon,
-        theme.playpause_size, theme.playpause_color, nil, {
-            on_right_click = actions:has('playlist_shuffle') and function()
-                actions:playlist_shuffle()
-                show_message('Playlist shuffled')
-            end or nil,
-            on_shift_click = theme.loop_in_pause and is_paused and function()
-                if actions:has('toggle_loop') then
-                    actions:toggle_loop()
-                end
-            end or nil,
-        })
+    add_center(
+        'play', -- Primary playback action
+        is_eof and 'replay' or 'play_pause',
+        play_icon,
+        theme.playpause_size,
+        theme.playpause_color,
+        nil,
+        {
+            on_right_click = actions:has('playlist_shuffle')
+                and function ()
+                    actions:playlist_shuffle()
+                    show_message('Playlist shuffled')
+                end or nil,
+            on_shift_click = theme.loop_in_pause and is_paused and function ()
+                    if actions:has('toggle_loop') then
+                        actions:toggle_loop()
+                    end
+                end or nil
+        }
+    )
 
+    ---@param kind  PlayerTrackKind
+    ---@param delta integer
     local function cycle_track(kind, delta)
         if kind == 'audio' and actions:has('clear_audio_filter') then
             actions:clear_audio_filter()
@@ -710,34 +810,43 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             actions:show_message(track_list_message(snapshot, kind))
         end
     end
+    ---@param kind PlayerTrackKind
+    ---@return boolean
     local function has_track_data(kind)
         if snapshot == nil or snapshot:get('track_list') == nil then
             return true
         end
         return #track_ids(snapshot, kind) > 0
     end
+    ---@param name        string
+    ---@param action_name string?
+    ---@param icon_name   ModernXIconName
+    ---@param interaction _PlayerControlInteraction?
     local function add_side(name, action_name, icon_name, interaction)
         local item_rect = layout_geometry.side[name]
         if item_rect and layout_geometry.visibility[name] then
-            children[#children + 1] = positioned(item_rect, icon_control(
-                theme, actions, name, action_name, icon_name, item_rect,
-                theme.side_button_size, theme.side_button_color,
-                interaction and interaction.on_click or nil, nil,
-                bounded_interaction(interaction, item_rect)))
+            children[#children + 1] = positioned(
+                item_rect,
+                icon_control(
+                    theme, actions, name, action_name, icon_name, item_rect, theme.side_button_size,
+                    theme.side_button_color, interaction and interaction.on_click or nil, nil,
+                    bounded_interaction(interaction, item_rect)
+                )
+            )
         end
     end
     add_side('audio', nil, 'audio', {
         enabled = has_track_data('audio') and (actions:has('set_track') or actions:has('cycle_audio')),
-        on_click = function()
+        on_click = function ()
             cycle_track('audio', 1)
         end,
-        on_right_click = function()
+        on_right_click = function ()
             cycle_track('audio', -1)
         end,
-        on_wheel = function(delta)
+        on_wheel = function (delta)
             cycle_track('audio', delta > 0 and 1 or -1)
         end,
-        on_shift_click = function(button)
+        on_shift_click = function (button)
             if button == 'left' and actions:has('select_audio_track') then
                 actions:select_audio_track()
             elseif button == 'left' then
@@ -749,20 +858,20 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
         end,
         tooltip = track_tooltip(snapshot, 'audio'),
-        disabled_tooltip = 'No audio available',
+        disabled_tooltip = 'No audio available'
     })
     add_side('subtitle', nil, 'subtitle', {
         enabled = has_track_data('sub') and (actions:has('set_track') or actions:has('cycle_subtitle')),
-        on_click = function()
+        on_click = function ()
             cycle_track('sub', 1)
         end,
-        on_right_click = function()
+        on_right_click = function ()
             cycle_track('sub', -1)
         end,
-        on_wheel = function(delta)
+        on_wheel = function (delta)
             cycle_track('sub', delta > 0 and 1 or -1)
         end,
-        on_shift_click = function(button)
+        on_shift_click = function (button)
             if button == 'left' and actions:has('select_subtitle') then
                 actions:select_subtitle()
             elseif button == 'left' then
@@ -772,7 +881,7 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
             end
         end,
         tooltip = track_tooltip(snapshot, 'sub'),
-        disabled_tooltip = 'No subtitles available',
+        disabled_tooltip = 'No subtitles available'
     })
     local volume = snapshot_number(snapshot, 'volume') or 0
     local volume_icon
@@ -787,32 +896,30 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
     end
     add_side('volume', 'toggle_mute', volume_icon, {
         enabled = actions:has('toggle_mute'),
-        on_right_click = function()
+        on_right_click = function ()
             if actions:has('select_audio_device') then
                 actions:select_audio_device()
             else
                 show_message('Audio-device selector unavailable')
             end
         end,
-        on_wheel = function(delta)
+        on_wheel = function (delta)
             local current = snapshot_number(snapshot, 'volume') or 0
             local maximum = snapshot_number(snapshot, 'volume_max') or 100
             if actions:has('set_volume') then
                 actions:set_volume(max(0, min(maximum, current + (delta > 0 and 5 or -5))))
             end
-        end,
+        end
     })
 
     local stats_capability = capability_info(snapshot, 'stats')
-    local stats_available = stats_capability == nil
-        or stats_capability.status == 'available'
+    local stats_available = stats_capability == nil or stats_capability.status == 'available'
     local yt_dlp_capability = capability_info(snapshot, 'yt_dlp')
-    local yt_dlp_available = yt_dlp_capability ~= nil
-        and yt_dlp_capability.status == 'available'
+    local yt_dlp_available = yt_dlp_capability ~= nil and yt_dlp_capability.status == 'available'
     local download_capability = capability_info(snapshot, 'download')
-    local download_available = yt_dlp_available and (download_capability == nil
-        or download_capability.status == 'available'
-        or download_capability.status == 'error')
+    local download_available = yt_dlp_available
+        and (download_capability == nil or download_capability.status == 'available'
+            or download_capability.status == 'error')
     local download_tooltip = 'Download'
     if yt_dlp_capability == nil then
         download_tooltip = 'Download unavailable'
@@ -836,49 +943,79 @@ local function default_controller(theme, actions, snapshot, title, layout_geomet
         end
     end
     local right_icons = {
-        { name = 'fullscreen', action = 'toggle_fullscreen',
-            icon = snapshot and snapshot:get('fullscreen') == true
-                and 'close_fullscreen' or 'open_in_full' },
-        { name = 'loop', action = 'toggle_loop',
+        {
+            name = 'fullscreen',
+            action = 'toggle_fullscreen',
+            icon = snapshot and snapshot:get('fullscreen') == true and 'close_fullscreen' or 'open_in_full'
+        },
+        {
+            name = 'loop',
+            action = 'toggle_loop',
             icon = snapshot and snapshot:get('loop_file') == true and 'loop_on' or 'loop',
-            tooltip = snapshot and snapshot:get('loop_file') == true and 'Disable loop' or 'Loop' },
-        { name = 'ontop', action = 'toggle_ontop',
+            tooltip = snapshot and snapshot:get('loop_file') == true and 'Disable loop' or 'Loop'
+        },
+        {
+            name = 'ontop',
+            action = 'toggle_ontop',
             icon = snapshot and snapshot:get('ontop') == true and 'pinned' or 'unpinned',
-            tooltip = snapshot and snapshot:get('ontop') == true and 'Unpin window' or 'Keep on top' },
-        { name = 'info', action = nil, icon = 'info', callback = function()
-            if actions:has('show_stats') then
-                actions:show_stats()
-            end
-        end, enabled = actions:has('show_stats') and stats_available,
-            tooltip = 'Player information', disabled_tooltip = 'Information unavailable' },
-        { name = 'screenshot', action = nil, icon = 'screenshot', callback = function()
-            if actions:has('screenshot') then
-                actions:screenshot(theme.screenshot_flag)
-            end
-        end, enabled = actions:has('screenshot'), tooltip = 'Screenshot',
-            disabled_tooltip = 'Screenshot unavailable' },
-        { name = 'download', action = nil,
+            tooltip = snapshot and snapshot:get('ontop') == true and 'Unpin window' or 'Keep on top'
+        },
+        {
+            name = 'info',
+            action = nil,
+            icon = 'info',
+            callback = function ()
+                if actions:has('show_stats') then
+                    actions:show_stats()
+                end
+            end,
+            enabled = actions:has('show_stats') and stats_available,
+            tooltip = 'Player information',
+            disabled_tooltip = 'Information unavailable'
+        },
+        {
+            name = 'screenshot',
+            action = nil,
+            icon = 'screenshot',
+            callback = function ()
+                if actions:has('screenshot') then
+                    actions:screenshot(theme.screenshot_flag)
+                end
+            end,
+            enabled = actions:has('screenshot'),
+            tooltip = 'Screenshot',
+            disabled_tooltip = 'Screenshot unavailable'
+        },
+        {
+            name = 'download',
+            action = nil,
             icon = download_capability and download_capability.status == 'available'
                 and download_capability.detail == 'downloaded' and 'download_done' or 'download',
-            callback = function()
+            callback = function ()
                 local source = player_metadata.source(snapshot)
                 if actions:has('download') and source then
                     actions:download(source)
                 elseif actions:has('show_message') then
                     actions:show_message('Download URL unavailable')
                 end
-            end, enabled = actions:has('download') and is_url and download_available,
-            tooltip = download_tooltip, disabled_tooltip = download_tooltip },
+            end,
+            enabled = actions:has('download') and is_url and download_available,
+            tooltip = download_tooltip,
+            disabled_tooltip = download_tooltip
+        }
     }
     for _, item in ipairs(right_icons) do
         local name = item.name
         local item_rect = layout_geometry.right[name]
         if item_rect and layout_geometry.visibility[name] then
             local action = item.action
-            children[#children + 1] = positioned(item_rect, icon_control(
-                theme, actions, name, action, item.icon, item_rect,
-                theme.side_button_size, theme.side_button_color, item.callback, nil,
-                bounded_interaction(item, item_rect)))
+            children[#children + 1] = positioned(
+                item_rect,
+                icon_control(
+                    theme, actions, name, action, item.icon, item_rect, theme.side_button_size, theme.side_button_color,
+                    item.callback, nil, bounded_interaction(item, item_rect)
+                )
+            )
         end
     end
     return children

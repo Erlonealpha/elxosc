@@ -16,6 +16,11 @@ local color_mod = require 'src.foundation.color'
 local paint_mod = require 'src.painting.paint'
 local slider_mod = require 'src.render.slider'
 
+local ipairs = ipairs
+local math = math
+local table = table
+local type = type
+
 local Rect = geometry.Rect
 local Size = geometry.Size
 local Color = color_mod.Color
@@ -45,20 +50,25 @@ local M = {}
 --- | 'single-bar'
 --- | 'gap'
 
+---@param value number?
+---@return boolean
 local function is_finite(value)
-    return type(value) == 'number'
-        and value == value
-        and value ~= huge
-        and value ~= -huge
+    return type(value) == 'number' and value == value and value ~= huge and value ~= -huge
 end
 
+---@param value number?
+---@param name  string
+---@return number
 local function validate_fraction(value, name)
     if not is_finite(value) or value < 0 or value > 1 then
         raise(std.ValueError(name .. ' must be between 0 and 1'))
     end
-    return value
+    return value --[[@as number]]
 end
 
+---@param value Color
+---@param name  string
+---@return Color
 local function validate_color(value, name)
     if not dataclass.isinstance(value, Color) then
         raise(std.TypeError(name .. ' must be a Color'))
@@ -66,6 +76,9 @@ local function validate_color(value, name)
     return value
 end
 
+---@param value function?
+---@param name  string
+---@return function?
 local function validate_callback(value, name)
     if value ~= nil and type(value) ~= 'function' then
         raise(std.TypeError(name .. ' must be a function'))
@@ -73,22 +86,21 @@ local function validate_callback(value, name)
     return value
 end
 
----@param value number
----@param name string
+---@param value number?
+---@param name  string
 ---@return number
 local function validate_non_negative(value, name)
     if not is_finite(value) or value < 0 then
         raise(std.ValueError(name .. ' must be a finite non-negative number'))
     end
-    return value
+    return value --[[@as number]]
 end
 
 ---@param value string
 ---@return string
 local function validate_marker_style(value)
     if value ~= 'triangle' and value ~= 'bar' and value ~= 'single-bar' and value ~= 'gap' then
-        raise(std.ValueError(
-            'RenderTimeline.marker_style must be triangle, bar, single-bar or gap'))
+        raise(std.ValueError('RenderTimeline.marker_style must be triangle, bar, single-bar or gap'))
     end
     return value
 end
@@ -123,7 +135,7 @@ local function copy_markers(list, name)
         end
         copy[index] = {
             fraction = validate_fraction(fraction or 0, name .. '[' .. index .. '].fraction'),
-            current = marker.current == true,
+            current = marker.current == true
         }
     end
     return copy
@@ -147,11 +159,10 @@ local function copy_ranges(list)
         local finish = range['end'] or range.finish or range[2] or 0
         copy[index] = {
             start = validate_fraction(start, 'RenderTimeline.ranges[' .. index .. '].start'),
-            ['end'] = validate_fraction(finish, 'RenderTimeline.ranges[' .. index .. '].end'),
+            ['end'] = validate_fraction(finish, 'RenderTimeline.ranges[' .. index .. '].end')
         }
         if range.color ~= nil then
-            copy[index].color = validate_color(
-                range.color, 'RenderTimeline.ranges[' .. index .. '].color')
+            copy[index].color = validate_color(range.color, 'RenderTimeline.ranges[' .. index .. '].color')
         end
         if copy[index]['end'] < copy[index].start then
             copy[index].start, copy[index]['end'] = copy[index]['end'], copy[index].start
@@ -161,107 +172,123 @@ local function copy_ranges(list)
 end
 
 ---@class player._RenderTimelineOptions
----@field progress number? 0..1
----@field buffered number? 0..1
----@field track_color Color?
----@field buffered_color Color?
----@field progress_color Color?
----@field handle_color Color?
----@field hover_track_color Color?
+---@field seek_mode            SeekMode?
+---@field progress             number?                                                      0..1
+---@field buffered             number?                                                      0..1
+---@field track_color          Color?
+---@field buffered_color       Color?
+---@field progress_color       Color?
+---@field handle_color         Color?
+---@field hover_track_color    Color?
 ---@field hover_buffered_color Color?
 ---@field hover_progress_color Color?
----@field hover_handle_color Color?
----@field height number? logical layout height
----@field handle_size number? 0..1 ratio of the bar height
----@field hover_handle_size number? 0..1 ratio of the bar height
----@field hover_expand number? extra input area in every direction
----@field range_expand number? horizontal cache-range expansion in px
----@field markers table? chapter marker fractions
----@field ranges table? seekable fractions
----@field marker_color Color?
+---@field hover_handle_color   Color?
+---@field height               number?                                                      logical layout height
+---@field handle_size          number?                                                      0..1 ratio of the bar height
+---@field hover_handle_size    number?                                                      0..1 ratio of the bar height
+---@field hover_expand         number?                                                      extra input area in every direction
+---@field range_expand         number?                                                      horizontal cache-range expansion in px
+---@field markers              table?                                                       chapter marker fractions
+---@field ranges               table?                                                       seekable fractions
+---@field marker_color         Color?
 ---@field current_marker_color Color?
----@field range_color Color?
----@field marker_style TimelineMarkerStyle?
----@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
----@field on_context_seek fun(fraction: number)? right-click chapter callback
----@field on_wheel fun(delta: number)? wheel callback
----@field enabled boolean?
+---@field range_color          Color?
+---@field marker_style         TimelineMarkerStyle?
+---@field on_seek              fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
+---@field on_context_seek      fun(fraction: number)?                                       right-click chapter callback
+---@field on_wheel             fun(delta: number)?                                          wheel callback
+---@field enabled              boolean?
 
----@class player.RenderTimeline : RenderSlider
----@field progress number
----@field buffered number
----@field track_color Color
----@field buffered_color Color
----@field progress_color Color
----@field handle_color Color
----@field hover_track_color Color?
+---@class player.RenderTimeline: RenderSlider
+---@field progress             number
+---@field buffered             number
+---@field track_color          Color
+---@field buffered_color       Color
+---@field progress_color       Color
+---@field handle_color         Color
+---@field hover_track_color    Color?
 ---@field hover_buffered_color Color?
 ---@field hover_progress_color Color?
----@field hover_handle_color Color?
----@field height number
----@field handle_size number
----@field hover_handle_size number
----@field hover_expand number
----@field range_expand number
----@field seek_mode SeekMode
----@field markers table[]
----@field ranges table[]
----@field marker_color Color
+---@field hover_handle_color   Color?
+---@field height               number
+---@field handle_size          number
+---@field hover_handle_size    number
+---@field hover_expand         number
+---@field range_expand         number
+---@field seek_mode            SeekMode
+---@field markers              table[]
+---@field ranges               table[]
+---@field marker_color         Color
 ---@field current_marker_color Color
----@field range_color Color
----@field marker_style TimelineMarkerStyle
----@field on_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
----@field on_context_seek fun(fraction: number)?
----@field on_wheel fun(delta: number)?
----@field enabled boolean
----@field hovered boolean
----@field dragging boolean
----@field _last_fraction number?
----@field _last_sent_fraction number?
----@field _seek_mode SeekMode
----@field _pending_seek_mode SeekMode?
----@field _interaction_seek fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
+---@field range_color          Color
+---@field marker_style         TimelineMarkerStyle
+---@field on_seek              fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
+---@field on_context_seek      fun(fraction: number)?
+---@field on_wheel             fun(delta: number)?
+---@field enabled              boolean
+---@field hovered              boolean
+---@field dragging             boolean
+---@field _last_fraction       number?
+---@field _last_sent_fraction  number?
+---@field _seek_mode           SeekMode
+---@field _pending_seek_mode   SeekMode?
+---@field _interaction_seek    fun(fraction: number, phase: TimelinePhase, mode: SeekMode)?
 ---@overload fun(options?: _RenderTimelineOptions): self
 local RenderTimeline = std.class.new('RenderTimeline', RenderSlider)
 
+---@param options _RenderTimelineOptions?
 function RenderTimeline:__init(options)
     local transparent = Color.rgba255(0, 0, 0, 0)
-    RenderSlider.__init(self, { value = 0, min = 0, max = 1, track_inset = 0,
-        active_color = transparent, inactive_color = transparent, secondary_active_color = transparent,
-        thumb_color = transparent, disabled_active_color = transparent, disabled_inactive_color = transparent,
-        disabled_thumb_color = transparent, overlay_color = transparent,
-        height = 20, track_height = 4, thumb_radius = 0, overlay_radius = 0 })
+    RenderSlider.__init(self, {
+        value = 0,
+        min = 0,
+        max = 1,
+        track_inset = 0,
+        active_color = transparent,
+        inactive_color = transparent,
+        secondary_active_color = transparent,
+        thumb_color = transparent,
+        disabled_active_color = transparent,
+        disabled_inactive_color = transparent,
+        disabled_thumb_color = transparent,
+        overlay_color = transparent,
+        height = 20,
+        track_height = 4,
+        thumb_radius = 0,
+        overlay_radius = 0
+    })
     options = options or {}
     self.progress = validate_fraction(options.progress or 0, 'RenderTimeline.progress')
     self.buffered = validate_fraction(options.buffered or 0, 'RenderTimeline.buffered')
     self.track_color = validate_color(
-        options.track_color or Color.rgba255(255, 255, 255, 45),
-        'RenderTimeline.track_color')
+        options.track_color or Color.rgba255(255, 255, 255, 45), 'RenderTimeline.track_color'
+    )
     self.buffered_color = validate_color(
-        options.buffered_color or Color.rgba255(255, 255, 255, 90),
-        'RenderTimeline.buffered_color')
+        options.buffered_color or Color.rgba255(255, 255, 255, 90), 'RenderTimeline.buffered_color'
+    )
     self.progress_color = validate_color(
-        options.progress_color or Color.rgba255(70, 150, 240),
-        'RenderTimeline.progress_color')
-    self.handle_color = validate_color(
-        options.handle_color or self.progress_color,
-        'RenderTimeline.handle_color')
+        options.progress_color or Color.rgba255(70, 150, 240), 'RenderTimeline.progress_color'
+    )
+    self.handle_color = validate_color(options.handle_color or self.progress_color, 'RenderTimeline.handle_color')
     self.hover_track_color = options.hover_track_color
-        and validate_color(options.hover_track_color, 'RenderTimeline.hover_track_color') or nil
+        and validate_color(options.hover_track_color, 'RenderTimeline.hover_track_color')
+        or nil
     self.hover_buffered_color = options.hover_buffered_color
-        and validate_color(options.hover_buffered_color, 'RenderTimeline.hover_buffered_color') or nil
+        and validate_color(options.hover_buffered_color, 'RenderTimeline.hover_buffered_color')
+        or nil
     self.hover_progress_color = options.hover_progress_color
-        and validate_color(options.hover_progress_color, 'RenderTimeline.hover_progress_color') or nil
+        and validate_color(options.hover_progress_color, 'RenderTimeline.hover_progress_color')
+        or nil
     self.hover_handle_color = options.hover_handle_color
-        and validate_color(options.hover_handle_color, 'RenderTimeline.hover_handle_color') or nil
+        and validate_color(options.hover_handle_color, 'RenderTimeline.hover_handle_color')
+        or nil
     self.height = options.height == nil and 14 or options.height
     if not is_finite(self.height) or self.height <= 0 then
         raise(std.ValueError('RenderTimeline.height must be a positive finite number'))
     end
     self.handle_size = options.handle_size == nil and 0.8 or options.handle_size
     validate_fraction(self.handle_size, 'RenderTimeline.handle_size')
-    self.hover_handle_size = options.hover_handle_size == nil
-        and self.handle_size or options.hover_handle_size
+    self.hover_handle_size = options.hover_handle_size == nil and self.handle_size or options.hover_handle_size
     validate_fraction(self.hover_handle_size, 'RenderTimeline.hover_handle_size')
     self.hover_expand = options.hover_expand == nil and 0 or options.hover_expand
     self.hit_expand = self.hover_expand
@@ -272,17 +299,14 @@ function RenderTimeline:__init(options)
     self.value = self.progress
     self.markers = copy_markers(options.markers, 'RenderTimeline.markers')
     self.ranges = copy_ranges(options.ranges)
-    self.marker_color = validate_color(
-        options.marker_color or self.progress_color, 'RenderTimeline.marker_color')
+    self.marker_color = validate_color(options.marker_color or self.progress_color, 'RenderTimeline.marker_color')
     self.current_marker_color = validate_color(
-        options.current_marker_color or self.marker_color,
-        'RenderTimeline.current_marker_color')
-    self.range_color = validate_color(
-        options.range_color or self.buffered_color, 'RenderTimeline.range_color')
+        options.current_marker_color or self.marker_color, 'RenderTimeline.current_marker_color'
+    )
+    self.range_color = validate_color(options.range_color or self.buffered_color, 'RenderTimeline.range_color')
     self.marker_style = validate_marker_style(options.marker_style or 'bar')
     self.on_seek = validate_callback(options.on_seek, 'RenderTimeline.on_seek')
-    self.on_context_seek = validate_callback(
-        options.on_context_seek, 'RenderTimeline.on_context_seek')
+    self.on_context_seek = validate_callback(options.on_context_seek, 'RenderTimeline.on_context_seek')
     self.on_wheel = validate_callback(options.on_wheel, 'RenderTimeline.on_wheel')
     self.enabled = options.enabled ~= false
     self.hovered = false
@@ -303,9 +327,9 @@ function RenderTimeline:set_seek_mode(seek_mode)
     self.seek_mode = seek_mode
 end
 
+---@param constraints Constraints
 function RenderTimeline:__perform_layout(constraints)
-    local width = constraints.max_width < huge and constraints.max_width
-        or constraints.min_width
+    local width = constraints.max_width < huge and constraints.max_width or constraints.min_width
     self.size = constraints:constrain_size(Size(width, self.height))
 end
 
@@ -582,6 +606,8 @@ function RenderTimeline:set_enabled(enabled)
     self:mark_needs_paint()
 end
 
+---@param canvas PaintingContext
+---@param offset Offset
 function RenderTimeline:__paint(canvas, offset)
     local width, height = self.size.width, self.size.height
     if width <= 0 or height <= 0 then
@@ -602,15 +628,20 @@ function RenderTimeline:__paint(canvas, offset)
         table.sort(gap_cuts)
     end
 
+    ---@param left  number
+    ---@param right number
+    ---@param color Color
     local function draw_bar(left, right, color)
         if right <= left then
             return
         end
         canvas:draw_rrect(
-            Rect(offset.x + left, offset.y + top, offset.x + right,
-                offset.y + top + track_height), radius, Paint(color))
+            Rect(offset.x + left, offset.y + top, offset.x + right, offset.y + top + track_height), radius, Paint(color)
+        )
     end
 
+    ---@param right number
+    ---@param color Color
     local function draw_segmented(right, color)
         if #gap_cuts == 0 then
             draw_bar(0, right, color)
@@ -663,7 +694,8 @@ function RenderTimeline:__paint(canvas, offset)
             local marker_color = marker.current and self.current_marker_color or self.marker_color
             local marker_paint = Paint(marker_color)
             if self.marker_style == 'triangle' then
-                local marker_path = require('src.painting.path').Path()
+                local marker_path = require('src.painting.path')
+                    .Path()
                     :move_to(marker_x, offset.y + top - height * 0.25)
                     :line_to(marker_x - height * 0.3, offset.y + top)
                     :line_to(marker_x + height * 0.3, offset.y + top)
@@ -671,12 +703,15 @@ function RenderTimeline:__paint(canvas, offset)
                 canvas:draw_path(marker_path, marker_paint)
             elseif self.marker_style == 'single-bar' then
                 canvas:draw_rect(
-                    Rect(marker_x - 0.5, offset.y + top, marker_x + 0.5,
-                        offset.y + top + track_height), marker_paint)
+                    Rect(marker_x - 0.5, offset.y + top, marker_x + 0.5, offset.y + top + track_height), marker_paint
+                )
             else
                 canvas:draw_rect(
-                    Rect(marker_x - 1, offset.y + top - height * 0.2, marker_x + 1,
-                        offset.y + top + track_height + height * 0.2), marker_paint)
+                    Rect(
+                        marker_x - 1, offset.y + top - height * 0.2, marker_x + 1,
+                        offset.y + top + track_height + height * 0.2
+                    ), marker_paint
+                )
             end
         end
     end
@@ -689,9 +724,9 @@ function RenderTimeline:__paint(canvas, offset)
         local handle_x = offset.x + progress_width
         local handle_top = offset.y + height / 2 - handle_radius
         canvas:draw_rrect(
-            Rect(handle_x - handle_radius, handle_top,
-            handle_x + handle_radius, handle_top + handle_radius * 2),
-            handle_radius, Paint(handle_color))
+            Rect(handle_x - handle_radius, handle_top, handle_x + handle_radius, handle_top + handle_radius * 2),
+            handle_radius, Paint(handle_color)
+        )
     end
 end
 
@@ -715,10 +750,11 @@ end
 ---@return Rect
 function RenderTimeline:input_region_rect()
     local expand = self.hover_expand
-    return Rect(-expand, -expand,
-        self.size.width + expand, self.size.height + expand)
+    return Rect(-expand, -expand, self.size.width + expand, self.size.height + expand)
 end
 
+---@param event PointerEventType
+---@return boolean
 function RenderTimeline:wants_pointer(event)
     if not self.enabled then
         return false
@@ -737,19 +773,20 @@ end
 
 ---@param event PointerEvent
 ---@param point Offset?
----@return boolean|DispatchResult|nil
+---@return boolean | DispatchResult | nil
 function RenderTimeline:on_pointer_event(event, point)
     if event.type == 'down' and (event.button == 'left' or event.data == 'left') then
-        self._pending_seek_mode = event.modifiers and event.modifiers.shift
-            and 'exact' or self.seek_mode
+        self._pending_seek_mode = event.modifiers and event.modifiers.shift and 'exact' or self.seek_mode
     end
     return RenderSlider.on_pointer_event(self, event, point)
 end
 
+---@return boolean
 function RenderTimeline:is_interactive()
     return self.enabled == true and self.on_seek ~= nil
 end
 
+---@param value number
 function RenderTimeline:__interaction_start(value)
     self._seek_mode = self._pending_seek_mode or self.seek_mode
     self._pending_seek_mode = nil
@@ -762,6 +799,7 @@ function RenderTimeline:__interaction_start(value)
     end
 end
 
+---@param value number
 function RenderTimeline:__interaction_update(value)
     if self._last_sent_fraction ~= value and self._interaction_seek then
         self._last_sent_fraction = value
@@ -769,6 +807,8 @@ function RenderTimeline:__interaction_update(value)
     end
 end
 
+---@param value     number
+---@param cancelled boolean
 function RenderTimeline:__interaction_end(value, cancelled)
     self._last_sent_fraction = nil
     local callback = self._interaction_seek
@@ -778,6 +818,10 @@ function RenderTimeline:__interaction_end(value, cancelled)
     end
 end
 
+---@param event PointerEventType
+---@param point Offset
+---@param data  any              legacy button/wheel payload
+---@return boolean | DispatchResult
 function RenderTimeline:on_pointer(event, point, data)
     if not self.enabled then
         return false

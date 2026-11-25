@@ -21,13 +21,17 @@ local player_context = require 'player.src.context'
 local player_theme_mod = require 'player.src.theme'
 local player_layout_mod = require 'player.src.layout'
 local metadata_mod = require 'player.src.metadata'
+local state_mod = require 'src.widgets.state'
+
+local State = state_mod.State
+local ipairs = ipairs
+local type = type
 
 local EdgeInsets = geometry.EdgeInsets
 local Offset = geometry.Offset
 local Size = geometry.Size
 local StatelessWidget = widget_mod.StatelessWidget
 local StatefulWidget = widget_mod.StatefulWidget
-local State = require('src.widgets.state').State
 local ThemeData = theme_mod.ThemeData
 local Theme = theme_mod.Theme
 local HostActions = actions_mod.HostActions
@@ -49,41 +53,44 @@ local raise = std.raise
 local M = {}
 
 ---@alias player.WindowTopBarMode
----| 'auto'
----| 'yes'
----| 'no'
+--- | 'auto'
+--- | 'yes'
+--- | 'no'
 
+---@param child Widget?
+---@return Widget
 local function child_or_empty(child)
     return child or SizedBox.shrink()
 end
 
---== Main ===================================================================
+-- == Main ===================================================================
 
 ---@class player._MainOptions
----@field title string?
----@field title_bar Widget?
+---@field title           string?
+---@field title_bar       Widget?
 ---@field window_controls Widget?
----@field window_top_bar WindowTopBarMode?
----@field layout_option PlayerLayoutOption?
----@field bottom Widget?
----@field left_controls Widget?
----@field right_controls Widget?
----@field scale number?
----@field key any?
+---@field window_top_bar  WindowTopBarMode?
+---@field layout_option   PlayerLayoutOption?
+---@field bottom          Widget?
+---@field left_controls   Widget?
+---@field right_controls  Widget?
+---@field scale           number?
+---@field key             any?
 
----@class player.Main : StatelessWidget
----@field title string
----@field title_bar Widget?
+---@class player.Main: StatelessWidget
+---@field title           string
+---@field title_bar       Widget?
 ---@field window_controls Widget?
----@field window_top_bar WindowTopBarMode?
----@field layout_option PlayerLayoutOption?
----@field bottom Widget?
----@field left_controls Widget?
----@field right_controls Widget?
----@field scale number?
+---@field window_top_bar  WindowTopBarMode?
+---@field layout_option   PlayerLayoutOption?
+---@field bottom          Widget?
+---@field left_controls   Widget?
+---@field right_controls  Widget?
+---@field scale           number?
 ---@overload fun(options?: _MainOptions): self
 local Main = std.class.new('Main', StatelessWidget)
 
+---@param options _MainOptions?
 function Main:__init(options)
     options = options or {}
     self.key = options.key
@@ -91,13 +98,12 @@ function Main:__init(options)
     self.title_bar = options.title_bar
     self.window_controls = options.window_controls
     self.window_top_bar = options.window_top_bar
-    if self.window_top_bar ~= nil and self.window_top_bar ~= 'auto' and self.window_top_bar ~= 'yes'
-        and self.window_top_bar ~= 'no' then
+    if self.window_top_bar ~= nil and self.window_top_bar ~= 'auto'
+        and self.window_top_bar ~= 'yes' and self.window_top_bar ~= 'no' then
         raise(std.ValueError('Main.window_top_bar must be auto, yes or no'))
     end
     self.layout_option = options.layout_option
-    if self.layout_option ~= nil and self.layout_option ~= 'original'
-        and self.layout_option ~= 'reduced' then
+    if self.layout_option ~= nil and self.layout_option ~= 'original' and self.layout_option ~= 'reduced' then
         raise(std.ValueError('Main.layout_option must be original or reduced'))
     end
     self.bottom = options.bottom
@@ -106,6 +112,7 @@ function Main:__init(options)
     self.scale = options.scale
 end
 
+---@return Widget[]
 function Main:child_widgets()
     local children = {}
     if self.title_bar then
@@ -126,6 +133,8 @@ function Main:child_widgets()
     return children
 end
 
+---@param snapshot PlayerSnapshot?
+---@return boolean
 local function top_hover_enabled(snapshot)
     if snapshot == nil then
         return true
@@ -143,7 +152,7 @@ local function top_hover_enabled(snapshot)
 end
 
 ---@param snapshot PlayerSnapshot?
----@param mode WindowTopBarMode
+---@param mode     WindowTopBarMode
 ---@return boolean
 local function top_bar_visible(snapshot, mode)
     if mode == 'yes' then
@@ -156,13 +165,14 @@ local function top_bar_visible(snapshot, mode)
 end
 
 local shell_fields = {
-    'fullscreen', 'border', 'title_bar', 'idle_active', 'media_title', 'title', 'filename',
-    'is_url', 'url', 'path', 'metadata', 'is_live', 'description', 'media_description', 'file_size',
-    'duration', 'eof_reached', 'pause', 'chapter_list', 'chapter', 'chapter_title', 'buffering',
-    'seekable_ranges', 'cache_state', 'sponsor_segments', 'capabilities', 'track_list',
-    'volume', 'volume_max', 'mute', 'playlist_count', 'playlist_pos', 'loop_file', 'ontop',
+    'fullscreen', 'border', 'title_bar', 'idle_active', 'media_title', 'title', 'filename', 'is_url', 'url', 'path',
+    'metadata', 'is_live', 'description', 'media_description', 'file_size', 'duration', 'eof_reached', 'pause',
+    'chapter_list', 'chapter', 'chapter_title', 'buffering', 'seekable_ranges', 'cache_state', 'sponsor_segments',
+    'capabilities', 'track_list', 'volume', 'volume_max', 'mute', 'playlist_count', 'playlist_pos', 'loop_file', 'ontop'
 }
 
+---@param snapshot PlayerSnapshot
+---@return PlayerSnapshotFields
 local function main_fields(snapshot)
     local fields = {}
     for _, name in ipairs(shell_fields) do
@@ -172,17 +182,19 @@ local function main_fields(snapshot)
 end
 
 ---@param context BuildContext
+---@return Widget?
 function Main:build(context)
     return PlayerSelector({
         selector = main_fields,
-        builder = function(_, snapshot, selected_context)
+        builder = function (_, snapshot, selected_context)
             return self:_build_shell(selected_context, snapshot)
-        end,
+        end
     })
 end
 
----@param context BuildContext
+---@param context  BuildContext
 ---@param snapshot PlayerSnapshot?
+---@return Widget
 function Main:_build_shell(context, snapshot)
     local theme_scope = Theme.maybe_of(context)
     local theme = theme_scope and theme_scope.data or ThemeData()
@@ -203,73 +215,76 @@ function Main:_build_shell(context, snapshot)
         right_controls = self.right_controls,
         layout_option = self.layout_option or player_theme.layout_option,
         top_bar_visible = top_bar_visible(snapshot, mode),
-        scale = scale,
+        scale = scale
     }), {
         scale = Size(scale, scale),
         alignment = Offset(0.5, 1),
-        clip = true,
+        clip = true
     })
 end
 
---== WindowLayer ============================================================
+-- == WindowLayer ============================================================
 
 ---@class player._WindowLayerOptions
 ---@field child Widget?
----@field key any?
+---@field key   any?
 
----@class player.WindowLayer : StatelessWidget
+---@class player.WindowLayer: StatelessWidget
 ---@field child Widget?
 ---@overload fun(options?: _WindowLayerOptions): self
 local WindowLayer = std.class.new('WindowLayer', StatelessWidget)
 
+---@param options _WindowLayerOptions?
 function WindowLayer:__init(options)
     options = options or {}
     self.key = options.key
     self.child = options.child
 end
 
+---@return Widget[]
 function WindowLayer:child_widgets()
     return self.child and { self.child } or {}
 end
 
+---@return Widget?
 function WindowLayer:build()
     return child_or_empty(self.child)
 end
 
---== DefaultApp =============================================================
+-- == DefaultApp =============================================================
 
 ---@class player._DefaultAppOptions
----@field main Widget?
----@field extension Widget?
----@field window_layer Widget?
----@field title string?
----@field scale number?
----@field auto_hide_timeout number?
----@field auto_hide_enabled boolean?
----@field auto_hide_fade_duration number?
----@field auto_hide_bottom_hover boolean?
----@field auto_hide_hover_zone number?
----@field auto_hide_top_hover boolean?
+---@field main                        Widget?
+---@field extension                   Widget?
+---@field window_layer                Widget?
+---@field title                       string?
+---@field scale                       number?
+---@field auto_hide_timeout           number?
+---@field auto_hide_enabled           boolean?
+---@field auto_hide_fade_duration     number?
+---@field auto_hide_bottom_hover      boolean?
+---@field auto_hide_hover_zone        number?
+---@field auto_hide_top_hover         boolean?
 ---@field auto_hide_top_hover_enabled boolean?
----@field auto_hide_top_hover_zone number?
----@field auto_hide_controller AutoHideController?
----@field key any?
+---@field auto_hide_top_hover_zone    number?
+---@field auto_hide_controller        AutoHideController?
+---@field key                         any?
 
----@class player.DefaultApp : StatefulWidget
----@field main Widget?
----@field extension Widget?
----@field window_layer Widget?
----@field title string
----@field scale number?
----@field auto_hide_timeout number
----@field auto_hide_enabled boolean
----@field auto_hide_fade_duration number
----@field auto_hide_bottom_hover boolean
----@field auto_hide_hover_zone number
----@field auto_hide_top_hover boolean
+---@class player.DefaultApp: StatefulWidget
+---@field main                        Widget?
+---@field extension                   Widget?
+---@field window_layer                Widget?
+---@field title                       string
+---@field scale                       number?
+---@field auto_hide_timeout           number
+---@field auto_hide_enabled           boolean
+---@field auto_hide_fade_duration     number
+---@field auto_hide_bottom_hover      boolean
+---@field auto_hide_hover_zone        number
+---@field auto_hide_top_hover         boolean
 ---@field auto_hide_top_hover_enabled boolean?
----@field auto_hide_top_hover_zone number
----@field auto_hide_controller AutoHideController
+---@field auto_hide_top_hover_zone    number
+---@field auto_hide_controller        AutoHideController
 ---@overload fun(options?: _DefaultAppOptions): self
 local DefaultApp = std.class.new('DefaultApp', StatefulWidget)
 
@@ -286,25 +301,22 @@ function DefaultApp:__init(options)
     -- three seconds makes hover scale appear to collapse at an unrelated time.
     self.auto_hide_timeout = options.auto_hide_timeout == nil and 1.5 or options.auto_hide_timeout
     self.auto_hide_enabled = options.auto_hide_enabled ~= false
-    self.auto_hide_fade_duration = options.auto_hide_fade_duration == nil and 0.15
-        or options.auto_hide_fade_duration
+    self.auto_hide_fade_duration = options.auto_hide_fade_duration == nil and 0.15 or options.auto_hide_fade_duration
     self.auto_hide_bottom_hover = options.auto_hide_bottom_hover == true
-    self.auto_hide_hover_zone = options.auto_hide_hover_zone == nil and 175
-        or options.auto_hide_hover_zone
+    self.auto_hide_hover_zone = options.auto_hide_hover_zone == nil and 175 or options.auto_hide_hover_zone
     self.auto_hide_top_hover = options.auto_hide_top_hover == true
     self.auto_hide_top_hover_enabled = options.auto_hide_top_hover_enabled
-    if self.auto_hide_top_hover_enabled ~= nil
-        and type(self.auto_hide_top_hover_enabled) ~= 'boolean' then
+    if self.auto_hide_top_hover_enabled ~= nil and type(self.auto_hide_top_hover_enabled) ~= 'boolean' then
         raise(std.TypeError('DefaultApp.auto_hide_top_hover_enabled must be a boolean'))
     end
-    self.auto_hide_top_hover_zone = options.auto_hide_top_hover_zone == nil and 40
-        or options.auto_hide_top_hover_zone
+    self.auto_hide_top_hover_zone = options.auto_hide_top_hover_zone == nil and 40 or options.auto_hide_top_hover_zone
     self.auto_hide_controller = options.auto_hide_controller or AutoHideController()
     if not std.isinstance(self.auto_hide_controller, AutoHideController) then
         raise(std.TypeError('DefaultApp.auto_hide_controller must be an AutoHideController'))
     end
 end
 
+---@return Widget[]
 function DefaultApp:child_widgets()
     local children = {}
     if self.main then
@@ -319,12 +331,12 @@ function DefaultApp:child_widgets()
     return children
 end
 
----@class player.DefaultAppState : State
+---@class player.DefaultAppState: State
 ---@field main_controller AutoHideController
----@field main_entry OverlayEntry
+---@field main_entry      OverlayEntry
 ---@field extension_entry OverlayEntry
----@field window_entry OverlayEntry
----@field default_main Main
+---@field window_entry    OverlayEntry
+---@field default_main    Main
 ---@overload fun(): self
 local DefaultAppState = std.class.new('DefaultAppState', State)
 
@@ -343,14 +355,14 @@ function DefaultAppState:init_state()
     self.main_controller = app.auto_hide_controller
     self.extension_entry = OverlayEntry({
         key = 'default-app-extension',
-        builder = function()
+        builder = function ()
             local current_app = self.widget --[[@as DefaultApp]]
             return current_app.extension
-        end,
+        end
     })
     self.main_entry = OverlayEntry({
         key = 'default-app-main',
-        builder = function(context)
+        builder = function (context)
             local current_app = self.widget --[[@as DefaultApp]]
             local main = current_app.main or self.default_main
             local player = PlayerProvider.maybe_of(context)
@@ -362,8 +374,7 @@ function DefaultAppState:init_state()
             if top_enabled == nil then
                 local player_theme_scope = PlayerTheme.maybe_of(context)
                 local player_theme = player_theme_scope and player_theme_scope.data or PlayerThemeData()
-                local mode = std.isinstance(main, Main) and main.window_top_bar
-                    or player_theme.window_top_bar
+                local mode = std.isinstance(main, Main) and main.window_top_bar or player_theme.window_top_bar
                 mode = mode or 'auto'
                 top_enabled = top_bar_visible(snapshot, mode)
             end
@@ -377,16 +388,16 @@ function DefaultAppState:init_state()
                 top_hover = current_app.auto_hide_top_hover,
                 top_hover_enabled = top_enabled,
                 top_hover_zone = current_app.auto_hide_top_hover_zone * main_scale,
-                child = main,
+                child = main
             })
-        end,
+        end
     })
     self.window_entry = OverlayEntry({
         key = 'default-app-window-layer',
-        builder = function()
+        builder = function ()
             local current_app = self.widget --[[@as DefaultApp]]
             return current_app.window_layer or WindowLayer()
-        end,
+        end
     })
 end
 
@@ -408,32 +419,41 @@ function DefaultAppState:did_update_widget(old_widget)
     end
 end
 
+---@return Widget?
 function DefaultAppState:build()
     return Theatre({
         initial_entries = {
             self.extension_entry,
             self.main_entry,
-            self.window_entry,
-        },
+            self.window_entry
+        }
     })
 end
 
+---@param visible boolean
+---@return boolean
 function DefaultAppState:set_main_visible(visible)
     return self.main_controller:set_visible(visible)
 end
 
+---@return boolean
 function DefaultAppState:show_main()
     return self.main_controller:show()
 end
 
+---@return boolean
 function DefaultAppState:hide_main()
     return self.main_controller:hide()
 end
 
+---@param x        number?
+---@param y        number?
+---@param viewport Rect?
 function DefaultAppState:notify_activity(x, y, viewport)
     self.main_controller:activity(x, y, viewport)
 end
 
+---@return DefaultAppState
 function DefaultApp:create_state()
     return DefaultAppState()
 end

@@ -10,6 +10,10 @@
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
+local ipairs = ipairs
+local math = math
+local type = type
+
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
@@ -17,77 +21,76 @@ local InheritedWidget = widget_mod.InheritedWidget
 local M = {}
 
 ---@class player._HostActionsOptions
----@field play_pause fun()?
----@field replay fun()?
----@field seek fun(seconds: number, mode: 'relative'|'absolute')?
----@field seek_to fun(seconds: number, mode: 'keyframe'|'exact')? absolute position in seconds
----@field set_pause fun(paused: boolean)?
----@field thumbfast_request fun(seconds: number, x: number, y: number)?
----@field thumbfast_clear fun()?
----@field open_url fun(url: string)?
----@field playlist_prev fun()?
----@field playlist_next fun()?
----@field select_playlist fun()?
----@field chapter_prev fun()?
----@field chapter_next fun()?
----@field set_chapter fun(index: number)?
----@field select_chapter fun()?
----@field set_track fun(kind: 'audio'|'sub', id: number|string)?
----@field clear_audio_filter fun()?
----@field select_audio_track fun()?
----@field load_audio_track fun()?
+---@field play_pause               fun()?
+---@field replay                   fun()?
+---@field seek                     fun(seconds: number, mode: 'relative' | 'absolute')?
+---@field seek_to                  fun(seconds: number, mode: 'keyframe' | 'exact')?    absolute position in seconds
+---@field set_pause                fun(paused: boolean)?
+---@field thumbfast_request        fun(seconds: number, x: number, y: number)?
+---@field thumbfast_clear          fun()?
+---@field open_url                 fun(url: string)?
+---@field playlist_prev            fun()?
+---@field playlist_next            fun()?
+---@field select_playlist          fun()?
+---@field chapter_prev             fun()?
+---@field chapter_next             fun()?
+---@field set_chapter              fun(index: number)?
+---@field select_chapter           fun()?
+---@field set_track                fun(kind: 'audio' | 'sub', id: number | string)?
+---@field clear_audio_filter       fun()?
+---@field select_audio_track       fun()?
+---@field load_audio_track         fun()?
 ---@field clear_secondary_subtitle fun()?
----@field select_subtitle fun()?
----@field cycle_audio_reverse fun()?
----@field cycle_subtitle_reverse fun()?
----@field cycle_audio fun()?
----@field cycle_subtitle fun()?
----@field toggle_mute fun()?
----@field set_volume fun(volume: number)?
----@field select_audio_device fun()?
----@field frame_step fun()?
----@field frame_back_step fun()?
----@field toggle_fullscreen fun()?
----@field toggle_maximized fun()?
----@field minimize fun()?
----@field toggle_ontop fun()?
----@field toggle_loop fun()?
----@field screenshot fun(flag: string?)?
----@field show_stats fun()?
----@field download fun(url: string)?
----@field show_message fun(message: string, duration: number?)?
----@field close fun()?
----@field playlist_shuffle fun()?
----@field playlist_first fun()?
----@field playlist_last fun()?
+---@field select_subtitle          fun()?
+---@field cycle_audio_reverse      fun()?
+---@field cycle_subtitle_reverse   fun()?
+---@field cycle_audio              fun()?
+---@field cycle_subtitle           fun()?
+---@field toggle_mute              fun()?
+---@field set_volume               fun(volume: number)?
+---@field select_audio_device      fun()?
+---@field frame_step               fun()?
+---@field frame_back_step          fun()?
+---@field toggle_fullscreen        fun()?
+---@field toggle_maximized         fun()?
+---@field minimize                 fun()?
+---@field toggle_ontop             fun()?
+---@field toggle_loop              fun()?
+---@field screenshot               fun(flag: string?)?
+---@field show_stats               fun()?
+---@field download                 fun(url: string)?
+---@field show_message             fun(message: string, duration: number?)?
+---@field close                    fun()?
+---@field playlist_shuffle         fun()?
+---@field playlist_first           fun()?
+---@field playlist_last            fun()?
 
----@class player.HostActions : std.object
+---@class player.HostActions: std.object
 ---@field private _callbacks table<string, function>
 ---@overload fun(options?: _HostActionsOptions): self
 local HostActions = std.class.new('HostActions')
 
 local ACTIONS = {
-    'play_pause', 'replay', 'seek', 'seek_to', 'set_pause',
-    'thumbfast_request', 'thumbfast_clear', 'open_url',
-    'playlist_prev', 'playlist_next', 'select_playlist', 'chapter_prev', 'chapter_next',
-    'set_chapter', 'select_chapter', 'set_track', 'clear_audio_filter',
-    'select_audio_track', 'load_audio_track', 'clear_secondary_subtitle', 'select_subtitle',
-    'cycle_audio', 'cycle_audio_reverse',
-    'cycle_subtitle', 'cycle_subtitle_reverse', 'toggle_mute', 'set_volume',
-    'select_audio_device', 'frame_step', 'frame_back_step',
-    'toggle_fullscreen', 'toggle_maximized', 'minimize', 'toggle_ontop', 'toggle_loop',
-    'screenshot', 'show_stats', 'download', 'show_message', 'close', 'playlist_shuffle',
-    'playlist_first', 'playlist_last',
+    'play_pause', 'replay', 'seek', 'seek_to', 'set_pause', 'thumbfast_request', 'thumbfast_clear', 'open_url',
+    'playlist_prev', 'playlist_next', 'select_playlist', 'chapter_prev', 'chapter_next', 'set_chapter', 'select_chapter',
+    'set_track', 'clear_audio_filter', 'select_audio_track', 'load_audio_track', 'clear_secondary_subtitle',
+    'select_subtitle', 'cycle_audio', 'cycle_audio_reverse', 'cycle_subtitle', 'cycle_subtitle_reverse', 'toggle_mute',
+    'set_volume', 'select_audio_device', 'frame_step', 'frame_back_step', 'toggle_fullscreen', 'toggle_maximized',
+    'minimize', 'toggle_ontop', 'toggle_loop', 'screenshot', 'show_stats', 'download', 'show_message', 'close',
+    'playlist_shuffle', 'playlist_first', 'playlist_last'
 }
 
+---@param name  string
+---@param value number
+---@return number
 local function require_finite(name, value)
-    if type(value) ~= 'number' or value ~= value
-        or value == math.huge or value == -math.huge then
+    if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
         raise(std.ValueError('HostActions.' .. name .. ' expects a finite number'))
     end
     return value
 end
 
+---@param options _HostActionsOptions?
 function HostActions:__init(options)
     options = options or {}
     if type(options) ~= 'table' then
@@ -104,7 +107,7 @@ function HostActions:__init(options)
 end
 
 ---@param name string
----@param ... any
+---@param ...  any
 ---@return any
 function HostActions:call(name, ...)
     local callback = self._callbacks[name]
@@ -120,16 +123,19 @@ function HostActions:has(name)
     return type(name) == 'string' and self._callbacks[name] ~= nil
 end
 
+---@return any callback result
 function HostActions:play_pause()
     return self:call('play_pause')
 end
 
+---@return any callback result
 function HostActions:replay()
     return self:call('replay')
 end
 
 ---@param seconds number
----@param mode 'relative'|'absolute'?
+---@param mode    'relative' | 'absolute'?
+---@return any callback result
 function HostActions:seek(seconds, mode)
     if mode == nil then
         mode = 'relative'
@@ -140,7 +146,8 @@ function HostActions:seek(seconds, mode)
 end
 
 ---@param seconds number
----@param mode 'keyframe'|'exact'?
+---@param mode    'keyframe' | 'exact'?
+---@return any callback result
 function HostActions:seek_to(seconds, mode)
     if mode == nil then
         mode = 'exact'
@@ -151,6 +158,7 @@ function HostActions:seek_to(seconds, mode)
 end
 
 ---@param paused boolean
+---@return any callback result
 function HostActions:set_pause(paused)
     if type(paused) ~= 'boolean' then
         raise(std.TypeError('HostActions.set_pause expects a boolean'))
@@ -159,21 +167,23 @@ function HostActions:set_pause(paused)
 end
 
 ---@param seconds number
----@param x number
----@param y number
+---@param x       number
+---@param y       number
+---@return any callback result
 function HostActions:thumbfast_request(seconds, x, y)
     return self:call(
-        'thumbfast_request',
-        require_finite('thumbfast_request seconds', seconds),
-        require_finite('thumbfast_request x', x),
-        require_finite('thumbfast_request y', y))
+        'thumbfast_request', require_finite('thumbfast_request seconds', seconds),
+        require_finite('thumbfast_request x', x), require_finite('thumbfast_request y', y)
+    )
 end
 
+---@return any callback result
 function HostActions:thumbfast_clear()
     return self:call('thumbfast_clear')
 end
 
 ---@param url string
+---@return any callback result
 function HostActions:open_url(url)
     if type(url) ~= 'string' or url == '' then
         raise(std.TypeError('HostActions.open_url expects a non-empty URL'))
@@ -184,27 +194,33 @@ function HostActions:open_url(url)
     return self:call('open_url', url)
 end
 
+---@return any callback result
 function HostActions:playlist_prev()
     return self:call('playlist_prev')
 end
 
+---@return any callback result
 function HostActions:playlist_next()
     return self:call('playlist_next')
 end
 
+---@return any callback result
 function HostActions:select_playlist()
     return self:call('select_playlist')
 end
 
+---@return any callback result
 function HostActions:chapter_prev()
     return self:call('chapter_prev')
 end
 
+---@return any callback result
 function HostActions:chapter_next()
     return self:call('chapter_next')
 end
 
 ---@param index number
+---@return any callback result
 function HostActions:set_chapter(index)
     index = require_finite('set_chapter', index)
     if index < 0 or index ~= math.floor(index) then
@@ -213,12 +229,14 @@ function HostActions:set_chapter(index)
     return self:call('set_chapter', index)
 end
 
+---@return any callback result
 function HostActions:select_chapter()
     return self:call('select_chapter')
 end
 
----@param kind 'audio'|'sub'
----@param id number|string
+---@param kind 'audio' | 'sub'
+---@param id   number | string
+---@return any callback result
 function HostActions:set_track(kind, id)
     if kind ~= 'audio' and kind ~= 'sub' then
         raise(std.ValueError('HostActions.set_track kind must be audio or sub'))
@@ -232,84 +250,104 @@ function HostActions:set_track(kind, id)
     return self:call('set_track', kind, id)
 end
 
+---@return any callback result
 function HostActions:clear_audio_filter()
     return self:call('clear_audio_filter')
 end
 
+---@return any callback result
 function HostActions:select_audio_track()
     return self:call('select_audio_track')
 end
 
+---@return any callback result
 function HostActions:load_audio_track()
     return self:call('load_audio_track')
 end
 
+---@return any callback result
 function HostActions:clear_secondary_subtitle()
     return self:call('clear_secondary_subtitle')
 end
 
+---@return any callback result
 function HostActions:select_subtitle()
     return self:call('select_subtitle')
 end
 
+---@return any callback result
 function HostActions:cycle_audio()
     return self:call('cycle_audio')
 end
 
+---@return any callback result
 function HostActions:cycle_audio_reverse()
     return self:call('cycle_audio_reverse')
 end
 
+---@return any callback result
 function HostActions:cycle_subtitle()
     return self:call('cycle_subtitle')
 end
 
+---@return any callback result
 function HostActions:cycle_subtitle_reverse()
     return self:call('cycle_subtitle_reverse')
 end
 
+---@return any callback result
 function HostActions:toggle_mute()
     return self:call('toggle_mute')
 end
 
 ---@param volume number
+---@return any callback result
 function HostActions:set_volume(volume)
     return self:call('set_volume', require_finite('set_volume', volume))
 end
 
+---@return any callback result
 function HostActions:select_audio_device()
     return self:call('select_audio_device')
 end
 
+---@return any callback result
 function HostActions:frame_step()
     return self:call('frame_step')
 end
 
+---@return any callback result
 function HostActions:frame_back_step()
     return self:call('frame_back_step')
 end
 
+---@return any callback result
 function HostActions:toggle_fullscreen()
     return self:call('toggle_fullscreen')
 end
 
+---@return any callback result
 function HostActions:toggle_maximized()
     return self:call('toggle_maximized')
 end
 
+---@return any callback result
 function HostActions:minimize()
     return self:call('minimize')
 end
 
+---@return any callback result
 function HostActions:toggle_ontop()
     return self:call('toggle_ontop')
 end
 
+---@return any callback result
 function HostActions:toggle_loop()
     return self:call('toggle_loop')
 end
 
 ---@param flag string?
+---@return any callback result
 function HostActions:screenshot(flag)
     if flag ~= nil and type(flag) ~= 'string' then
         raise(std.TypeError('HostActions.screenshot flag must be a string'))
@@ -317,11 +355,13 @@ function HostActions:screenshot(flag)
     return self:call('screenshot', flag)
 end
 
+---@return any callback result
 function HostActions:show_stats()
     return self:call('show_stats')
 end
 
 ---@param url string
+---@return any callback result
 function HostActions:download(url)
     if type(url) ~= 'string' or url == '' then
         raise(std.TypeError('HostActions.download expects a non-empty URL'))
@@ -332,8 +372,9 @@ function HostActions:download(url)
     return self:call('download', url)
 end
 
----@param message string
+---@param message  string
 ---@param duration number?
+---@return any callback result
 function HostActions:show_message(message, duration)
     if type(message) ~= 'string' then
         raise(std.TypeError('HostActions.show_message message must be a string'))
@@ -350,34 +391,39 @@ function HostActions:show_message(message, duration)
     return self:call('show_message', message, duration)
 end
 
+---@return any callback result
 function HostActions:close()
     return self:call('close')
 end
 
+---@return any callback result
 function HostActions:playlist_shuffle()
     return self:call('playlist_shuffle')
 end
 
+---@return any callback result
 function HostActions:playlist_first()
     return self:call('playlist_first')
 end
 
+---@return any callback result
 function HostActions:playlist_last()
     return self:call('playlist_last')
 end
 
 ---@class player._HostActionsScopeOptions
 ---@field actions HostActions
----@field child Widget?
----@field key any?
+---@field child   Widget?
+---@field key     any?
 
----@class player.HostActionsScope : InheritedWidget
+---@class player.HostActionsScope: InheritedWidget
 ---@field actions HostActions
----@field child Widget?
+---@field child   Widget?
 ---@overload fun(options: _HostActionsScopeOptions): self
 local HostActionsScope = std.class.new('HostActionsScope', InheritedWidget)
 local HostActionsScopeClass = HostActionsScope --[[@as std.class]]
 
+---@param options _HostActionsScopeOptions
 function HostActionsScope:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('HostActionsScope expects an options table'))
@@ -391,6 +437,7 @@ function HostActionsScope:__init(options)
 end
 
 ---@param old_widget HostActionsScope
+---@return boolean
 function HostActionsScope:update_should_notify(old_widget)
     return self.actions ~= old_widget.actions
 end

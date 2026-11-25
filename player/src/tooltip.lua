@@ -8,10 +8,14 @@ local std = require 'elxlibs.std'
 local tooltip_mod = require 'src.widgets.tooltip'
 local text_style_mod = require 'src.text.text_style'
 local color_mod = require 'src.foundation.color'
-local AutoHide = require('player.src.auto_hide').AutoHide
+local auto_hide_mod = require 'player.src.auto_hide'
 local time_mod = require 'player.src.text_controls'
 local widget_mod = require 'src.widgets.framework'
 local state_mod = require 'src.widgets.state'
+
+local AutoHide = auto_hide_mod.AutoHide
+
+local pairs = pairs
 
 local Tooltip = tooltip_mod.Tooltip
 local TextStyle = text_style_mod.TextStyle
@@ -23,15 +27,16 @@ local default_style = TextStyle({
     outline_width = 0.5,
     outline_color = Color.rgba255(0, 0, 0),
     blur_radius = 1,
-    wrap = false,
+    wrap = false
 })
 
----@class player._PlayerTooltipOptions : _TooltipOptions
+---@class player._PlayerTooltipOptions: _TooltipOptions
 
----@class player.PlayerTooltip : Tooltip
+---@class player.PlayerTooltip: Tooltip
 ---@overload fun(options?: _PlayerTooltipOptions): self
 local PlayerTooltip = std.class.new('PlayerTooltip', Tooltip)
 
+---@param options _PlayerTooltipOptions?
 function PlayerTooltip:__init(options)
     local config = {}
     for name, value in pairs(options or {}) do
@@ -39,7 +44,7 @@ function PlayerTooltip:__init(options)
     end
     config.style = config.style or default_style
     local hover_enabled = config.hover_enabled
-    config.hover_enabled = function(context)
+    config.hover_enabled = function (context)
         local ancestor = context.parent
         while ancestor do
             if std.isinstance(ancestor.widget, AutoHide) and not ancestor.widget.controller.visible then
@@ -53,9 +58,11 @@ function PlayerTooltip:__init(options)
 end
 
 ---@class mod.player.src.tooltip
-local M = { PlayerTooltip = PlayerTooltip }
+local M = {
+    PlayerTooltip = PlayerTooltip
+}
 
----@class player.PlayerTimeTooltip : StatefulWidget
+---@class player.PlayerTimeTooltip: StatefulWidget
 ---@field config _PlayerTooltipOptions
 ---@overload fun(options?: _PlayerTooltipOptions): self
 local PlayerTimeTooltip = std.class.new('PlayerTimeTooltip', widget_mod.StatefulWidget)
@@ -69,19 +76,20 @@ function PlayerTimeTooltip:__init(options)
     end
 end
 
----@class player.PlayerTimeTooltipState : State
----@field _width PlayerTimeWidth
+---@class player.PlayerTimeTooltipState: State
+---@field _width          PlayerTimeWidth
 ---@field _width_for_text fun(layout: TextLayout, label: string, style: TextStyle): number
 ---@overload fun(): self
 local PlayerTimeTooltipState = std.class.new('PlayerTimeTooltipState', state_mod.State)
 
 function PlayerTimeTooltipState:init_state()
     self._width = time_mod.PlayerTimeWidth()
-    self._width_for_text = function(layout, label, style)
+    self._width_for_text = function (layout, label, style)
         return self._width:resolve(layout, label, style)
     end
 end
 
+---@return Widget?
 function PlayerTimeTooltipState:build()
     local widget = self.widget --[[@as PlayerTimeTooltip]]
     local config = {}
@@ -92,6 +100,7 @@ function PlayerTimeTooltipState:build()
     return PlayerTooltip(config)
 end
 
+---@return PlayerTimeTooltipState
 function PlayerTimeTooltip:create_state()
     return PlayerTimeTooltipState()
 end

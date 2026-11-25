@@ -13,6 +13,13 @@ local widget_mod = require 'src.widgets.framework'
 local theme_mod = require 'player.src.theme'
 local metadata_mod = require 'player.src.metadata'
 local extension_controls_mod = require 'player.src.extension_controls'
+local geometry_mod = require 'player.src.geometry'
+local description_mod = require 'player.src.description'
+local visuals_mod = require 'player.src.visuals'
+local controls_mod = require 'player.src.controls'
+
+local ipairs = ipairs
+local type = type
 
 local DisplayScope = ambient_mod.DisplayScope
 local HostActions = actions_mod.HostActions
@@ -23,10 +30,6 @@ local player_metadata = metadata_mod
 local StatelessWidget = widget_mod.StatelessWidget
 
 local raise = std.raise
-local geometry_mod = require 'player.src.geometry'
-local description_mod = require 'player.src.description'
-local visuals_mod = require 'player.src.visuals'
-local controls_mod = require 'player.src.controls'
 local geometry_for = geometry_mod.geometry_for
 local PlayerDescriptionLayer = description_mod.PlayerDescriptionLayer
 local idle_view = visuals_mod.idle_view
@@ -40,36 +43,37 @@ local default_controller = controls_mod.default_controller
 local M = {}
 
 ---@class player._PlayerLayoutOptions
----@field theme PlayerThemeData
----@field actions HostActions
----@field snapshot PlayerSnapshot?
----@field title string
----@field title_bar Widget?
+---@field theme           PlayerThemeData
+---@field actions         HostActions
+---@field snapshot        PlayerSnapshot?
+---@field title           string
+---@field title_bar       Widget?
 ---@field window_controls Widget?
----@field bottom Widget?
----@field left_controls PlayerControlBar?
----@field right_controls PlayerControlBar?
----@field layout_option PlayerLayoutOption
+---@field bottom          Widget?
+---@field left_controls   PlayerControlBar?
+---@field right_controls  PlayerControlBar?
+---@field layout_option   PlayerLayoutOption
 ---@field top_bar_visible boolean
----@field scale number
----@field key any?
+---@field scale           number
+---@field key             any?
 
----@class player.PlayerLayout : StatelessWidget
----@field theme PlayerThemeData
----@field actions HostActions
----@field snapshot PlayerSnapshot?
----@field title string
----@field title_bar Widget?
+---@class player.PlayerLayout: StatelessWidget
+---@field theme           PlayerThemeData
+---@field actions         HostActions
+---@field snapshot        PlayerSnapshot?
+---@field title           string
+---@field title_bar       Widget?
 ---@field window_controls Widget?
----@field bottom Widget?
----@field left_controls PlayerControlBar?
----@field right_controls PlayerControlBar?
----@field layout_option PlayerLayoutOption
+---@field bottom          Widget?
+---@field left_controls   PlayerControlBar?
+---@field right_controls  PlayerControlBar?
+---@field layout_option   PlayerLayoutOption
 ---@field top_bar_visible boolean
----@field scale number
+---@field scale           number
 ---@overload fun(options: _PlayerLayoutOptions): self
 local PlayerLayout = std.class.new('PlayerLayout', StatelessWidget)
 
+---@param options _PlayerLayoutOptions
 function PlayerLayout:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('PlayerLayout expects an options table'))
@@ -146,7 +150,7 @@ function PlayerLayout:build(context)
         show_chapter_title = self.theme.show_chapter_title,
         persistent_progress = self.theme.persistent_progress,
         has_description = description ~= '',
-        is_url = is_url,
+        is_url = is_url
     })
     layout_geometry.scale = scale
 
@@ -161,9 +165,12 @@ function PlayerLayout:build(context)
 
     local children = {}
     if self.top_bar_visible and (title_bar or window_controls) then
-        children[#children + 1] = positioned(layout_geometry.window_bar, panel(
-            self.theme, self.theme.window_color, self.theme.window_border_color,
-            self.theme.window_blur_radius, true))
+        children[#children + 1] = positioned(
+            layout_geometry.window_bar,
+            panel(
+                self.theme, self.theme.window_color, self.theme.window_border_color, self.theme.window_blur_radius, true
+            )
+        )
         if title_bar then
             children[#children + 1] = positioned(layout_geometry.window_title, title_bar)
         end
@@ -175,8 +182,7 @@ function PlayerLayout:build(context)
     if self.bottom then
         children[#children + 1] = positioned(layout_geometry.controller, self.bottom)
     else
-        local controller = default_controller(
-            self.theme, self.actions, snapshot, self.title, layout_geometry)
+        local controller = default_controller(self.theme, self.actions, snapshot, self.title, layout_geometry)
         for _, child in ipairs(controller) do
             children[#children + 1] = child
         end
@@ -201,8 +207,8 @@ function PlayerLayout:build(context)
                 viewport_height = viewport_height,
                 actions = self.actions,
                 links = player_metadata.links(description),
-                stats = player_metadata.stats(snapshot),
-            }),
+                stats = player_metadata.stats(snapshot)
+            })
         })
     end
 

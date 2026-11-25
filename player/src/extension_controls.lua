@@ -11,6 +11,8 @@ local geometry = require 'src.foundation.geometry'
 local theme_mod = require 'player.src.theme'
 local visuals_mod = require 'player.src.visuals'
 
+local ipairs = ipairs
+
 local StatelessWidget = widget_mod.StatelessWidget
 local Widget = widget_mod.Widget
 local Row = layout_mod.Row
@@ -19,9 +21,9 @@ local raise = std.raise
 
 ---@class player._PlayerControlBarOptions
 ---@field children Widget[]?
----@field key any?
+---@field key      any?
 
----@class player.PlayerControlBar : StatelessWidget
+---@class player.PlayerControlBar: StatelessWidget
 ---@field children Widget[]
 ---@overload fun(options?: _PlayerControlBarOptions): self
 local PlayerControlBar = std.class.new('PlayerControlBar', StatelessWidget)
@@ -38,6 +40,7 @@ function PlayerControlBar:__init(options)
     end
 end
 
+---@return Widget[]
 function PlayerControlBar:child_widgets()
     return self.children
 end
@@ -47,6 +50,7 @@ function PlayerControlBar:control_count()
     return #self.children
 end
 
+---@return Widget?
 function PlayerControlBar:build()
     local children = {}
     for index, child in ipairs(self.children) do
@@ -59,18 +63,19 @@ function PlayerControlBar:build()
 end
 
 ---@class player._PlayerControlButtonOptions
----@field icon string?
+---@field icon     string?
 ---@field on_click fun()?
----@field enabled boolean?
----@field key any?
+---@field enabled  boolean?
+---@field key      any?
 
----@class player.PlayerControlButton : StatelessWidget
----@field icon string
+---@class player.PlayerControlButton: StatelessWidget
+---@field icon     string
 ---@field on_click fun()?
----@field enabled boolean
+---@field enabled  boolean
 ---@overload fun(options?: _PlayerControlButtonOptions): self
 local PlayerControlButton = std.class.new('PlayerControlButton', StatelessWidget)
 
+---@param options _PlayerControlButtonOptions?
 function PlayerControlButton:__init(options)
     options = options or {}
     self.key = options.key
@@ -79,6 +84,8 @@ function PlayerControlButton:__init(options)
     self.enabled = options.enabled ~= false
 end
 
+---@param context Element
+---@return Widget?
 function PlayerControlButton:build(context)
     local scope = theme_mod.PlayerTheme.maybe_of(context)
     local theme = scope and scope.data or theme_mod.PlayerThemeData()
@@ -86,11 +93,11 @@ function PlayerControlButton:build(context)
         key = self.key,
         icon = layout_mod.Container({
             alignment = geometry.Offset(0.5, 0.5),
-            child = basic_mod.Icon(self.icon, { size = theme.side_button_size, color = theme.side_button_color }),
+            child = basic_mod.Icon(self.icon, { size = theme.side_button_size, color = theme.side_button_color })
         }),
         style = visuals_mod.control_style(theme),
         enabled = self.enabled,
-        on_click = self.on_click,
+        on_click = self.on_click
     })
 end
 

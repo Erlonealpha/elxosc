@@ -27,26 +27,28 @@ local PlayerControlBar = extension_controls_mod.PlayerControlBar
 local M = {}
 
 ---@alias player.PlayerControlSide
----| 'left'
----| 'right'
+--- | 'left'
+--- | 'right'
 
 ---@param side PlayerControlSide
 ---@return define.SlotWrap
 local function control_slot(side)
     return SlotWrap(SlotSpec({
-        id = 'player.controls.' .. side,
-        allow = { 'append' }, default_op = 'append', default_value = {},
-        builder = function(value)
-            local children = {}
-            ---@type Widget[]
-            local buttons = value
-            for index = 1, #buttons do
-                local source_index = side == 'right' and #buttons - index + 1 or index
-                children[index] = buttons[source_index]
+            id = 'player.controls.' .. side,
+            allow = { 'append' },
+            default_op = 'append',
+            default_value = {},
+            builder = function (value)
+                local children = {}
+                ---@type Widget[]
+                local buttons = value
+                for index = 1, #buttons do
+                    local source_index = side == 'right' and #buttons - index + 1 or index
+                    children[index] = buttons[source_index]
+                end
+                return PlayerControlBar({ children = children })
             end
-            return PlayerControlBar({ children = children })
-        end,
-    }))
+        }))
 end
 
 ---@return Widget
@@ -54,16 +56,17 @@ local function build_description()
     local extension_slot_spec = SlotSpec({
         id = 'app.extension',
         allow = { 'set', 'replace' },
-        default_op = 'set',
+        default_op = 'set'
     })
     local extension_slot = Container({
-        child = SizedBox.shrink(),
+        child = SizedBox.shrink()
     })
     local window_layer = WindowLayer({
         child = SlotWrap(SlotSpec({
-            id = 'app.window_layer',
-            allow = { 'set', 'replace' }, default_op = 'set',
-        }), SizedBox.shrink()),
+                id = 'app.window_layer',
+                allow = { 'set', 'replace' },
+                default_op = 'set'
+            }), SizedBox.shrink())
     })
 
     local app = DefaultApp({
@@ -77,12 +80,13 @@ local function build_description()
         -- modes.  Keep this player entrypoint explicit without changing the
         -- generic framework ThemeData default.
         main = Main({
-            title = 'elxosc', scale = 1.5,
+            title = 'elxosc',
+            scale = 1.5,
             left_controls = control_slot('left'),
-            right_controls = control_slot('right'),
+            right_controls = control_slot('right')
         }),
         extension = SlotWrap(extension_slot_spec, extension_slot),
-        window_layer = window_layer,
+        window_layer = window_layer
     })
     return app
 end
