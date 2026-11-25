@@ -16,24 +16,26 @@ local mp = require 'mp'
 local std = require 'elxlibs.std'
 local frame_clock = require 'src.scheduler.frame_clock'
 
-local FrameClock = frame_clock.FrameClock
 local math = math
+local tostring = tostring
+local FrameClock = frame_clock.FrameClock
 
 ---@class mod.host.mpv_primitives
 local M = {}
 
---== frame clock ===========================================================
+-- == frame clock ===========================================================
 
 --- Drives frames from `mp.add_timeout`, one timer per requested frame, with
 --- the same rate limiting uosc applies via `render_delay`.
----@class host.MpFrameClock : FrameClock
----@field delay number minimum seconds between frames
----@field _timer table?
+---@class host.MpFrameClock: FrameClock
+---@field delay       number  minimum seconds between frames
+---@field _timer      table?
 ---@field _last_frame number?
----@field _disposed boolean
+---@field _disposed   boolean
 ---@overload fun(delay: number?): self
 local MpFrameClock = std.class.new('MpFrameClock', FrameClock)
 
+---@param delay number?
 function MpFrameClock:__init(delay)
     self.delay = delay or (1 / 60)
     self._timer = nil
@@ -59,7 +61,7 @@ function MpFrameClock:request_frame()
     end
     local last = self._last_frame
     local since = last and (mp.get_time() - last) or math.huge
-    self._timer = mp.add_timeout(math.max(0, self.delay - since), function()
+    self._timer = mp.add_timeout(math.max(0, self.delay - since), function ()
         self._timer = nil
         if self._disposed then
             return
@@ -84,18 +86,19 @@ function MpFrameClock:dispose()
     return true
 end
 
---== presenter =============================================================
+-- == presenter =============================================================
 
 --- Pushes the canvas as an `ass-events` overlay, skipping identical frames.
----@class host.AssPresenter : std.object
----@field overlay table
+---@class host.AssPresenter: std.object
+---@field overlay    table
 ---@field _last_data string?
----@field _last_w number
----@field _last_h number
----@field _removed boolean
+---@field _last_w    number
+---@field _last_h    number
+---@field _removed   boolean
 ---@overload fun(z: number?): self
 local AssPresenter = std.class.new('AssPresenter')
 
+---@param z number?
 function AssPresenter:__init(z)
     self.overlay = mp.create_osd_overlay('ass-events')
     self.overlay.z = z or 2000
@@ -105,7 +108,7 @@ function AssPresenter:__init(z)
 end
 
 ---@param canvas AssCanvas
----@param width number
+---@param width  number
 ---@param height number
 ---@return boolean submitted
 function AssPresenter:present(canvas, width, height)

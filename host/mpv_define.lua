@@ -24,24 +24,31 @@ local player_context = require 'player.src.context'
 local player_exports = require 'player'
 local exports_mod = require 'host.package_catalog'
 
+local type = type
+local error = error
+local pairs = pairs
+local ipairs = ipairs
+local string = string
+local tostring = tostring
+local pcall = pcall
+local raise = std.raise
 local DefineSession = define_mod.DefineSession
 local ModuleRegistry = modules_mod.ModuleRegistry
 local CompositionAssembler = slot_mod.CompositionAssembler
 local PlayerStore = player_context.PlayerStore
-local raise = std.raise
 
 ---@class mod.host.mpv_define
 local M = {}
 
 ---@class host.MpFacadeSubscription
 ---@field is_active fun(): boolean
----@field dispose fun(): boolean
+---@field dispose   fun(): boolean
 
 ---@alias host.MpPackage host.MpFacadeExports & host.MpScopeExports
 
 ---@class host.PlayerRuntimeExports
 ---@field get_snapshot fun(): player.PlayerSnapshot
----@field on_update fun(callback: fun(snapshot: player.PlayerSnapshot, previous: player.PlayerSnapshot)): player.PlayerSubscription
+---@field on_update    fun(callback: fun(snapshot: player.PlayerSnapshot, previous: player.PlayerSnapshot)): player.PlayerSubscription
 
 ---@alias host.PlayerPackage mod.player.src.components & host.PlayerRuntimeExports
 
@@ -50,7 +57,7 @@ function M.builtins()
     return require 'host.builtins'
 end
 
---== the `mp` module =======================================================
+-- == the `mp` module =======================================================
 
 --- Describe the `mp` module: plain data for the request/response helpers, plus a
 --- loader for the one that needs the importing scope.
@@ -63,21 +70,21 @@ end
 local function mp_package(register_disposer)
     ---@class host.MpFacadeExports
     local exports = {
-        get_prop = function(name)
+        get_prop = function (name)
             return mp.get_property_native(name)
         end,
-        set_prop = function(name, value)
+        set_prop = function (name, value)
             mp.set_property_native(name, value)
         end,
-        get_time = function()
+        get_time = function ()
             return mp.get_time()
         end,
-        commandv = function(...)
+        commandv = function (...)
             return mp.commandv(...)
         end,
         logger = mp.msg,
         --- `cb(name, value)`, the same shape `mp.observe_property` uses.
-        on_prop = function(name, cb)
+        on_prop = function (name, cb)
             if type(name) ~= 'string' or name == '' then
                 error('mp.on_prop expects a non-empty property name', 2)
             end
@@ -87,10 +94,10 @@ local function mp_package(register_disposer)
             mp.observe_property(name, 'native', cb)
             local active = true
             local subscription = {
-                is_active = function()
+                is_active = function ()
                     return active
                 end,
-                dispose = function()
+                dispose = function ()
                     if not active then
                         return false
                     end
@@ -99,14 +106,14 @@ local function mp_package(register_disposer)
                         mp.unobserve_property(cb)
                     end
                     return true
-                end,
+                end
             }
             if register_disposer then
                 register_disposer(subscription.dispose)
             end
             return subscription
         end,
-        on_event = function(name, cb)
+        on_event = function (name, cb)
             if type(name) ~= 'string' or name == '' then
                 error('mp.on_event expects a non-empty event name', 2)
             end
@@ -119,10 +126,10 @@ local function mp_package(register_disposer)
             mp.register_event(name, cb)
             local active = true
             local subscription = {
-                is_active = function()
+                is_active = function ()
                     return active
                 end,
-                dispose = function()
+                dispose = function ()
                     if not active then
                         return false
                     end
@@ -131,14 +138,14 @@ local function mp_package(register_disposer)
                         mp.unregister_event(cb)
                     end
                     return true
-                end,
+                end
             }
             if register_disposer then
                 register_disposer(subscription.dispose)
             end
             return subscription
         end,
-        message_to = function(...)
+        message_to = function (...)
             mp.commandv('script-message-to', ...)
         end
     }
@@ -146,14 +153,14 @@ local function mp_package(register_disposer)
     ---@class host.MpScopeExports
     local function loader(env, scope_id)
         -- Messages this scope can receive: `script-message-to elxosc <scope> ...`
-        env.on_message = function(cb)
+        env.on_message = function (cb)
             mp.register_script_message(scope_id, cb)
             local active = true
             local subscription = {
-                is_active = function()
+                is_active = function ()
                     return active
                 end,
-                dispose = function()
+                dispose = function ()
                     if not active then
                         return false
                     end
@@ -162,14 +169,14 @@ local function mp_package(register_disposer)
                         mp.unregister_script_message(scope_id)
                     end
                     return true
-                end,
+                end
             }
             if register_disposer then
                 register_disposer(subscription.dispose)
             end
             return subscription
         end
-        env.emit = function(...)
+        env.emit = function (...)
             mp.commandv('script-message', scope_id, ...)
         end
     end
@@ -177,7 +184,7 @@ local function mp_package(register_disposer)
     return { name = 'mp', exports = exports, loader = loader }
 end
 
----@param store player.PlayerStore
+---@param store             player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 ---@return define.DefinePackage<PlayerPackage>
 local function player_package(store, register_disposer)
@@ -186,13 +193,13 @@ local function player_package(store, register_disposer)
     for name, value in pairs(player_exports) do
         exports[name] = value
     end
-    exports.get_snapshot = function()
+    exports.get_snapshot = function ()
         return store:get()
     end
-    exports.on_update = function(callback)
+    exports.on_update = function (callback)
         local subscription = store:subscribe(callback)
         if register_disposer then
-            register_disposer(function()
+            register_disposer(function ()
                 subscription:dispose()
             end)
         end
@@ -202,8 +209,8 @@ local function player_package(store, register_disposer)
 end
 
 --- Every extension package is registered here; runtime packages add owned APIs.
----@param modules define.ModuleRegistry
----@param store player.PlayerStore
+---@param modules           define.ModuleRegistry
+---@param store             player.PlayerStore
 ---@param register_disposer fun(dispose: fun())?
 function M.install_modules(modules, store, register_disposer)
     ---@type define.DefinePackageDescriptor[]
@@ -223,29 +230,30 @@ function M.install_modules(modules, store, register_disposer)
     end
 end
 
---== the session ===========================================================
+-- == the session ===========================================================
 
 ---@class host.MpDefineOptions
----@field builtins table<string, any>? replaces the host-selected defaults
+---@field builtins      table<string, any>?          replaces the host-selected defaults
 ---@field contributions define.ContributionRegistry? shared contribution registry
----@field modules define.ModuleRegistry? shared module registry (gets the `mp` module)
----@field player_store player.PlayerStore? host-independent player snapshot store
+---@field modules       define.ModuleRegistry?       shared module registry (gets the `mp` module)
+---@field player_store  player.PlayerStore?          host-independent player snapshot store
 
 --- A `DefineSession` wired to mpv: the protocol messages, the `mp` module and
 --- the window policy.
----@class host.MpDefine : std.object
----@field session define.DefineSession
----@field on_sealed fun()? called when the last `define_end` arrives
----@field player_store player.PlayerStore
----@field protected _listening boolean
----@field protected _allow_start boolean
----@field protected _disposers fun()[]
----@field protected _shutdown boolean
----@field protected _assembled boolean
+---@class host.MpDefine: std.object
+---@field session                          define.DefineSession
+---@field on_sealed                        fun()?               called when the last `define_end` arrives
+---@field player_store                     player.PlayerStore
+---@field protected _listening             boolean
+---@field protected _allow_start           boolean
+---@field protected _disposers             fun()[]
+---@field protected _shutdown              boolean
+---@field protected _assembled             boolean
 ---@field protected _payload_disposer_mark integer?
 ---@overload fun(options: MpDefineOptions?): self
 local MpDefine = std.class.new('MpDefine')
 
+---@param options MpDefineOptions?
 function MpDefine:__init(options)
     options = options or {}
     self.player_store = options.player_store or PlayerStore()
@@ -273,15 +281,15 @@ function MpDefine:__init(options)
     self.session = DefineSession({
         builtins = builtins,
         modules = modules,
-        contributions = options.contributions,
+        contributions = options.contributions
     })
-    self.session.on_payload_begin = function()
+    self.session.on_payload_begin = function ()
         self._payload_disposer_mark = #self._disposers
     end
-    self.session.on_payload_commit = function()
+    self.session.on_payload_commit = function ()
         self._payload_disposer_mark = nil
     end
-    self.session.on_payload_rollback = function()
+    self.session.on_payload_rollback = function ()
         local mark = self._payload_disposer_mark or #self._disposers
         for index = #self._disposers, mark + 1, -1 do
             self._disposers[index]()
@@ -289,7 +297,7 @@ function MpDefine:__init(options)
         end
         self._payload_disposer_mark = nil
     end
-    self.session.on_error = function(scope_id, err)
+    self.session.on_error = function (scope_id, err)
         mp.msg.error(string.format("elxosc: define('%s') failed: %s", scope_id, tostring(err)))
     end
 end
@@ -302,7 +310,7 @@ function MpDefine:listen()
     end
     self._listening = true
 
-    mp.register_script_message('define_start', function()
+    mp.register_script_message('define_start', function ()
         if not self._allow_start then
             mp.msg.warn('elxosc: define_start ignored, the define window is closed')
             return
@@ -310,7 +318,7 @@ function MpDefine:listen()
         self.session:define_start()
     end)
 
-    mp.register_script_message('define', function(scope_id, code)
+    mp.register_script_message('define', function (scope_id, code)
         if self.session.phase == 'idle' then
             mp.msg.warn('elxosc: define ignored, no define_start was received')
             return
@@ -318,7 +326,7 @@ function MpDefine:listen()
         self.session:define(scope_id, code)
     end)
 
-    mp.register_script_message('define_end', function()
+    mp.register_script_message('define_end', function ()
         self.session:define_end()
         if self.session.phase == 'sealed' and self.on_sealed ~= nil then
             self.on_sealed()
@@ -365,7 +373,7 @@ function MpDefine:shutdown()
             failure = failure or err
         end
     end
-    release(function()
+    release(function ()
         self:unlisten()
     end)
     local disposers = self._disposers
@@ -390,7 +398,7 @@ end
 --- Blocking, so it only suits a host that wants the whole tree defined before
 --- the UI appears. `main.lua` prefers `listen()` plus a timeout, which keeps
 --- mpv's startup non-blocking.
----@param wait_start number? seconds during which `define_start` is accepted
+---@param wait_start  number? seconds during which `define_start` is accepted
 ---@param all_timeout number? total seconds the window may last
 ---@return boolean sealed
 function MpDefine:wait(wait_start, all_timeout)
@@ -435,12 +443,11 @@ function MpDefine:assemble(root)
         raise(std.RuntimeError('Define contributions have already been assembled'))
     end
     local assembler = CompositionAssembler(self.session:contribution_snapshot(), {
-        on_warning = function(diagnostic)
-            mp.msg.warn(string.format(
-                "elxosc: slot '%s': %s",
-                tostring(diagnostic.slot_id),
-                tostring(diagnostic.message)))
-        end,
+        on_warning = function (diagnostic)
+            mp.msg.warn(
+                string.format("elxosc: slot '%s': %s", tostring(diagnostic.slot_id), tostring(diagnostic.message))
+            )
+        end
     })
     local assembled, diagnostics = assembler:assemble(root)
     self._assembled = true

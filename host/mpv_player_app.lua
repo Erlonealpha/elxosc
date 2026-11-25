@@ -4,34 +4,51 @@
 ---@using elxosc.host
 
 local std = require 'elxlibs.std'
-local App = require('host.mpv_app').App
-local PlayerApp = require('player.src.ambients').PlayerApp
-local PlayerScope = require('player.src.context').PlayerScope
-local ThemeData = require('src.material.theme').ThemeData
-local PlayerThemeData = require('player.src.theme').PlayerThemeData
+local mpv_app = require 'host.mpv_app'
+local player_ambients = require 'player.src.ambients'
+local player_context = require 'player.src.context'
+local material_theme = require 'src.material.theme'
+local player_theme = require 'player.src.theme'
 local mpv_actions = require 'host.mpv_actions'
 
+local ipairs = ipairs
+local type = type
+local pcall = pcall
+local error = error
+local App = mpv_app.App
+local PlayerApp = player_ambients.PlayerApp
+local PlayerScope = player_context.PlayerScope
+local ThemeData = material_theme.ThemeData
+local PlayerThemeData = player_theme.PlayerThemeData
+
+---@class mod.host.mpv_player_app
+local M = {}
+
 ---@class host._PlayerHostAppOptions
----@field z number?
----@field delay number?
----@field player_store player.PlayerStore?
----@field player_context MpPlayerContext?
----@field theme material.ThemeData?
----@field player_theme player.PlayerThemeData?
----@field actions player.HostActions?
+---@field z                  number?
+---@field delay              number?
+---@field player_store       player.PlayerStore?
+---@field player_context     MpPlayerContext?
+---@field theme              material.ThemeData?
+---@field player_theme       player.PlayerThemeData?
+---@field actions            player.HostActions?
 ---@field default_text_style TextStyle?
 
----@class host.PlayerHostApp : host.App
----@field player_store player.PlayerStore?
----@field player_context MpPlayerContext?
----@field theme material.ThemeData
----@field player_theme player.PlayerThemeData
----@field actions player.HostActions
----@field private _activity_cache _TreeQueryCache?
+---@class host.PlayerHostApp: host.App
+---@field player_store    player.PlayerStore?
+---@field player_context  MpPlayerContext?
+---@field theme           material.ThemeData
+---@field player_theme    player.PlayerThemeData
+---@field actions         player.HostActions
+---@field _activity_cache _TreeQueryCache?
 ---@overload fun(root_widget: Widget, options?: _PlayerHostAppOptions): self
 local PlayerHostApp = std.class.new('PlayerHostApp', App)
 
 -- Input activity is a player policy, kept outside the generic frame owner.
+---@param app      PlayerHostApp
+---@param x        number?
+---@param y        number?
+---@param viewport Rect?
 local function notify_activity(app, x, y, viewport)
     local root = app.binding and app.binding.root_element
     local cache = app._activity_cache
@@ -64,6 +81,8 @@ local function notify_activity(app, x, y, viewport)
     end
 end
 
+---@param root_widget Widget
+---@param options     _PlayerHostAppOptions?
 function PlayerHostApp:__init(root_widget, options)
     options = options or {}
     local default_text_style = options.default_text_style
@@ -72,6 +91,7 @@ function PlayerHostApp:__init(root_widget, options)
     self.theme = options.theme or ThemeData()
     self.player_theme = options.player_theme or PlayerThemeData()
     local context = self.player_context
+
     local disposed = false
     local function dispose()
         if disposed then
@@ -83,7 +103,8 @@ function PlayerHostApp:__init(root_widget, options)
             context:dispose()
         end
     end
-    local ok, err = pcall(function()
+
+    local ok, err = pcall(function ()
         self.actions = options.actions or mpv_actions.default({ player_context = context })
         if context then
             context:observe_default_properties({ batch = true })
@@ -96,16 +117,16 @@ function PlayerHostApp:__init(root_widget, options)
             delay = options.delay,
             on_dispose = dispose,
             on_activity = notify_activity,
-            root_wrapper = function(root, display)
+            root_wrapper = function (root, display)
                 return PlayerApp({
                     theme = self.theme,
                     player_theme = self.player_theme,
                     display = display,
                     default_text_style = default_text_style,
                     actions = self.actions,
-                    child = self.player_store and PlayerScope({ store = self.player_store, child = root }) or root,
+                    child = self.player_store and PlayerScope({ store = self.player_store, child = root }) or root
                 })
-            end,
+            end
         })
     end)
     if not ok then
@@ -114,10 +135,7 @@ function PlayerHostApp:__init(root_widget, options)
     end
 end
 
----@class mod.host.mpv_player_app
-local M = { PlayerHostApp = PlayerHostApp }
-
----@param build fun(): Widget
+---@param build   fun(): Widget
 ---@param options _PlayerHostAppOptions?
 ---@return PlayerHostApp
 function M.start(build, options)
@@ -136,5 +154,7 @@ function M.start(build, options)
     end
     return app
 end
+
+M.PlayerHostApp = PlayerHostApp
 
 return M

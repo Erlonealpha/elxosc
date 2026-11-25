@@ -9,13 +9,18 @@
 local mp = require 'mp'
 local std = require 'elxlibs.std'
 
----@class mod.host.ass_measure
-local M = {}
+local type = type
+local pcall = pcall
+local tostring = tostring
+local huge = math.huge
 local floor = math.floor
 
+---@class mod.host.ass_measure
+local M = {}
+
 ---@alias host.AssMeasureErrorKind
----| 'unavailable'
----| 'error'
+--- | 'unavailable'
+--- | 'error'
 
 ---@class host._AssMeasureOptions
 ---@field res_x number fixed ASS coordinate resolution, floored once
@@ -30,33 +35,33 @@ local floor = math.floor
 ---@alias host.AssMeasureRawBounds host.AssMeasureBounds | table<never, never>
 
 ---@class host.AssMeasureCommand
----@field _name string
----@field id integer
----@field format string
----@field data string
----@field res_x integer
----@field res_y integer
----@field hidden boolean
+---@field _name          string
+---@field id             integer
+---@field format         string
+---@field data           string
+---@field res_x          integer
+---@field res_y          integer
+---@field hidden         boolean
 ---@field compute_bounds boolean
 
 ---@param value number
----@param name string
+---@param name  string
 ---@return integer
 local function resolution(value, name)
-    if type(value) ~= 'number' or value ~= value or value == math.huge or value < 1 then
+    if type(value) ~= 'number' or value ~= value or value == huge or value < 1 then
         std.raise(std.ValueError('AssMeasure.' .. name .. ' must be finite and at least 1'))
     end
     return floor(value)
 end
 
----@class host.AssMeasure : std.object
----@field res_x integer
----@field res_y integer
----@field private _command AssMeasureCommand?
+---@class host.AssMeasure: std.object
+---@field res_x                   integer
+---@field res_y                   integer
+---@field private _command        AssMeasureCommand?
 ---@field private _command_native fun(command: table): table?, string?
----@field private _closed boolean
----@field private _error string?
----@field private _error_kind AssMeasureErrorKind?
+---@field private _closed         boolean
+---@field private _error          string?
+---@field private _error_kind     AssMeasureErrorKind?
 ---@overload fun(options: _AssMeasureOptions): self
 local AssMeasure = std.class.new('AssMeasure')
 
@@ -83,8 +88,14 @@ function AssMeasure:__init(options)
     -- Use mpv's allocator, then reuse a command table instead of update's
     -- per-call field copy and resolution rounding. No fixed or borrowed ID.
     self._command = {
-        _name = 'osd-overlay', id = overlay.id, format = 'ass-events', data = '',
-        res_x = self.res_x, res_y = self.res_y, hidden = true, compute_bounds = true,
+        _name = 'osd-overlay',
+        id = overlay.id,
+        format = 'ass-events',
+        data = '',
+        res_x = self.res_x,
+        res_y = self.res_y,
+        hidden = true,
+        compute_bounds = true
     }
 end
 
@@ -130,7 +141,10 @@ function AssMeasure:dispose()
     end
     command.data = ''
     local ok, raw, err = pcall(self._command_native, {
-        _name = 'osd-overlay', id = command.id, format = 'none', data = '',
+        _name = 'osd-overlay',
+        id = command.id,
+        format = 'none',
+        data = ''
     })
     if not ok or err ~= nil then
         return false, tostring(ok and err or raw)

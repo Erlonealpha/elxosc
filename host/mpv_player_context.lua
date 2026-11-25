@@ -12,6 +12,15 @@ local mp = require 'mp'
 local std = require 'elxlibs.std'
 local player_context = require 'player.src.context'
 
+local tonumber = tonumber
+local math = math
+local tostring = tostring
+local type = type
+local pcall = pcall
+local next = next
+local string = string
+local ipairs = ipairs
+local pairs = pairs
 local raise = std.raise
 local PlayerSnapshot = player_context.PlayerSnapshot
 local PlayerStore = player_context.PlayerStore
@@ -20,38 +29,25 @@ local PlayerStore = player_context.PlayerStore
 local M = {}
 
 local DEFAULT_PLAYER_PROPERTIES = {
-    { name = 'pause', field = 'pause' },
-    { name = 'eof-reached', field = 'eof_reached' },
-    { name = 'seeking', field = 'seeking' },
-    { name = 'paused-for-cache', field = 'buffering' },
-    { name = 'media-title', field = 'media_title' },
-    { name = 'filename', field = 'filename' },
-    { name = 'path', field = 'path' },
-    { name = 'metadata', field = 'metadata' },
-    { name = 'file-size', field = 'file_size' },
-    { name = 'time-pos', field = 'time_pos' },
-    { name = 'duration', field = 'duration' },
-    { name = 'percent-pos', field = 'percent_pos' },
+    { name = 'pause', field = 'pause' }, { name = 'eof-reached', field = 'eof_reached' },
+    { name = 'seeking', field = 'seeking' }, { name = 'paused-for-cache', field = 'buffering' },
+    { name = 'media-title', field = 'media_title' }, { name = 'filename', field = 'filename' },
+    { name = 'path', field = 'path' }, { name = 'metadata', field = 'metadata' },
+    { name = 'file-size', field = 'file_size' }, { name = 'time-pos', field = 'time_pos' },
+    { name = 'duration', field = 'duration' }, { name = 'percent-pos', field = 'percent_pos' },
     { name = 'playtime-remaining', field = 'playtime_remaining' },
     { name = 'demuxer-cache-duration', field = 'buffered_duration' },
-    { name = 'demuxer-cache-state', field = 'cache_state' },
-    { name = 'playlist-pos', field = 'playlist_pos' },
-    { name = 'playlist-count', field = 'playlist_count' },
-    { name = 'chapter', field = 'chapter' },
-    { name = 'chapter-list', field = 'chapter_list' },
-    { name = 'track-list', field = 'track_list' },
-    { name = 'fullscreen', field = 'fullscreen' },
-    { name = 'border', field = 'border' },
-    { name = 'title-bar', field = 'title_bar' },
-    { name = 'window-maximized', field = 'window_maximized' },
-    { name = 'ontop', field = 'ontop' },
-    { name = 'idle-active', field = 'idle_active' },
-    { name = 'mute', field = 'mute' },
-    { name = 'volume', field = 'volume' },
-    { name = 'volume-max', field = 'volume_max' },
-    { name = 'loop-file', field = 'loop_file' },
+    { name = 'demuxer-cache-state', field = 'cache_state' }, { name = 'playlist-pos', field = 'playlist_pos' },
+    { name = 'playlist-count', field = 'playlist_count' }, { name = 'chapter', field = 'chapter' },
+    { name = 'chapter-list', field = 'chapter_list' }, { name = 'track-list', field = 'track_list' },
+    { name = 'fullscreen', field = 'fullscreen' }, { name = 'border', field = 'border' },
+    { name = 'title-bar', field = 'title_bar' }, { name = 'window-maximized', field = 'window_maximized' },
+    { name = 'ontop', field = 'ontop' }, { name = 'idle-active', field = 'idle_active' },
+    { name = 'mute', field = 'mute' }, { name = 'volume', field = 'volume' },
+    { name = 'volume-max', field = 'volume_max' }, { name = 'loop-file', field = 'loop_file' }
 }
 
+---@class host.PropertyBooleanFields
 local BOOLEAN_FIELDS = {
     pause = true,
     eof_reached = true,
@@ -64,16 +60,19 @@ local BOOLEAN_FIELDS = {
     ontop = true,
     idle_active = true,
     mute = true,
-    loop_file = true,
+    loop_file = true
 }
 
+---@class host.PropertyTableFields
 local TABLE_FIELDS = {
     cache_state = true,
     metadata = true,
     chapter_list = true,
-    track_list = true,
+    track_list = true
 }
 
+---@param value string | any?
+---@return number?
 local function normalize_number(value)
     if value == nil then
         return nil
@@ -85,6 +84,8 @@ local function normalize_number(value)
     return value
 end
 
+---@param value any
+---@return string?
 local function normalize_text(value)
     if value == nil then
         return nil
@@ -93,6 +94,8 @@ local function normalize_text(value)
     return value ~= '' and value or nil
 end
 
+---@param value boolean | 'yes' | 'no' | 'true' | 'false' | any
+---@return boolean?
 local function normalize_boolean(value)
     if value == nil then
         return nil
@@ -109,6 +112,12 @@ local function normalize_boolean(value)
     return nil
 end
 
+---@param field string
+---@param value any
+---@return boolean | string | table | number?
+---@overload fun(field: string, value: nil): nil
+---@overload fun(field: keyof PropertyBooleanFields, value: boolean): boolean
+---@overload fun(field: keyof PropertyTableFields, value: table): table
 local function normalize_property(field, value)
     if BOOLEAN_FIELDS[field] then
         return normalize_boolean(value)
@@ -122,14 +131,15 @@ local function normalize_property(field, value)
     return normalize_number(value)
 end
 
----@param payload any
+---@param payload table | string | number?
+---@param height  number | string?
 ---@return table?
+---@overload fun(payload: table, height: any): table
 local function parse_thumbfast_info(payload, height)
     if type(payload) == 'table' then
         return payload
     end
-    if type(payload) == 'string' and mp.utils
-        and type(mp.utils.parse_json) == 'function' then
+    if type(payload) == 'string' and mp.utils and type(mp.utils.parse_json) == 'function' then
         local ok, parsed = pcall(mp.utils.parse_json, payload)
         if ok and type(parsed) == 'table' then
             return parsed
@@ -143,14 +153,14 @@ local function parse_thumbfast_info(payload, height)
     return nil
 end
 
----@param payload any
+---@param payload table | string | any
 ---@return table?
+---@overload fun(payload: table): table
 local function parse_json_table(payload)
     if type(payload) == 'table' then
         return payload
     end
-    if type(payload) == 'string' and mp.utils
-        and type(mp.utils.parse_json) == 'function' then
+    if type(payload) == 'string' and mp.utils and type(mp.utils.parse_json) == 'function' then
         local ok, parsed = pcall(mp.utils.parse_json, payload)
         if ok and type(parsed) == 'table' then
             return parsed
@@ -159,15 +169,18 @@ local function parse_json_table(payload)
     return nil
 end
 
----@class host.MpPropertySubscription : std.object
----@field _active boolean
----@field _callback fun(name: string, value: any)?
----@field _owner MpPlayerContext?
----@field name string
+---@class host.MpPropertySubscription: std.object
+---@field _active      boolean
+---@field _callback    fun(name: string, value: any)?
+---@field _owner       MpPlayerContext?
+---@field name         string
 ---@field _batch_group table?
 ---@overload fun(owner: MpPlayerContext, name: string, callback: fun(name: string, value: any)): self
 local MpPropertySubscription = std.class.new('MpPropertySubscription')
 
+---@param owner    MpPlayerContext
+---@param name     string
+---@param callback fun(name: string, value: any)
 function MpPropertySubscription:__init(owner, name, callback)
     self._owner = owner
     self.name = name
@@ -195,14 +208,16 @@ function MpPropertySubscription:dispose()
     return true
 end
 
----@class host.MpCapabilitySubscription : std.object
+---@class host.MpCapabilitySubscription: std.object
 ---@field _active boolean
----@field _owner MpPlayerContext?
----@field name string
+---@field _owner  MpPlayerContext?
+---@field name    string
 ---@field _handle any
 ---@overload fun(owner: MpPlayerContext, name: string): self
 local MpCapabilitySubscription = std.class.new('MpCapabilitySubscription')
 
+---@param owner MpPlayerContext
+---@param name  string
 function MpCapabilitySubscription:__init(owner, name)
     self._active = true
     self._owner = owner
@@ -251,18 +266,18 @@ end
 ---@class host.MpPlayerContextOptions
 ---@field on_error fun(name: string, error: any)?
 
----@class host.MpPlayerContext : std.object
----@field store player.PlayerStore
----@field on_error fun(name: string, error: any)?
----@field _properties table<string, MpPropertySubscription>
----@field _batches table<table, true>
----@field _capabilities table<string, MpCapabilitySubscription>
+---@class host.MpPlayerContext: std.object
+---@field store          player.PlayerStore
+---@field on_error       fun(name: string, error: any)?
+---@field _properties    table<string, MpPropertySubscription>
+---@field _batches       table<table, true>
+---@field _capabilities  table<string, MpCapabilitySubscription>
 ---@field _async_handles table<function, true>
----@field _disposed boolean
+---@field _disposed      boolean
 ---@overload fun(store: player.PlayerStore, options: MpPlayerContextOptions?): self
 local MpPlayerContext = std.class.new('MpPlayerContext')
 
----@param name string
+---@param name         string
 ---@param subscription MpPropertySubscription
 function MpPlayerContext:_remove_property(name, subscription)
     if self._properties[name] == subscription then
@@ -281,7 +296,7 @@ function MpPlayerContext:_remove_property(name, subscription)
     end
 end
 
----@param name string
+---@param name         string
 ---@param subscription MpCapabilitySubscription
 function MpPlayerContext:_remove_capability(name, subscription)
     if self._capabilities[name] == subscription then
@@ -289,6 +304,8 @@ function MpPlayerContext:_remove_capability(name, subscription)
     end
 end
 
+---@param store   player.PlayerStore
+---@param options MpPlayerContextOptions?
 function MpPlayerContext:__init(store, options)
     if not std.isinstance(store, PlayerStore) then
         raise(std.TypeError('MpPlayerContext expects a PlayerStore'))
@@ -310,14 +327,14 @@ end
 ---@return fun()
 function MpPlayerContext:register_async(cancel)
     if self._disposed then
-        return function() end
+        return function () end
     end
     if type(cancel) ~= 'function' then
         raise(std.TypeError('MpPlayerContext.register_async expects a cancel function'))
     end
     self._async_handles[cancel] = true
     local active = true
-    return function()
+    return function ()
         if not active then
             return false
         end
@@ -327,7 +344,7 @@ function MpPlayerContext:register_async(cancel)
     end
 end
 
----@param snapshot player.PlayerSnapshot|player.PlayerSnapshotFields
+---@param snapshot player.PlayerSnapshot | player.PlayerSnapshotFields
 ---@return player.PlayerSnapshot
 function MpPlayerContext:publish(snapshot)
     if self._disposed then
@@ -336,8 +353,8 @@ function MpPlayerContext:publish(snapshot)
     return self.store:replace(snapshot)
 end
 
----@param name string
----@param transform? fun(value: any, current: player.PlayerSnapshot): player.PlayerSnapshot|player.PlayerSnapshotFields?
+---@param name       string
+---@param transform? fun(value: any, current: player.PlayerSnapshot): player.PlayerSnapshot | player.PlayerSnapshotFields?
 ---@return MpPropertySubscription
 function MpPlayerContext:observe(name, transform)
     if self._disposed then
@@ -347,8 +364,7 @@ function MpPlayerContext:observe(name, transform)
         raise(std.ValueError('MpPlayerContext property name must be a non-empty string'))
     end
     if self._properties[name] then
-        raise(std.RuntimeError(string.format(
-            "MpPlayerContext property '%s' is already observed", name)))
+        raise(std.RuntimeError(string.format("MpPlayerContext property '%s' is already observed", name)))
     end
     if transform ~= nil and type(transform) ~= 'function' then
         raise(std.TypeError('MpPlayerContext transform must be a function'))
@@ -356,15 +372,16 @@ function MpPlayerContext:observe(name, transform)
 
     local callback
     local subscription
-    callback = function(property_name, value)
+    callback = function (property_name, value)
         if self._disposed or (subscription and not subscription:is_active()) then
             return
         end
-        local make_snapshot = transform or function(next_value, current)
-            return current:copy({ [property_name] = next_value })
-        end
+        local make_snapshot = transform
+            or function (next_value, current)
+                return current:copy({ [property_name] = next_value })
+            end
         local ok, transformed = pcall(make_snapshot, value, self.store:get())
-        ---@type player.PlayerSnapshot|player.PlayerSnapshotFields?
+        ---@type player.PlayerSnapshot | player.PlayerSnapshotFields?
         local next_snapshot = transformed
         if not ok then
             if self.on_error then
@@ -375,7 +392,7 @@ function MpPlayerContext:observe(name, transform)
         if next_snapshot == nil then
             return
         end
-        local replaced, replace_error = pcall(function()
+        local replaced, replace_error = pcall(function ()
             self.store:replace(next_snapshot)
         end)
         if not replaced and self.on_error then
@@ -390,8 +407,8 @@ function MpPlayerContext:observe(name, transform)
 end
 
 ---@class host.MpBatchPropertyDefinition
----@field name string mpv property name
----@field field string player.PlayerSnapshot field name
+---@field name      string                mpv property name
+---@field field     string                player.PlayerSnapshot field name
 ---@field normalize fun(value: any): any?
 
 ---@param definitions MpBatchPropertyDefinition[]
@@ -410,18 +427,16 @@ function MpPlayerContext:observe_batch(definitions)
         pending_names = {},
         pending_values = {},
         timer = nil,
-        disposed = false,
+        disposed = false
     }
     local seen = {}
     for _, definition in ipairs(definitions) do
-        if type(definition) ~= 'table'
-            or type(definition.name) ~= 'string' or definition.name == ''
+        if type(definition) ~= 'table' or type(definition.name) ~= 'string' or definition.name == ''
             or type(definition.field) ~= 'string' or definition.field == '' then
             raise(std.TypeError('MpPlayerContext batch definitions need name and field'))
         end
         if seen[definition.name] or self._properties[definition.name] then
-            raise(std.RuntimeError(string.format(
-                "MpPlayerContext property '%s' is already observed", definition.name)))
+            raise(std.RuntimeError(string.format("MpPlayerContext property '%s' is already observed", definition.name)))
         end
         if definition.normalize ~= nil and type(definition.normalize) ~= 'function' then
             raise(std.TypeError('MpPlayerContext batch normalize must be a function'))
@@ -446,9 +461,10 @@ function MpPlayerContext:observe_batch(definitions)
         for _, definition in ipairs(group.definitions) do
             if pending_names[definition.name] then
                 ---@type fun(value: any): any?
-                local normalize = definition.normalize or function(value)
-                    return value
-                end
+                local normalize = definition.normalize
+                    or function (value)
+                        return value
+                    end
                 local ok, value = pcall(normalize, pending_values[definition.name])
                 if not ok then
                     error_name = definition.name
@@ -467,7 +483,7 @@ function MpPlayerContext:observe_batch(definitions)
         if next(fields) == nil then
             return
         end
-        local ok, replace_error = pcall(function()
+        local ok, replace_error = pcall(function ()
             self.store:replace(self.store:get():copy(fields))
         end)
         if not ok and self.on_error then
@@ -491,10 +507,9 @@ function MpPlayerContext:observe_batch(definitions)
     for _, definition in ipairs(group.definitions) do
         local property_name = definition.name
         local callback
-        callback = function(_, value)
+        callback = function (_, value)
             local subscription = group.subscriptions[property_name]
-            if group.disposed or self._disposed
-                or not subscription or not subscription:is_active() then
+            if group.disposed or self._disposed or not subscription or not subscription:is_active() then
                 return
             end
             group.pending_names[property_name] = true
@@ -523,28 +538,28 @@ function MpPlayerContext:observe_default_properties(options)
             definitions[#definitions + 1] = {
                 name = definition.name,
                 field = definition.field,
-                normalize = function(value)
+                normalize = function (value)
                     return normalize_property(definition.field, value)
-                end,
+                end
             }
         end
         return self:observe_batch(definitions)
     end
     local subscriptions = {}
     for _, definition in ipairs(DEFAULT_PLAYER_PROPERTIES) do
-        subscriptions[#subscriptions + 1] = self:observe(definition.name,
-            function(value, current)
-                return current:copy({
-                    [definition.field] = normalize_property(definition.field, value),
-                })
-            end)
+        subscriptions[#subscriptions + 1] = self:observe(definition.name, function (value, current)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            return current:copy({
+                [definition.field] = normalize_property(definition.field, value)
+            })
+        end)
     end
     return subscriptions
 end
 
----@param name string
----@param status player.CapabilityStatus
----@param detail string?
+---@param name          string
+---@param status        player.CapabilityStatus
+---@param detail        string?
 ---@param error_message string?
 function MpPlayerContext:set_capability(name, status, detail, error_message)
     if self._disposed then
@@ -553,8 +568,7 @@ function MpPlayerContext:set_capability(name, status, detail, error_message)
     if type(name) ~= 'string' or name == '' then
         raise(std.ValueError('MpPlayerContext capability name must be non-empty'))
     end
-    if status ~= 'available' and status ~= 'unavailable'
-        and status ~= 'loading' and status ~= 'error' then
+    if status ~= 'available' and status ~= 'unavailable' and status ~= 'loading' and status ~= 'error' then
         raise(std.ValueError('MpPlayerContext capability status is invalid'))
     end
     if detail ~= nil and type(detail) ~= 'string' then
@@ -565,19 +579,15 @@ function MpPlayerContext:set_capability(name, status, detail, error_message)
     end
     local current = self.store:get()
     local next_capabilities = current:to_table().capabilities or {}
-    next_capabilities[name] = {
-        status = status,
-        detail = detail,
-        error = error_message,
-    }
+    next_capabilities[name] = { status = status, detail = detail, error = error_message }
     return self.store:replace(current:copy({ capabilities = next_capabilities }))
 end
 
 ---@class host.MpCapabilityAdapter
 ---@field start fun(report: fun(status: player.CapabilityStatus, detail: string?, error: string?)): any
 
----@param name string
----@param adapter MpCapabilityAdapter|fun(report: fun(status: player.CapabilityStatus, detail: string?, error: string?)): any
+---@param name    string
+---@param adapter MpCapabilityAdapter | fun(report: fun(status: player.CapabilityStatus, detail: string?, error: string?)): any
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_capability(name, adapter)
     if self._disposed then
@@ -587,11 +597,9 @@ function MpPlayerContext:observe_capability(name, adapter)
         raise(std.ValueError('MpPlayerContext capability name must be non-empty'))
     end
     if self._capabilities[name] then
-        raise(std.RuntimeError(string.format(
-            "MpPlayerContext capability '%s' is already observed", name)))
+        raise(std.RuntimeError(string.format("MpPlayerContext capability '%s' is already observed", name)))
     end
-    local start = type(adapter) == 'function' and adapter or type(adapter) == 'table'
-        and adapter.start or nil
+    local start = type(adapter) == 'function' and adapter or type(adapter) == 'table' and adapter.start or nil
     if type(start) ~= 'function' then
         raise(std.TypeError('MpPlayerContext capability adapter needs a start function'))
     end
@@ -604,8 +612,7 @@ function MpPlayerContext:observe_capability(name, adapter)
         if self._disposed or not subscription:is_active() then
             return
         end
-        if status ~= 'available' and status ~= 'unavailable'
-            and status ~= 'loading' and status ~= 'error' then
+        if status ~= 'available' and status ~= 'unavailable' and status ~= 'loading' and status ~= 'error' then
             local invalid = 'adapter reported invalid capability status: ' .. tostring(status)
             pcall(self.set_capability, self, name, 'error', 'adapter failed', invalid)
             if self.on_error then
@@ -613,7 +620,7 @@ function MpPlayerContext:observe_capability(name, adapter)
             end
             return
         end
-        local ok, report_error = pcall(function()
+        local ok, report_error = pcall(function ()
             self:set_capability(name, status, detail, error_message)
         end)
         if not ok and self.on_error then
@@ -624,10 +631,8 @@ function MpPlayerContext:observe_capability(name, adapter)
     local ok, handle = pcall(start, report)
     if not ok then
         report('error', 'adapter failed', tostring(handle))
-    elseif handle ~= nil
-        and type(handle) ~= 'function'
-        and not (type(handle) == 'table'
-            and (type(handle.dispose) == 'function' or type(handle.stop) == 'function')) then
+    elseif handle ~= nil and type(handle) ~= 'function'
+        and not (type(handle) == 'table' and (type(handle.dispose) == 'function' or type(handle.stop) == 'function')) then
         report('error', 'adapter returned an invalid handle', 'invalid disposable')
     else
         subscription:set_handle(handle)
@@ -640,7 +645,7 @@ end
 --- message; the timeout turns a missing script into an explicit fallback state.
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_thumbfast()
-    return self:observe_capability('thumbfast', function(report)
+    return self:observe_capability('thumbfast', function (report)
         local timeout
         local function kill_timeout()
             if timeout and type(timeout.kill) == 'function' then
@@ -649,7 +654,7 @@ function MpPlayerContext:observe_thumbfast()
             end
         end
         local callback
-        callback = function(payload, height)
+        callback = function (payload, height)
             local info = parse_thumbfast_info(payload, height)
             if info == nil then
                 kill_timeout()
@@ -673,12 +678,12 @@ function MpPlayerContext:observe_thumbfast()
         end
         mp.register_script_message('thumbfast-info', callback)
         if type(mp.add_timeout) == 'function' then
-            timeout = mp.add_timeout(2, function()
+            timeout = mp.add_timeout(2, function ()
                 timeout = nil
                 report('unavailable', 'thumbfast script not installed')
             end)
         end
-        return function()
+        return function ()
             kill_timeout()
             if type(mp.unregister_script_message) == 'function' then
                 mp.unregister_script_message('thumbfast-info')
@@ -691,7 +696,7 @@ end
 --- The core only receives capability state; it never launches a subprocess.
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_yt_dlp()
-    return self:observe_capability('yt_dlp', function(report)
+    return self:observe_capability('yt_dlp', function (report)
         if type(mp.command_native_async) ~= 'function' then
             report('unavailable', 'async subprocess API unavailable')
             return
@@ -702,20 +707,21 @@ function MpPlayerContext:observe_yt_dlp()
             args = { 'yt-dlp', '--version' },
             playback_only = false,
             capture_stdout = true,
-            capture_stderr = true,
-        }, function(success, result, error_message)
-            if finished then
-                return
-            end
-            finished = true
-            if success and type(result) == 'table' and (result.status == nil or result.status == 0) then
-                local version = type(result.stdout) == 'string' and result.stdout:gsub('%s+$', '') or nil
-                report('available', version ~= '' and version or 'yt-dlp available')
-            else
-                report('error', 'yt-dlp probe failed', tostring(error_message or 'not installed'))
-            end
-        end)
-        return function()
+            capture_stderr = true
+        },
+            function (success, result, error_message)
+                if finished then
+                    return
+                end
+                finished = true
+                if success and type(result) == 'table' and (result.status == nil or result.status == 0) then
+                    local version = type(result.stdout) == 'string' and result.stdout:gsub('%s+$', '') or nil
+                    report('available', version ~= '' and version or 'yt-dlp available')
+                else
+                    report('error', 'yt-dlp probe failed', tostring(error_message or 'not installed'))
+                end
+            end)
+        return function ()
             finished = true
             if request ~= nil and type(mp.abort_async_command) == 'function' then
                 mp.abort_async_command(request)
@@ -728,7 +734,7 @@ end
 --- capability data and never rewrite the user's chapter list.
 ---@return MpCapabilitySubscription
 function MpPlayerContext:observe_sponsorblock()
-    return self:observe_capability('sponsorblock', function(report)
+    return self:observe_capability('sponsorblock', function (report)
         local finished = false
         local timeout
         local function cleanup()
@@ -740,7 +746,7 @@ function MpPlayerContext:observe_sponsorblock()
                 mp.unregister_script_message('sponsorblock-done')
             end
         end
-        local callback = function(payload)
+        local callback = function (payload)
             if finished then
                 return
             end
@@ -765,7 +771,7 @@ function MpPlayerContext:observe_sponsorblock()
         end
         mp.register_script_message('sponsorblock-done', callback)
         if type(mp.add_timeout) == 'function' then
-            timeout = mp.add_timeout(0.5, function()
+            timeout = mp.add_timeout(0.5, function ()
                 if not finished then
                     finished = true
                     cleanup()
@@ -773,7 +779,7 @@ function MpPlayerContext:observe_sponsorblock()
                 end
             end)
         end
-        return function()
+        return function ()
             finished = true
             cleanup()
         end

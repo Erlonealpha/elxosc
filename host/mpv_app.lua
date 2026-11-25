@@ -35,6 +35,13 @@ local mpv_input = require 'host.mpv_input'
 local mpv_primitives = require 'host.mpv_primitives'
 local ass_measure_mod = require 'host.ass_measure'
 
+local pcall = pcall
+local ipairs = ipairs
+local type = type
+local tostring = tostring
+local math = math
+local assert = assert
+local error = error
 local Constraints = constraints_mod.Constraints
 local Rect = geometry.Rect
 local Scheduler = scheduler_mod.Scheduler
@@ -55,49 +62,51 @@ local Navigator = require('src.widgets.navigation').Navigator
 local M = {}
 
 ---@class host.Display
----@field width number
----@field height number
+---@field width       number
+---@field height      number
 ---@field initialized boolean
 
 ---@class host._AppOptions
----@field z number?
----@field delay number?
+---@field z                  number?
+---@field delay              number?
 ---@field default_text_style TextStyle?
----@field root_wrapper (fun(root: Widget, display: DisplaySnapshot): Widget)?
----@field on_activity (fun(app: App, x: number?, y: number?, viewport: Rect?))?
----@field on_dispose fun()?
+---@field root_wrapper       (fun(root: Widget, display: DisplaySnapshot): Widget)?
+---@field on_activity        (fun(app: App, x: number?, y: number?, viewport: Rect?))?
+---@field on_dispose         fun()?
 
---== app ===================================================================
+-- == app ===================================================================
 
 --- Wires a render tree to the scheduler, the ASS canvas, the overlay and input.
----@class host.App : std.object
----@field display Display
----@field clock MpFrameClock
----@field scheduler Scheduler
----@field owner RenderOwner
----@field widgets_binding WidgetsBinding
----@field binding WidgetTree
----@field root_widget Widget
----@field display_snapshot DisplaySnapshot
----@field canvas AssCanvas
----@field presenter AssPresenter
----@field input MpInput
----@field _shutdown boolean
----@field _property_callbacks fun(name: string, value: any)[]
----@field _render_callback fun(dt: number, time: number)
----@field _shutdown_callback fun()
----@field _root_wrapper (fun(root: Widget, display: DisplaySnapshot): Widget)?
----@field _activity_callback (fun(app: App, x: number?, y: number?, viewport: Rect?))?
----@field _dispose_callback fun()?
----@field text_layout AssTextLayout
----@field text_layout_generation integer
----@field private _text_sessions AssMeasure[]
----@field private _text_font string?
+---@class host.App: std.object
+---@field display                 Display
+---@field clock                   MpFrameClock
+---@field scheduler               Scheduler
+---@field owner                   RenderOwner
+---@field widgets_binding         WidgetsBinding
+---@field binding                 WidgetTree
+---@field root_widget             Widget
+---@field display_snapshot        DisplaySnapshot
+---@field canvas                  AssCanvas
+---@field presenter               AssPresenter
+---@field input                   MpInput
+---@field _shutdown               boolean
+---@field _property_callbacks     fun(name: string, value: any)[]
+---@field _render_callback        fun(dt: number, time: number)
+---@field _shutdown_callback      fun()
+---@field _root_wrapper           (fun(root: Widget, display: DisplaySnapshot): Widget)?
+---@field _activity_callback      (fun(app: App, x: number?, y: number?, viewport: Rect?))?
+---@field _dispose_callback       fun()?
+---@field text_layout             AssTextLayout
+---@field text_layout_generation  integer
+---@field private _text_sessions  AssMeasure[]
+---@field private _text_font      string?
 ---@field private _keyboard_cache _TreeQueryCache?
----@field default_text_style TextStyle?
+---@field default_text_style      TextStyle?
 ---@overload fun(root_widget: Widget, options?: _AppOptions): self
 local App = std.class.new('App')
 
+---@param root_widget Widget
+---@param options     _AppOptions?
 function App:__init(root_widget, options)
     self._shutdown = false
     self._property_callbacks = {}
@@ -111,6 +120,8 @@ function App:__init(root_widget, options)
     end
 end
 
+---@param root_widget Widget
+---@param options     _AppOptions?
 function App:_initialize(root_widget, options)
     options = options or {}
     self.root_widget = root_widget
@@ -130,10 +141,10 @@ function App:_initialize(root_widget, options)
     self.owner = self.widgets_binding:create_pipeline_owner()
     self.presenter = AssPresenter(options.z)
 
-    self.owner.on_dirty = function()
+    self.owner.on_dirty = function ()
         self.scheduler:schedule_frame()
     end
-    self._render_callback = function()
+    self._render_callback = function ()
         self:render()
     end
     self.scheduler:add_persistent(self._render_callback)
@@ -145,9 +156,8 @@ function App:_initialize(root_widget, options)
     end
     self.text_layout = AssTextLayout()
 
-    self.binding = self.widgets_binding:attach(
-        self:_wrap_root(self.root_widget), self.owner, self.scheduler)
-    self.binding.on_dirty = function()
+    self.binding = self.widgets_binding:attach(self:_wrap_root(self.root_widget), self.owner, self.scheduler)
+    self.binding.on_dirty = function ()
         self.scheduler:schedule_frame()
     end
 
@@ -156,27 +166,27 @@ function App:_initialize(root_widget, options)
     self:_update_delay()
     self.input = MpInput({
         owner = self.owner,
-        get_viewport = function()
+        get_viewport = function ()
             return self:_input_viewport()
         end,
-        notify_activity = function(x, y, viewport)
+        notify_activity = function (x, y, viewport)
             self:notify_activity(x, y, viewport)
         end,
-        request_frame = function()
+        request_frame = function ()
             self:request_frame()
         end,
-        get_can_pop = function()
+        get_can_pop = function ()
             return self:_can_handle_key()
         end,
-        handle_key = function(event)
+        handle_key = function (event)
             return self:_handle_key(event)
-        end,
+        end
     })
 end
 
----@class host._KeyboardTarget : State
+---@class host._KeyboardTarget: State
 ---@field can_handle_key? fun(self: self, event: KeyEvent?): boolean
----@field handle_key? fun(self: self, event: KeyEvent): boolean
+---@field handle_key?     fun(self: self, event: KeyEvent): boolean
 
 --- Cache traversal order, while querying live State capabilities every time.
 ---@return _KeyboardTarget[]
@@ -223,8 +233,7 @@ function App:_keyboard_targets()
         end
         return nil
     end
-    cache.value = { root = root, elements = elements,
-        navigator = navigation and root and first_navigator(root) or nil }
+    cache.value = { root = root, elements = elements, navigator = navigation and root and first_navigator(root) or nil }
     return elements
 end
 
@@ -239,8 +248,7 @@ end
 function App:_handle_key(event)
     for _, state in ipairs(self:_keyboard_targets()) do
         if state and type(state.can_handle_key) == 'function'
-            and state:can_handle_key(event)
-            and type(state.handle_key) == 'function' then
+            and state:can_handle_key(event) and type(state.handle_key) == 'function' then
             if state:handle_key(event) == true then
                 return true
             end
@@ -280,13 +288,13 @@ function App:_wrap_root(root_widget)
         content = WidgetsApp({
             display = self.display_snapshot,
             default_text_style = self.default_text_style,
-            child = root_widget,
+            child = root_widget
         })
     end
     return TextLayoutScope({
         layout = self.text_layout,
         generation = self.text_layout_generation,
-        child = content,
+        child = content
     })
 end
 
@@ -323,15 +331,17 @@ function App:refresh_text_layout()
             -- A failed removal must not accumulate one hidden ID per resize.
             options.res_x = math.floor(width)
             options.res_y = math.floor(height)
-            options.measure_ass = function()
+            options.measure_ass = function ()
                 return nil, cleanup_error, 'error'
             end
         else
             local session = AssMeasure({ res_x = width, res_y = height })
             self._text_sessions[#self._text_sessions + 1] = session
-            options.measure_ass = function(data)
+            options.measure_ass = function (data)
                 local raw, err, kind = session:measure(data)
-                return raw --[[@as AssTextRawBounds?]], err, kind
+                return
+                    raw --[[@as AssTextRawBounds?]]
+                    , err, kind
             end
             options.res_x = session.res_x
             options.res_y = session.res_y
@@ -356,6 +366,9 @@ end
 -- Notify application-level visibility policies without installing a full-size
 -- pointer interceptor in the render tree.  A passive Main/background layer must
 -- not swallow clicks destined for an Extension or WindowLayer control.
+---@param x        number?
+---@param y        number?
+---@param viewport Rect?
 function App:notify_activity(x, y, viewport)
     if self._shutdown or not self.binding or not self.binding.root_element then
         return
@@ -380,16 +393,16 @@ function App:set_root_widget(root_widget)
 end
 
 function App:_observe()
-    local dimensions_callback = function()
+    local dimensions_callback = function ()
         self:_update_display()
     end
-    local display_fps_callback = function()
+    local display_fps_callback = function ()
         self:_update_delay()
     end
-    local estimated_fps_callback = function()
+    local estimated_fps_callback = function ()
         self:_update_delay()
     end
-    local font_callback = function()
+    local font_callback = function ()
         local family = mp.get_property_native('osd-font')
         if family ~= self._text_font then
             self:refresh_text_layout()
@@ -401,7 +414,7 @@ function App:_observe()
         self._property_callbacks[#self._property_callbacks + 1] = callback
         mp.observe_property(assert(names[index]), 'native', callback)
     end
-    self._shutdown_callback = function()
+    self._shutdown_callback = function ()
         self:shutdown()
     end
     mp.register_event('shutdown', self._shutdown_callback)
@@ -426,18 +439,18 @@ function App:shutdown()
         end
     end
     for _, callback in ipairs(self._property_callbacks) do
-        release(function()
+        release(function ()
             mp.unobserve_property(callback)
         end)
     end
     self._property_callbacks = {}
     if self._shutdown_callback and mp.unregister_event then
-        release(function()
+        release(function ()
             mp.unregister_event(self._shutdown_callback)
         end)
     end
     if self.input then
-        release(function()
+        release(function ()
             self.input:shutdown()
         end)
     end
@@ -445,23 +458,23 @@ function App:shutdown()
         self.owner.on_dirty = nil
     end
     if self.scheduler then
-        release(function()
+        release(function ()
             self.scheduler:remove_persistent(self._render_callback)
             self.scheduler:dispose()
         end)
     end
     if self.binding then
-        release(function()
+        release(function ()
             self.binding:dispose()
         end)
     end
     if self.owner then
-        release(function()
+        release(function ()
             self.owner:dispose()
         end)
     end
     if self.clock then
-        release(function()
+        release(function ()
             self.clock:dispose()
         end)
     end
@@ -470,11 +483,11 @@ function App:shutdown()
         self._dispose_callback = nil
     end
     if self.presenter then
-        release(function()
+        release(function ()
             self.presenter:remove()
         end)
     end
-    release(function()
+    release(function ()
         local err = self:_dispose_text_sessions()
         self.text_layout = AssTextLayout()
         if err then
@@ -502,13 +515,12 @@ function App:_update_display()
     end
     self.display.width, self.display.height = width, height
     self.display.initialized = true
-    if self.display_snapshot.width ~= width
-        or self.display_snapshot.height ~= height
+    if self.display_snapshot.width ~= width or self.display_snapshot.height ~= height
         or not self.display_snapshot.initialized then
         self.display_snapshot = DisplaySnapshot({
             width = width,
             height = height,
-            initialized = true,
+            initialized = true
         })
         self:refresh_text_layout()
     end
@@ -525,8 +537,7 @@ function App:_update_delay()
     if self._shutdown then
         return
     end
-    local fps = mp.get_property_number('estimated-display-fps')
-        or mp.get_property_number('display-fps')
+    local fps = mp.get_property_number('estimated-display-fps') or mp.get_property_number('display-fps')
     if fps and fps > 0 then
         self.clock:set_delay(1 / fps)
     end
@@ -548,7 +559,7 @@ function App:render()
 end
 
 --- Build a root widget and start rendering it.
----@param build fun(): Widget
+---@param build   fun(): Widget
 ---@param options _AppOptions?
 ---@return App
 function M.start(build, options)

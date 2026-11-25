@@ -8,7 +8,11 @@
 
 local exports = require('export').new()
 
+local ipairs = ipairs
 local export = exports.export
+
+---@class mod.host.package_catalog
+local M = {}
 
 for _, catalog in ipairs({
     require 'package_catalog',
@@ -19,9 +23,6 @@ for _, catalog in ipairs({
         export(package.name, package.exports, true)
     end
 end
-
----@class mod.host.package_catalog
-local M = {}
 
 ---@return export.Package<export.Exports>[]
 function M.collect()
