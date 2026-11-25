@@ -25,31 +25,34 @@ local RenderObject = render_object.RenderObject
 local M = {}
 
 ---@class GestureHandlers
----@field expand number? extra hit area in px on every side
----@field on_enter fun(self: RenderGesture)?
----@field on_leave fun(self: RenderGesture)?
----@field on_move fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
----@field on_hover_move fun(self: RenderGesture, point: Offset, event: PointerEvent)? observes hit-path movement during capture too
----@field on_down fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
----@field on_up fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
----@field on_tap fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
----@field on_click fun(self: RenderGesture, point: Offset, event: PointerEvent?)? alias for on_tap
----@field on_button_down (fun(self: RenderGesture, button: PointerButton?, point: Offset?, event: PointerEvent?): boolean?)?
----@field on_button_up (fun(self: RenderGesture, button: PointerButton?, point: Offset?, event: PointerEvent?): boolean?)?
----@field on_state_change fun(self: RenderGesture)? called after hovered/pressed changes
----@field on_wheel (fun(self: RenderGesture, delta: number, event: PointerEvent?): boolean?)?
----@field initial_hovered boolean? state to restore when a widget rebuilds
----@field initial_pressed boolean? state to restore when a widget rebuilds
+---@field key             any?
+---@field expand          number?                                                                                             extra hit area in px on every side
+---@field on_enter        fun(self: RenderGesture)?
+---@field on_leave        fun(self: RenderGesture)?
+---@field on_move         fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
+---@field on_hover_move   fun(self: RenderGesture, point: Offset, event: PointerEvent)?                                       observes hit-path movement during capture too
+---@field on_down         fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
+---@field on_up           fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
+---@field on_tap          fun(self: RenderGesture, point: Offset, event: PointerEvent?)?
+---@field on_click        fun(self: RenderGesture, point: Offset, event: PointerEvent?)?                                      alias for on_tap
+---@field on_button_down  (fun(self: RenderGesture, button: PointerButton?, point: Offset?, event: PointerEvent?): boolean?)?
+---@field on_button_up    (fun(self: RenderGesture, button: PointerButton?, point: Offset?, event: PointerEvent?): boolean?)?
+---@field on_state_change fun(self: RenderGesture)?                                                                           called after hovered/pressed changes
+---@field on_wheel        (fun(self: RenderGesture, delta: number, event: PointerEvent?): boolean?)?
+---@field initial_hovered boolean?                                                                                            state to restore when a widget rebuilds
+---@field initial_pressed boolean?                                                                                            state to restore when a widget rebuilds
 
----@class RenderGesture : RenderObject
----@field handlers GestureHandlers
----@field hovered boolean
----@field pressed boolean
+---@class RenderGesture: RenderObject
+---@field handlers            GestureHandlers
+---@field hovered             boolean
+---@field pressed             boolean
 ---@field _last_pointer_event PointerEvent?
 ---@field _initial_state_sync boolean
 ---@overload fun(child: RenderObject?, handlers: GestureHandlers?): self
 local RenderGesture = std.class.new('RenderGesture', RenderObject)
 
+---@param child    RenderObject?
+---@param handlers GestureHandlers?
 function RenderGesture:__init(child, handlers)
     std.super(RenderGesture, self, RenderObject).__init(self)
     self.handlers = handlers or {}
@@ -62,6 +65,7 @@ function RenderGesture:__init(child, handlers)
     end
 end
 
+---@param constraints Constraints
 function RenderGesture:__perform_layout(constraints)
     local child = self._children[1]
     if child then
@@ -85,8 +89,7 @@ function RenderGesture:set_handlers(handlers)
     local down, wheel = self:wants_pointer('down'), self:wants_pointer('wheel')
     local expand = self.handlers.expand or 0
     self.handlers = handlers
-    if down ~= self:wants_pointer('down') or wheel ~= self:wants_pointer('wheel')
-        or expand ~= (handlers.expand or 0) then
+    if down ~= self:wants_pointer('down') or wheel ~= self:wants_pointer('wheel') or expand ~= (handlers.expand or 0) then
         self:mark_needs_input()
     end
     if not self:wants_pointer('down') then
@@ -106,6 +109,8 @@ function RenderGesture:_notify_state_change()
     end
 end
 
+---@param point Offset
+---@return boolean
 function RenderGesture:__hit_test_bounds(point)
     local expand = self.handlers.expand or 0
     return point.x >= -expand and point.y >= -expand
@@ -114,7 +119,7 @@ end
 
 ---@param event PointerEvent
 ---@param point Offset?
----@return boolean|DispatchResult|nil
+---@return boolean | DispatchResult | nil
 function RenderGesture:on_pointer_event(event, point)
     self._last_pointer_event = event
     local result = RenderObject.on_pointer_event(self, event, point)
@@ -128,6 +133,8 @@ function RenderGesture:input_region_rect()
     return Rect(-expand, -expand, self.size.width + expand, self.size.height + expand)
 end
 
+---@param point Offset
+---@param event PointerEvent
 function RenderGesture:on_hover_move(point, event)
     local callback = self.handlers.on_hover_move
     if callback then
@@ -135,11 +142,13 @@ function RenderGesture:on_hover_move(point, event)
     end
 end
 
+---@param event PointerEventType
+---@return boolean
 function RenderGesture:wants_pointer(event)
     local h = self.handlers
     if event == 'down' or event == 'up' then
-        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil
-            or h.on_button_down ~= nil or h.on_button_up ~= nil
+        return h.on_down ~= nil or h.on_up ~= nil or h.on_tap ~= nil or h.on_click ~= nil or h.on_button_down ~= nil
+            or h.on_button_up ~= nil
     elseif event == 'wheel' then
         return h.on_wheel ~= nil
     elseif event == 'move' then
@@ -154,6 +163,10 @@ local function is_primary_button(data)
     return data == nil or data == 'left'
 end
 
+---@param event PointerEventType
+---@param point Offset
+---@param data  any              legacy button/wheel payload
+---@return boolean | DispatchResult
 function RenderGesture:on_pointer(event, point, data)
     local h = self.handlers
     if event == 'down' then

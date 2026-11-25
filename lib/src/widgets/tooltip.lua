@@ -22,6 +22,13 @@ local ambient_mod = require 'src.widgets.ambient'
 local text_paint_mod = require 'src.painting.text_paint'
 local anchor_mod = require 'src.foundation.anchor'
 
+local assert = assert
+local error = error
+local math = math
+local pcall = pcall
+local rawequal = rawequal
+local type = type
+
 local Offset = geometry.Offset
 local Rect = geometry.Rect
 local TextStyle = text_style_mod.TextStyle
@@ -38,70 +45,76 @@ local raise = std.raise
 local M = {}
 local default_style = TextStyle({ wrap = false })
 
+---@param value        number?
+---@param name         string
+---@param non_negative boolean?
+---@return number?
 local function coordinate(value, name, non_negative)
-    if value ~= nil and (type(value) ~= 'number' or value ~= value
-        or value == math.huge or value == -math.huge or non_negative and value < 0) then
-        raise(std.ValueError('Tooltip.' .. name .. ' must be finite'
-            .. (non_negative and ' and non-negative' or '')))
+    if value ~= nil
+        and (type(value) ~= 'number' or value ~= value
+            or value == math.huge or value == -math.huge
+            or non_negative and value < 0) then
+        raise(std.ValueError('Tooltip.' .. name .. ' must be finite' .. (non_negative and ' and non-negative' or '')))
     end
     return value
 end
 
 ---@class _TooltipOptions
----@field child Widget?
----@field text string?
----@field disabled_text string?
----@field text_for_point (fun(point: Offset): string?)?
----@field enabled boolean?
----@field style TextStyle?
----@field offset_x number?
----@field offset_y number?
----@field follow_pointer boolean?
----@field bounds_width number?
----@field bounds_height number?
----@field anchor_left number?
----@field anchor_top number?
----@field anchor_width number?
----@field anchor_height number?
----@field margin number?
----@field gap number?
+---@field child              Widget?
+---@field text               string?
+---@field disabled_text      string?
+---@field text_for_point     (fun(point: Offset): string?)?
+---@field enabled            boolean?
+---@field style              TextStyle?
+---@field offset_x           number?
+---@field offset_y           number?
+---@field follow_pointer     boolean?
+---@field bounds_width       number?
+---@field bounds_height      number?
+---@field anchor_left        number?
+---@field anchor_top         number?
+---@field anchor_width       number?
+---@field anchor_height      number?
+---@field margin             number?
+---@field gap                number?
 ---@field position_for_point (fun(point: Offset, label: string?): number?)?
----@field expand number?
----@field on_hover_point fun(point: Offset, label: string?)?
----@field on_hover_leave fun()?
----@field hover_enabled (fun(context: BuildContext): boolean)?
----@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
----@field width_for_text (fun(layout: TextLayout, label: string, style: TextStyle): number)? optional stable visual width
----@field key any?
+---@field expand             number?
+---@field on_hover_point     fun(point: Offset, label: string?)?
+---@field on_hover_leave     fun()?
+---@field hover_enabled      (fun(context: BuildContext): boolean)?
+---@field paint_for_point    (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
+---@field width_for_text     (fun(layout: TextLayout, label: string, style: TextStyle): number)?  optional stable visual width
+---@field key                any?
 
----@class Tooltip : StatefulWidget
----@field child Widget?
----@field text string
----@field disabled_text string
----@field text_for_point (fun(point: Offset): string?)?
----@field enabled boolean
----@field style TextStyle
----@field offset_x number
----@field offset_y number
----@field follow_pointer boolean
----@field bounds_width number?
----@field bounds_height number?
----@field anchor_left number?
----@field anchor_top number?
----@field anchor_width number?
----@field anchor_height number?
----@field margin number
----@field gap number
+---@class Tooltip: StatefulWidget
+---@field child              Widget?
+---@field text               string
+---@field disabled_text      string
+---@field text_for_point     (fun(point: Offset): string?)?
+---@field enabled            boolean
+---@field style              TextStyle
+---@field offset_x           number
+---@field offset_y           number
+---@field follow_pointer     boolean
+---@field bounds_width       number?
+---@field bounds_height      number?
+---@field anchor_left        number?
+---@field anchor_top         number?
+---@field anchor_width       number?
+---@field anchor_height      number?
+---@field margin             number
+---@field gap                number
 ---@field position_for_point (fun(point: Offset, label: string?): number?)?
----@field expand number
----@field on_hover_point fun(point: Offset, label: string?)?
----@field on_hover_leave fun()?
----@field hover_enabled (fun(context: BuildContext): boolean)?
----@field paint_for_point (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
----@field width_for_text (fun(layout: TextLayout, label: string, style: TextStyle): number)?
+---@field expand             number
+---@field on_hover_point     fun(point: Offset, label: string?)?
+---@field on_hover_leave     fun()?
+---@field hover_enabled      (fun(context: BuildContext): boolean)?
+---@field paint_for_point    (fun(canvas: Canvas, offset: Offset, point: Offset, label: string))?
+---@field width_for_text     (fun(layout: TextLayout, label: string, style: TextStyle): number)?
 ---@overload fun(options?: _TooltipOptions): self
 local Tooltip = std.class.new('Tooltip', StatefulWidget)
 
+---@param options _TooltipOptions?
 function Tooltip:__init(options)
     options = options or {}
     self.key = options.key
@@ -137,19 +150,19 @@ function Tooltip:__init(options)
     end
 end
 
----@class TooltipState : State
----@field hovered boolean
----@field hover_label string
----@field hover_point Offset?
----@field _paragraph Paragraph?
----@field _paragraph_label string?
----@field _paragraph_style TextStyle?
----@field _text_layout TextLayout?
----@field _text_generation integer?
----@field _hover_enabled boolean
+---@class TooltipState: State
+---@field hovered           boolean
+---@field hover_label       string
+---@field hover_point       Offset?
+---@field _paragraph        Paragraph?
+---@field _paragraph_label  string?
+---@field _paragraph_style  TextStyle?
+---@field _text_layout      TextLayout?
+---@field _text_generation  integer?
+---@field _hover_enabled    boolean
 ---@field _prepare_callback fun()
----@field _prepare_owner RenderOwner?
----@field _paragraph_width number?
+---@field _prepare_owner    RenderOwner?
+---@field _paragraph_width  number?
 ---@overload fun(): self
 local TooltipState = std.class.new('TooltipState', State)
 
@@ -158,7 +171,7 @@ function TooltipState:init_state()
     self.hover_label = ''
     self.hover_point = nil
     self._hover_enabled = true
-    self._prepare_callback = function()
+    self._prepare_callback = function ()
         self:_prepare_text()
     end
     self:refresh_hover_visibility()
@@ -186,10 +199,12 @@ function TooltipState:refresh_hover_visibility()
     end
 end
 
+---@return boolean
 function TooltipState:_hover_allowed()
     return self._hover_enabled
 end
 
+---@param old_widget StatefulWidget
 function TooltipState:did_update_widget(old_widget)
     local old = old_widget --[[@as Tooltip]]
     local widget = self.widget --[[@as Tooltip]]
@@ -299,7 +314,7 @@ end
 
 ---@param canvas Canvas
 ---@param offset Offset
----@param size Size
+---@param size   Size
 function TooltipState:_paint_tooltip(canvas, offset, size)
     local widget = self.widget --[[@as Tooltip]]
     local label = self:_label()
@@ -312,8 +327,7 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
             return
         end
         local visual_width = self._paragraph_width or paragraph.size.width
-        local available_width = widget.bounds_width
-            and max(0, widget.bounds_width - widget.margin * 2) or visual_width
+        local available_width = widget.bounds_width and max(0, widget.bounds_width - widget.margin * 2) or visual_width
         local width = math.min(visual_width, available_width)
         local height = paragraph.size.height
         local anchor_left = widget.anchor_left or 0
@@ -333,8 +347,9 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
         end
         center_x = center_x + widget.offset_x
         if widget.bounds_width then
-            center_x = max(widget.margin + width / 2,
-                math.min(center_x, widget.bounds_width - widget.margin - width / 2))
+            center_x = max(
+                widget.margin + width / 2, math.min(center_x, widget.bounds_width - widget.margin - width / 2)
+            )
         end
         if widget.bounds_height then
             if y - height < widget.margin then
@@ -342,18 +357,16 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
                 anchor = anchor_mod.Anchor.TOP_CENTER
             end
             if anchor == anchor_mod.Anchor.BOTTOM_CENTER then
-                y = max(widget.margin + height,
-                    math.min(y, widget.bounds_height - widget.margin))
+                y = max(widget.margin + height, math.min(y, widget.bounds_height - widget.margin))
             else
                 y = max(widget.margin, math.min(y, widget.bounds_height - widget.margin - height))
             end
         end
         local position = (offset + Offset(center_x - anchor_left, y - anchor_top)) --[[@as Offset]]
         canvas:save()
-        local ok, err = pcall(function()
+        local ok, err = pcall(function ()
             if paragraph.size.width > width then
-                local clip_top = anchor == anchor_mod.Anchor.BOTTOM_CENTER
-                    and position.y - height or position.y
+                local clip_top = anchor == anchor_mod.Anchor.BOTTOM_CENTER and position.y - height or position.y
                 canvas:clip_rect(Rect.from_ltwh(position.x - width / 2, clip_top, width, height))
             end
             canvas:draw_text(paragraph, position, text_paint_mod.TextPaint({ anchor = anchor }))
@@ -365,6 +378,7 @@ function TooltipState:_paint_tooltip(canvas, offset, size)
     end
 end
 
+---@return Widget?
 function TooltipState:build()
     -- Every rebuild clears old inherited registrations; keep the service
     -- dependency subscribed even when only the parent Widget changed.
@@ -375,27 +389,30 @@ function TooltipState:build()
         children[1] = widget.child
     end
     children[#children + 1] = Positioned({
-        left = 0, top = 0, right = 0, bottom = 0,
+        left = 0,
+        top = 0,
+        right = 0,
+        bottom = 0,
         child = CustomPaint({
-            draw = function(canvas, offset, size)
+            draw = function (canvas, offset, size)
                 self:_paint_tooltip(canvas, offset, size)
-            end,
-        }),
+            end
+        })
     })
     return GestureDetector(Stack({ children = children }), {
         expand = widget.expand,
-        on_enter = function()
+        on_enter = function ()
             if self:_hover_allowed() and not self.hovered then
                 self.hovered = true
                 self:_invalidate_paint()
             end
         end,
-        on_leave = function()
+        on_leave = function ()
             if self.hovered then
                 self:_clear_hover()
             end
         end,
-        on_hover_move = function(_, point)
+        on_hover_move = function (_, point)
             if not self:_hover_allowed() then
                 return
             end
@@ -403,14 +420,10 @@ function TooltipState:build()
                 self.hovered = true
                 self:_invalidate_paint()
             end
-            if widget.follow_pointer or widget.text_for_point
-                or widget.on_hover_point or widget.paint_for_point then
-                local label_at_point = widget.text_for_point
-                    and (widget.text_for_point(point) or '') or nil
-                local changed = self.hover_point == nil
-                    or self.hover_point.x ~= point.x
-                    or self.hover_point.y ~= point.y
-                    or self.hover_label ~= (label_at_point or '')
+            if widget.follow_pointer or widget.text_for_point or widget.on_hover_point or widget.paint_for_point then
+                local label_at_point = widget.text_for_point and (widget.text_for_point(point) or '') or nil
+                local changed = self.hover_point == nil or self.hover_point.x ~= point.x
+                    or self.hover_point.y ~= point.y or self.hover_label ~= (label_at_point or '')
                 if changed then
                     if widget.on_hover_point then
                         widget.on_hover_point(point, label_at_point)
@@ -421,10 +434,11 @@ function TooltipState:build()
                     self:_invalidate_paint()
                 end
             end
-        end,
+        end
     })
 end
 
+---@return TooltipState
 function Tooltip:create_state()
     return TooltipState()
 end

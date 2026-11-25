@@ -14,24 +14,24 @@ local RenderAlign = align_mod.RenderAlign
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _AlignOptions
----@field alignment? Offset
----@field width_factor? number
+---@field alignment?     Offset
+---@field width_factor?  number
 ---@field height_factor? number
----@field key? any
+---@field key?           any
 
 ---@class _CenterOptions
----@field width_factor? number
+---@field width_factor?  number
 ---@field height_factor? number
----@field key? any
+---@field key?           any
 
----@class Align : SingleChildRenderObjectWidget
----@field alignment Offset
----@field width_factor? number
+---@class Align: SingleChildRenderObjectWidget
+---@field alignment      Offset
+---@field width_factor?  number
 ---@field height_factor? number
 ---@overload fun(child: Widget?, options?: _AlignOptions): self
 local Align = std.class.new('Align', SingleChildRenderObjectWidget)
 
----@param child Widget?
+---@param child    Widget?
 ---@param options? _AlignOptions
 function Align:__init(child, options)
     options = options or {}
@@ -42,6 +42,7 @@ function Align:__init(child, options)
     self.height_factor = options.height_factor
 end
 
+---@return RenderAlign
 function Align:create_render_object()
     return RenderAlign(self.alignment, nil, self.width_factor, self.height_factor)
 end
@@ -54,7 +55,7 @@ function Align:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
----@param child Widget?
+---@param child    Widget?
 ---@param options? _CenterOptions
 ---@return Align
 local function Center(child, options)
@@ -63,12 +64,15 @@ local function Center(child, options)
         key = options.key,
         alignment = Offset(0.5, 0.5),
         width_factor = options.width_factor,
-        height_factor = options.height_factor,
+        height_factor = options.height_factor
     })
 end
 
 ---@class mod.src.widgets.align
 ---@field Center fun(child: Widget?, options?: _CenterOptions): Align
-local M = { Align = Align, Center = Center }
+local M = {
+    Align = Align,
+    Center = Center
+}
 
 return M

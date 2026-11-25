@@ -5,9 +5,17 @@
 local std = require 'elxlibs.std'
 local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
-local Color = require('src.foundation.color').Color
-local Paint = require('src.painting.paint').Paint
-local RenderObject = require('src.render.render_object').RenderObject
+local color_mod = require 'src.foundation.color'
+local paint_mod = require 'src.painting.paint'
+local render_object_mod = require 'src.render.render_object'
+
+local Color = color_mod.Color
+local Paint = paint_mod.Paint
+local RenderObject = render_object_mod.RenderObject
+local ipairs = ipairs
+local math = math
+local type = type
+
 local Rect = geometry.Rect
 local Size = geometry.Size
 local raise = std.raise
@@ -15,6 +23,9 @@ local raise = std.raise
 ---@class mod.src.render.progress_indicator
 local M = {}
 
+---@param value number
+---@param name  string
+---@return number
 local function finite(value, name)
     if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
         raise(std.ValueError('LinearProgressIndicator.' .. name .. ' must be finite'))
@@ -24,13 +35,13 @@ end
 
 ---@class _ProgressValueOptions
 ---@field value number? nil means indeterminate; finite values are clamped to 0..1
----@field key any?
+---@field key   any?
 
----@class _RenderLinearProgressIndicatorOptions : _ProgressValueOptions
----@field color Color
+---@class _RenderLinearProgressIndicatorOptions: _ProgressValueOptions
+---@field color            Color
 ---@field background_color Color
----@field min_height number
----@field border_radius number
+---@field min_height       number
+---@field border_radius    number
 
 ---@param options _RenderLinearProgressIndicatorOptions
 ---@return _RenderLinearProgressIndicatorOptions
@@ -50,17 +61,24 @@ function M.normalize(options)
     if not dataclass.isinstance(foreground, Color) or not dataclass.isinstance(background, Color) then
         raise(std.TypeError('LinearProgressIndicator colors must be Color values'))
     end
-    return { key = options.key, value = value, color = foreground, background_color = background,
-        min_height = height, border_radius = radius }
+    return {
+        key = options.key,
+        value = value,
+        color = foreground,
+        background_color = background,
+        min_height = height,
+        border_radius = radius
+    }
 end
 
----@class RenderLinearProgressIndicator : RenderObject, _RenderLinearProgressIndicatorOptions
----@field min_height number
+---@class RenderLinearProgressIndicator: RenderObject, _RenderLinearProgressIndicatorOptions
+---@field min_height    number
 ---@field border_radius number
----@field phase number
+---@field phase         number
 ---@overload fun(options: _RenderLinearProgressIndicatorOptions): self
 local RenderLinearProgressIndicator = std.class.new('RenderLinearProgressIndicator', RenderObject)
 
+---@param options _RenderLinearProgressIndicatorOptions
 function RenderLinearProgressIndicator:__init(options)
     RenderObject.__init(self)
     self.phase = 0
@@ -96,11 +114,14 @@ function RenderLinearProgressIndicator:set_phase(phase)
     end
 end
 
+---@param constraints Constraints
 function RenderLinearProgressIndicator:__perform_layout(constraints)
     local width = constraints.max_width < math.huge and constraints.max_width or 200
     self.size = constraints:constrain_size(Size(width, self.min_height))
 end
 
+---@param canvas PaintingContext
+---@param offset Offset
 function RenderLinearProgressIndicator:__paint(canvas, offset)
     local width, height = self.size.width, self.size.height
     if width <= 0 or height <= 0 then
@@ -108,11 +129,15 @@ function RenderLinearProgressIndicator:__paint(canvas, offset)
     end
     local radius = math.min(self.border_radius, height / 2, width / 2)
     canvas:draw_rrect(Rect.from_ltwh(offset.x, offset.y, width, height), radius, Paint(self.background_color))
+    ---@param left  number
+    ---@param right number
     local function segment(left, right)
         left, right = math.max(0, left), math.min(1, right)
         if right > left then
-            canvas:draw_rrect(Rect.from_ltwh(offset.x + left * width, offset.y,
-                (right - left) * width, height), radius, Paint(self.color))
+            canvas:draw_rrect(
+                Rect.from_ltwh(offset.x + left * width, offset.y, (right - left) * width, height), radius,
+                Paint(self.color)
+            )
         end
     end
     if self.value ~= nil then

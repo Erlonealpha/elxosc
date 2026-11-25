@@ -32,6 +32,8 @@ local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
 local render_object = require 'src.render.render_object'
 
+local string = string
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
@@ -65,25 +67,27 @@ local M = {}
 --- | 'baseline'
 
 ---@class FlexOpts
----@field children RenderObject[]?
----@field main_alignment MainAlignment?
----@field main_axis_size MainAxisSize?
+---@field children        RenderObject[]?
+---@field main_alignment  MainAlignment?
+---@field main_axis_size  MainAxisSize?
 ---@field cross_alignment CrossAlignment?
----@field spacing number?
+---@field spacing         number?
 
 ---@alias FlexDirection
 --- | 'row'
 --- | 'column'
 
----@class RenderFlex : RenderObject
----@field direction FlexDirection
----@field main_alignment MainAlignment
----@field main_axis_size MainAxisSize
+---@class RenderFlex: RenderObject
+---@field direction       FlexDirection
+---@field main_alignment  MainAlignment
+---@field main_axis_size  MainAxisSize
 ---@field cross_alignment CrossAlignment
----@field spacing number
+---@field spacing         number
 ---@overload fun(direction: FlexDirection, options: FlexOpts?): self
 local RenderFlex = std.class.new('RenderFlex', RenderObject)
 
+---@param direction FlexDirection
+---@param options   FlexOpts?
 function RenderFlex:__init(direction, options)
     RenderObject.__init(self)
     options = options or {}
@@ -98,29 +102,29 @@ function RenderFlex:__init(direction, options)
 end
 
 ---@param horizontal boolean
----@param size Size
+---@param size       Size
 ---@return number
 local function main_extent(horizontal, size)
     return horizontal and size.width or size.height
 end
 
 ---@param horizontal boolean
----@param size Size
+---@param size       Size
 ---@return number
 local function cross_extent(horizontal, size)
     return horizontal and size.height or size.width
 end
 
 ---@param horizontal boolean
----@param main number
----@param cross number
+---@param main       number
+---@param cross      number
 ---@return Size
 local function axis_size(horizontal, main, cross)
     return horizontal and Size(main, cross) or Size(cross, main)
 end
 
----@param horizontal boolean
----@param stretch boolean
+---@param horizontal  boolean
+---@param stretch     boolean
 ---@param constraints Constraints
 ---@return Constraints
 local function non_flex_constraints(horizontal, stretch, constraints)
@@ -136,27 +140,25 @@ local function non_flex_constraints(horizontal, stretch, constraints)
     return Constraints(0, constraints.max_width, 0, huge)
 end
 
----@param horizontal boolean
----@param stretch boolean
+---@param horizontal  boolean
+---@param stretch     boolean
 ---@param constraints Constraints
----@param min_extent number
----@param max_extent number
+---@param min_extent  number
+---@param max_extent  number
 ---@return Constraints
 local function flex_child_constraints(horizontal, stretch, constraints, min_extent, max_extent)
     if horizontal then
-        return Constraints(min_extent, max_extent,
-            stretch and constraints.max_height or 0, constraints.max_height)
+        return Constraints(min_extent, max_extent, stretch and constraints.max_height or 0, constraints.max_height)
     end
-    return Constraints(stretch and constraints.max_width or 0, constraints.max_width,
-        min_extent, max_extent)
+    return Constraints(stretch and constraints.max_width or 0, constraints.max_width, min_extent, max_extent)
 end
 
 --- `MainAxisAlignment._distributeSpace` for a left-to-right / top-to-bottom
 --- (non-flipped) flex.
 ---@param alignment string
----@param free number
----@param count integer
----@param spacing number
+---@param free      number
+---@param count     integer
+---@param spacing   number
 ---@return number leading
 ---@return number between
 local function distribute_space(alignment, free, count, spacing)
@@ -183,7 +185,7 @@ end
 
 --- `CrossAxisAlignment._getChildCrossAxisOffset` (non-flipped).
 ---@param alignment string
----@param free number
+---@param free      number
 ---@return number
 local function cross_offset(alignment, free)
     if alignment == 'center' then
@@ -207,6 +209,7 @@ local function fit_of(child)
     return child.parent_data.fit or 'tight'
 end
 
+---@param constraints Constraints
 function RenderFlex:__perform_layout(constraints)
     local horizontal = self.direction == 'row'
     local children = self._children
@@ -219,12 +222,16 @@ function RenderFlex:__perform_layout(constraints)
     -- Non-zero flex on an unbounded main axis is an error (Flutter asserts).
     if not can_flex then
         for _, child in ipairs(children) do
-            if flex_of(child) > 0
-                and (self.main_axis_size == 'max' or fit_of(child) == 'tight') then
+            if flex_of(child) > 0 and (self.main_axis_size == 'max' or fit_of(child) == 'tight') then
                 local dimension = horizontal and 'width' or 'height'
-                raise(std.RuntimeError(string.format(
-                    'RenderFlex children have non-zero flex but incoming %s constraints are unbounded',
-                    dimension)))
+                raise(
+                    std.RuntimeError(
+                        string.format(
+                            'RenderFlex children have non-zero flex but incoming %s constraints are unbounded',
+                            dimension
+                        )
+                    )
+                )
             end
         end
     end
@@ -258,8 +265,9 @@ function RenderFlex:__perform_layout(constraints)
             if flex > 0 then
                 local max_child_extent = space_per_flex * flex
                 local min_child_extent = fit_of(child) == 'tight' and max_child_extent or 0
-                child:layout(flex_child_constraints(horizontal, stretch, constraints,
-                    min_child_extent, max_child_extent))
+                child:layout(
+                    flex_child_constraints(horizontal, stretch, constraints, min_child_extent, max_child_extent)
+                )
                 accumulated_main = accumulated_main + main_extent(horizontal, child.size)
                 accumulated_cross = max(accumulated_cross, cross_extent(horizontal, child.size))
             end

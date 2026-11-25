@@ -26,24 +26,27 @@ local format = string.format
 ---@class mod.src.foundation.geometry
 local M = {}
 
---==========================================================================
+-- ==========================================================================
 -- Offset
---==========================================================================
+-- ==========================================================================
 
----@class Offset : dataclass.Object
+---@class Offset: dataclass.Object
 ---@field x number
 ---@field y number
 ---@overload fun(x: number?, y: number?): self
 local Offset = dataclass.new('Offset', nil, { eq = false, repr = false })({
     dataclass.field('x', 0),
-    dataclass.field('y', 0),
+    dataclass.field('y', 0)
 })
 
+---@param x number?
+---@param y number?
 function Offset:__init(x, y)
     self.x = x or 0
     self.y = y or 0
 end
 
+---@return string
 function Offset:__tostring()
     return format('Offset(%g, %g)', self.x, self.y)
 end
@@ -109,20 +112,23 @@ function Offset.zero()
     return Offset(0, 0)
 end
 
----@class Point : dataclass.Object
+---@class Point: dataclass.Object
 ---@field x int
 ---@field y int
 ---@overload fun(x: int?, y: int?): self
 local Point = dataclass.new('Point', nil, { eq = false, repr = false })({
     dataclass.field('x', 0),
-    dataclass.field('y', 0),
+    dataclass.field('y', 0)
 })
 
+---@param x int?
+---@param y int?
 function Point:__init(x, y)
     self.x = x or 0
     self.y = y or 0
 end
 
+---@return string
 function Point:__tostring()
     return format('Point(%d, %d)', self.x, self.y)
 end
@@ -188,24 +194,27 @@ function Point.zero()
     return Point(0, 0)
 end
 
---==========================================================================
+-- ==========================================================================
 -- Size
---==========================================================================
+-- ==========================================================================
 
----@class Size : dataclass.Object
----@field width number
+---@class Size: dataclass.Object
+---@field width  number
 ---@field height number
 ---@overload fun(width: number?, height: number?): self
 local Size = dataclass.new('Size', nil, { eq = false, repr = false })({
     dataclass.field('width', 0),
-    dataclass.field('height', 0),
+    dataclass.field('height', 0)
 })
 
+---@param width  number?
+---@param height number?
 function Size:__init(width, height)
     self.width = width or 0
     self.height = height or 0
 end
 
+---@return string
 function Size:__tostring()
     return format('Size(%g, %g)', self.width, self.height)
 end
@@ -265,24 +274,28 @@ end
 
 dataclass.finish(Size)
 
---==========================================================================
+-- ==========================================================================
 -- Rect
---==========================================================================
+-- ==========================================================================
 
 --- A rectangle stored as left/top/right/bottom edges (Flutter's LTRB form).
----@class Rect : dataclass.Object
----@field left number
----@field top number
----@field right number
+---@class Rect: dataclass.Object
+---@field left   number
+---@field top    number
+---@field right  number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
 local Rect = dataclass.new('Rect', nil, { eq = false, repr = false })({
     dataclass.field('left', 0),
     dataclass.field('top', 0),
     dataclass.field('right', 0),
-    dataclass.field('bottom', 0),
+    dataclass.field('bottom', 0)
 })
 
+---@param left   number?
+---@param top    number?
+---@param right  number?
+---@param bottom number?
 function Rect:__init(left, top, right, bottom)
     self.left = left or 0
     self.top = top or 0
@@ -290,6 +303,7 @@ function Rect:__init(left, top, right, bottom)
     self.bottom = bottom or 0
 end
 
+---@return string
 function Rect:__tostring()
     return format('Rect(%g, %g, %g, %g)', self.left, self.top, self.right, self.bottom)
 end
@@ -335,8 +349,7 @@ end
 ---@param offset Offset
 ---@return boolean
 function Rect:contains(offset)
-    return offset.x >= self.left and offset.x < self.right
-        and offset.y >= self.top and offset.y < self.bottom
+    return offset.x >= self.left and offset.x < self.right and offset.y >= self.top and offset.y < self.bottom
 end
 
 ---@param delta number
@@ -354,8 +367,7 @@ end
 ---@param offset Offset
 ---@return Rect
 function Rect:shift(offset)
-    return Rect(self.left + offset.x, self.top + offset.y,
-        self.right + offset.x, self.bottom + offset.y)
+    return Rect(self.left + offset.x, self.top + offset.y, self.right + offset.x, self.bottom + offset.y)
 end
 
 ---@param dx number
@@ -368,8 +380,7 @@ end
 ---@param other Rect
 ---@return boolean
 function Rect:overlaps(other)
-    return self.left < other.right and other.left < self.right
-        and self.top < other.bottom and other.top < self.bottom
+    return self.left < other.right and other.left < self.right and self.top < other.bottom and other.top < self.bottom
 end
 
 --- Overlap of two rects; the result is empty when they do not intersect.
@@ -386,18 +397,18 @@ function Rect:intersect(other)
     return Rect(left, top, right, bottom)
 end
 
----@param left number
----@param top number
----@param width number
+---@param left   number
+---@param top    number
+---@param width  number
 ---@param height number
 ---@return Rect
 function Rect.from_ltwh(left, top, width, height)
     return Rect(left, top, left + width, top + height)
 end
 
----@param left number
----@param top number
----@param right number
+---@param left   number
+---@param top    number
+---@param right  number
 ---@param bottom number
 ---@return Rect
 function Rect.from_ltrb(left, top, right, bottom)
@@ -412,29 +423,33 @@ function Rect.from_points(a, b)
 end
 
 ---@param offset Offset
----@param size Size
+---@param size   Size
 ---@return Rect
 function Rect.from_offset_size(offset, size)
     return Rect(offset.x, offset.y, offset.x + size.width, offset.y + size.height)
 end
 
---==========================================================================
+-- ==========================================================================
 -- EdgeInsets
---==========================================================================
+-- ==========================================================================
 
----@class EdgeInsets : dataclass.Object
----@field left number
----@field top number
----@field right number
+---@class EdgeInsets: dataclass.Object
+---@field left   number
+---@field top    number
+---@field right  number
 ---@field bottom number
 ---@overload fun(left: number?, top: number?, right: number?, bottom: number?): self
 local EdgeInsets = dataclass.new('EdgeInsets', nil, { eq = false, repr = false })({
     dataclass.field('left', 0),
     dataclass.field('top', 0),
     dataclass.field('right', 0),
-    dataclass.field('bottom', 0),
+    dataclass.field('bottom', 0)
 })
 
+---@param left   number?
+---@param top    number?
+---@param right  number?
+---@param bottom number?
 function EdgeInsets:__init(left, top, right, bottom)
     self.left = left or 0
     self.top = top or 0
@@ -442,6 +457,7 @@ function EdgeInsets:__init(left, top, right, bottom)
     self.bottom = bottom or 0
 end
 
+---@return string
 function EdgeInsets:__tostring()
     return format('EdgeInsets(%g, %g, %g, %g)', self.left, self.top, self.right, self.bottom)
 end
@@ -477,16 +493,14 @@ end
 ---@param rect Rect
 ---@return Rect
 function EdgeInsets:inflate_rect(rect)
-    return Rect(rect.left - self.left, rect.top - self.top,
-        rect.right + self.right, rect.bottom + self.bottom)
+    return Rect(rect.left - self.left, rect.top - self.top, rect.right + self.right, rect.bottom + self.bottom)
 end
 
 --- Shrink `rect` by these insets (the content box of a padded container).
 ---@param rect Rect
 ---@return Rect
 function EdgeInsets:deflate_rect(rect)
-    return Rect(rect.left + self.left, rect.top + self.top,
-        rect.right - self.right, rect.bottom - self.bottom)
+    return Rect(rect.left + self.left, rect.top + self.top, rect.right - self.right, rect.bottom - self.bottom)
 end
 
 ---@param value number
@@ -496,7 +510,7 @@ function EdgeInsets.all(value)
 end
 
 ---@param horizontal number
----@param vertical number
+---@param vertical   number
 ---@return EdgeInsets
 function EdgeInsets.symmetric(horizontal, vertical)
     return EdgeInsets(horizontal, vertical, horizontal, vertical)

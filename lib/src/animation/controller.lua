@@ -11,6 +11,11 @@ local std = require 'elxlibs.std'
 local ticker_mod = require 'src.scheduler.ticker'
 local curve_mod = require 'src.animation.curve'
 
+local ipairs = ipairs
+local math = math
+local pairs = pairs
+local type = type
+
 local Ticker = ticker_mod.Ticker
 local linear = curve_mod.linear
 local raise = std.raise
@@ -28,28 +33,39 @@ local M = {}
 --- | 'stopped'
 
 ---@class _AnimationControllerOptions
----@field duration number positive seconds
----@field lower_bound number? defaults to 0
----@field upper_bound number? defaults to 1
----@field value number? defaults to lower_bound
----@field curve? fun(t: number): number defaults to linear
+---@field duration    number                 positive seconds
+---@field lower_bound number?                defaults to 0
+---@field upper_bound number?                defaults to 1
+---@field value       number?                defaults to lower_bound
+---@field curve?      fun(t: number): number defaults to linear
 
 ---@class _AnimationRepeatOptions
 ---@field reverse boolean? alternate direction at each bound
----@field count integer? completed cycles before stopping; nil repeats forever
+---@field count   integer? completed cycles before stopping; nil repeats forever
 
----@class AnimationController : std.object
----@field scheduler Scheduler
----@field duration number
----@field lower_bound number
----@field upper_bound number
----@field value number
----@field status AnimationStatus
+---@class AnimationController: std.object
+---@field scheduler               Scheduler
+---@field duration                number
+---@field lower_bound             number
+---@field upper_bound             number
+---@field value                   number
+---@field status                  AnimationStatus
+---@field curve                   fun(t: number): number
+---@field private _listeners      table<fun(controller: AnimationController), true>
+---@field private _ticker         Ticker
+---@field private _from           number
+---@field private _target         number
+---@field private _elapsed        number
+---@field private _repeat         boolean
+---@field private _repeat_count   integer?
+---@field private _repeat_cycles  integer
+---@field private _repeat_reverse boolean
+---@field private _disposed       boolean
 ---@overload fun(scheduler: Scheduler, options: _AnimationControllerOptions): self
 local AnimationController = std.class.new('AnimationController')
 
 ---@param scheduler Scheduler
----@param options _AnimationControllerOptions
+---@param options   _AnimationControllerOptions
 function AnimationController:__init(scheduler, options)
     options = options or {}
     if type(options.duration) ~= 'number' or options.duration <= 0
@@ -74,7 +90,7 @@ function AnimationController:__init(scheduler, options)
     self.status = self.value == lower and 'dismissed' or 'stopped'
     self.curve = options.curve or linear
     self._listeners = {}
-    self._ticker = Ticker(scheduler, function(dt, time)
+    self._ticker = Ticker(scheduler, function (dt, time)
         self:_tick(dt, time)
     end)
     self._from = self.value
@@ -123,7 +139,7 @@ end
 
 ---@param target number
 ---@param status AnimationStatus
----@param from number?
+---@param from   number?
 function AnimationController:_start(target, status, from)
     if self._disposed then
         raise(std.RuntimeError('AnimationController is disposed'))
@@ -207,7 +223,7 @@ function AnimationController:_next_repeat()
     self:_start(self.upper_bound, 'forward', self.lower_bound)
 end
 
----@param dt number
+---@param dt   number
 ---@param time number
 function AnimationController:_tick(dt, time)
     if not self._ticker:is_active() or self._disposed then

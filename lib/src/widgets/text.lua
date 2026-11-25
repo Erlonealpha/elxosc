@@ -13,6 +13,11 @@ local text_mod = require 'src.render.text'
 local widget_mod = require 'src.widgets.framework'
 local ambient_mod = require 'src.widgets.ambient'
 
+local error = error
+local rawequal = rawequal
+local tostring = tostring
+local type = type
+
 local TextStyle = text_style.TextStyle
 local RenderText = text_mod.RenderText
 local DefaultTextStyle = ambient_mod.DefaultTextStyle
@@ -24,22 +29,28 @@ local StatelessWidget = widget_mod.StatelessWidget
 local M = {}
 
 ---@class _TextOptions
----@field style TextStyle?
+---@field style       TextStyle?
 ---@field text_layout TextLayout?
----@field text_paint TextPaint?
----@field key any?
----@field clip boolean? clip when natural text width exceeds its constrained box
+---@field text_paint  TextPaint?
+---@field key         any?
+---@field clip        boolean?    clip when natural text width exceeds its constrained box
 
----@class TextRenderObjectWidget : LeafRenderObjectWidget
----@field text string
----@field style TextStyle
+---@class TextRenderObjectWidget: LeafRenderObjectWidget
+---@field text        string
+---@field style       TextStyle
 ---@field text_layout TextLayout?
----@field text_paint TextPaint
----@field generation integer
----@field clip boolean
+---@field text_paint  TextPaint
+---@field generation  integer
+---@field clip        boolean
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint, generation?: integer, clip?: boolean): self
 local TextRenderObjectWidget = std.class.new('TextRenderObjectWidget', LeafRenderObjectWidget)
 
+---@param text        string
+---@param style       TextStyle
+---@param text_layout TextLayout?
+---@param text_paint  TextPaint
+---@param generation  integer?
+---@param clip        boolean?
 function TextRenderObjectWidget:__init(text, style, text_layout, text_paint, generation, clip)
     self.text = text
     self.style = style
@@ -49,6 +60,7 @@ function TextRenderObjectWidget:__init(text, style, text_layout, text_paint, gen
     self.clip = clip == true
 end
 
+---@return RenderText
 function TextRenderObjectWidget:create_render_object()
     local render_object = RenderText(self.text, self.style, self.text_layout, self.text_paint)
     render_object.text_layout_generation = self.generation
@@ -58,8 +70,7 @@ end
 
 ---@param render_object RenderText
 function TextRenderObjectWidget:update_render_object(render_object)
-    local layout_changed = render_object.text ~= self.text
-        or render_object.style ~= self.style
+    local layout_changed = render_object.text ~= self.text or render_object.style ~= self.style
         or not rawequal(render_object.text_layout, self.text_layout)
         or render_object.text_layout_generation ~= self.generation
     local paint_changed = render_object.text_paint ~= self.text_paint or render_object.clip ~= self.clip
@@ -76,16 +87,16 @@ function TextRenderObjectWidget:update_render_object(render_object)
     end
 end
 
----@class Text : StatelessWidget
----@field text string
----@field style TextStyle?
+---@class Text: StatelessWidget
+---@field text        string
+---@field style       TextStyle?
 ---@field text_layout TextLayout?
----@field text_paint TextPaint
----@field clip boolean
+---@field text_paint  TextPaint
+---@field clip        boolean
 ---@overload fun(text: string | number, options: _TextOptions?): self
 local Text = std.class.new('Text', StatelessWidget)
 
----@param text string | number
+---@param text    string | number
 ---@param options _TextOptions?
 function Text:__init(text, options)
     options = options or {}
@@ -103,6 +114,8 @@ function Text:__init(text, options)
     end
 end
 
+---@param context Element
+---@return Widget?
 function Text:build(context)
     local style = self.style
     if style == nil then

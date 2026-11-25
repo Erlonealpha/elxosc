@@ -14,6 +14,14 @@ local std = require 'elxlibs.std'
 local build_scope_mod = require 'src.widgets.build_scope'
 local key_mod = require 'src.widgets.key'
 
+local error = error
+local ipairs = ipairs
+local pairs = pairs
+local pcall = pcall
+local setmetatable = setmetatable
+local string = string
+local table = table
+
 ---@class mod.src.widgets.build_owner
 local M = {}
 local BuildScope = build_scope_mod.BuildScope
@@ -22,26 +30,28 @@ local GlobalKey = key_mod.GlobalKey
 ---@class _TreeQueryCache
 ---@field value table? owner invalidates the cached traversal immediately on tree changes
 
----@class BuildOwner : std.object
----@field render_owner RenderOwner?
----@field scheduler Scheduler?
----@field on_dirty fun()?
----@field on_diagnostic fun(message: string, value: any?)?
----@field root_scope BuildScope
----@field global_key_registry table<GlobalKey, Element>
----@field diagnostics string[]
----@field _scopes table<BuildScope, true>
----@field _dirty_scopes table<BuildScope, true>
----@field _dirty_scope_order BuildScope[]
----@field _inactive table<Element, true>
----@field _building boolean
----@field _state_lock_depth integer
----@field _post_finalize fun()[]
----@field _tree_generation integer internal Element lifecycle/child-order revision
+---@class BuildOwner: std.object
+---@field render_owner         RenderOwner?
+---@field scheduler            Scheduler?
+---@field on_dirty             fun()?
+---@field on_diagnostic        fun(message: string, value: any?)?
+---@field root_scope           BuildScope
+---@field global_key_registry  table<GlobalKey, Element>
+---@field diagnostics          string[]
+---@field _scopes              table<BuildScope, true>
+---@field _dirty_scopes        table<BuildScope, true>
+---@field _dirty_scope_order   BuildScope[]
+---@field _inactive            table<Element, true>
+---@field _building            boolean
+---@field _state_lock_depth    integer
+---@field _post_finalize       fun()[]
+---@field _tree_generation     integer                            internal Element lifecycle/child-order revision
 ---@field private _tree_caches table<_TreeQueryCache, true>
 ---@overload fun(render_owner: RenderOwner?, scheduler: Scheduler?): self
 local BuildOwner = std.class.new('BuildOwner')
 
+---@param render_owner RenderOwner?
+---@param scheduler    Scheduler?
 function BuildOwner:__init(render_owner, scheduler)
     self.render_owner = render_owner
     self.scheduler = scheduler
@@ -111,8 +121,10 @@ end
 function BuildOwner:create_build_scope(schedule_rebuild)
     ---@type BuildScope?
     local scope
-    scope = BuildScope(function()
-        self:_scope_dirtied(scope --[[@as BuildScope]])
+    scope = BuildScope(function ()
+        self:_scope_dirtied(
+            scope --[[@as BuildScope]]
+        )
         if schedule_rebuild then
             schedule_rebuild()
         end
@@ -127,7 +139,7 @@ function BuildOwner:is_building()
 end
 
 ---@param message string
----@param value any?
+---@param value   any?
 function BuildOwner:diagnose(message, value)
     self.diagnostics[#self.diagnostics + 1] = message
     if self.on_diagnostic then
@@ -135,7 +147,7 @@ function BuildOwner:diagnose(message, value)
     end
 end
 
----@param key GlobalKey
+---@param key     GlobalKey
 ---@param element Element
 function BuildOwner:register_global_key(key, element)
     local current = self.global_key_registry[key]
@@ -146,7 +158,7 @@ function BuildOwner:register_global_key(key, element)
     key:_register(self, element)
 end
 
----@param key GlobalKey
+---@param key     GlobalKey
 ---@param element Element
 function BuildOwner:unregister_global_key(key, element)
     if self.global_key_registry[key] == element then
@@ -176,7 +188,7 @@ function BuildOwner:finalize_tree()
     local inactive = self._inactive
     self._inactive = {}
     local failure
-    self:lock_state(function()
+    self:lock_state(function ()
         for element in pairs(inactive) do
             if element.mounted and not element.active then
                 local ok, err = pcall(element.unmount, element)
@@ -234,12 +246,11 @@ end
 function BuildOwner:_rebuild_scope(scope)
     while scope:has_dirty_elements() do
         local dirty = scope:take_dirty()
-        table.sort(dirty, function(a, b)
+        table.sort(dirty, function (a, b)
             return a.depth < b.depth
         end)
         for _, element in ipairs(dirty) do
-            if element.mounted and element.active and element.dirty
-                and element.build_scope == scope then
+            if element.mounted and element.active and element.dirty and element.build_scope == scope then
                 element:rebuild()
             end
         end
@@ -267,7 +278,7 @@ function BuildOwner:rebuild_dirty(scope)
         error('BuildOwner.rebuild_dirty() is not reentrant', 2)
     end
     self._building = true
-    local ok, err = pcall(function()
+    local ok, err = pcall(function ()
         if scope then
             self._dirty_scopes[scope] = nil
             self:_rebuild_scope(scope)

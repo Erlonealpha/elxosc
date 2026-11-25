@@ -10,6 +10,10 @@ local color_mod = require 'src.foundation.color'
 local paint_mod = require 'src.painting.paint'
 local render_mod = require 'src.render.render_object'
 
+local ipairs = ipairs
+local math = math
+local type = type
+
 local RenderObject = render_mod.RenderObject
 local Color = color_mod.Color
 local Paint = paint_mod.Paint
@@ -20,21 +24,31 @@ local raise = std.raise
 ---@class mod.src.render.slider
 local M = {}
 
+---@param value number?
+---@param name  string
+---@return number
 local function finite(value, name)
     if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
         raise(std.ValueError('Slider.' .. name .. ' must be finite'))
     end
-    return value
+    return value --[[@as number]]
 end
 
+---@param value      number?
+---@param name       string
+---@param allow_zero boolean?
+---@return number
 local function positive(value, name, allow_zero)
     finite(value, name)
     if value < 0 or not allow_zero and value == 0 then
         raise(std.ValueError('Slider.' .. name .. ' has an invalid size'))
     end
-    return value
+    return value --[[@as number]]
 end
 
+---@param value Color
+---@param name  string
+---@return Color
 local function color(value, name)
     if not dataclass.isinstance(value, Color) then
         raise(std.TypeError('Slider.' .. name .. ' must be a Color'))
@@ -42,6 +56,9 @@ local function color(value, name)
     return value
 end
 
+---@param value function?
+---@param name  string
+---@return function?
 local function callback(value, name)
     if value ~= nil and type(value) ~= 'function' then
         raise(std.TypeError('Slider.' .. name .. ' must be a function'))
@@ -50,39 +67,39 @@ local function callback(value, name)
 end
 
 ---@class _SliderInputOptions
----@field value number? controlled value; default min
----@field min number? inclusive lower bound; default 0
----@field max number? inclusive upper bound; default 1; equal bounds disable input
----@field divisions integer? positive number of intervals
----@field secondary_track_value number? value in the same range
----@field on_changed fun(value: number)? nil disables selection
----@field on_change_start fun(value: number)? previous controlled value
----@field on_change_end fun(value: number)? final drag value; also called on cancellation
----@field hit_expand number? extra input bounds; default 0
----@field enabled boolean? optional explicit disable
----@field key any?
+---@field value                 number?             controlled value; default min
+---@field min                   number?             inclusive lower bound; default 0
+---@field max                   number?             inclusive upper bound; default 1; equal bounds disable input
+---@field divisions             integer?            positive number of intervals
+---@field secondary_track_value number?             value in the same range
+---@field on_changed            fun(value: number)? nil disables selection
+---@field on_change_start       fun(value: number)? previous controlled value
+---@field on_change_end         fun(value: number)? final drag value; also called on cancellation
+---@field hit_expand            number?             extra input bounds; default 0
+---@field enabled               boolean?            optional explicit disable
+---@field key                   any?
 
----@class _RenderSliderOptions : _SliderInputOptions
----@field active_color Color
----@field inactive_color Color
----@field secondary_active_color Color
----@field thumb_color Color
----@field disabled_active_color Color
+---@class _RenderSliderOptions: _SliderInputOptions
+---@field active_color            Color
+---@field inactive_color          Color
+---@field secondary_active_color  Color
+---@field thumb_color             Color
+---@field disabled_active_color   Color
 ---@field disabled_inactive_color Color
----@field disabled_thumb_color Color
----@field overlay_color Color
----@field height number
----@field track_height number
----@field track_inset number
----@field thumb_radius number
----@field overlay_radius number
+---@field disabled_thumb_color    Color
+---@field overlay_color           Color
+---@field height                  number
+---@field track_height            number
+---@field track_inset             number
+---@field thumb_radius            number
+---@field overlay_radius          number
 
----@class _RenderSliderConfig : _RenderSliderOptions
----@field min number
----@field max number
----@field value number
+---@class _RenderSliderConfig: _RenderSliderOptions
+---@field min        number
+---@field max        number
+---@field value      number
 ---@field hit_expand number
----@field enabled boolean
+---@field enabled    boolean
 
 --- Normalize once at construction/update boundaries, keeping caller data untouched.
 ---@param options _RenderSliderOptions
@@ -108,7 +125,11 @@ function M.normalize(options)
     end
     local active = color(options.active_color, 'active_color')
     return {
-        key = options.key, min = lower, max = upper, value = value, divisions = divisions,
+        key = options.key,
+        min = lower,
+        max = upper,
+        value = value,
+        divisions = divisions,
         secondary_track_value = secondary,
         on_changed = callback(options.on_changed, 'on_changed'),
         on_change_start = callback(options.on_change_start, 'on_change_start'),
@@ -116,40 +137,37 @@ function M.normalize(options)
         enabled = options.enabled ~= false,
         active_color = active,
         inactive_color = color(options.inactive_color, 'inactive_color'),
-        secondary_active_color = color(options.secondary_active_color,
-            'secondary_active_color'),
+        secondary_active_color = color(options.secondary_active_color, 'secondary_active_color'),
         thumb_color = color(options.thumb_color, 'thumb_color'),
-        disabled_active_color = color(options.disabled_active_color,
-            'disabled_active_color'),
-        disabled_inactive_color = color(options.disabled_inactive_color,
-            'disabled_inactive_color'),
-        disabled_thumb_color = color(options.disabled_thumb_color,
-            'disabled_thumb_color'),
+        disabled_active_color = color(options.disabled_active_color, 'disabled_active_color'),
+        disabled_inactive_color = color(options.disabled_inactive_color, 'disabled_inactive_color'),
+        disabled_thumb_color = color(options.disabled_thumb_color, 'disabled_thumb_color'),
         overlay_color = color(options.overlay_color, 'overlay_color'),
         height = positive(options.height, 'height', false),
         track_height = positive(options.track_height, 'track_height', false),
         track_inset = positive(options.track_inset, 'track_inset', true),
         thumb_radius = positive(options.thumb_radius, 'thumb_radius', true),
         overlay_radius = positive(options.overlay_radius, 'overlay_radius', true),
-        hit_expand = positive(options.hit_expand or 0, 'hit_expand', true),
+        hit_expand = positive(options.hit_expand or 0, 'hit_expand', true)
     }
 end
 
 local fields = {
-    'min', 'max', 'value', 'divisions', 'secondary_track_value', 'on_changed', 'on_change_start',
-    'on_change_end', 'enabled', 'active_color', 'inactive_color', 'secondary_active_color',
-    'thumb_color', 'disabled_active_color', 'disabled_inactive_color', 'disabled_thumb_color',
-    'overlay_color', 'height', 'track_height', 'track_inset', 'thumb_radius', 'overlay_radius', 'hit_expand',
+    'min', 'max', 'value', 'divisions', 'secondary_track_value', 'on_changed', 'on_change_start', 'on_change_end',
+    'enabled', 'active_color', 'inactive_color', 'secondary_active_color', 'thumb_color', 'disabled_active_color',
+    'disabled_inactive_color', 'disabled_thumb_color', 'overlay_color', 'height', 'track_height', 'track_inset',
+    'thumb_radius', 'overlay_radius', 'hit_expand'
 }
 
----@class RenderSlider : RenderObject, _RenderSliderConfig
----@field hovered boolean
----@field dragging boolean
----@field _last_fraction number?
+---@class RenderSlider: RenderObject, _RenderSliderConfig
+---@field hovered          boolean
+---@field dragging         boolean
+---@field _last_fraction   number?
 ---@field _last_sent_value number?
 ---@overload fun(options: _RenderSliderOptions): self
 local RenderSlider = std.class.new('RenderSlider', RenderObject)
 
+---@param options _RenderSliderOptions
 function RenderSlider:__init(options)
     RenderObject.__init(self)
     self.hovered = false
@@ -188,6 +206,7 @@ function RenderSlider:configure(options)
     end
 end
 
+---@param constraints Constraints
 function RenderSlider:__perform_layout(constraints)
     local width = constraints.max_width < math.huge and constraints.max_width or 144 + self.track_inset * 2
     self.size = constraints:constrain_size(Size(width, self.height))
@@ -238,6 +257,8 @@ function RenderSlider:set_value(value)
     end
 end
 
+---@param canvas PaintingContext
+---@param offset Offset
 function RenderSlider:__paint(canvas, offset)
     local track = self:track_rect()
     local interactive = self:is_interactive()
@@ -247,16 +268,23 @@ function RenderSlider:__paint(canvas, offset)
     local fraction = self:_normalized(self:_value_at(self:_normalized(self.value)))
     local center_x = offset.x + track.left + fraction * track:width()
     local center_y = offset.y + self.size.height / 2
+    ---@param left        number
+    ---@param right       number
+    ---@param paint_color Color
     local function segment(left, right, paint_color)
         if right > left then
-            canvas:draw_rrect(Rect.from_ltwh(offset.x + left, offset.y + track.top,
-                right - left, track:height()), track:height() / 2, Paint(paint_color))
+            canvas:draw_rrect(
+                Rect.from_ltwh(offset.x + left, offset.y + track.top, right - left, track:height()), track:height() / 2,
+                Paint(paint_color)
+            )
         end
     end
     segment(track.left, track.right, inactive)
     if self.secondary_track_value and self.secondary_track_value > self.value then
-        segment(track.left, track.left + track:width() * self:_normalized(self.secondary_track_value),
-            interactive and self.secondary_active_color or self.disabled_active_color)
+        segment(
+            track.left, track.left + track:width() * self:_normalized(self.secondary_track_value),
+            interactive and self.secondary_active_color or self.disabled_active_color
+        )
     end
     segment(track.left, center_x - offset.x, active)
     if self.divisions and track:width() / self.divisions >= 4 then
@@ -265,10 +293,13 @@ function RenderSlider:__paint(canvas, offset)
             canvas:draw_rrect(Rect.from_ltwh(x - 1, center_y - 1, 2, 2), 1, Paint(inactive))
         end
     end
+    ---@param radius      number
+    ---@param paint_color Color
     local function circle(radius, paint_color)
         if radius > 0 then
-            canvas:draw_rrect(Rect.from_ltwh(center_x - radius, center_y - radius,
-                radius * 2, radius * 2), radius, Paint(paint_color))
+            canvas:draw_rrect(
+                Rect.from_ltwh(center_x - radius, center_y - radius, radius * 2, radius * 2), radius, Paint(paint_color)
+            )
         end
     end
     if interactive and (self.hovered or self.dragging) then
@@ -277,22 +308,28 @@ function RenderSlider:__paint(canvas, offset)
     circle(self.thumb_radius, thumb)
 end
 
+---@param point Offset
+---@return boolean
 function RenderSlider:__hit_test_bounds(point)
     local expand = self.hit_expand
     return point.x >= -expand and point.y >= -expand
         and point.x < self.size.width + expand and point.y < self.size.height + expand
 end
 
+---@return Rect
 function RenderSlider:input_region_rect()
     local expand = self.hit_expand
     return Rect(-expand, -expand, self.size.width + expand, self.size.height + expand)
 end
 
+---@param event PointerEventType
+---@return boolean
 function RenderSlider:wants_pointer(event)
     return self:is_interactive() and (event == 'down' or event == 'up' or event == 'move')
 end
 
 -- Protected lifecycle hooks let Timeline add seek phases without duplicating capture.
+---@param value number
 function RenderSlider:__interaction_start(value)
     if self.on_change_start then
         self.on_change_start(self:_value_at(self:_normalized(self.value)))
@@ -300,6 +337,7 @@ function RenderSlider:__interaction_start(value)
     self:__interaction_update(value)
 end
 
+---@param value number
 function RenderSlider:__interaction_update(value)
     if value ~= self._last_sent_value then
         self._last_sent_value = value
@@ -309,12 +347,15 @@ function RenderSlider:__interaction_update(value)
     end
 end
 
+---@param value      number
+---@param _cancelled boolean
 function RenderSlider:__interaction_end(value, _cancelled)
     if self.on_change_end then
         self.on_change_end(value)
     end
 end
 
+---@param cancelled boolean
 function RenderSlider:_end_interaction(cancelled)
     if not self.dragging then
         return
@@ -327,6 +368,10 @@ function RenderSlider:_end_interaction(cancelled)
     self:mark_needs_paint()
 end
 
+---@param event PointerEventType
+---@param point Offset
+---@param data  any              legacy button/wheel payload
+---@return boolean | DispatchResult
 function RenderSlider:on_pointer(event, point, data)
     if event == 'cancel' then
         self:_end_interaction(true)

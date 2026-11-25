@@ -3,13 +3,23 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
+
+local ipairs = ipairs
+local math = math
+local next = next
+local rawequal = rawequal
+local select = select
+local string = string
+local tostring = tostring
+local type = type
+
 local raise = std.raise
 
 ---@alias export.Key string | integer
 ---@alias export.Exports table<export.Key, any>
 
 ---@class export.Package<T>
----@field name string
+---@field name    string
 ---@field exports T
 
 ---@class export.Selection
@@ -17,26 +27,26 @@ local raise = std.raise
 ---@field hide fun(...: export.Key): export.Selection
 
 ---@class export.Context
----@field export fun(name: string, source: table, append: boolean?): export.Selection
----@field get fun(name: string): export.Exports
+---@field export  fun(name: string, source: table, append: boolean?): export.Selection
+---@field get     fun(name: string): export.Exports
 ---@field collect fun(): export.Package<export.Exports>[]
 
 ---@class export.Source
 ---@field values export.Exports
----@field keys table<export.Key, true>?
----@field show boolean?
+---@field keys   table<export.Key, true>?
+---@field show   boolean?
 
 ---@class export.Declaration
----@field name string
+---@field name    string
 ---@field sources export.Source[]
 ---@field exports export.Exports?
 
+---@param name string
 local function validate_name(name)
     if type(name) ~= 'string' then
         raise(std.TypeError('export package name must be a string'))
     end
-    if name == '' or name:find('..', 1, true) or name:sub(1, 1) == '.'
-        or name:sub(-1) == '.' or name:sub(-4) == '.lua' then
+    if name == '' or name:find('..', 1, true) or name:sub(1, 1) == '.' or name:sub(-1) == '.' or name:sub(-4) == '.lua' then
         raise(std.ValueError('invalid export package name: ' .. name))
     end
     for segment in name:gmatch('[^.]+') do
@@ -46,12 +56,12 @@ local function validate_name(name)
     end
 end
 
+---@param key export.Key
 local function validate_key(key)
     if type(key) == 'string' then
         return
     end
-    if type(key) == 'number' and key == key and key ~= math.huge
-        and key ~= -math.huge and key == math.floor(key) then
+    if type(key) == 'number' and key == key and key ~= math.huge and key ~= -math.huge and key == math.floor(key) then
         return
     end
     raise(std.ValueError('export keys must be strings or finite integers'))
@@ -63,14 +73,18 @@ local function resolve(package)
     local values, owners = {}, {}
     for index, source in ipairs(package.sources) do
         for key, value in next, source.values do
-            local selected = source.keys == nil
-                or (source.show and source.keys[key] == true)
+            local selected = source.keys == nil or (source.show and source.keys[key] == true)
                 or (not source.show and source.keys[key] == nil)
             if selected then
                 if owners[key] ~= nil and not rawequal(values[key], value) then
-                    raise(std.ValueError(string.format(
-                        "package '%s' key '%s' conflicts between sources %d and %d",
-                        package.name, tostring(key), owners[key], index)))
+                    raise(
+                        std.ValueError(
+                            string.format(
+                                "package '%s' key '%s' conflicts between sources %d and %d", package.name, tostring(key),
+                                owners[key], index
+                            )
+                        )
+                    )
                 end
                 values[key] = value
                 owners[key] = owners[key] or index
@@ -89,6 +103,10 @@ local function new_context()
     local ordered = {}
     local context = {}
 
+    ---@param name   string
+    ---@param source table
+    ---@param append boolean?
+    ---@return export.Selection
     function context.export(name, source, append)
         validate_name(name)
         if type(source) ~= 'table' then
@@ -119,6 +137,9 @@ local function new_context()
         local sources = package.sources
         local selection = {}
 
+        ---@param show boolean
+        ---@param ...  export.Key
+        ---@return export.Selection
         local function select_keys(show, ...)
             local current_sources = package.sources
             if package.exports ~= nil or current_sources ~= sources then
@@ -141,10 +162,14 @@ local function new_context()
             return selection
         end
 
+        ---@param ... export.Key
+        ---@return export.Selection
         function selection.show(...)
             return select_keys(true, ...)
         end
 
+        ---@param ... export.Key
+        ---@return export.Selection
         function selection.hide(...)
             return select_keys(false, ...)
         end
@@ -152,6 +177,8 @@ local function new_context()
         return selection
     end
 
+    ---@param name string
+    ---@return export.Exports
     function context.get(name)
         validate_name(name)
         local package = by_name[name]
@@ -165,6 +192,7 @@ local function new_context()
         return package.exports
     end
 
+    ---@return export.Package<export.Exports>[]
     function context.collect()
         -- Validate every pending package before publishing any of them.
         local pending = {}
@@ -187,7 +215,7 @@ local function new_context()
     return context
 end
 
----@class mod.export : export.Context
+---@class mod.export: export.Context
 local M = new_context()
 M.new = new_context
 

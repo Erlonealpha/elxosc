@@ -7,8 +7,13 @@
 
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
+
+local ipairs = ipairs
+
 local Rect = geometry.Rect
 
+---@param regions PointerRegion[]
+---@return PointerRegion[]
 local function copy_regions(regions)
     local copy = {}
     for index, region in ipairs(regions) do
@@ -17,7 +22,7 @@ local function copy_regions(regions)
             node = region.node,
             rect = Rect(rect.left, rect.top, rect.right, rect.bottom),
             down = region.down,
-            wheel = region.wheel,
+            wheel = region.wheel
         }
     end
     return copy
@@ -25,12 +30,12 @@ end
 
 ---@class _RegionSnapshotOptions
 ---@field generation integer
----@field root RenderObject?
----@field regions PointerRegion[]
+---@field root       RenderObject?
+---@field regions    PointerRegion[]
 
----@class RegionSnapshot : std.object
----@field generation integer
----@field root RenderObject?
+---@class RegionSnapshot: std.object
+---@field generation       integer
+---@field root             RenderObject?
 ---@field private _regions PointerRegion[]
 ---@overload fun(options: _RegionSnapshotOptions): self
 local RegionSnapshot = std.class.new('RegionSnapshot')
@@ -58,8 +63,9 @@ function RegionSnapshot:same_regions(other)
     end
     for index, region in ipairs(self._regions) do
         local previous = other._regions[index]
-        if previous == nil or region.node ~= previous.node or region.rect ~= previous.rect
-            or region.down ~= previous.down or region.wheel ~= previous.wheel then
+        if previous == nil or region.node ~= previous.node
+            or region.rect ~= previous.rect or region.down ~= previous.down
+            or region.wheel ~= previous.wheel then
             return false
         end
     end
@@ -67,6 +73,8 @@ function RegionSnapshot:same_regions(other)
 end
 
 ---@class mod.src.render.region_snapshot
-local M = { RegionSnapshot = RegionSnapshot }
+local M = {
+    RegionSnapshot = RegionSnapshot
+}
 
 return M

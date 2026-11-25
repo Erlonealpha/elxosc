@@ -11,14 +11,15 @@ local std = require 'elxlibs.std'
 ---@class mod.src.widgets.build_scope
 local M = {}
 
----@class BuildScope : std.object
+---@class BuildScope: std.object
 ---@field schedule_rebuild fun()?
----@field _dirty boolean
----@field _dirty_elements Element[]
----@field _dirty_set table<Element, true>
+---@field _dirty           boolean
+---@field _dirty_elements  Element[]
+---@field _dirty_set       table<Element, true>
 ---@overload fun(schedule_rebuild: fun()?): self
 local BuildScope = std.class.new('BuildScope')
 
+---@param schedule_rebuild fun()?
 function BuildScope:__init(schedule_rebuild)
     self.schedule_rebuild = schedule_rebuild
     self._dirty = false

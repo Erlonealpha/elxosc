@@ -19,6 +19,9 @@ local render_object = require 'src.render.render_object'
 local text_layout = require 'src.text.text_layout'
 local color_mod = require 'src.foundation.color'
 
+local math = math
+local type = type
+
 local Offset = geometry.Offset
 local Anchor = anchor_mod.Anchor
 local RenderObject = render_object.RenderObject
@@ -29,25 +32,25 @@ local raise = std.raise
 ---@class mod.src.render.text
 local M = {}
 
----@class RenderText : RenderObject
----@field text string
----@field style TextStyle
----@field text_layout TextLayout?
+---@class RenderText: RenderObject
+---@field text                   string
+---@field style                  TextStyle
+---@field text_layout            TextLayout?
 ---@field text_layout_generation integer
----@field clip boolean
----@field paragraph Paragraph?
----@field text_paint TextPaint
----@field color_override Color?
----@field shadow_color_override Color?
+---@field clip                   boolean
+---@field paragraph              Paragraph?
+---@field text_paint             TextPaint
+---@field color_override         Color?
+---@field shadow_color_override  Color?
 ---@field shadow_radius_override number?
----@field glow_color_override Color?
----@field glow_radius_override number?
+---@field glow_color_override    Color?
+---@field glow_radius_override   number?
 ---@overload fun(text: string, style: TextStyle, text_layout: TextLayout?, text_paint: TextPaint?): self
 local RenderText = std.class.new('RenderText', RenderObject)
 
----@param text string
----@param style TextStyle
----@param measurer TextLayout?
+---@param text       string
+---@param style      TextStyle
+---@param measurer   TextLayout?
 ---@param text_paint TextPaint?
 function RenderText:__init(text, style, measurer, text_paint)
     std.super(RenderText, self, RenderObject).__init(self)
@@ -77,14 +80,14 @@ function RenderText:set_color_override(color)
     self:mark_needs_paint()
 end
 
----@param color Color?
+---@param color  Color?
 ---@param radius number?
 function RenderText:set_shadow_override(color, radius)
     if color ~= nil and not dataclass.isinstance(color, Color) then
         raise(std.TypeError('RenderText.shadow_color_override must be a Color'))
     end
-    if radius ~= nil and (type(radius) ~= 'number' or radius < 0
-        or radius ~= radius or radius == math.huge or radius == -math.huge) then
+    if radius ~= nil
+        and (type(radius) ~= 'number' or radius < 0 or radius ~= radius or radius == math.huge or radius == -math.huge) then
         raise(std.ValueError('RenderText.shadow_radius_override must be non-negative and finite'))
     end
     if self.shadow_color_override == color and self.shadow_radius_override == radius then
@@ -95,14 +98,14 @@ function RenderText:set_shadow_override(color, radius)
     self:mark_needs_paint()
 end
 
----@param color Color?
+---@param color  Color?
 ---@param radius number?
 function RenderText:set_glow_override(color, radius)
     if color ~= nil and not dataclass.isinstance(color, Color) then
         raise(std.TypeError('RenderText.glow_color_override must be a Color'))
     end
-    if radius ~= nil and (type(radius) ~= 'number' or radius < 0
-        or radius ~= radius or radius == math.huge or radius == -math.huge) then
+    if radius ~= nil
+        and (type(radius) ~= 'number' or radius < 0 or radius ~= radius or radius == math.huge or radius == -math.huge) then
         raise(std.ValueError('RenderText.glow_radius_override must be non-negative and finite'))
     end
     if self.glow_color_override == color and self.glow_radius_override == radius then
@@ -117,12 +120,12 @@ end
 function RenderText:measurer()
     local layout = self.text_layout or text_layout.get_default()
     if not layout then
-        raise(std.RuntimeError(
-            'RenderText needs a TextLayout: pass one or call text_layout.set_default()'))
+        raise(std.RuntimeError('RenderText needs a TextLayout: pass one or call text_layout.set_default()'))
     end
     return layout
 end
 
+---@param constraints Constraints
 function RenderText:__perform_layout(constraints)
     local bounds = constraints:has_bounded_width() and constraints.max_width or math.huge
     local paragraph = self:measurer():layout(self.text, self.style, bounds)
@@ -150,13 +153,10 @@ function RenderText:_paint_content(canvas, offset)
             end
         end
         local fraction = anchor_mod.fraction(anchor)
-        local position = (offset + Offset(
-            self.size.width * fraction.x,
-            self.size.height * fraction.y)) --[[@as Offset]]
+        local position = (offset + Offset(self.size.width * fraction.x, self.size.height * fraction.y)) --[[@as Offset]]
         local text_paint = self.text_paint
         local paragraph = self.paragraph
-        if self.color_override ~= nil
-            or self.shadow_color_override ~= nil then
+        if self.color_override ~= nil or self.shadow_color_override ~= nil then
             local style_options = {}
             if self.color_override ~= nil and paragraph.style.color ~= self.color_override then
                 style_options.color = self.color_override
@@ -174,7 +174,7 @@ function RenderText:_paint_content(canvas, offset)
         if self.glow_color_override ~= nil then
             local glow_style = paragraph.style:copy_with({
                 color = self.glow_color_override,
-                blur_radius = self.glow_radius_override or 0,
+                blur_radius = self.glow_radius_override or 0
             })
             canvas:draw_text(paragraph:with_style(glow_style), position, text_paint)
         end
@@ -182,13 +182,16 @@ function RenderText:_paint_content(canvas, offset)
     self:paint_children(canvas, offset)
 end
 
+---@param canvas PaintingContext
+---@param offset Offset
 function RenderText:__paint(canvas, offset)
     local paragraph = self.paragraph
-    local constrained_overflow = paragraph and (paragraph.size.width > self.size.width
-        or paragraph.size.height > self.size.height)
-    if paragraph and (self.clip and paragraph.size.width > self.size.width
-        or self.style.overflow ~= 'visible' and constrained_overflow) then
-        canvas:clip_rect_and_paint(self:input_region_rect():shift(offset), function()
+    local constrained_overflow = paragraph
+        and (paragraph.size.width > self.size.width or paragraph.size.height > self.size.height)
+    if paragraph
+        and (self.clip and paragraph.size.width > self.size.width
+            or self.style.overflow ~= 'visible' and constrained_overflow) then
+        canvas:clip_rect_and_paint(self:input_region_rect():shift(offset), function ()
             self:_paint_content(canvas, offset)
         end)
     else

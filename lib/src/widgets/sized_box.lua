@@ -8,21 +8,23 @@ local std = require 'elxlibs.std'
 local sized_box_mod = require 'src.render.sized_box'
 local widget_mod = require 'src.widgets.framework'
 
+local math = math
+
 local RenderSizedBox = sized_box_mod.RenderSizedBox
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _SizedBoxOptions
----@field width? number
+---@field width?  number
 ---@field height? number
----@field child? Widget
----@field key? any
+---@field child?  Widget
+---@field key?    any
 
 ---@class _SizedBoxChildOptions
 ---@field child? Widget
----@field key? any
+---@field key?   any
 
----@class SizedBox : SingleChildRenderObjectWidget
----@field width? number
+---@class SizedBox: SingleChildRenderObjectWidget
+---@field width?  number
 ---@field height? number
 ---@overload fun(options?: _SizedBoxOptions): self
 local SizedBox = std.class.new('SizedBox', SingleChildRenderObjectWidget)
@@ -36,6 +38,7 @@ function SizedBox:__init(options)
     self.height = options.height
 end
 
+---@return RenderSizedBox
 function SizedBox:create_render_object()
     return RenderSizedBox(self.width, self.height)
 end
@@ -56,7 +59,7 @@ function SizedBox.expand(options)
         key = options.key,
         child = options.child,
         width = math.huge,
-        height = math.huge,
+        height = math.huge
     })
 end
 
@@ -69,11 +72,11 @@ function SizedBox.shrink(options)
         key = options.key,
         child = options.child,
         width = 0,
-        height = 0,
+        height = 0
     })
 end
 
----@param size Size
+---@param size     Size
 ---@param options? _SizedBoxChildOptions
 ---@return SizedBox
 function SizedBox.from_size(size, options)
@@ -82,11 +85,13 @@ function SizedBox.from_size(size, options)
         key = options.key,
         child = options.child,
         width = size.width,
-        height = size.height,
+        height = size.height
     })
 end
 
 ---@class mod.src.widgets.sized_box
-local M = { SizedBox = SizedBox }
+local M = {
+    SizedBox = SizedBox
+}
 
 return M

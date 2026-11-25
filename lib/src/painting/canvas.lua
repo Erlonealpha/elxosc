@@ -19,6 +19,8 @@
 
 local std = require 'elxlibs.std'
 
+local string = string
+
 local raise = std.raise
 
 -- Every method below declares the backend contract; the base implementation
@@ -32,15 +34,14 @@ local M = {}
 
 ---@param method string
 local function abstract(method)
-    raise(std.NotImplementedError(
-        string.format('Canvas:%s must be implemented by a rendering backend', method)))
+    raise(std.NotImplementedError(string.format('Canvas:%s must be implemented by a rendering backend', method)))
 end
 
----@class Canvas : std.object
+---@class Canvas: std.object
 ---@overload fun(): self
 local Canvas = std.class.new('Canvas')
 
---== state ================================================================
+-- == state ================================================================
 
 --- Push the current transform/clip state onto the backend's stack.
 function Canvas:save()
@@ -75,49 +76,49 @@ function Canvas:opacity(opacity)
     abstract('opacity')
 end
 
---== primitives ===========================================================
+-- == primitives ===========================================================
 
----@param rect Rect
+---@param rect  Rect
 ---@param paint Paint
 function Canvas:draw_rect(rect, paint)
     abstract('draw_rect')
 end
 
----@param rect Rect
+---@param rect   Rect
 ---@param radius number
----@param paint Paint
+---@param paint  Paint
 function Canvas:draw_rrect(rect, radius, paint)
     abstract('draw_rrect')
 end
 
----@param path Path
+---@param path  Path
 ---@param paint Paint
 function Canvas:draw_path(path, paint)
     abstract('draw_path')
 end
 
----@param from Offset
----@param to Offset
+---@param from  Offset
+---@param to    Offset
 ---@param paint Paint
 function Canvas:draw_line(from, to, paint)
     abstract('draw_line')
 end
 
---== content ==============================================================
+-- == content ==============================================================
 
 --- Draw a laid out text run. `paragraph` is produced by the text layer, not
 --- by the canvas, so backends never deal with raw strings here.
 --- The backend places the chosen content reference at `position + offset`,
 --- then applies the Canvas transform. This is not an exact glyph ink origin.
----@param paragraph Paragraph
----@param position Offset logical target point for the paint anchor
+---@param paragraph  Paragraph
+---@param position   Offset     logical target point for the paint anchor
 ---@param text_paint TextPaint? defaults to top-left with zero offset
 function Canvas:draw_text(paragraph, position, text_paint)
     abstract('draw_text')
 end
 
 ---@param image Image?
----@param rect Rect destination rectangle
+---@param rect  Rect   destination rectangle
 function Canvas:draw_image(image, rect)
     abstract('draw_image')
 end

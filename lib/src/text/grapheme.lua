@@ -7,16 +7,16 @@
 local std = require 'elxlibs.std'
 
 ---@class TextCluster
----@field text string
----@field start_byte integer
----@field end_byte integer exclusive
----@field codepoint integer first codepoint
+---@field text           string
+---@field start_byte     integer
+---@field end_byte       integer exclusive
+---@field codepoint      integer first codepoint
 ---@field last_codepoint integer
 
 ---@class mod.src.text.grapheme
 local M = {}
 
----@param text string
+---@param text  string
 ---@param index integer
 ---@return integer codepoint
 ---@return integer next_byte
@@ -25,8 +25,7 @@ local function decode(text, index)
     if lead < 128 then
         return lead, index + 1
     end
-    local length = lead >= 0xC2 and lead <= 0xDF and 2
-        or lead >= 0xE0 and lead <= 0xEF and 3
+    local length = lead >= 0xC2 and lead <= 0xDF and 2 or lead >= 0xE0 and lead <= 0xEF and 3
         or lead >= 0xF0 and lead <= 0xF4 and 4 or 0
     local value = length == 2 and lead - 0xC0 or length == 3 and lead - 0xE0 or lead - 0xF0
     for offset = 1, length - 1 do
@@ -37,8 +36,8 @@ local function decode(text, index)
         end
         value = value * 64 + byte - 0x80
     end
-    if length == 0 or (length == 3 and value < 0x800) or (length == 4 and value < 0x10000)
-        or value > 0x10FFFF or value >= 0xD800 and value <= 0xDFFF then
+    if length == 0 or (length == 3 and value < 0x800) or (length == 4 and value < 0x10000) or value > 0x10FFFF
+        or value >= 0xD800 and value <= 0xDFFF then
         std.raise(std.ValueError('TextLayout requires valid UTF-8 at byte ' .. index))
     end
     return value, index + length
@@ -47,8 +46,7 @@ end
 ---@param value integer
 ---@return boolean
 local function extend(value)
-    return value >= 0x0300 and value <= 0x036F
-        or value >= 0x0483 and value <= 0x0489
+    return value >= 0x0300 and value <= 0x036F or value >= 0x0483 and value <= 0x0489
         or value >= 0x0591 and value <= 0x05BD or value == 0x05BF
         or value >= 0x05C1 and value <= 0x05C2 or value >= 0x05C4 and value <= 0x05C5
         or value >= 0x0610 and value <= 0x061A or value >= 0x064B and value <= 0x065F
@@ -91,7 +89,7 @@ function M.validate_utf8(text)
 end
 
 --- Byte ranges are one-based and half-open; a tab's rendered text is four spaces.
----@param text string
+---@param text       string
 ---@param start_byte integer? original-text start offset; default 1
 ---@return TextCluster[]
 function M.clusters(text, start_byte)
@@ -107,19 +105,28 @@ function M.clusters(text, start_byte)
         local current_hangul = hangul(codepoint)
         local previous_hangul = previous and hangul(previous)
         local joins_hangul = previous_hangul == 'L'
-                and (current_hangul == 'L' or current_hangul == 'V' or current_hangul == 'LV' or current_hangul == 'LVT')
-            or (previous_hangul == 'LV' or previous_hangul == 'V') and (current_hangul == 'V' or current_hangul == 'T')
+            and (current_hangul == 'L' or current_hangul == 'V' or current_hangul == 'LV' or current_hangul == 'LVT') or (previous_hangul
+            == 'LV'
+            or previous_hangul == 'V')
+            and (current_hangul == 'V' or current_hangul == 'T')
             or (previous_hangul == 'LVT' or previous_hangul == 'T') and current_hangul == 'T'
-        local joins = last and (extend(codepoint) or codepoint == 0x200D or previous == 0x200D
-            or regional and regional_count % 2 == 1 or joins_hangul)
+        local joins = last
+            and (extend(codepoint) or codepoint == 0x200D
+                or previous == 0x200D or regional and regional_count % 2 == 1
+                or joins_hangul)
         local part = codepoint == 9 and '    ' or text:sub(index, next_byte - 1)
         if joins and previous ~= 9 and codepoint ~= 9 then
             last.text = last.text .. part
             last.end_byte = next_byte + offset
             last.last_codepoint = codepoint
         else
-            clusters[#clusters + 1] = { text = part, start_byte = index + offset,
-                end_byte = next_byte + offset, codepoint = codepoint, last_codepoint = codepoint }
+            clusters[#clusters + 1] = {
+                text = part,
+                start_byte = index + offset,
+                end_byte = next_byte + offset,
+                codepoint = codepoint,
+                last_codepoint = codepoint
+            }
         end
         regional_count = regional and regional_count + 1 or 0
         previous = codepoint

@@ -40,7 +40,7 @@ export('widgets', require 'src.widgets.transform_box', true)
 export('widgets', require 'src.widgets.visibility', true)
 export('widgets', require 'src.widgets.widgets_binding', true)
 
----@class mod.widgets :
+---@class mod.widgets:
 --- mod.src.widgets.align,
 --- mod.src.widgets.ambient,
 --- mod.src.widgets.app,

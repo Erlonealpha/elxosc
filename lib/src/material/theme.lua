@@ -17,6 +17,9 @@ local color_mod = require 'src.foundation.color'
 local text_style_mod = require 'src.text.text_style'
 local widget_mod = require 'src.widgets.framework'
 
+local math = math
+local type = type
+
 local raise = std.raise
 local Color = color_mod.Color
 local TextStyle = text_style_mod.TextStyle
@@ -25,37 +28,39 @@ local InheritedWidget = widget_mod.InheritedWidget
 ---@class mod.src.material.theme
 local M = {}
 
+---@param value number?
+---@return boolean
 local function is_finite(value)
-    return type(value) == 'number'
-        and value == value
-        and value ~= math.huge
-        and value ~= -math.huge
+    return type(value) == 'number' and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+---@param context Element
+---@param name    string
 local function require_context(context, name)
     if context == nil or type(context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError(name .. ' lookup expects a BuildContext'))
     end
 end
 
---== Theme ==================================================================
+-- == Theme ==================================================================
 
 ---@class material._ThemeDataOptions
----@field scale number? positive finite uniform layout scale
+---@field scale            number?    positive finite uniform layout scale
 ---@field background_color Color?
----@field surface_color Color?
----@field accent_color Color?
----@field text_style TextStyle?
+---@field surface_color    Color?
+---@field accent_color     Color?
+---@field text_style       TextStyle?
 
----@class material.ThemeData : std.object
----@field scale number
+---@class material.ThemeData: std.object
+---@field scale            number
 ---@field background_color Color
----@field surface_color Color
----@field accent_color Color
----@field text_style TextStyle
+---@field surface_color    Color
+---@field accent_color     Color
+---@field text_style       TextStyle
 ---@overload fun(options?: _ThemeDataOptions): self
 local ThemeData = std.class.new('ThemeData')
 
+---@param options _ThemeDataOptions?
 function ThemeData:__init(options)
     options = options or {}
     if type(options) ~= 'table' then
@@ -70,8 +75,7 @@ function ThemeData:__init(options)
     self.surface_color = options.surface_color or Color.rgba(0x202832EE)
     self.accent_color = options.accent_color or Color.rgba(0x68A0FFFF)
     self.text_style = options.text_style or TextStyle({ font_size = 14 })
-    if not dataclass.isinstance(self.background_color, Color)
-        or not dataclass.isinstance(self.surface_color, Color)
+    if not dataclass.isinstance(self.background_color, Color) or not dataclass.isinstance(self.surface_color, Color)
         or not dataclass.isinstance(self.accent_color, Color) then
         raise(std.TypeError('ThemeData colors must be Color values'))
     end
@@ -81,17 +85,18 @@ function ThemeData:__init(options)
 end
 
 ---@class material._ThemeOptions
----@field data ThemeData
+---@field data  ThemeData
 ---@field child Widget?
----@field key any?
+---@field key   any?
 
----@class material.Theme : InheritedWidget
----@field data ThemeData
+---@class material.Theme: InheritedWidget
+---@field data  ThemeData
 ---@field child Widget?
 ---@overload fun(options: _ThemeOptions): self
 local Theme = std.class.new('Theme', InheritedWidget)
 local ThemeClass = Theme --[[@as std.class]]
 
+---@param options _ThemeOptions
 function Theme:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('Theme expects an options table'))
@@ -105,6 +110,7 @@ function Theme:__init(options)
 end
 
 ---@param old_widget Theme
+---@return boolean
 function Theme:update_should_notify(old_widget)
     return self.data ~= old_widget.data
 end

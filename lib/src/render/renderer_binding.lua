@@ -14,11 +14,13 @@ local M = {}
 ---@class RendererBindingRole
 local RendererBinding = {}
 
+---@return WidgetsBinding
 function RendererBinding.ensure_initialized()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.ensure_initialized()
 end
 
+---@return WidgetsBinding?
 function RendererBinding.instance()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.instance()

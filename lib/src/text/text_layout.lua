@@ -16,6 +16,11 @@ local geometry = require 'src.foundation.geometry'
 local paragraph = require 'src.text.paragraph'
 local grapheme_mod = require 'src.text.grapheme'
 
+local assert = assert
+local ipairs = ipairs
+local table = table
+local type = type
+
 local Size = geometry.Size
 local Paragraph = paragraph.Paragraph
 local raise = std.raise
@@ -41,9 +46,9 @@ function M.get_default()
 end
 
 ---@class TextHardLine
----@field text string
+---@field text       string
 ---@field start_byte integer
----@field end_byte integer
+---@field end_byte   integer
 
 ---@param text string
 ---@return TextHardLine[]
@@ -72,7 +77,7 @@ local function whitespace(cluster)
     return cluster.codepoint == 32 or cluster.codepoint == 9
 end
 
----@class TextLayout : std.object
+---@class TextLayout: std.object
 ---@overload fun(): self
 local TextLayout = std.class.new('TextLayout')
 
@@ -84,7 +89,7 @@ function TextLayout:line_height(style)
 end
 
 --- Abstract: natural width of one already wrapped line, in logical pixels.
----@param line string
+---@param line  string
 ---@param style TextStyle
 ---@return number
 function TextLayout:line_width(line, style)
@@ -92,7 +97,7 @@ function TextLayout:line_width(line, style)
 end
 
 --- Backends may override to retain measurement provenance without changing layout.
----@param line string
+---@param line  string
 ---@param style TextStyle
 ---@return number
 ---@return TextMeasureSource
@@ -102,15 +107,14 @@ function TextLayout:measure_line(line, style)
 end
 
 --- Wrap `text` and produce a Paragraph. `max_width` is unbounded when nil.
----@param text string
----@param style TextStyle
----@param max_width number? unbounded when nil / math.huge
+---@param text      string
+---@param style     TextStyle
+---@param max_width number?   unbounded when nil / math.huge
 ---@return Paragraph
 function TextLayout:layout(text, style, max_width)
     grapheme_mod.validate_utf8(text)
     local line_height = self:line_height(style)
-    if type(line_height) ~= 'number' or line_height ~= line_height
-        or line_height < 0 or line_height == math.huge then
+    if type(line_height) ~= 'number' or line_height ~= line_height or line_height < 0 or line_height == math.huge then
         raise(std.ValueError('TextLayout:line_height must return a non-negative finite number'))
     end
     local bounds = max_width == nil and math.huge or max_width
@@ -121,6 +125,10 @@ function TextLayout:layout(text, style, max_width)
     local metrics = {}
     ---@type TextCluster[][]
     local line_clusters = {}
+    ---@param line string
+    ---@return number
+    ---@return TextMeasureSource
+    ---@return string?
     local function measure(line)
         local width, source, reason = self:measure_line(line, style)
         if type(width) ~= 'number' or width < 0 or width ~= width or width == math.huge then
@@ -128,10 +136,16 @@ function TextLayout:layout(text, style, max_width)
         end
         return width, source, reason
     end
+    ---@param clusters   TextCluster[]
+    ---@param first      integer
+    ---@param last       integer
+    ---@param start_byte integer
+    ---@param end_byte   integer
     local function append(clusters, first, last, start_byte, end_byte)
         local parts = {}
         for index = first, last do
-            parts[#parts + 1] = clusters[index].text
+            parts[#parts + 1] = clusters[index] --[[@as TextCluster]]
+                .text
         end
         local line = table.concat(parts)
         local width, source, reason = measure(line)
@@ -141,8 +155,14 @@ function TextLayout:layout(text, style, max_width)
             selected[#selected + 1] = clusters[index]
         end
         line_clusters[#line_clusters + 1] = selected
-        metrics[#metrics + 1] = { width = width, source = source, reason = reason,
-            start_byte = start_byte, end_byte = end_byte, truncated = false }
+        metrics[#metrics + 1] = {
+            width = width,
+            source = source,
+            reason = reason,
+            start_byte = start_byte,
+            end_byte = end_byte,
+            truncated = false
+        }
     end
     if #text > 0 then
         for _, hard in ipairs(split_hard_lines(text)) do
@@ -163,9 +183,10 @@ function TextLayout:layout(text, style, max_width)
                         parts[#parts + 1] = cluster.text
                         local next_cluster = clusters[index + 1]
                         local can_break = next_cluster == nil
-                        if next_cluster and (whitespace(cluster) and not whitespace(next_cluster)
-                            or grapheme_mod.is_cjk(cluster.last_codepoint)
-                            or grapheme_mod.is_cjk(next_cluster.codepoint)) then
+                        if next_cluster
+                            and (whitespace(cluster) and not whitespace(next_cluster) or grapheme_mod.is_cjk(
+                                    cluster.last_codepoint
+                                ) or grapheme_mod.is_cjk(next_cluster.codepoint)) then
                             can_break = true
                         end
                         if can_break then
@@ -254,7 +275,10 @@ function TextLayout:layout(text, style, max_width)
         raise(std.ValueError('TextLayout paragraph height must be finite'))
     end
     return Paragraph(text, style, Size(width, height), lines, line_height, {
-        line_metrics = metrics, max_width = bounds, overflow = style.overflow, truncated = truncated,
+        line_metrics = metrics,
+        max_width = bounds,
+        overflow = style.overflow,
+        truncated = truncated
     })
 end
 

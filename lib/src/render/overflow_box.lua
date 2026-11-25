@@ -25,11 +25,13 @@ local RenderObject = render_object.RenderObject
 ---@class mod.src.render.overflow_box
 local M = {}
 
----@class RenderUnconstrainedBox : RenderObject
+---@class RenderUnconstrainedBox: RenderObject
 ---@field alignment Offset
 ---@overload fun(child: RenderObject?, alignment: Offset?): self
 local RenderUnconstrainedBox = std.class.new('RenderUnconstrainedBox', RenderObject)
 
+---@param child     RenderObject?
+---@param alignment Offset?
 function RenderUnconstrainedBox:__init(child, alignment)
     RenderObject.__init(self)
     self.alignment = alignment or Offset(0.5, 0.5)
@@ -38,6 +40,7 @@ function RenderUnconstrainedBox:__init(child, alignment)
     end
 end
 
+---@param constraints Constraints
 function RenderUnconstrainedBox:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
@@ -48,7 +51,8 @@ function RenderUnconstrainedBox:__perform_layout(constraints)
     self.size = constraints:constrain_size(child.size)
     child.parent_data.offset = Offset(
         (self.size.width - child.size.width) * self.alignment.x,
-        (self.size.height - child.size.height) * self.alignment.y)
+        (self.size.height - child.size.height) * self.alignment.y
+    )
 end
 
 ---@alias OverflowBoxFit
@@ -56,18 +60,22 @@ end
 --- | 'defer_to_child'
 
 ---@class OverflowBoxOpts
----@field min_width number?
----@field max_width number?
+---@field min_width  number?
+---@field max_width  number?
 ---@field min_height number?
 ---@field max_height number?
----@field fit OverflowBoxFit?
----@field alignment Offset?
+---@field fit        OverflowBoxFit?
+---@field alignment  Offset?
 
----@class RenderOverflowBox : RenderObject
----@field opts OverflowBoxOpts
+---@class RenderOverflowBox: RenderObject
+---@field opts      OverflowBoxOpts
+---@field alignment Offset
+---@field fit       OverflowBoxFit
 ---@overload fun(child: RenderObject?, options: OverflowBoxOpts?): self
 local RenderOverflowBox = std.class.new('RenderOverflowBox', RenderObject)
 
+---@param child   RenderObject?
+---@param options OverflowBoxOpts?
 function RenderOverflowBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
@@ -84,12 +92,12 @@ end
 function RenderOverflowBox:inner_constraints(constraints)
     local opts = self.opts
     return Constraints(
-        opts.min_width or constraints.min_width,
-        opts.max_width or constraints.max_width,
-        opts.min_height or constraints.min_height,
-        opts.max_height or constraints.max_height)
+        opts.min_width or constraints.min_width, opts.max_width or constraints.max_width,
+        opts.min_height or constraints.min_height, opts.max_height or constraints.max_height
+    )
 end
 
+---@param constraints Constraints
 function RenderOverflowBox:__perform_layout(constraints)
     local child = self._children[1]
     if self.fit == 'defer_to_child' then
@@ -104,7 +112,8 @@ function RenderOverflowBox:__perform_layout(constraints)
     child:layout(self:inner_constraints(constraints))
     child.parent_data.offset = Offset(
         (self.size.width - child.size.width) * self.alignment.x,
-        (self.size.height - child.size.height) * self.alignment.y)
+        (self.size.height - child.size.height) * self.alignment.y
+    )
 end
 
 M.RenderUnconstrainedBox = RenderUnconstrainedBox

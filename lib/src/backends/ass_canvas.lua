@@ -34,6 +34,11 @@ local transform_mod = require 'src.foundation.transform'
 local geometry_mod = require 'src.foundation.geometry'
 local ass_text_mod = require 'src.backends.ass_text'
 
+local string = string
+local table = table
+local tostring = tostring
+local type = type
+
 local Canvas = canvas.Canvas
 local Path = path_mod.Path
 local Verb = path_mod.Verb
@@ -62,14 +67,10 @@ local ASS_ANCHORS = {
     [Anchor.CENTER_RIGHT] = 6,
     [Anchor.BOTTOM_LEFT] = 1,
     [Anchor.BOTTOM_CENTER] = 2,
-    [Anchor.BOTTOM_RIGHT] = 3,
+    [Anchor.BOTTOM_RIGHT] = 3
 }
 
-local ASS_TEXT_ALIGN_ANCHORS = {
-    [Align.LEFT] = 4,
-    [Align.CENTER] = 5,
-    [Align.RIGHT] = 6,
-}
+local ASS_TEXT_ALIGN_ANCHORS = { [Align.LEFT] = 4, [Align.CENTER] = 5, [Align.RIGHT] = 6 }
 
 ---@class mod.src.backends.ass_canvas
 local M = {}
@@ -109,43 +110,47 @@ end
 ---@param value number
 ---@return number
 local function validate_opacity(value)
-    if type(value) ~= 'number' or value ~= value
-        or value == math.huge or value == -math.huge
-        or value < 0 or value > 1 then
+    if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge or value < 0 or value > 1 then
         raise(std.ValueError('AssCanvas.opacity must be between 0 and 1'))
     end
     return value
 end
 
----@param color_ Color
+---@param color_  Color
 ---@param opacity number
 ---@return string
 local function ass_alpha_with_opacity(color_, opacity)
     return format('%02X', 255 - to_byte(color_.a * opacity))
 end
 
----@param paint Paint
+---@param paint      Paint
 ---@param force_fill boolean?
----@param opacity number
+---@param opacity    number
 ---@return string
 local function paint_tags(paint, force_fill, opacity)
     local rgb = M.ass_rgb(paint.color)
     local alpha = ass_alpha_with_opacity(paint.color, opacity)
     local blur = paint.blur_radius or 0
     if paint.style == 'stroke' and not force_fill then
-        return format('\\blur%g\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF',
-            blur, paint.stroke_width, rgb, alpha, rgb)
+        return format(
+            '\\blur%g\\bord%g\\shad0\\3c&H%s&\\3a&H%s&\\1c&H%s&\\1a&HFF', blur, paint.stroke_width, rgb, alpha, rgb
+        )
     end
     return format('\\blur%g\\bord0\\shad0\\1c&H%s&\\1a&H%s&', blur, rgb, alpha)
 end
 
----@class AssCanvas : Canvas
----@field events string[] one ASS `Text` event per shape or non-empty paragraph row
----@field subpixel integer `\p` level (4 = 8x sub-pixel, the assdraw default)
----@field default_font_family string? resolved by the owning host
+---@class AssCanvas: Canvas
+---@field events              string[]                                      one ASS `Text` event per shape or non-empty paragraph row
+---@field subpixel            integer                                       `\p` level (4 = 8x sub-pixel, the assdraw default)
+---@field default_font_family string?                                       resolved by the owning host
+---@field private _matrix     Matrix2D
+---@field private _clip       Rect?
+---@field private _opacity    number
+---@field private _stack      { [1]: Matrix2D, [2]: Rect?, [3]: number } []
 ---@overload fun(subpixel: integer?): self
 local AssCanvas = std.class.new('AssCanvas', Canvas)
 
+---@param subpixel integer?
 function AssCanvas:__init(subpixel)
     self.events = {}
     self.subpixel = subpixel or 4
@@ -184,11 +189,10 @@ end
 ---@return number
 function AssCanvas:_apply(x, y)
     local matrix = self._matrix
-    return matrix.a * x + matrix.c * y + matrix.tx,
-        matrix.b * x + matrix.d * y + matrix.ty
+    return matrix.a * x + matrix.c * y + matrix.tx, matrix.b * x + matrix.d * y + matrix.ty
 end
 
---== state ================================================================
+-- == state ================================================================
 
 function AssCanvas:save()
     local stack = self._stack
@@ -202,26 +206,30 @@ function AssCanvas:restore()
     end
 end
 
+---@param opacity number
 function AssCanvas:opacity(opacity)
     self._opacity = self._opacity * validate_opacity(opacity)
 end
 
----@param name string
+---@param name  string
 ---@param value any
 ---@return number
 local function check_finite(name, value)
-    if type(value) ~= 'number' or value ~= value
-        or value == math.huge or value == -math.huge then
+    if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
         raise(std.ValueError('AssCanvas.' .. name .. ' must be a finite number'))
     end
     return value
 end
 
+---@param dx number
+---@param dy number
 function AssCanvas:translate(dx, dy)
     dx, dy = check_finite('translate.x', dx), check_finite('translate.y', dy)
     self._matrix = self._matrix:multiply(Matrix2D.translation(dx, dy))
 end
 
+---@param sx number
+---@param sy number?
 function AssCanvas:scale(sx, sy)
     sy = sy == nil and sx or sy
     sx, sy = check_finite('scale.x', sx), check_finite('scale.y', sy)
@@ -231,15 +239,11 @@ function AssCanvas:scale(sx, sy)
     self._matrix = self._matrix:multiply(Matrix2D.scale(sx, sy))
 end
 
+---@param rect Rect
 function AssCanvas:clip_rect(rect)
     local x0, y0 = self:_apply(rect.left, rect.top)
     local x1, y1 = self:_apply(rect.right, rect.bottom)
-    local next_clip = {
-        left = min(x0, x1),
-        top = min(y0, y1),
-        right = max(x0, x1),
-        bottom = max(y0, y1),
-    }
+    local next_clip = { left = min(x0, x1), top = min(y0, y1), right = max(x0, x1), bottom = max(y0, y1) }
     local previous = self._clip
     if previous then
         next_clip.left = max(next_clip.left, previous.left)
@@ -256,14 +260,13 @@ function AssCanvas:_clip_tag()
     if not clip then
         return ''
     end
-    return format('\\clip(%s,%s,%s,%s)',
-        ris(clip.left), ris(clip.top), ris(clip.right), ris(clip.bottom))
+    return format('\\clip(%s,%s,%s,%s)', ris(clip.left), ris(clip.top), ris(clip.right), ris(clip.bottom))
 end
 
---== primitives ===========================================================
+-- == primitives ===========================================================
 
----@param path Path
----@param paint Paint?
+---@param path       Path
+---@param paint      Paint?
 ---@param force_fill boolean?
 function AssCanvas:_emit_path(path, paint, force_fill)
     local verbs = path:verbs()
@@ -301,35 +304,48 @@ function AssCanvas:_emit_path(path, paint, force_fill)
             local qx, qy, ex, ey = verb[2], verb[3], verb[4], verb[5]
             local c1x, c1y = cx + 2 / 3 * (qx - cx), cy + 2 / 3 * (qy - cy)
             local c2x, c2y = ex + 2 / 3 * (qx - ex), ey + 2 / 3 * (qy - ey)
-            parts[#parts + 1] = format('b %s %s %s %s %s %s',
-                ax(c1x), ay(c1y), ax(c2x), ay(c2y), ax(ex), ay(ey))
+            parts[#parts + 1] = format('b %s %s %s %s %s %s', ax(c1x), ay(c1y), ax(c2x), ay(c2y), ax(ex), ay(ey))
             cx, cy = ex, ey
         elseif op == Verb.CUBIC_TO then
-            parts[#parts + 1] = format('b %s %s %s %s %s %s',
-                ax(verb[2]), ay(verb[3]), ax(verb[4]), ay(verb[5]), ax(verb[6]), ay(verb[7]))
+            parts[#parts + 1] = format(
+                'b %s %s %s %s %s %s', ax(verb[2]), ay(verb[3]), ax(verb[4]), ay(verb[5]), ax(verb[6]), ay(verb[7])
+            )
             cx, cy = verb[6], verb[7]
         elseif op == Verb.CLOSE then
             parts[#parts + 1] = 'c'
         end
     end
 
-    self:_push(format('{\\pos(0,0)\\rDefault\\an7%s%s}{\\p%d}%s{\\p0}',
-        paint_tags(paint, force_fill, self._opacity), self:_clip_tag(), self.subpixel,
-        concat(parts, ' ')))
+    self:_push(
+        format(
+            '{\\pos(0,0)\\rDefault\\an7%s%s}{\\p%d}%s{\\p0}', paint_tags(paint, force_fill, self._opacity),
+            self:_clip_tag(), self.subpixel, concat(parts, ' ')
+        )
+    )
 end
 
+---@param rect  Rect
+---@param paint Paint
 function AssCanvas:draw_rect(rect, paint)
     self:_emit_path(Path():add_rect(rect), paint)
 end
 
+---@param rect   Rect
+---@param radius number
+---@param paint  Paint
 function AssCanvas:draw_rrect(rect, radius, paint)
     self:_emit_path(Path():add_rrect(rect, radius), paint)
 end
 
+---@param path  Path
+---@param paint Paint
 function AssCanvas:draw_path(path, paint)
     self:_emit_path(path, paint)
 end
 
+---@param from  Offset
+---@param to    Offset
+---@param paint Paint
 function AssCanvas:draw_line(from, to, paint)
     paint = paint or Paint(Color.argb(0xFF000000))
     local dx, dy = to.x - from.x, to.y - from.y
@@ -348,11 +364,11 @@ function AssCanvas:draw_line(from, to, paint)
     self:_emit_path(quad, paint, true)
 end
 
---== content ==============================================================
+-- == content ==============================================================
 
----@param line string
----@param style TextStyle
----@param position Offset
+---@param line       string
+---@param style      TextStyle
+---@param position   Offset
 ---@param text_paint TextPaint?
 function AssCanvas:_draw_text_line(line, style, position, text_paint)
     if style.font_size == 0 or line == '' then
@@ -363,8 +379,7 @@ function AssCanvas:_draw_text_line(line, style, position, text_paint)
     local x, y = self:_apply(position.x + visual_offset.x, position.y + visual_offset.y)
     local anchor = text_paint.anchor
     if not text_paint._anchor_explicit then
-        anchor = style.align == Align.CENTER and Anchor.CENTER
-            or style.align == Align.RIGHT and Anchor.CENTER_RIGHT
+        anchor = style.align == Align.CENTER and Anchor.CENTER or style.align == Align.RIGHT and Anchor.CENTER_RIGHT
             or Anchor.CENTER_LEFT
     end
     local ass_anchor = ASS_ANCHORS[anchor]
@@ -375,10 +390,8 @@ function AssCanvas:_draw_text_line(line, style, position, text_paint)
         raise(std.ValueError('unsupported ASS text anchor: ' .. tostring(text_paint.anchor)))
     end
     local tags = {
-        format(
-            '{\\pos(%d,%d)\\rDefault\\an%d\\blur%g',
-            ri(x), ri(y), ass_anchor, style.blur_radius),
-        ass_text_mod.shape_tags(style, self.default_font_family),
+        format('{\\pos(%d,%d)\\rDefault\\an%d\\blur%g', ri(x), ri(y), ass_anchor, style.blur_radius),
+        ass_text_mod.shape_tags(style, self.default_font_family)
     }
     tags[#tags + 1] = '\\1c&H' .. M.ass_rgb(style.color) .. '&'
     tags[#tags + 1] = '\\1a&H' .. ass_alpha_with_opacity(style.color, self._opacity) .. '&'
@@ -405,8 +418,7 @@ function AssCanvas:_draw_text_line(line, style, position, text_paint)
     -- A scaled canvas (e.g. inside a FittedBox) scales glyphs with
     -- `\fscx`/`\fscy`; drawings are already scaled by `_apply`.
     if self._matrix.a ~= 1 or self._matrix.d ~= 1 then
-        tags[#tags + 1] = format('\\fscx%s\\fscy%s',
-            ris(self._matrix.a * 100), ris(self._matrix.d * 100))
+        tags[#tags + 1] = format('\\fscx%s\\fscy%s', ris(self._matrix.a * 100), ris(self._matrix.d * 100))
     end
     tags[#tags + 1] = self:_clip_tag()
     tags[#tags + 1] = '}'
@@ -414,8 +426,8 @@ function AssCanvas:_draw_text_line(line, style, position, text_paint)
     self:_push(concat(tags) .. ass_text_mod.escape_line(line))
 end
 
----@param paragraph Paragraph
----@param position Offset
+---@param paragraph  Paragraph
+---@param position   Offset
 ---@param text_paint TextPaint?
 function AssCanvas:draw_text(paragraph, position, text_paint)
     if paragraph.style.font_size == 0 or paragraph:is_empty() then
@@ -428,12 +440,12 @@ function AssCanvas:draw_text(paragraph, position, text_paint)
     end
     local anchor = text_paint.anchor
     if not text_paint._anchor_explicit then
-        anchor = paragraph.style.align == Align.CENTER and Anchor.CENTER
-            or paragraph.style.align == Align.RIGHT and Anchor.CENTER_RIGHT or Anchor.CENTER_LEFT
+        anchor = paragraph.style.align == Align.CENTER and Anchor.CENTER or paragraph.style.align == Align.RIGHT
+                and Anchor.CENTER_RIGHT or Anchor.CENTER_LEFT
     end
     local fraction = anchor_mod.fraction(anchor)
-    local middle_anchor = fraction.x == 0 and Anchor.CENTER_LEFT
-        or fraction.x == 1 and Anchor.CENTER_RIGHT or Anchor.CENTER
+    local middle_anchor = fraction.x == 0 and Anchor.CENTER_LEFT or fraction.x == 1 and Anchor.CENTER_RIGHT
+        or Anchor.CENTER
     local line_paint = text_paint:copy_with({ anchor = middle_anchor })
     local top = position.y - paragraph.size.height * fraction.y
     for index, line in ipairs(paragraph.lines) do

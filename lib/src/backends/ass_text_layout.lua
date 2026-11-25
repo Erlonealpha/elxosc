@@ -13,6 +13,13 @@ local std = require 'elxlibs.std'
 local text_layout = require 'src.text.text_layout'
 local ass_text_mod = require 'src.backends.ass_text'
 
+local ipairs = ipairs
+local math = math
+local pcall = pcall
+local string = string
+local tostring = tostring
+local type = type
+
 local TextLayout = text_layout.TextLayout
 
 ---@class mod.src.backends.ass_text_layout
@@ -25,14 +32,10 @@ local function glyph_ratio(codepoint)
         return 0.5
     end
     -- Rough "East Asian wide" ranges (CJK, Hangul, full-width forms, ...).
-    if (codepoint >= 0x1100 and codepoint <= 0x115F)
-        or (codepoint >= 0x2E80 and codepoint <= 0xA4CF)
-        or (codepoint >= 0xAC00 and codepoint <= 0xD7A3)
-        or (codepoint >= 0xF900 and codepoint <= 0xFAFF)
-        or (codepoint >= 0xFE30 and codepoint <= 0xFE4F)
-        or (codepoint >= 0xFF00 and codepoint <= 0xFF60)
-        or (codepoint >= 0xFFE0 and codepoint <= 0xFFE6)
-        or codepoint >= 0x20000 then
+    if (codepoint >= 0x1100 and codepoint <= 0x115F) or (codepoint >= 0x2E80 and codepoint <= 0xA4CF)
+        or (codepoint >= 0xAC00 and codepoint <= 0xD7A3) or (codepoint >= 0xF900 and codepoint <= 0xFAFF)
+        or (codepoint >= 0xFE30 and codepoint <= 0xFE4F) or (codepoint >= 0xFF00 and codepoint <= 0xFF60)
+        or (codepoint >= 0xFFE0 and codepoint <= 0xFFE6) or codepoint >= 0x20000 then
         return 1.0
     end
     return 0.5
@@ -79,8 +82,7 @@ local function utf8_next(s, i)
         return (b1 % 0x10) * 0x1000 + (b2 % 0x40) * 0x40 + (b3 % 0x40), i + 3
     end
     local b4 = s:byte(i + 3) or 0x80
-    return (b1 % 0x08) * 0x40000 + (b2 % 0x40) * 0x1000
-        + (b3 % 0x40) * 0x40 + (b4 % 0x40), i + 4
+    return (b1 % 0x08) * 0x40000 + (b2 % 0x40) * 0x1000 + (b3 % 0x40) * 0x40 + (b4 % 0x40), i + 4
 end
 
 ---@alias AssTextMeasureSource 'native' | 'estimate' | 'empty'
@@ -97,64 +99,65 @@ end
 ---@alias AssTextMeasure sync fun(data: string): AssTextRawBounds?, string?, AssTextMeasureErrorKind?
 
 ---@class _AssTextLayoutOptions
----@field measure_ass AssTextMeasure?
----@field res_x number?
----@field res_y number?
+---@field measure_ass         AssTextMeasure?
+---@field res_x               number?
+---@field res_y               number?
 ---@field default_font_family string?
----@field cache_entries integer? default 512; zero disables caching
----@field cache_bytes integer? default 262144; original text and shape key bytes
+---@field cache_entries       integer?        default 512; zero disables caching
+---@field cache_bytes         integer?        default 262144; original text and shape key bytes
 
 ---@class AssTextCacheEntry
----@field key string
----@field width number
----@field source AssTextMeasureSource
----@field reason AssTextMeasureReason?
+---@field key      string
+---@field width    number
+---@field source   AssTextMeasureSource
+---@field reason   AssTextMeasureReason?
 ---@field previous AssTextCacheEntry?
----@field next AssTextCacheEntry?
+---@field next     AssTextCacheEntry?
 
 ---@class AssTextCacheStats
----@field entries integer
----@field bytes integer
----@field hits integer
+---@field entries      integer
+---@field bytes        integer
+---@field hits         integer
 ---@field native_calls integer
----@field estimates integer
----@field evictions integer
+---@field estimates    integer
+---@field evictions    integer
 
----@class AssTextLayout : TextLayout
----@field private _measure_ass AssTextMeasure?
----@field res_x number immutable measurement environment
----@field res_y number immutable measurement environment
----@field default_font_family string? immutable resolved font environment
----@field private _capacity integer
+---@class AssTextLayout: TextLayout
+---@field private _measure_ass   AssTextMeasure?
+---@field res_x                  number                           immutable measurement environment
+---@field res_y                  number                           immutable measurement environment
+---@field default_font_family    string?                          immutable resolved font environment
+---@field private _capacity      integer
 ---@field private _byte_capacity integer
----@field private _cache table<string, AssTextCacheEntry>
----@field private _head AssTextCacheEntry?
----@field private _tail AssTextCacheEntry?
----@field private _stats AssTextCacheStats
----@field private _failure AssTextMeasureReason?
+---@field private _cache         table<string, AssTextCacheEntry>
+---@field private _head          AssTextCacheEntry?
+---@field private _tail          AssTextCacheEntry?
+---@field private _stats         AssTextCacheStats
+---@field private _failure       AssTextMeasureReason?
 ---@overload fun(options?: _AssTextLayoutOptions): self
 local AssTextLayout = std.class.new('AssTextLayout', TextLayout)
 
----@param value number?
+---@param value   number?
 ---@param default number
----@param name string
+---@param name    string
 ---@return integer
 local function capacity(value, default, name)
     value = value == nil and default or value
-    if type(value) ~= 'number' or value < 0 or value == math.huge
-        or value ~= math.floor(value) then
+    if type(value) ~= 'number' or value < 0 or value == math.huge or value ~= math.floor(value) then
         std.raise(std.ValueError('AssTextLayout.' .. name .. ' must be a non-negative integer'))
     end
-    return math.floor(value --[[@as number]])
+    return math.floor(
+        value --[[@as number]]
+    )
 end
 
 ---@param value number
 ---@return boolean
 local function positive_resolution(value)
-    return type(value) == 'number' and value >= 1 and value < math.huge
-        and value == math.floor(value)
+    return type(value) == 'number' and value >= 1 and value < math.huge and value == math.floor(value)
 end
 
+---@param options _AssTextLayoutOptions?
 function AssTextLayout:__init(options)
     options = options or {}
     if type(options) ~= 'table' then
@@ -164,8 +167,8 @@ function AssTextLayout:__init(options)
     self.res_x = options.res_x or 0
     self.res_y = options.res_y or 0
     self.default_font_family = options.default_font_family
-    if self.default_font_family ~= nil and (type(self.default_font_family) ~= 'string'
-        or self.default_font_family:find('[\r\n%z{}\\]')) then
+    if self.default_font_family ~= nil
+        and (type(self.default_font_family) ~= 'string' or self.default_font_family:find('[\r\n%z{}\\]')) then
         std.raise(std.ValueError('AssTextLayout.default_font_family must be a literal font name'))
     end
     if self._measure_ass ~= nil then
@@ -187,7 +190,7 @@ end
 
 -- Inherit the logical line advance. The actual spacing of a multi-line ASS
 -- event is controlled by libass; paint transforms do not alter logical metrics.
----@param line string
+---@param line  string
 ---@param style TextStyle
 ---@return number
 local function estimate_width(line, style)
@@ -234,16 +237,15 @@ function AssTextLayout:_touch(entry)
     end
 end
 
----@param key string
----@param width number
+---@param key    string
+---@param width  number
 ---@param source AssTextMeasureSource
 ---@param reason AssTextMeasureReason?
 function AssTextLayout:_remember(key, width, source, reason)
     if self._capacity == 0 or #key > self._byte_capacity then
         return
     end
-    while self._tail and (self._stats.entries >= self._capacity
-        or self._stats.bytes + #key > self._byte_capacity) do
+    while self._tail and (self._stats.entries >= self._capacity or self._stats.bytes + #key > self._byte_capacity) do
         local old = self._tail
         self:_unlink(old)
         self._cache[old.key] = nil
@@ -264,8 +266,14 @@ end
 ---@return AssTextCacheStats
 function AssTextLayout:cache_stats()
     local stats = self._stats
-    return { entries = stats.entries, bytes = stats.bytes, hits = stats.hits,
-        native_calls = stats.native_calls, estimates = stats.estimates, evictions = stats.evictions }
+    return {
+        entries = stats.entries,
+        bytes = stats.bytes,
+        hits = stats.hits,
+        native_calls = stats.native_calls,
+        estimates = stats.estimates,
+        evictions = stats.evictions
+    }
 end
 
 ---@param data string
@@ -292,14 +300,15 @@ function AssTextLayout:_bounds(data)
             return nil, 'unreliable'
         end
     end
-    if raw.x0 <= 0 or raw.y0 <= 0 or raw.x1 >= self.res_x or raw.y1 >= self.res_y
+    if raw.x0 <= 0 or raw.y0 <= 0
+        or raw.x1 >= self.res_x or raw.y1 >= self.res_y
         or raw.x1 <= raw.x0 or raw.y1 <= raw.y0 then
         return nil, 'unreliable'
     end
     return raw --[[@as AssTextBounds]]
 end
 
----@param line string
+---@param line  string
 ---@param style TextStyle
 ---@return number?
 ---@return AssTextMeasureReason?
@@ -312,9 +321,13 @@ function AssTextLayout:_native_width(line, style)
     local y = math.floor(self.res_y / 2)
     local shape = ass_text_mod.shape_tags(style, self.default_font_family)
     local text = ass_text_mod.escape_line(line)
+    ---@param anchor integer
+    ---@param x      number
+    ---@return string
     local function event(anchor, x)
-        return string.format('{\\pos(%d,%d)\\rDefault\\an%d\\blur0%s\\bord0\\shad0\\1a&H00&}%s',
-            x, y, anchor, shape, text)
+        return string.format(
+            '{\\pos(%d,%d)\\rDefault\\an%d\\blur0%s\\bord0\\shad0\\1a&H00&}%s', x, y, anchor, shape, text
+        )
     end
     local left, reason = self:_bounds(event(4, left_x))
     if not left then
@@ -336,7 +349,7 @@ end
 
 --- Original text is never changed. The width is a positioning span, not ink or
 --- baseline metrics. Native failure latches until the host replaces this layout.
----@param line string
+---@param line  string
 ---@param style TextStyle
 ---@return number width
 ---@return AssTextMeasureSource source
@@ -346,8 +359,10 @@ function AssTextLayout:measure_line(line, style)
         return 0, 'empty'
     end
     local family = style.font_family or self.default_font_family or ''
-    local key = string.format('%d:%s:%.17g:%s:%s:%.17g:%s', #family, family,
-        style.font_size, tostring(style.bold), tostring(style.italic), style.letter_spacing, line)
+    local key = string.format(
+        '%d:%s:%.17g:%s:%s:%.17g:%s', #family, family, style.font_size, tostring(style.bold), tostring(style.italic),
+        style.letter_spacing, line
+    )
     local cached = self._cache[key]
     if cached then
         self:_unlink(cached)
@@ -360,9 +375,9 @@ function AssTextLayout:measure_line(line, style)
     if not self._measure_ass then
         reason = 'offline'
     elseif not reason then
-        if line:find('[\r\n\t\v\f%z]') or line:find('\226\128[\128-\138]')
-            or line:find('\227\128\128') or line:find('\226\128[\168\169\175]')
-            or line:find('\226\129\159') or line:find('\194\133') or line:find('\225\154\128') then
+        if line:find('[\r\n\t\v\f%z]') or line:find('\226\128[\128-\138]') or line:find('\227\128\128')
+            or line:find('\226\128[\168\169\175]') or line:find('\226\129\159') or line:find('\194\133')
+            or line:find('\225\154\128') then
             reason = 'unsupported'
         elseif line:gsub(' ', ''):gsub('\194\160', '') == '' then
             local marked, marked_reason = self:_native_width(line .. '|', style)
@@ -389,6 +404,9 @@ function AssTextLayout:measure_line(line, style)
     return width, source, reason
 end
 
+---@param line  string
+---@param style TextStyle
+---@return number
 function AssTextLayout:line_width(line, style)
     local width = self:measure_line(line, style)
     return width

@@ -19,23 +19,23 @@ local RenderLayoutScaleBox = layout_scale_box_mod.RenderLayoutScaleBox
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _TransformBoxOptions
----@field scale? Size positive axis scales; defaults to 1x1
----@field alignment? Offset 0..1 pivot inside the layout box
----@field clip? boolean clip transformed paint to the layout box
+---@field scale?            Size                positive axis scales; defaults to 1x1
+---@field alignment?        Offset              0..1 pivot inside the layout box
+---@field clip?             boolean             clip transformed paint to the layout box
 ---@field scale_controller? AnimationController
----@field scale_tween? Tween<Size>
----@field key? any
+---@field scale_tween?      Tween<Size>
+---@field key?              any
 
----@class TransformBox : SingleChildRenderObjectWidget
----@field scale Size
----@field alignment Offset
----@field clip boolean
+---@class TransformBox: SingleChildRenderObjectWidget
+---@field scale            Size
+---@field alignment        Offset
+---@field clip             boolean
 ---@field scale_controller AnimationController?
----@field scale_tween Tween<Size>?
+---@field scale_tween      Tween<Size>?
 ---@overload fun(child: Widget?, options?: _TransformBoxOptions): self
 local TransformBox = std.class.new('TransformBox', SingleChildRenderObjectWidget)
 
----@param child Widget?
+---@param child    Widget?
 ---@param options? _TransformBoxOptions
 function TransformBox:__init(child, options)
     options = options or {}
@@ -52,11 +52,12 @@ function TransformBox:__init(child, options)
     end
 end
 
+---@return RenderTransformBox
 function TransformBox:create_render_object()
     local render_object = RenderTransformBox(nil, {
         scale = self.scale,
         alignment = self.alignment,
-        clip = self.clip,
+        clip = self.clip
     })
     render_object:set_scale_animation(self.scale_controller, self.scale_tween)
     return render_object
@@ -73,19 +74,19 @@ function TransformBox:update_render_object(render_object)
 end
 
 ---@class _LayoutScaleBoxOptions
----@field scale? Size positive axis scales; defaults to 1x1
----@field alignment? Offset 0..1 alignment for extra outer space
----@field clip? boolean clip transformed paint to the layout box
----@field key? any
+---@field scale?     Size    positive axis scales; defaults to 1x1
+---@field alignment? Offset  0..1 alignment for extra outer space
+---@field clip?      boolean clip transformed paint to the layout box
+---@field key?       any
 
----@class LayoutScaleBox : SingleChildRenderObjectWidget
----@field scale Size
+---@class LayoutScaleBox: SingleChildRenderObjectWidget
+---@field scale     Size
 ---@field alignment Offset
----@field clip boolean
+---@field clip      boolean
 ---@overload fun(child: Widget?, options?: _LayoutScaleBoxOptions): self
 local LayoutScaleBox = std.class.new('LayoutScaleBox', SingleChildRenderObjectWidget)
 
----@param child Widget?
+---@param child    Widget?
 ---@param options? _LayoutScaleBoxOptions
 function LayoutScaleBox:__init(child, options)
     options = options or {}
@@ -100,11 +101,12 @@ function LayoutScaleBox:__init(child, options)
     end
 end
 
+---@return RenderLayoutScaleBox
 function LayoutScaleBox:create_render_object()
     return RenderLayoutScaleBox(nil, {
         scale = self.scale,
         alignment = self.alignment,
-        clip = self.clip,
+        clip = self.clip
     })
 end
 
@@ -118,7 +120,7 @@ end
 ---@class mod.src.widgets.transform_box
 local M = {
     TransformBox = TransformBox,
-    LayoutScaleBox = LayoutScaleBox,
+    LayoutScaleBox = LayoutScaleBox
 }
 
 return M

@@ -24,12 +24,14 @@ local RenderObject = render_object.RenderObject
 ---@class mod.src.render.offset_box
 local M = {}
 
----@class RenderOffsetBox : RenderObject
----@field offset Offset
+---@class RenderOffsetBox: RenderObject
+---@field offset            Offset
 ---@field _offset_animation table?
 ---@overload fun(offset: Offset?, child: RenderObject?): self
 local RenderOffsetBox = std.class.new('RenderOffsetBox', RenderObject)
 
+---@param offset Offset?
+---@param child  RenderObject?
 function RenderOffsetBox:__init(offset, child)
     RenderObject.__init(self)
     self.offset = offset or Offset.zero()
@@ -60,6 +62,7 @@ function RenderOffsetBox:_child_offset(child_offset)
     return result --[[@as Offset]]
 end
 
+---@param constraints Constraints
 function RenderOffsetBox:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
@@ -71,6 +74,7 @@ function RenderOffsetBox:__perform_layout(constraints)
 end
 
 ---@param canvas PaintingContext
+---@param offset Offset
 function RenderOffsetBox:__paint(canvas, offset)
     local child = self._children[1]
     if child == nil then
@@ -81,7 +85,7 @@ function RenderOffsetBox:__paint(canvas, offset)
         canvas:paint_child(child, offset)
         return
     end
-    canvas:with_save(function()
+    canvas:with_save(function ()
         canvas:translate(offset.x + child_offset.x, offset.y + child_offset.y)
         canvas:paint_child(child, Offset.zero())
     end)
@@ -105,8 +109,8 @@ function RenderOffsetBox:hit_test(position)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderOffsetBox:pointer_path(point, out)
     out = out or {}
     if not self:__hit_test_bounds(point) then
@@ -124,9 +128,9 @@ function RenderOffsetBox:pointer_path(point, out)
     return out
 end
 
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderOffsetBox:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
@@ -135,27 +139,25 @@ function RenderOffsetBox:collect_pointer_regions(out, local_to_root, ancestor_cl
     local child = self._children[1]
     if child then
         local child_offset = self:_child_offset(child.parent_data and child.parent_data.offset)
-        child:_collect_clipped_pointer_regions(out,
-            local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)),
-            self:_pointer_child_clip(local_to_root, ancestor_clip))
+        child:_collect_clipped_pointer_regions(
+            out, local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y)),
+            self:_pointer_child_clip(local_to_root, ancestor_clip)
+        )
     end
     return out
 end
 RenderOffsetBox._clipped_region_collector = RenderOffsetBox.collect_pointer_regions
 
 ---@param controller AnimationController
----@param tween Tween<Offset>
+---@param tween      Tween<Offset>
 ---@return self
 function RenderOffsetBox:bind_offset_animation(controller, tween)
     self:unbind_offset_animation()
-    local listener = function()
+    local listener = function ()
         self:set_offset(tween:value_at(controller.value))
     end
     controller:add_listener(listener)
-    self._offset_animation = {
-        controller = controller,
-        listener = listener,
-    }
+    self._offset_animation = { controller = controller, listener = listener }
     listener()
     return self
 end

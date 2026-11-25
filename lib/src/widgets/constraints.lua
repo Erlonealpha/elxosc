@@ -9,23 +9,25 @@ local constraints_mod = require 'src.layout.constraints'
 local render_mod = require 'src.render.constrained_box'
 local widget_mod = require 'src.widgets.framework'
 
+local math = math
+
 local Constraints = constraints_mod.Constraints
 local RenderConstrainedBox = render_mod.RenderConstrainedBox
 local RenderLimitedBox = render_mod.RenderLimitedBox
 local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _ConstrainedBoxOptions
----@field child? Widget
+---@field child?       Widget
 ---@field constraints? Constraints
----@field key? any
+---@field key?         any
 
 ---@class _LimitedBoxOptions
----@field child? Widget
----@field max_width? number
+---@field child?      Widget
+---@field max_width?  number
 ---@field max_height? number
----@field key? any
+---@field key?        any
 
----@class ConstrainedBox : SingleChildRenderObjectWidget
+---@class ConstrainedBox: SingleChildRenderObjectWidget
 ---@field constraints Constraints
 ---@overload fun(options?: _ConstrainedBoxOptions): self
 local ConstrainedBox = std.class.new('ConstrainedBox', SingleChildRenderObjectWidget)
@@ -38,6 +40,7 @@ function ConstrainedBox:__init(options)
     self.constraints = options.constraints or Constraints.unbounded()
 end
 
+---@return RenderConstrainedBox
 function ConstrainedBox:create_render_object()
     return RenderConstrainedBox(self.constraints)
 end
@@ -48,8 +51,8 @@ function ConstrainedBox:update_render_object(render_object)
     render_object:mark_needs_layout()
 end
 
----@class LimitedBox : SingleChildRenderObjectWidget
----@field max_width? number
+---@class LimitedBox: SingleChildRenderObjectWidget
+---@field max_width?  number
 ---@field max_height? number
 ---@overload fun(options?: _LimitedBoxOptions): self
 local LimitedBox = std.class.new('LimitedBox', SingleChildRenderObjectWidget)
@@ -63,6 +66,7 @@ function LimitedBox:__init(options)
     self.max_height = options.max_height
 end
 
+---@return RenderLimitedBox
 function LimitedBox:create_render_object()
     return RenderLimitedBox(self.max_width, self.max_height)
 end
@@ -75,6 +79,9 @@ function LimitedBox:update_render_object(render_object)
 end
 
 ---@class mod.src.widgets.constraints
-local M = { ConstrainedBox = ConstrainedBox, LimitedBox = LimitedBox }
+local M = {
+    ConstrainedBox = ConstrainedBox,
+    LimitedBox = LimitedBox
+}
 
 return M

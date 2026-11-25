@@ -9,6 +9,10 @@
 
 local std = require 'elxlibs.std'
 
+local math = math
+local pairs = pairs
+local type = type
+
 local huge = math.huge
 local raise = std.raise
 ---@class mod.src.foundation.key_event
@@ -20,15 +24,15 @@ local M = {}
 --- | 'press'
 
 ---@class _KeyEventFields
----@field key string
----@field type KeyEventType
+---@field key       string
+---@field type      KeyEventType
 ---@field modifiers InputModifiers?
 ---@field is_repeat boolean?
 ---@field timestamp number?
 
----@class KeyEvent : std.object
----@field key string
----@field type KeyEventType
+---@class KeyEvent: std.object
+---@field key       string
+---@field type      KeyEventType
 ---@field modifiers InputModifiers?
 ---@field is_repeat boolean
 ---@field timestamp number?

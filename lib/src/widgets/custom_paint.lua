@@ -17,16 +17,18 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 local M = {}
 
 ---@class _CustomPaintOptions
----@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
+---@field draw           (fun(canvas: Canvas, offset: Offset, size: Size))?
 ---@field preferred_size Size?
----@field child Widget?
----@field key any?
+---@field child          Widget?
+---@field key            any?
 
----@class CustomPaint : SingleChildRenderObjectWidget
----@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
+---@class CustomPaint: SingleChildRenderObjectWidget
+---@field preferred_size Size?
+---@field draw           (fun(canvas: Canvas, offset: Offset, size: Size))?
 ---@overload fun(options: _CustomPaintOptions?): self
 local CustomPaint = std.class.new('CustomPaint', SingleChildRenderObjectWidget)
 
+---@param options _CustomPaintOptions?
 function CustomPaint:__init(options)
     options = options or {}
     self.key = options.key
@@ -35,6 +37,7 @@ function CustomPaint:__init(options)
     self.preferred_size = options.preferred_size
 end
 
+---@return RenderCustomPaint
 function CustomPaint:create_render_object()
     return RenderCustomPaint(self.draw, { preferred_size = self.preferred_size })
 end

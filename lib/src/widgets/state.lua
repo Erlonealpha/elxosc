@@ -14,6 +14,11 @@ local std = require 'elxlibs.std'
 local ticker_mod = require 'src.scheduler.ticker'
 local controller_mod = require 'src.animation.controller'
 
+local error = error
+local pcall = pcall
+local string = string
+local tostring = tostring
+
 local raise = std.raise
 local Ticker = ticker_mod.Ticker
 local AnimationController = controller_mod.AnimationController
@@ -21,9 +26,9 @@ local AnimationController = controller_mod.AnimationController
 ---@class mod.src.widgets.state
 local M = {}
 
----@class State : std.object
----@field widget StatefulWidget
----@field context Element?
+---@class State: std.object
+---@field widget     StatefulWidget
+---@field context    Element?
 ---@field _resources table[]
 ---@overload fun(): self
 local State = std.class.new('State')
@@ -108,8 +113,7 @@ end
 ---@param context BuildContext
 ---@return Widget?
 function State:build(context)
-    raise(std.NotImplementedError(
-        string.format('%s must implement build', tostring(self))))
+    raise(std.NotImplementedError(string.format('%s must implement build', tostring(self))))
 end
 
 --- Apply a change and schedule a rebuild. `apply` may be omitted when the

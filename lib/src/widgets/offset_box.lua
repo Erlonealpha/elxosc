@@ -17,10 +17,10 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _OffsetBoxOptions
 ---@field offset? Offset defaults to Offset.zero()
----@field child? Widget
----@field key? any
+---@field child?  Widget
+---@field key?    any
 
----@class OffsetBox : SingleChildRenderObjectWidget
+---@class OffsetBox: SingleChildRenderObjectWidget
 ---@field offset Offset
 ---@overload fun(options?: _OffsetBoxOptions): self
 local OffsetBox = std.class.new('OffsetBox', SingleChildRenderObjectWidget)
@@ -33,6 +33,7 @@ function OffsetBox:__init(options)
     self.child = options.child
 end
 
+---@return RenderOffsetBox
 function OffsetBox:create_render_object()
     return RenderOffsetBox(self.offset)
 end
@@ -43,6 +44,8 @@ function OffsetBox:update_render_object(render_object)
 end
 
 ---@class mod.src.widgets.offset_box
-local M = { OffsetBox = OffsetBox }
+local M = {
+    OffsetBox = OffsetBox
+}
 
 return M

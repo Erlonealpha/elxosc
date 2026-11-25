@@ -23,15 +23,17 @@ local RenderObject = render_object.RenderObject
 local M = {}
 
 ---@class CustomPaintOpts
----@field child RenderObject?
+---@field child          RenderObject?
 ---@field preferred_size Size?
 
----@class RenderCustomPaint : RenderObject
----@field draw (fun(canvas: Canvas, offset: Offset, size: Size))?
+---@class RenderCustomPaint: RenderObject
+---@field draw           (fun(canvas: Canvas, offset: Offset, size: Size))?
 ---@field preferred_size Size?
 ---@overload fun(draw: (fun(canvas: Canvas, offset: Offset, size: Size))?, options: CustomPaintOpts?): self
 local RenderCustomPaint = std.class.new('RenderCustomPaint', RenderObject)
 
+---@param draw    fun(canvas: Canvas, offset: Offset, size: Size) )?
+---@param options CustomPaintOpts?
 function RenderCustomPaint:__init(draw, options)
     RenderObject.__init(self)
     options = options or {}
@@ -42,6 +44,7 @@ function RenderCustomPaint:__init(draw, options)
     end
 end
 
+---@param constraints Constraints
 function RenderCustomPaint:__perform_layout(constraints)
     local child = self._children[1]
     if child then
@@ -59,6 +62,7 @@ function RenderCustomPaint:__perform_layout(constraints)
 end
 
 ---@param canvas PaintingContext
+---@param offset Offset
 function RenderCustomPaint:__paint(canvas, offset)
     if self.draw then
         self.draw(canvas.canvas, offset, self.size)

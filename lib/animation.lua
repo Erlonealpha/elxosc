@@ -13,7 +13,7 @@ export('animation', require 'src.animation.controller', true)
 export('animation', require 'src.animation.curve', true)
 export('animation', require 'src.animation.tween', true)
 
----@class mod.animation :
+---@class mod.animation:
 --- mod.src.animation.controller,
 --- mod.src.animation.curve,
 --- mod.src.animation.tween

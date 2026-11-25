@@ -7,45 +7,49 @@
 local std = require 'elxlibs.std'
 local color_mod = require 'src.foundation.color'
 
+local math = math
+local pairs = pairs
+local type = type
+
 local Color = color_mod.Color
 local raise = std.raise
 
 ---@class material._ButtonStyleOptions
----@field background_color Color?
----@field color Color?
----@field foreground_color Color?
----@field hover_foreground_color Color?
----@field pressed_foreground_color Color?
+---@field background_color          Color?
+---@field color                     Color?
+---@field foreground_color          Color?
+---@field hover_foreground_color    Color?
+---@field pressed_foreground_color  Color?
 ---@field disabled_foreground_color Color?
----@field hover_color Color?
----@field pressed_color Color?
----@field disabled_color Color?
----@field border_color Color?
----@field border_width number?
----@field radius number?
----@field padding EdgeInsets?
----@field elevation number?
----@field hover_scale number? positive paint-only scale used while hovered
----@field hover_shadow_color Color?
----@field hover_shadow_radius number?
+---@field hover_color               Color?
+---@field pressed_color             Color?
+---@field disabled_color            Color?
+---@field border_color              Color?
+---@field border_width              number?
+---@field radius                    number?
+---@field padding                   EdgeInsets?
+---@field elevation                 number?
+---@field hover_scale               number?     positive paint-only scale used while hovered
+---@field hover_shadow_color        Color?
+---@field hover_shadow_radius       number?
 
----@class material.ButtonStyle : std.object
----@field background_color Color?
----@field foreground_color Color
----@field hover_foreground_color Color?
----@field pressed_foreground_color Color?
+---@class material.ButtonStyle: std.object
+---@field background_color          Color?
+---@field foreground_color          Color
+---@field hover_foreground_color    Color?
+---@field pressed_foreground_color  Color?
 ---@field disabled_foreground_color Color?
----@field hover_color Color?
----@field pressed_color Color?
----@field disabled_color Color?
----@field border_color Color?
----@field border_width number
----@field radius number
----@field padding EdgeInsets?
----@field elevation number
----@field hover_scale number
----@field hover_shadow_color Color?
----@field hover_shadow_radius number
+---@field hover_color               Color?
+---@field pressed_color             Color?
+---@field disabled_color            Color?
+---@field border_color              Color?
+---@field border_width              number
+---@field radius                    number
+---@field padding                   EdgeInsets?
+---@field elevation                 number
+---@field hover_scale               number
+---@field hover_shadow_color        Color?
+---@field hover_shadow_radius       number
 ---@overload fun(options: _ButtonStyleOptions?): self
 local ButtonStyle = std.class.new('ButtonStyle')
 
@@ -74,16 +78,14 @@ function ButtonStyle:__init(options)
     end
 end
 
----@param state "normal"|"hover"|"pressed"|"disabled"
+---@param state "normal" | "hover" | "pressed" | "disabled"
 ---@return Color
 function ButtonStyle:foreground_for(state)
     if state == 'disabled' then
         return self.disabled_foreground_color or self.foreground_color
     end
     if state == 'pressed' then
-        return self.pressed_foreground_color
-            or self.hover_foreground_color
-            or self.foreground_color
+        return self.pressed_foreground_color or self.hover_foreground_color or self.foreground_color
     end
     if state == 'hover' then
         return self.hover_foreground_color or self.foreground_color
@@ -91,7 +93,7 @@ function ButtonStyle:foreground_for(state)
     return self.foreground_color
 end
 
----@param state "normal"|"hover"|"pressed"|"disabled"
+---@param state "normal" | "hover" | "pressed" | "disabled"
 ---@return Color?
 function ButtonStyle:background_for(state)
     if state == 'disabled' then
@@ -130,6 +132,8 @@ function ButtonStyle:shadow_for(elevation)
 end
 
 ---@class mod.src.material.button_style
-local M = { ButtonStyle = ButtonStyle }
+local M = {
+    ButtonStyle = ButtonStyle
+}
 
 return M

@@ -13,6 +13,9 @@ local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
 local render_object = require 'src.render.render_object'
 
+local error = error
+local type = type
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
@@ -21,11 +24,13 @@ local RenderObject = render_object.RenderObject
 ---@class mod.src.render.offstage
 local M = {}
 
----@class RenderOffstage : RenderObject
+---@class RenderOffstage: RenderObject
 ---@field offstage boolean
 ---@overload fun(offstage: boolean?, child: RenderObject?): self
 local RenderOffstage = std.class.new('RenderOffstage', RenderObject)
 
+---@param offstage boolean?
+---@param child    RenderObject?
 function RenderOffstage:__init(offstage, child)
     std.super(RenderOffstage, self, RenderObject).__init(self)
     self.offstage = offstage == true
@@ -46,6 +51,7 @@ function RenderOffstage:set_offstage(offstage)
     self:mark_needs_layout()
 end
 
+---@param constraints Constraints
 function RenderOffstage:__perform_layout(constraints)
     local child = self._children[1]
     if child then
@@ -57,6 +63,8 @@ function RenderOffstage:__perform_layout(constraints)
     end
 end
 
+---@param canvas PaintingContext
+---@param offset Offset
 function RenderOffstage:__paint(canvas, offset)
     if self.offstage then
         return
@@ -64,6 +72,8 @@ function RenderOffstage:__paint(canvas, offset)
     self:paint_children(canvas, offset)
 end
 
+---@param position Offset
+---@return RenderObject?
 function RenderOffstage:hit_test(position)
     if self.offstage then
         return nil
@@ -72,8 +82,8 @@ function RenderOffstage:hit_test(position)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderOffstage:pointer_path(point, out)
     out = out or {}
     if self.offstage then
@@ -82,9 +92,9 @@ function RenderOffstage:pointer_path(point, out)
     return RenderObject.pointer_path(self, point, out)
 end
 
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderOffstage:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}

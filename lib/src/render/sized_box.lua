@@ -26,12 +26,15 @@ local RenderObject = render_object.RenderObject
 ---@class mod.src.render.sized_box
 local M = {}
 
----@class RenderSizedBox : RenderObject
----@field width number?
+---@class RenderSizedBox: RenderObject
+---@field width  number?
 ---@field height number?
 ---@overload fun(width: number?, height: number?, child: RenderObject?): self
 local RenderSizedBox = std.class.new('RenderSizedBox', RenderObject)
 
+---@param width  number?
+---@param height number?
+---@param child  RenderObject?
 function RenderSizedBox:__init(width, height, child)
     std.super(RenderSizedBox, self, RenderObject).__init(self)
     self.width = width
@@ -41,6 +44,7 @@ function RenderSizedBox:__init(width, height, child)
     end
 end
 
+---@param constraints Constraints
 function RenderSizedBox:__perform_layout(constraints)
     local child = self._children[1]
     -- `BoxConstraints.tightFor(width, height)`: null means 0..infinity.

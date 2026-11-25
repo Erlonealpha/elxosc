@@ -18,8 +18,8 @@ local raise = std.raise
 ---@class mod.src.scheduler.frame_clock
 local M = {}
 
----@class FrameClock : std.object
----@field handler fun(time: number)?
+---@class FrameClock: std.object
+---@field handler   fun(time: number)?
 ---@field _disposed boolean
 ---@overload fun(): self
 local FrameClock = std.class.new('FrameClock')

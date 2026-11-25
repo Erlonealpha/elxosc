@@ -14,6 +14,13 @@ local dataclass = require 'elxlibs.dataclass'
 local color_mod = require 'src.foundation.color'
 local geometry = require 'src.foundation.geometry'
 
+local math = math
+local pairs = pairs
+local rawequal = rawequal
+local string = string
+local tostring = tostring
+local type = type
+
 local Color = color_mod.Color
 local Offset = geometry.Offset
 local raise = std.raise
@@ -28,36 +35,32 @@ local M = {}
 
 ---@alias TextOverflow 'visible' | 'clip' | 'ellipsis'
 
-M.Align = {
-    LEFT = 'left',
-    CENTER = 'center',
-    RIGHT = 'right',
-}
+M.Align = { LEFT = 'left', CENTER = 'center', RIGHT = 'right' }
 
 --- Opaque backend extension data, immutable by convention and compared by identity.
 --- The built-in ASS backend does not currently consume these extensions.
----@class TextStyleExtra : table<string,any>
+---@class TextStyleExtra: table<string, any>
 ---@field type string
 
 ---@class _TextStyleOptions
----@field font_size number?         non-negative finite logical pixels; default 16
----@field bold boolean?             default false
----@field color Color?              default 0xFFFFFFFF
----@field font_family string?
----@field italic boolean?           default false
----@field letter_spacing number?    finite extra px between glyphs; default 0
----@field line_height number?       non-negative finite multiple of font_size; default 1.2
----@field align TextAlign?          default 'left'
----@field wrap boolean?             default true
----@field max_lines integer? positive visible-line limit; nil means unlimited
----@field overflow TextOverflow? default visible
----@field blur_radius number?       non-negative backend blur intent; default 0
----@field outline_width number?     non-negative outline width; default 0
----@field outline_color Color?      outline color intent
----@field shadow_color Color?       shadow color intent
----@field shadow_offset Offset?     finite visual shadow offset
----@field shadow_radius number?     non-negative shadow blur intent; default 0
----@field extra TextStyleExtra?     immutable extension data for a supporting backend
+---@field font_size      number?         non-negative finite logical pixels; default 16
+---@field bold           boolean?        default false
+---@field color          Color?          default 0xFFFFFFFF
+---@field font_family    string?
+---@field italic         boolean?        default false
+---@field letter_spacing number?         finite extra px between glyphs; default 0
+---@field line_height    number?         non-negative finite multiple of font_size; default 1.2
+---@field align          TextAlign?      default 'left'
+---@field wrap           boolean?        default true
+---@field max_lines      integer?        positive visible-line limit; nil means unlimited
+---@field overflow       TextOverflow?   default visible
+---@field blur_radius    number?         non-negative backend blur intent; default 0
+---@field outline_width  number?         non-negative outline width; default 0
+---@field outline_color  Color?          outline color intent
+---@field shadow_color   Color?          shadow color intent
+---@field shadow_offset  Offset?         finite visual shadow offset
+---@field shadow_radius  number?         non-negative shadow blur intent; default 0
+---@field extra          TextStyleExtra? immutable extension data for a supporting backend
 
 ---@type table<string, boolean>
 local option_names = {
@@ -78,7 +81,7 @@ local option_names = {
     shadow_color = true,
     shadow_offset = true,
     shadow_radius = true,
-    extra = true,
+    extra = true
 }
 
 ---@param options _TextStyleOptions?
@@ -99,7 +102,7 @@ local function check_options(options)
 end
 
 ---@generic T
----@param value T?
+---@param value   T?
 ---@param default T
 ---@return T
 local function pick(value, default)
@@ -109,7 +112,7 @@ local function pick(value, default)
     return value
 end
 
----@param name string
+---@param name  string
 ---@param value number?
 ---@return number
 local function check_finite(name, value)
@@ -119,7 +122,7 @@ local function check_finite(name, value)
     return value
 end
 
----@param name string
+---@param name  string
 ---@param value boolean?
 ---@return boolean
 local function check_boolean(name, value)
@@ -129,25 +132,25 @@ local function check_boolean(name, value)
     return value
 end
 
----@class TextStyle : std.object
----@field font_size number
----@field color Color
----@field font_family string?
----@field bold boolean
----@field italic boolean
+---@class TextStyle: std.object
+---@field font_size      number
+---@field color          Color
+---@field font_family    string?
+---@field bold           boolean
+---@field italic         boolean
 ---@field letter_spacing number
----@field line_height number multiple of `font_size`
----@field align TextAlign
----@field wrap boolean
----@field max_lines integer?
----@field overflow TextOverflow
----@field blur_radius number
----@field outline_width number
----@field outline_color Color?
----@field shadow_color Color?
----@field shadow_offset Offset?
----@field shadow_radius number
----@field extra TextStyleExtra?
+---@field line_height    number          multiple of `font_size`
+---@field align          TextAlign
+---@field wrap           boolean
+---@field max_lines      integer?
+---@field overflow       TextOverflow
+---@field blur_radius    number
+---@field outline_width  number
+---@field outline_color  Color?
+---@field shadow_color   Color?
+---@field shadow_offset  Offset?
+---@field shadow_radius  number
+---@field extra          TextStyleExtra?
 ---@overload fun(options: _TextStyleOptions?): self
 local TextStyle = std.class.new('TextStyle')
 
@@ -165,8 +168,9 @@ function TextStyle:__init(options)
     self.wrap = check_boolean('wrap', pick(options.wrap, true))
     self.max_lines = options.max_lines
     self.overflow = pick(options.overflow, 'visible')
-    if self.max_lines ~= nil and (type(self.max_lines) ~= 'number' or self.max_lines < 1
-        or self.max_lines == math.huge or self.max_lines ~= math.floor(self.max_lines)) then
+    if self.max_lines ~= nil
+        and (type(self.max_lines) ~= 'number' or self.max_lines < 1
+            or self.max_lines == math.huge or self.max_lines ~= math.floor(self.max_lines)) then
         raise(std.ValueError('TextStyle.max_lines must be a positive integer'))
     end
     if self.overflow ~= 'visible' and self.overflow ~= 'clip' and self.overflow ~= 'ellipsis' then
@@ -180,8 +184,9 @@ function TextStyle:__init(options)
     self.shadow_radius = check_finite('shadow_radius', pick(options.shadow_radius, 0))
     self.extra = options.extra
 
-    if self.font_size < 0 or self.line_height < 0 or self.blur_radius < 0
-        or self.outline_width < 0 or self.shadow_radius < 0 then
+    if self.font_size < 0 or self.line_height < 0
+        or self.blur_radius < 0 or self.outline_width < 0
+        or self.shadow_radius < 0 then
         raise(std.ValueError('TextStyle size and effect values must be non-negative'))
     end
     check_finite('line_height_px', self:line_height_px())
@@ -214,6 +219,7 @@ function TextStyle:__init(options)
     end
 end
 
+---@return string
 function TextStyle:__tostring()
     return string.format('TextStyle(%g, %s)', self.font_size, self.font_family or 'default')
 end
@@ -221,24 +227,13 @@ end
 ---@param other TextStyle
 ---@return boolean
 function TextStyle:__eq(other)
-    return not (self.font_size ~= other.font_size
-        or self.color ~= other.color
-        or self.font_family ~= other.font_family
-        or self.bold ~= other.bold
-        or self.italic ~= other.italic
-        or self.letter_spacing ~= other.letter_spacing
-        or self.line_height ~= other.line_height
-        or self.align ~= other.align
-        or self.wrap ~= other.wrap
-        or self.max_lines ~= other.max_lines
-        or self.overflow ~= other.overflow
-        or self.blur_radius ~= other.blur_radius
-        or self.outline_width ~= other.outline_width
-        or self.outline_color ~= other.outline_color
-        or self.shadow_color ~= other.shadow_color
-        or self.shadow_offset ~= other.shadow_offset
-        or self.shadow_radius ~= other.shadow_radius
-        or not rawequal(self.extra, other.extra))
+    return not (self.font_size ~= other.font_size or self.color ~= other.color or self.font_family ~= other.font_family
+        or self.bold ~= other.bold or self.italic ~= other.italic or self.letter_spacing ~= other.letter_spacing
+        or self.line_height ~= other.line_height or self.align ~= other.align or self.wrap ~= other.wrap
+        or self.max_lines ~= other.max_lines or self.overflow ~= other.overflow or self.blur_radius ~= other.blur_radius
+        or self.outline_width ~= other.outline_width or self.outline_color ~= other.outline_color
+        or self.shadow_color ~= other.shadow_color or self.shadow_offset ~= other.shadow_offset
+        or self.shadow_radius ~= other.shadow_radius or not rawequal(self.extra, other.extra))
 end
 
 ---@return number
@@ -269,7 +264,7 @@ function TextStyle:copy_with(options)
         shadow_color = pick(options.shadow_color, self.shadow_color),
         shadow_offset = pick(options.shadow_offset, self.shadow_offset),
         shadow_radius = pick(options.shadow_radius, self.shadow_radius),
-        extra = pick(options.extra, self.extra),
+        extra = pick(options.extra, self.extra)
     })
 end
 

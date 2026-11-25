@@ -16,6 +16,17 @@ local widget_mod = require 'src.widgets.framework'
 local state_mod = require 'src.widgets.state'
 local style_mod = require 'src.material.button_style'
 local transform_widgets = require 'src.widgets.transform_box'
+local transform_box_mod = require 'src.render.transform_box'
+local decorated_box_mod = require 'src.render.decorated_box'
+local gesture_mod = require 'src.render.gesture'
+local text_mod = require 'src.render.text'
+
+local RenderTransformBox = transform_box_mod.RenderTransformBox
+local RenderDecoratedBox = decorated_box_mod.RenderDecoratedBox
+local RenderGesture = gesture_mod.RenderGesture
+local RenderText = text_mod.RenderText
+local ipairs = ipairs
+local pairs = pairs
 
 local EdgeInsets = geometry.EdgeInsets
 local Offset = geometry.Offset
@@ -29,32 +40,28 @@ local State = state_mod.State
 local ButtonStyle = style_mod.ButtonStyle
 local TransformBox = transform_widgets.TransformBox
 local Size = geometry.Size
-local RenderTransformBox = require('src.render.transform_box').RenderTransformBox
-local RenderDecoratedBox = require('src.render.decorated_box').RenderDecoratedBox
-local RenderGesture = require('src.render.gesture').RenderGesture
-local RenderText = require('src.render.text').RenderText
 
----@class material._ButtonBaseOptions : material._ButtonStyleOptions
----@field key any?
----@field label string|number?
----@field child Widget?
----@field on_click fun()?
+---@class material._ButtonBaseOptions: material._ButtonStyleOptions
+---@field key            any?
+---@field label          string | number?
+---@field child          Widget?
+---@field on_click       fun()?
 ---@field on_right_click fun()?
 ---@field on_shift_click fun(button: PointerButton, event: PointerEvent?)?
----@field on_wheel fun(delta: number)?
----@field soft_repeat boolean?
----@field on_repeat fun()?
----@field enabled boolean?
----@field style ButtonStyle?
----@field font_size number?
----@field padding EdgeInsets?
+---@field on_wheel       fun(delta: number)?
+---@field soft_repeat    boolean?
+---@field on_repeat      fun()?
+---@field enabled        boolean?
+---@field style          ButtonStyle?
+---@field font_size      number?
+---@field padding        EdgeInsets?
 
----@class material.ButtonState : State
----@field widget ButtonBase
----@field hovered boolean
----@field pressed boolean
----@field _repeat_ticker Ticker?
----@field _repeat_ticks integer
+---@class material.ButtonState: State
+---@field widget             ButtonBase
+---@field hovered            boolean
+---@field pressed            boolean
+---@field _repeat_ticker     Ticker?
+---@field _repeat_ticks      integer
 ---@field _down_action_fired boolean
 ---@overload fun(): self
 local ButtonState = std.class.new('ButtonState', State)
@@ -81,7 +88,7 @@ function ButtonState:_start_repeat()
     if not self.widget.soft_repeat or not owner or not owner.scheduler then
         return
     end
-    self._repeat_ticker = self:create_ticker(function()
+    self._repeat_ticker = self:create_ticker(function ()
         if not self.pressed or not self:is_mounted() then
             self:_stop_repeat()
             return
@@ -97,7 +104,7 @@ function ButtonState:_start_repeat()
     end)
     self._repeat_ticker:start()
 end
----@return "normal"|"hover"|"pressed"|"disabled"
+---@return "normal" | "hover" | "pressed" | "disabled"
 function ButtonState:visual_state()
     if not self.widget.enabled then
         return 'disabled'
@@ -111,7 +118,7 @@ function ButtonState:visual_state()
     return 'normal'
 end
 
----@param state "normal"|"hover"|"pressed"|"disabled"
+---@param state "normal" | "hover" | "pressed" | "disabled"
 ---@return Decoration
 function ButtonState:_decoration(state)
     local style = self.widget.style
@@ -125,7 +132,7 @@ function ButtonState:_decoration(state)
         border_color = style.border_color,
         shadow_color = shadow_color,
         shadow_offset = shadow_offset,
-        shadow_radius = shadow_radius,
+        shadow_radius = shadow_radius
     })
 end
 
@@ -153,6 +160,7 @@ function ButtonState:_update_visual(gesture)
     local foreground = button.style:foreground_for(state)
     local shadow_color = state == 'hover' and button.style.hover_shadow_color or nil
     local shadow_radius = shadow_color and button.style.hover_shadow_radius or nil
+    ---@param node RenderObject
     local function update_text(node)
         if std.isinstance(node, RenderText) then
             node:set_color_override(foreground)
@@ -175,23 +183,22 @@ function ButtonState:build()
         child = Text(button.label or '', {
             style = TextStyle({
                 font_size = button.font_size or 16,
-                color = style.foreground_color,
-            }),
+                color = style.foreground_color
+            })
         })
     end
     local decoration = self:_decoration(state)
     local body = Container({
         child = child,
         padding = style.padding or EdgeInsets.symmetric(12, 6),
-        decoration = decoration,
+        decoration = decoration
     })
     if not button.enabled
-        or (not button.on_click and not button.on_right_click
-            and not button.on_shift_click and not button.on_wheel) then
+        or (not button.on_click and not button.on_right_click and not button.on_shift_click and not button.on_wheel) then
         return GestureDetector(TransformBox(body), {
-            on_state_change = function(gesture)
+            on_state_change = function (gesture)
                 self:_update_visual(gesture)
-            end,
+            end
         })
     end
     local factor = state == 'hover' and style.hover_scale or 1
@@ -199,12 +206,12 @@ function ButtonState:build()
     return GestureDetector(visual, {
         initial_hovered = self.hovered,
         initial_pressed = self.pressed,
-        on_enter = function() end,
-        on_leave = function() end,
-        on_state_change = function(gesture)
+        on_enter = function () end,
+        on_leave = function () end,
+        on_state_change = function (gesture)
             self:_update_visual(gesture)
         end,
-        on_button_down = function(_, button_name, _, event)
+        on_button_down = function (_, button_name, _, event)
             self._down_action_fired = false
             if button_name == 'left' and not (event and event.modifiers and event.modifiers.shift) then
                 if button.soft_repeat and button.on_click then
@@ -213,8 +220,7 @@ function ButtonState:build()
                 end
                 self:_start_repeat()
             end
-            if button_name ~= nil and event and event.modifiers and event.modifiers.shift
-                and button.on_shift_click then
+            if button_name ~= nil and event and event.modifiers and event.modifiers.shift and button.on_shift_click then
                 button.on_shift_click(button_name, event)
                 return true
             end
@@ -228,32 +234,33 @@ function ButtonState:build()
             end
             return false
         end,
-        on_wheel = button.on_wheel and function(_, delta)
-            button.on_wheel(delta)
-            return true
-        end or nil,
-        on_tap = function()
+        on_wheel = button.on_wheel
+            and function (_, delta)
+                button.on_wheel(delta)
+                return true
+            end or nil,
+        on_tap = function ()
             if self._down_action_fired then
                 self._down_action_fired = false
             elseif button.on_click then
                 button.on_click()
             end
-        end,
+        end
     })
 end
 
----@class material.ButtonBase : StatefulWidget
----@field label string|number?
----@field child Widget?
----@field on_click fun()?
+---@class material.ButtonBase: StatefulWidget
+---@field label          string | number?
+---@field child          Widget?
+---@field on_click       fun()?
 ---@field on_right_click fun()?
 ---@field on_shift_click fun(button: PointerButton, event: PointerEvent?)?
----@field on_wheel fun(delta: number)?
----@field soft_repeat boolean
----@field on_repeat fun()?
----@field enabled boolean
----@field style ButtonStyle
----@field font_size number?
+---@field on_wheel       fun(delta: number)?
+---@field soft_repeat    boolean
+---@field on_repeat      fun()?
+---@field enabled        boolean
+---@field style          ButtonStyle
+---@field font_size      number?
 ---@overload fun(options: _ButtonBaseOptions?): self
 local ButtonBase = std.class.new('ButtonBase', StatefulWidget)
 ---@param options _ButtonBaseOptions?
@@ -297,6 +304,10 @@ function ButtonBase:child_widgets()
 end
 
 ---@class mod.src.material.button_base
-local M = { ButtonBase = ButtonBase, ButtonStyle = ButtonStyle, copy_options = copy_options }
+local M = {
+    ButtonBase = ButtonBase,
+    ButtonStyle = ButtonStyle,
+    copy_options = copy_options
+}
 
 return M

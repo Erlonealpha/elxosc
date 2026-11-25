@@ -12,6 +12,10 @@ local geometry = require 'src.foundation.geometry'
 local paint_mod = require 'src.painting.paint'
 local render_object = require 'src.render.render_object'
 
+local error = error
+local math = math
+local type = type
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Rect = geometry.Rect
@@ -20,9 +24,10 @@ local Style = paint_mod.Style
 local RenderObject = render_object.RenderObject
 local huge = math.huge
 
+---@param value number?
+---@return number
 local function validate_blur(value)
-    if type(value) ~= 'number' or value ~= value or value == huge or value == -huge
-        or value < 0 then
+    if type(value) ~= 'number' or value ~= value or value == huge or value == -huge or value < 0 then
         error('Decoration.blur_radius must be a finite non-negative number', 3)
     end
     return value
@@ -32,27 +37,28 @@ end
 local M = {}
 
 ---@class _DecorationOptions
----@field color Color?
----@field radius number?
----@field border_width number?
----@field border_color Color?
----@field shadow_color Color?
+---@field color         Color?
+---@field radius        number?
+---@field border_width  number?
+---@field border_color  Color?
+---@field shadow_color  Color?
 ---@field shadow_offset Offset?
 ---@field shadow_radius number?
----@field blur_radius number? non-negative paint blur intent
+---@field blur_radius   number? non-negative paint blur intent
 
----@class Decoration : std.object
----@field color Color?
----@field radius number
----@field border_width number
----@field border_color Color?
----@field shadow_color Color?
+---@class Decoration: std.object
+---@field color         Color?
+---@field radius        number
+---@field border_width  number
+---@field border_color  Color?
+---@field shadow_color  Color?
 ---@field shadow_offset Offset?
 ---@field shadow_radius number?
----@field blur_radius number
+---@field blur_radius   number
 ---@overload fun(options: _DecorationOptions?): self
 local Decoration = std.class.new('Decoration')
 
+---@param options _DecorationOptions?
 function Decoration:__init(options)
     options = options or {}
     self.color = options.color
@@ -65,11 +71,13 @@ function Decoration:__init(options)
     self.blur_radius = validate_blur(options.blur_radius or 0)
 end
 
----@class RenderDecoratedBox : RenderObject
+---@class RenderDecoratedBox: RenderObject
 ---@field decoration Decoration
 ---@overload fun(decoration: Decoration, child: RenderObject?): self
 local RenderDecoratedBox = std.class.new('RenderDecoratedBox', RenderObject)
 
+---@param decoration Decoration
+---@param child      RenderObject?
 function RenderDecoratedBox:__init(decoration, child)
     std.super(RenderDecoratedBox, self, RenderObject).__init(self)
     self.decoration = decoration
@@ -87,6 +95,7 @@ function RenderDecoratedBox:set_decoration(decoration)
     self:mark_needs_paint()
 end
 
+---@param constraints Constraints
 function RenderDecoratedBox:__perform_layout(constraints)
     local child = self._children[1]
     if child then
@@ -99,14 +108,14 @@ function RenderDecoratedBox:__perform_layout(constraints)
 end
 
 ---@param canvas PaintingContext
+---@param offset Offset
 function RenderDecoratedBox:__paint(canvas, offset)
     local decoration = self.decoration
     local rect = Rect.from_offset_size(offset, self.size)
     if decoration.shadow_color then
         local shadow_offset = decoration.shadow_offset or Offset(0, 2)
         local shadow_radius = decoration.shadow_radius or 0
-        local shadow_rect = Rect.from_offset_size(
-            offset:translate(shadow_offset.x, shadow_offset.y), self.size)
+        local shadow_rect = Rect.from_offset_size(offset:translate(shadow_offset.x, shadow_offset.y), self.size)
         local shadow = Paint(decoration.shadow_color)
         shadow.blur_radius = shadow_radius
         if decoration.radius > 0 then

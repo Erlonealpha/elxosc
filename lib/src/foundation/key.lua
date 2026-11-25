@@ -10,16 +10,21 @@
 
 local std = require 'elxlibs.std'
 
+local rawget = rawget
+local string = string
+local tostring = tostring
+
 ---@class mod.src.foundation.key
 local M = {}
 local rawequal = rawequal
 local kindof = std.kindof
 
----@class Key : std.object
+---@class Key: std.object
 ---@field value any?
 ---@overload fun(value: any?): self
 local Key = std.class.new('Key')
 
+---@param value any?
 function Key:__init(value)
     self.value = value
 end
@@ -27,26 +32,35 @@ end
 ---@param other any
 ---@return boolean
 function Key:__eq(other)
-    return kindof(other, 'object')
-        and other.__class == self.__class
-        and self.value == other.value
+    return kindof(other, 'object') and other.__class == self.__class and self.value == other.value
 end
 
+---@return string
 function Key:__tostring()
-    local class = rawget(self --[[@as table]], '__class')
-    local name = rawget(self --[[@as table]], '__name')
-        or (class and rawget(class --[[@as table]], '__name')) or 'Key'
+    local class = rawget(
+        self, --[[@as table]]
+        '__class'
+    )
+    local name = rawget(
+            self, --[[@as table]]
+            '__name'
+        ) or (class
+            and rawget(
+                class, --[[@as table]]
+                '__name'
+            )) or 'Key'
     return string.format('%s(%s)', name, tostring(self.value))
 end
 
----@class LocalKey : Key
+---@class LocalKey: Key
 ---@overload fun(value: any?): self
 local LocalKey = std.class.new('LocalKey', Key)
 
----@class ValueKey : LocalKey
+---@class ValueKey: LocalKey
 ---@overload fun(value: any): self
 local ValueKey = std.class.new('ValueKey', LocalKey)
 
+---@param value any
 function ValueKey:__init(value)
     self.value = value
 end
@@ -54,16 +68,15 @@ end
 ---@param other any
 ---@return boolean
 function ValueKey:__eq(other)
-    return kindof(other, 'object')
-        and other.__class == self.__class
-        and self.value == other.value
+    return kindof(other, 'object') and other.__class == self.__class and self.value == other.value
 end
 
+---@return string
 function ValueKey:__tostring()
     return string.format('ValueKey(%s)', tostring(self.value))
 end
 
----@class UniqueKey : LocalKey
+---@class UniqueKey: LocalKey
 ---@overload fun(): self
 local UniqueKey = std.class.new('UniqueKey', LocalKey)
 
@@ -73,6 +86,7 @@ function UniqueKey:__eq(other)
     return rawequal(self, other)
 end
 
+---@return string
 function UniqueKey:__tostring()
     return 'UniqueKey'
 end

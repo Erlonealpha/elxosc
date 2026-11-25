@@ -18,7 +18,7 @@ export('foundation', require 'src.foundation.key_event', true)
 export('foundation', require 'src.foundation.pointer_event', true)
 export('foundation', require 'src.foundation.transform', true)
 
----@class mod.foundation : mod.src.foundation.anchor, mod.src.foundation.binding_base, mod.src.foundation.color, mod.src.foundation.geometry, mod.src.foundation.key, mod.src.foundation.key_event, mod.src.foundation.pointer_event, mod.src.foundation.transform
+---@class mod.foundation: mod.src.foundation.anchor, mod.src.foundation.binding_base, mod.src.foundation.color, mod.src.foundation.geometry, mod.src.foundation.key, mod.src.foundation.key_event, mod.src.foundation.pointer_event, mod.src.foundation.transform
 local M = exports.get('foundation')
 
 return M

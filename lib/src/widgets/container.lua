@@ -23,29 +23,29 @@ local LimitedBox = constrained_box_mod.LimitedBox
 local StatelessWidget = widget_mod.StatelessWidget
 
 ---@class _ContainerOptions
----@field child? Widget
----@field padding? EdgeInsets
----@field margin? EdgeInsets
----@field alignment? Offset
----@field width? number
----@field height? number
----@field constraints? Constraints
----@field decoration? Decoration
----@field color? Color
----@field radius? number
+---@field child?        Widget
+---@field padding?      EdgeInsets
+---@field margin?       EdgeInsets
+---@field alignment?    Offset
+---@field width?        number
+---@field height?       number
+---@field constraints?  Constraints
+---@field decoration?   Decoration
+---@field color?        Color
+---@field radius?       number
 ---@field border_width? number
 ---@field border_color? Color
----@field key? any
+---@field key?          any
 
 --- A convenience composition of margin / sizing / decoration / alignment /
 --- padding (Flutter's `Container`). It owns no render object of its own; the
 --- whole thing is expressed with the widgets above.
----@class Container : StatelessWidget
----@field child? Widget
----@field padding? EdgeInsets
----@field margin? EdgeInsets
----@field alignment? Offset
----@field decoration? Decoration
+---@class Container: StatelessWidget
+---@field child?       Widget
+---@field padding?     EdgeInsets
+---@field margin?      EdgeInsets
+---@field alignment?   Offset
+---@field decoration?  Decoration
 ---@field constraints? Constraints
 ---@overload fun(options?: _ContainerOptions): self
 local Container = std.class.new('Container', StatelessWidget)
@@ -59,12 +59,13 @@ function Container:__init(options)
     self.margin = options.margin
     self.alignment = options.alignment
     self.decoration = options.decoration
-        or (options.color and Decoration({
-            color = options.color,
-            radius = options.radius or 0,
-            border_width = options.border_width or 0,
-            border_color = options.border_color,
-        }) or nil)
+        or (options.color
+            and Decoration({
+                color = options.color,
+                radius = options.radius or 0,
+                border_width = options.border_width or 0,
+                border_color = options.border_color
+            }) or nil)
     -- `width`/`height` are folded into `constraints`, exactly like Flutter's
     -- constructor (`constraints?.tighten(...) ?? BoxConstraints.tightFor(...)`).
     local width = options.width
@@ -77,6 +78,7 @@ function Container:__init(options)
     self.constraints = constraints
 end
 
+---@return Widget?
 function Container:build()
     -- With no child, expand to fill a bounded box (so decoration shows), but
     -- collapse when unbounded; with a child, alignment precedes padding.
@@ -85,7 +87,7 @@ function Container:build()
         current = LimitedBox({
             max_width = 0,
             max_height = 0,
-            child = ConstrainedBox({ constraints = Constraints.expand() }),
+            child = ConstrainedBox({ constraints = Constraints.expand() })
         })
     elseif self.alignment then
         current = Align(current, { alignment = self.alignment })
@@ -105,11 +107,14 @@ function Container:build()
     return current
 end
 
+---@return Widget[]
 function Container:child_widgets()
     return self.child and { self.child } or {}
 end
 
 ---@class mod.src.widgets.container
-local M = { Container = Container }
+local M = {
+    Container = Container
+}
 
 return M

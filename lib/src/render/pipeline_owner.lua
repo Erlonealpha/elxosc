@@ -16,7 +16,7 @@ local PipelineOwner = render_owner.RenderOwner
 ---@class mod.src.render.pipeline_owner
 local M = {
     PipelineOwner = PipelineOwner,
-    RenderOwner = PipelineOwner,
+    RenderOwner = PipelineOwner
 }
 
 return M

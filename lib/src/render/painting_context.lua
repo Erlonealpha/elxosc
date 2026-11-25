@@ -10,30 +10,36 @@
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
+local error = error
+local ipairs = ipairs
+local pcall = pcall
+
 local Offset = geometry.Offset
 
 ---@class mod.src.render.painting_context
 local M = {}
 
----@class PaintingContext : std.object
----@field canvas Canvas
+---@class PaintingContext: std.object
+---@field canvas           Canvas
 ---@field estimated_bounds Rect?
 ---@overload fun(canvas: Canvas, estimated_bounds: Rect?): self
 local PaintingContext = std.class.new('PaintingContext')
 
+---@param canvas           Canvas
+---@param estimated_bounds Rect?
 function PaintingContext:__init(canvas, estimated_bounds)
     self.canvas = canvas
     self.estimated_bounds = estimated_bounds
 end
 
----@param child RenderObject
+---@param child  RenderObject
 ---@param offset Offset
 function PaintingContext:paint_child(child, offset)
     child:paint(self, offset)
 end
 
 ---@param children RenderObject[]
----@param offset Offset
+---@param offset   Offset
 function PaintingContext:paint_children(children, offset)
     for _, child in ipairs(children) do
         local child_offset = offset
@@ -44,10 +50,10 @@ function PaintingContext:paint_children(children, offset)
     end
 end
 
----@param rect Rect
+---@param rect    Rect
 ---@param painter fun()
 function PaintingContext:clip_rect_and_paint(rect, painter)
-    self:with_save(function()
+    self:with_save(function ()
         self.canvas:clip_rect(rect)
         painter()
     end)
@@ -74,14 +80,19 @@ function PaintingContext:restore()
     return self.canvas:restore()
 end
 
+---@param dx number
+---@param dy number
 function PaintingContext:translate(dx, dy)
     return self.canvas:translate(dx, dy)
 end
 
+---@param sx number
+---@param sy number?
 function PaintingContext:scale(sx, sy)
     return self.canvas:scale(sx, sy)
 end
 
+---@param rect Rect
 function PaintingContext:clip_rect(rect)
     return self.canvas:clip_rect(rect)
 end
@@ -95,32 +106,47 @@ end
 ---@param opacity number 0..1
 ---@param painter fun()
 function PaintingContext:with_opacity(opacity, painter)
-    self:with_save(function()
+    self:with_save(function ()
         self:opacity(opacity)
         painter()
     end)
 end
 
+---@param rect  Rect
+---@param paint Paint
 function PaintingContext:draw_rect(rect, paint)
     return self.canvas:draw_rect(rect, paint)
 end
 
+---@param rect   Rect
+---@param radius number
+---@param paint  Paint
 function PaintingContext:draw_rrect(rect, radius, paint)
     return self.canvas:draw_rrect(rect, radius, paint)
 end
 
+---@param path  Path
+---@param paint Paint
 function PaintingContext:draw_path(path, paint)
     return self.canvas:draw_path(path, paint)
 end
 
+---@param from  Offset
+---@param to    Offset
+---@param paint Paint
 function PaintingContext:draw_line(from, to, paint)
     return self.canvas:draw_line(from, to, paint)
 end
 
+---@param paragraph  Paragraph
+---@param position   Offset
+---@param text_paint TextPaint?
 function PaintingContext:draw_text(paragraph, position, text_paint)
     return self.canvas:draw_text(paragraph, position, text_paint)
 end
 
+---@param image Image?
+---@param rect  Rect
 function PaintingContext:draw_image(image, rect)
     return self.canvas:draw_image(image, rect)
 end

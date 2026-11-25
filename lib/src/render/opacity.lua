@@ -12,6 +12,9 @@ local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
 local render_object = require 'src.render.render_object'
 
+local math = math
+local type = type
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Matrix2D = transform_mod.Matrix2D
@@ -25,23 +28,21 @@ local M = {}
 ---@param value number
 ---@return number
 local function validate_opacity(value)
-    if type(value) ~= 'number' or value ~= value
-        or value == huge or value == -huge
-        or value < 0 or value > 1 then
+    if type(value) ~= 'number' or value ~= value or value == huge or value == -huge or value < 0 or value > 1 then
         raise(std.ValueError('RenderOpacity.opacity must be between 0 and 1'))
     end
     return value
 end
 
----@class RenderOpacity : RenderObject
+---@class RenderOpacity: RenderObject
 ---@field opacity number
----@field hidden boolean suppress paint, hit testing and pointer regions while retaining layout
+---@field hidden  boolean suppress paint, hit testing and pointer regions while retaining layout
 ---@overload fun(opacity: number?, child: RenderObject?, hidden: boolean?): self
 local RenderOpacity = std.class.new('RenderOpacity', RenderObject)
 
 ---@param opacity number?
----@param child RenderObject?
----@param hidden boolean?
+---@param child   RenderObject?
+---@param hidden  boolean?
 function RenderOpacity:__init(opacity, child, hidden)
     RenderObject.__init(self)
     local initial_opacity = opacity
@@ -103,11 +104,13 @@ function RenderOpacity:__paint(canvas, offset)
     if child == nil then
         return
     end
-    canvas:with_opacity(self.opacity, function()
+    canvas:with_opacity(self.opacity, function ()
         canvas:paint_child(child, offset)
     end)
 end
 
+---@param position Offset
+---@return RenderObject?
 function RenderOpacity:hit_test(position)
     if self.hidden then
         return nil
@@ -116,8 +119,8 @@ function RenderOpacity:hit_test(position)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderOpacity:pointer_path(point, out)
     out = out or {}
     if self.hidden then
@@ -126,9 +129,9 @@ function RenderOpacity:pointer_path(point, out)
     return RenderObject.pointer_path(self, point, out)
 end
 
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderOpacity:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}

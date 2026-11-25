@@ -16,19 +16,23 @@ local std = require 'elxlibs.std'
 ---@class mod.src.scheduler.ticker
 local M = {}
 
----@class Ticker : std.object
----@field scheduler Scheduler
----@field on_tick fun(dt: number, time: number)
----@field _last_time number?
+---@class Ticker: std.object
+---@field scheduler         Scheduler
+---@field on_tick           fun(dt: number, time: number)
+---@field _last_time        number?
+---@field private _active   boolean
+---@field private _callback fun(dt: number, time: number)
 ---@overload fun(scheduler: Scheduler, on_tick: fun(dt: number, time: number)): self
 local Ticker = std.class.new('Ticker')
 
+---@param scheduler Scheduler
+---@param on_tick   fun(dt: number, time: number)
 function Ticker:__init(scheduler, on_tick)
     self.scheduler = scheduler
     self.on_tick = on_tick
     self._active = false
     self._last_time = nil
-    self._callback = function(_, time)
+    self._callback = function (_, time)
         if self._active then
             local last_time = self._last_time
             local dt = last_time and (time - last_time) or 0

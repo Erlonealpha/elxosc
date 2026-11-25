@@ -15,18 +15,20 @@ local M = {}
 ---@class SchedulerBindingRole
 local SchedulerBinding = {}
 
+---@return WidgetsBinding
 function SchedulerBinding.ensure_initialized()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.ensure_initialized()
 end
 
+---@return WidgetsBinding?
 function SchedulerBinding.instance()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.instance()
 end
 
 ---@param scheduler Scheduler
----@param time number
+---@param time      number
 function SchedulerBinding.handle_frame(scheduler, time)
     if scheduler and scheduler._handle_frame then
         scheduler:_handle_frame(time)

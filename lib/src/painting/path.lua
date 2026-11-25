@@ -23,6 +23,7 @@ local min = math.min
 local M = {}
 
 --- The drawing verbs a backend must understand.
+
 ---@alias PathVerb
 --- | 'move_to'
 --- | 'line_to'
@@ -30,20 +31,15 @@ local M = {}
 --- | 'cubic_to'
 --- | 'close'
 
-M.Verb = {
-    MOVE_TO = 'move_to',
-    LINE_TO = 'line_to',
-    QUAD_TO = 'quad_to',
-    CUBIC_TO = 'cubic_to',
-    CLOSE = 'close',
-}
+M.Verb = { MOVE_TO = 'move_to', LINE_TO = 'line_to', QUAD_TO = 'quad_to', CUBIC_TO = 'cubic_to', CLOSE = 'close' }
 
 local Verb = M.Verb
 
 --- kappa: control point distance that turns a cubic bezier into a quarter arc.
 local KAPPA = 0.5522847498307936
 
----@class Path : std.object
+---@class Path: std.object
+---@field private _verbs any[][] verb followed by numeric operands
 ---@overload fun(): self
 local Path = std.class.new('Path')
 
@@ -53,6 +49,7 @@ function Path:__init()
     self._verbs = {}
 end
 
+---@return string
 function Path:__tostring()
     return string.format('Path(%d verbs)', #self._verbs)
 end
@@ -87,8 +84,8 @@ end
 
 ---@param cx number control point
 ---@param cy number
----@param x number end point
----@param y number
+---@param x  number end point
+---@param y  number
 ---@return Path self (chainable)
 function Path:quad_to(cx, cy, x, y)
     local verbs = self._verbs
@@ -100,8 +97,8 @@ end
 ---@param c1y number
 ---@param c2x number second control point
 ---@param c2y number
----@param x number end point
----@param y number
+---@param x   number end point
+---@param y   number
 ---@return Path self (chainable)
 function Path:cubic_to(c1x, c1y, c2x, c2y, x, y)
     local verbs = self._verbs
@@ -131,7 +128,7 @@ function Path:add_rect(rect)
 end
 
 --- Append a rectangle with uniform rounded corners of `radius`.
----@param rect Rect
+---@param rect   Rect
 ---@param radius number? defaults to 0 (a plain rectangle)
 ---@return Path self (chainable)
 function Path:add_rrect(rect, radius)

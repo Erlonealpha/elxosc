@@ -6,6 +6,10 @@
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
+local ipairs = ipairs
+local math = math
+local type = type
+
 local ParentDataWidget = widget_mod.ParentDataWidget
 local raise = std.raise
 local huge = math.huge
@@ -14,31 +18,34 @@ local huge = math.huge
 local M = {}
 
 ---@class _PositionedOptions
----@field left number?
----@field top number?
----@field right number?
+---@field left   number?
+---@field top    number?
+---@field right  number?
 ---@field bottom number?
----@field width number?
+---@field width  number?
 ---@field height number?
----@field child Widget?
----@field key any?
+---@field child  Widget?
+---@field key    any?
 
----@class Positioned : ParentDataWidget
----@field left number?
----@field top number?
----@field right number?
+---@class Positioned: ParentDataWidget
+---@field left   number?
+---@field top    number?
+---@field right  number?
 ---@field bottom number?
----@field width number?
+---@field width  number?
 ---@field height number?
 ---@overload fun(options?: _PositionedOptions): self
 local Positioned = std.class.new('Positioned', ParentDataWidget)
 
+---@param name         string
+---@param value        number?
+---@param non_negative boolean
+---@return number?
 local function optional_number(name, value, non_negative)
     if value == nil then
         return nil
     end
-    if type(value) ~= 'number' or value ~= value
-        or value == huge or value == -huge then
+    if type(value) ~= 'number' or value ~= value or value == huge or value == -huge then
         raise(std.ValueError('Positioned.' .. name .. ' must be finite'))
     end
     if non_negative and value < 0 then
@@ -47,6 +54,7 @@ local function optional_number(name, value, non_negative)
     return value
 end
 
+---@param options _PositionedOptions?
 function Positioned:__init(options)
     options = options or {}
     self.key = options.key
@@ -64,6 +72,8 @@ function Positioned:__init(options)
     end
 end
 
+---@param render_object RenderObject
+---@param data          Partial<BoxParentData>
 local function apply_data(render_object, data)
     local parent_data = render_object.parent_data
     local changed = parent_data.positioned ~= data.positioned
@@ -79,6 +89,7 @@ local function apply_data(render_object, data)
     end
 end
 
+---@param render_object RenderObject
 function Positioned:apply_parent_data(render_object)
     apply_data(render_object, {
         positioned = true,
@@ -87,10 +98,11 @@ function Positioned:apply_parent_data(render_object)
         right = self.right,
         bottom = self.bottom,
         width = self.width,
-        height = self.height,
+        height = self.height
     })
 end
 
+---@param render_object RenderObject
 function Positioned:clear_parent_data(render_object)
     apply_data(render_object, { positioned = false })
 end

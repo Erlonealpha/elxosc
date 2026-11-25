@@ -11,17 +11,19 @@
 
 local std = require 'elxlibs.std'
 
+local error = error
+
 ---@class mod.src.foundation.binding_base
 local M = {}
 local raise = std.raise
 ---@type BindingBase?
 local current_binding
 
----@class BindingBase : std.object
+---@class BindingBase: std.object
 ---@field _initialized boolean
----@field _disposed boolean
----@field _disposing boolean
----@field phase string
+---@field _disposed    boolean
+---@field _disposing   boolean
+---@field phase        string
 ---@overload fun(): self
 local BindingBase = std.class.new('BindingBase')
 

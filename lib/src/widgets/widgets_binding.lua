@@ -14,7 +14,7 @@ local binding = require 'src.widgets.binding'
 ---@class mod.src.widgets.widgets_binding
 local M = {
     WidgetsBinding = binding.WidgetsBinding,
-    WidgetBinding = binding.WidgetBinding,
+    WidgetBinding = binding.WidgetBinding
 }
 
 return M

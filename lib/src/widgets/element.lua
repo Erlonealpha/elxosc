@@ -21,6 +21,12 @@ local builder_mod = require 'src.widgets.builder'
 local key_mod = require 'src.widgets.key'
 local foundation_key = require 'src.foundation.key'
 
+local error = error
+local ipairs = ipairs
+local pairs = pairs
+local pcall = pcall
+local type = type
+
 local raise = std.raise
 local can_update = widget_mod.can_update
 local StatelessWidget = widget_mod.StatelessWidget
@@ -37,21 +43,21 @@ local LocalKey = foundation_key.LocalKey
 ---@class mod.src.widgets.element
 local M = {}
 
---== base =================================================================
+-- == base =================================================================
 
----@class Element : std.object
----@field widget Widget
----@field state State? present only on StatefulElement
----@field parent Element?
----@field owner BuildOwner?
----@field depth int
----@field mounted boolean
----@field active boolean
----@field dirty boolean
----@field build_scope BuildScope?
+---@class Element: std.object
+---@field widget                  Widget
+---@field state                   State?                        present only on StatefulElement
+---@field parent                  Element?
+---@field owner                   BuildOwner?
+---@field depth                   int
+---@field mounted                 boolean
+---@field active                  boolean
+---@field dirty                   boolean
+---@field build_scope             BuildScope?
 ---@field _inherited_dependencies table<InheritedElement, true>
----@field _lifecycle_phase string
----@overload fun(widget: Widget):self
+---@field _lifecycle_phase        string
+---@overload fun(widget: Widget): self
 local Element = std.class.new('Element')
 
 --- `BuildContext` is Flutter's name for "the handle a build gets"; here the
@@ -73,7 +79,7 @@ function Element:__init(widget)
 end
 
 ---@param parent Element?
----@param owner BuildOwner
+---@param owner  BuildOwner
 function Element:mount(parent, owner)
     owner:_tree_changed()
     self.parent = parent
@@ -133,6 +139,7 @@ end
 
 --- Temporarily remove this subtree from the active tree. The BuildOwner keeps
 --- it alive until the current build frame is finalized.
+---@return boolean
 function Element:deactivate()
     if not self.mounted or not self.active then
         return false
@@ -152,6 +159,7 @@ function Element:deactivate()
 end
 
 ---@param parent Element?
+---@return boolean
 function Element:activate(parent)
     if not self.mounted or self.active then
         return false
@@ -162,8 +170,7 @@ function Element:activate(parent)
     self.parent = parent
     self.depth = parent and (parent.depth + 1) or 0
     self.active = true
-    self.build_scope = parent and parent.build_scope
-        or (self.owner and self.owner.root_scope or nil)
+    self.build_scope = parent and parent.build_scope or (self.owner and self.owner.root_scope or nil)
     if self.owner then
         self.owner:remove_inactive(self)
     end
@@ -178,7 +185,7 @@ function Element:is_active()
     return self.mounted and self.active
 end
 
----@param phase string
+---@param phase    string
 ---@param callback fun(): any
 ---@return any
 function Element:_run_in_phase(phase, callback)
@@ -202,14 +209,12 @@ function Element:_assert_can_depend()
         raise(std.RuntimeError('listening Provider lookup requires a mounted BuildContext'))
     end
     if self._lifecycle_phase ~= 'build' and self._lifecycle_phase ~= 'dependencies' then
-        raise(std.RuntimeError(
-            'listening Provider lookup is only valid during build or did_change_dependencies'))
+        raise(std.RuntimeError('listening Provider lookup is only valid during build or did_change_dependencies'))
     end
 end
 
 function Element:_assert_can_read()
-    if not self.mounted or self._lifecycle_phase == 'dispose'
-        or self._lifecycle_phase == 'unmounted' then
+    if not self.mounted or self._lifecycle_phase == 'dispose' or self._lifecycle_phase == 'unmounted' then
         raise(std.RuntimeError('non-listening Provider lookup requires a mounted BuildContext'))
     end
 end
@@ -363,7 +368,7 @@ end
 
 --- Reconcile `previous` against `widget`, reusing or recreating as needed.
 ---@param previous Element?
----@param widget Widget?
+---@param widget   Widget?
 ---@return Element?
 function Element:update_child(previous, widget)
     if widget == nil then
@@ -386,8 +391,11 @@ function Element:update_child(previous, widget)
         previous:unmount()
     end
     local child = widget:create_element()
-    local ok, err = pcall(function()
-        child:mount(self, self.owner --[[@as BuildOwner]])
+    local ok, err = pcall(function ()
+        child:mount(
+            self,
+            self.owner --[[@as BuildOwner]]
+        )
         child:rebuild()
     end)
     if not ok then
@@ -397,12 +405,12 @@ function Element:update_child(previous, widget)
     return child
 end
 
---== composite ============================================================
+-- == composite ============================================================
 
----@class StatelessElement : Element
+---@class StatelessElement: Element
 ---@field widget StatelessWidget
----@field child Element?
----@overload fun(widget:StatelessWidget):self
+---@field child  Element?
+---@overload fun(widget: StatelessWidget): self
 local StatelessElement = std.class.new('StatelessElement', Element)
 
 ---@param widget StatelessWidget
@@ -411,10 +419,12 @@ function StatelessElement:__init(widget)
     self.child = nil
 end
 
+---@return Element[]
 function StatelessElement:element_children()
     return self.child and { self.child } or {}
 end
 
+---@return RenderObject?
 function StatelessElement:first_render_object()
     return self.child and self.child:first_render_object() or nil
 end
@@ -423,8 +433,8 @@ function StatelessElement:rebuild()
     self:_assert_can_build()
     self:_clear_inherited_dependencies()
     self.dirty = false
-    local child = self:_run_in_phase('build', function()
-        return builder_mod.call_context(function(context)
+    local child = self:_run_in_phase('build', function ()
+        return builder_mod.call_context(function (context)
             return self.widget:build(context)
         end, self, 'StatelessWidget.build')
     end)
@@ -438,12 +448,12 @@ function StatelessElement:update(new_widget)
     self:rebuild()
 end
 
----@class StatefulElement : Element
----@field widget StatefulWidget
----@field child Element?
----@field state State
+---@class StatefulElement: Element
+---@field widget                StatefulWidget
+---@field child                 Element?
+---@field state                 State
 ---@field _dependencies_changed boolean
----@overload fun(widget: StatefulWidget):self
+---@overload fun(widget: StatefulWidget): self
 local StatefulElement = std.class.new('StatefulElement', Element)
 
 ---@param widget StatefulWidget
@@ -456,9 +466,11 @@ function StatefulElement:__init(widget)
     self.state.context = self
 end
 
+---@param parent Element?
+---@param owner  BuildOwner
 function StatefulElement:mount(parent, owner)
     std.super(StatefulElement, self, Element).mount(self, parent, owner)
-    self:_run_in_phase('init_state', function()
+    self:_run_in_phase('init_state', function ()
         self.state:init_state()
     end)
     self._dependencies_changed = true
@@ -479,13 +491,13 @@ function StatefulElement:unmount()
     end
     local failure
     if self.mounted then
-        local ok, err = pcall(self._run_in_phase, self, 'dispose', function()
+        local ok, err = pcall(self._run_in_phase, self, 'dispose', function ()
             self.state:dispose()
         end)
         if not ok then
             failure = err
         end
-        ok, err = pcall(self._run_in_phase, self, 'dispose', function()
+        ok, err = pcall(self._run_in_phase, self, 'dispose', function ()
             self.state:_dispose_resources()
         end)
         if not ok then
@@ -502,10 +514,12 @@ function StatefulElement:unmount()
     end
 end
 
+---@return Element[]
 function StatefulElement:element_children()
     return self.child and { self.child } or {}
 end
 
+---@return RenderObject?
 function StatefulElement:first_render_object()
     return self.child and self.child:first_render_object() or nil
 end
@@ -516,12 +530,12 @@ function StatefulElement:rebuild()
     self.dirty = false
     if self._dependencies_changed then
         self._dependencies_changed = false
-        self:_run_in_phase('dependencies', function()
+        self:_run_in_phase('dependencies', function ()
             self.state:did_change_dependencies()
         end)
     end
-    local child = self:_run_in_phase('build', function()
-        return builder_mod.call_context(function(context)
+    local child = self:_run_in_phase('build', function ()
+        return builder_mod.call_context(function (context)
             return self.state:build(context)
         end, self, 'State.build')
     end)
@@ -540,10 +554,10 @@ function StatefulElement:dependency_changed(initial)
     end
 end
 
----@class ProxyElement : Element
+---@class ProxyElement: Element
 ---@field widget ProxyWidget
----@field child Element?
----@overload fun(widget: ProxyWidget):self
+---@field child  Element?
+---@overload fun(widget: ProxyWidget): self
 local ProxyElement = std.class.new('ProxyElement', Element)
 
 ---@param widget ProxyWidget
@@ -552,10 +566,12 @@ function ProxyElement:__init(widget)
     self.child = nil
 end
 
+---@return Element[]
 function ProxyElement:element_children()
     return self.child and { self.child } or {}
 end
 
+---@return RenderObject?
 function ProxyElement:first_render_object()
     return self.child and self.child:first_render_object() or nil
 end
@@ -573,9 +589,9 @@ function ProxyElement:update(new_widget)
     self:rebuild()
 end
 
----@class ParentDataElement : ProxyElement
+---@class ParentDataElement: ProxyElement
 ---@field widget ParentDataWidget
----@overload fun(widget: ParentDataWidget):self
+---@overload fun(widget: ParentDataWidget): self
 local ParentDataElement = std.class.new('ParentDataElement', ProxyElement)
 
 function ParentDataElement:unmount()
@@ -601,8 +617,8 @@ function ParentDataElement:update(new_widget)
     self:rebuild()
 end
 
----@class InheritedElement : ProxyElement
----@field widget InheritedWidget
+---@class InheritedElement: ProxyElement
+---@field widget     InheritedWidget
 ---@field dependents table<Element, true>
 ---@overload fun(widget: InheritedWidget): self
 local InheritedElement = std.class.new('InheritedElement', ProxyElement)
@@ -613,6 +629,7 @@ function InheritedElement:__init(widget)
     self.dependents = {}
 end
 
+---@return boolean
 function InheritedElement:is_inherited_element()
     return true
 end
@@ -649,12 +666,12 @@ function InheritedElement:notify_dependents(dependents)
     end
 end
 
---== render object elements ===============================================
+-- == render object elements ===============================================
 
----@class RenderObjectElement : Element
----@field widget RenderObjectWidget
+---@class RenderObjectElement: Element
+---@field widget        RenderObjectWidget
 ---@field render_object RenderObject
----@overload fun(widget: RenderObjectWidget):self
+---@overload fun(widget: RenderObjectWidget): self
 local RenderObjectElement = std.class.new('RenderObjectElement', Element)
 
 ---@param widget RenderObjectWidget
@@ -663,6 +680,8 @@ function RenderObjectElement:__init(widget)
     self.render_object = nil
 end
 
+---@param parent Element?
+---@param owner  BuildOwner
 function RenderObjectElement:mount(parent, owner)
     std.super(RenderObjectElement, self, Element).mount(self, parent, owner)
     self.render_object = self.widget:create_render_object()
@@ -677,10 +696,12 @@ function RenderObjectElement:update(new_widget)
     new_widget:update_render_object(self.render_object)
 end
 
+---@return RenderObject?
 function RenderObjectElement:first_render_object()
     return self.render_object
 end
 
+---@return boolean
 function RenderObjectElement:is_render_object_element()
     return true
 end
@@ -700,17 +721,16 @@ function RenderObjectElement:rebuild()
     self:sync_render_children()
 end
 
----@class LeafRenderObjectElement : RenderObjectElement
+---@class LeafRenderObjectElement: RenderObjectElement
 ---@field widget LeafRenderObjectWidget
----@overload fun(widget: LeafRenderObjectWidget):self
+---@overload fun(widget: LeafRenderObjectWidget): self
 local LeafRenderObjectElement = std.class.new('LeafRenderObjectElement', RenderObjectElement)
 
----@class SingleChildRenderObjectElement : RenderObjectElement
+---@class SingleChildRenderObjectElement: RenderObjectElement
 ---@field widget SingleChildRenderObjectWidget
----@field child Element?
----@overload fun(widget: SingleChildRenderObjectWidget):self
-local SingleChildRenderObjectElement =
-    std.class.new('SingleChildRenderObjectElement', RenderObjectElement)
+---@field child  Element?
+---@overload fun(widget: SingleChildRenderObjectWidget): self
+local SingleChildRenderObjectElement = std.class.new('SingleChildRenderObjectElement', RenderObjectElement)
 
 ---@param widget SingleChildRenderObjectWidget
 function SingleChildRenderObjectElement:__init(widget)
@@ -718,10 +738,12 @@ function SingleChildRenderObjectElement:__init(widget)
     self.child = nil
 end
 
+---@return Element[]
 function SingleChildRenderObjectElement:element_children()
     return self.child and { self.child } or {}
 end
 
+---@return RenderObject[]
 function SingleChildRenderObjectElement:render_children()
     local render_object = self.child and self.child:first_render_object()
     return render_object and { render_object } or {}
@@ -740,12 +762,11 @@ function SingleChildRenderObjectElement:update(new_widget)
     self:rebuild()
 end
 
----@class MultiChildRenderObjectElement : RenderObjectElement
----@field widget MultiChildRenderObjectWidget
+---@class MultiChildRenderObjectElement: RenderObjectElement
+---@field widget   MultiChildRenderObjectWidget
 ---@field children Element[]
----@overload fun(widget: MultiChildRenderObjectWidget):self
-local MultiChildRenderObjectElement =
-    std.class.new('MultiChildRenderObjectElement', RenderObjectElement)
+---@overload fun(widget: MultiChildRenderObjectWidget): self
+local MultiChildRenderObjectElement = std.class.new('MultiChildRenderObjectElement', RenderObjectElement)
 
 ---@param widget MultiChildRenderObjectWidget
 function MultiChildRenderObjectElement:__init(widget)
@@ -753,10 +774,12 @@ function MultiChildRenderObjectElement:__init(widget)
     self.children = {}
 end
 
+---@return Element[]
 function MultiChildRenderObjectElement:element_children()
     return self.children
 end
 
+---@return RenderObject[]
 function MultiChildRenderObjectElement:render_children()
     local out = {}
     for _, child in ipairs(self.children) do
@@ -778,7 +801,11 @@ function MultiChildRenderObjectElement:rebuild()
     local seen_local_keys = {}
     for _, child_widget in ipairs(widgets) do
         local key = child_widget.key
-        if key and std.isinstance(key --[[@as std.object]], LocalKey) then
+        if key
+            and std.isinstance(
+                key, --[[@as std.object]]
+                LocalKey
+            ) then
             for _, seen in ipairs(seen_local_keys) do
                 if seen == key then
                     if self.owner then
@@ -796,23 +823,24 @@ function MultiChildRenderObjectElement:rebuild()
     -- a keyed Element (and its State/RenderObject) follows its logical item
     -- when siblings are inserted, removed, or reordered.
     local used = {}
+    ---@param key any
+    ---@return Element?
+    ---@return integer?
     local function find_keyed(key)
         for i, old_child in ipairs(previous) do
-            if not used[old_child] and old_child.widget.key ~= nil
-                and old_child.widget.key == key then
+            if not used[old_child] and old_child.widget.key ~= nil and old_child.widget.key == key then
                 return old_child, i
             end
         end
         return nil, nil
     end
 
-    local ok, err = pcall(function()
+    local ok, err = pcall(function ()
         for i, widget in ipairs(widgets) do
             local candidate = nil
             if widget.key ~= nil then
                 candidate = find_keyed(widget.key)
-            elseif previous[i] and previous[i].widget.key == nil
-                and not used[previous[i]] then
+            elseif previous[i] and previous[i].widget.key == nil and not used[previous[i]] then
                 candidate = previous[i]
             end
             children[i] = self:update_child(candidate, widget)
@@ -863,7 +891,7 @@ function MultiChildRenderObjectElement:update(new_widget)
     self:rebuild()
 end
 
---== widget <-> element wiring =============================================
+-- == widget <-> element wiring =============================================
 -- `widget/widget.lua` cannot reference the element classes (Lua's `require`
 -- has no cycles), so the mapping is installed here, once.
 

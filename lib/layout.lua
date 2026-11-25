@@ -11,7 +11,7 @@ local export = exports.export
 
 export('layout', require 'src.layout.constraints', true)
 
----@class mod.layout : mod.src.layout.constraints
+---@class mod.layout: mod.src.layout.constraints
 local M = exports.get('layout')
 
 return M

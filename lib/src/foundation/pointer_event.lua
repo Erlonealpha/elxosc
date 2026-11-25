@@ -12,6 +12,11 @@
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
+local math = math
+local pairs = pairs
+local setmetatable = setmetatable
+local type = type
+
 local Offset = geometry.Offset
 local floor = math.floor
 local raise = std.raise
@@ -39,47 +44,47 @@ local M = {}
 ---@alias PointerSource
 --- | 'mouse'
 
----@alias PointerPoint Offset | {x: number, y: number}
+---@alias PointerPoint Offset | { x: number, y: number }
 
 ---@class InputModifiers
 ---@field shift boolean?
----@field ctrl boolean?
----@field alt boolean?
----@field meta boolean?
+---@field ctrl  boolean?
+---@field alt   boolean?
+---@field meta  boolean?
 
 ---@class PointerButtons
----@field left boolean?
+---@field left   boolean?
 ---@field middle boolean?
----@field right boolean?
+---@field right  boolean?
 
----@class _PointerEventFields : table<string, any>
----@field type PointerEventType
----@field point PointerPoint?
----@field data any?
----@field pointer_id integer?
----@field button PointerButton?
----@field buttons PointerButtons?
+---@class _PointerEventFields: table<string, any>
+---@field type        PointerEventType
+---@field point       PointerPoint?
+---@field data        any?
+---@field pointer_id  integer?
+---@field button      PointerButton?
+---@field buttons     PointerButtons?
 ---@field click_count integer?
----@field delta_x number?
----@field delta_y number?
----@field modifiers InputModifiers?
----@field source PointerSource?
----@field timestamp number?
+---@field delta_x     number?
+---@field delta_y     number?
+---@field modifiers   InputModifiers?
+---@field source      PointerSource?
+---@field timestamp   number?
 
----@class PointerEvent : std.object
----@field [string] any extension fields are retained verbatim
----@field type PointerEventType
----@field point Offset?
----@field data any?
----@field pointer_id integer?
----@field button PointerButton?
----@field buttons PointerButtons?
+---@class PointerEvent: std.object
+---@field [string]    any              extension fields are retained verbatim
+---@field type        PointerEventType
+---@field point       Offset?
+---@field data        any?
+---@field pointer_id  integer?
+---@field button      PointerButton?
+---@field buttons     PointerButtons?
 ---@field click_count integer?
----@field delta_x number?
----@field delta_y number?
----@field modifiers InputModifiers?
----@field source PointerSource?
----@field timestamp number?
+---@field delta_x     number?
+---@field delta_y     number?
+---@field modifiers   InputModifiers?
+---@field source      PointerSource?
+---@field timestamp   number?
 ---@overload fun(type: string, point: PointerPoint?, data: any?, extra: table?): self
 ---@overload fun(fields: _PointerEventFields): self
 local PointerEvent = std.class.new('PointerEvent')
@@ -93,7 +98,7 @@ local EVENT_TYPES = {
     enter = true,
     leave = true,
     wheel = true,
-    double = true,
+    double = true
 }
 
 local BUTTONS = { left = true, middle = true, right = true }
@@ -111,8 +116,8 @@ local function is_integer(value)
     return type(value) == 'number' and is_finite(value) and value == floor(value)
 end
 
----@param name string
----@param value table?
+---@param name    string
+---@param value   table?
 ---@param allowed table<string, true>
 ---@return table?
 local function copy_boolean_map(name, value, allowed)
@@ -135,7 +140,7 @@ local function copy_boolean_map(name, value, allowed)
     return copy
 end
 
----@param point any
+---@param point      any
 ---@param event_type PointerEventType
 ---@return Offset?
 local function validate_point(point, event_type)
@@ -148,8 +153,7 @@ local function validate_point(point, event_type)
     if type(point) ~= 'table' then
         raise(std.TypeError('PointerEvent.point must be a finite Offset'))
     end
-    if type(point.x) ~= 'number' or not is_finite(point.x)
-        or type(point.y) ~= 'number' or not is_finite(point.y) then
+    if type(point.x) ~= 'number' or not is_finite(point.x) or type(point.y) ~= 'number' or not is_finite(point.y) then
         raise(std.ValueError('PointerEvent.point must be a finite Offset'))
     end
     return Offset(point.x, point.y)
@@ -164,7 +168,7 @@ local function validate_event_type(value)
     return value --[[@as PointerEventType]]
 end
 
----@param name string
+---@param name  string
 ---@param value any
 ---@return number?
 local function validate_finite(name, value)
@@ -177,9 +181,9 @@ local function validate_finite(name, value)
     return value
 end
 
----@param name string
----@param value any
----@param minimum number
+---@param name        string
+---@param value       any
+---@param minimum     number
 ---@param description string
 ---@return integer?
 local function validate_integer(name, value, minimum, description)
@@ -197,15 +201,12 @@ local function validate_fields(fields)
     local event_type = validate_event_type(fields.type)
     fields.type = event_type
     fields.point = validate_point(fields.point, event_type)
-    fields.pointer_id = validate_integer(
-        'pointer_id', fields.pointer_id, 0, 'a non-negative integer')
-    if fields.button ~= nil
-        and (type(fields.button) ~= 'string' or not BUTTONS[fields.button]) then
+    fields.pointer_id = validate_integer('pointer_id', fields.pointer_id, 0, 'a non-negative integer')
+    if fields.button ~= nil and (type(fields.button) ~= 'string' or not BUTTONS[fields.button]) then
         raise(std.ValueError('PointerEvent.button is not supported'))
     end
     fields.buttons = copy_boolean_map('buttons', fields.buttons, BUTTONS)
-    fields.click_count = validate_integer(
-        'click_count', fields.click_count, 1, 'a positive integer')
+    fields.click_count = validate_integer('click_count', fields.click_count, 1, 'a positive integer')
     fields.delta_x = validate_finite('delta_x', fields.delta_x)
     fields.delta_y = validate_finite('delta_y', fields.delta_y)
     fields.timestamp = validate_finite('timestamp', fields.timestamp)
@@ -218,10 +219,10 @@ local function validate_fields(fields)
     end
 end
 
----@param event_or_fields string|_PointerEventFields
----@param point PointerPoint?
----@param data any?
----@param extra table?
+---@param event_or_fields string | _PointerEventFields
+---@param point           PointerPoint?
+---@param data            any?
+---@param extra           table?
 function PointerEvent:__init(event_or_fields, point, data, extra)
     local fields = {}
     if type(event_or_fields) == 'table' then

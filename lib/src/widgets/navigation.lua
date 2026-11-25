@@ -21,6 +21,11 @@ local overlay_mod = require 'src.widgets.overlay'
 local gesture_mod = require 'src.widgets.gesture_detector'
 local container_mod = require 'src.widgets.container'
 
+local ipairs = ipairs
+local pairs = pairs
+local table = table
+local type = type
+
 local Widget = widget_mod.Widget
 local StatefulWidget = widget_mod.StatefulWidget
 local InheritedWidget = widget_mod.InheritedWidget
@@ -36,6 +41,9 @@ local Color = color_mod.Color
 ---@class mod.src.widgets.navigation
 local M = {}
 
+---@generic T
+---@param values T[]?
+---@return T[]
 local function copy_array(values)
     local result = {}
     for index, value in ipairs(values or {}) do
@@ -44,28 +52,29 @@ local function copy_array(values)
     return result
 end
 
---== immutable page descriptions ============================================
+-- == immutable page descriptions ============================================
 
 ---@class _PageOptions
----@field key any required stable identity within a Navigator
----@field name string?
----@field builder ContextBuilder
----@field opaque boolean? defaults to true
----@field maintain_state boolean? defaults to true
----@field on_pop fun(route: Route, value: any?)?
----@field on_dispose fun(route: Route)?
+---@field key            any                             required stable identity within a Navigator
+---@field name           string?
+---@field builder        ContextBuilder
+---@field opaque         boolean?                        defaults to true
+---@field maintain_state boolean?                        defaults to true
+---@field on_pop         fun(route: Route, value: any?)?
+---@field on_dispose     fun(route: Route)?
 
----@class Page : std.object
----@field key any
----@field name string?
----@field builder ContextBuilder
----@field opaque boolean
+---@class Page: std.object
+---@field key            any
+---@field name           string?
+---@field builder        ContextBuilder
+---@field opaque         boolean
 ---@field maintain_state boolean
----@field on_pop fun(route: Route, value: any?)?
----@field on_dispose fun(route: Route)?
+---@field on_pop         fun(route: Route, value: any?)?
+---@field on_dispose     fun(route: Route)?
 ---@overload fun(options: _PageOptions): self
 local Page = std.class.new('Page')
 
+---@param options _PageOptions
 function Page:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('Page expects an options table'))
@@ -98,10 +107,14 @@ function Page:build(context)
     return builder_mod.call_context(self.builder, context, 'Page.builder')
 end
 
+---@param left  Page
+---@param right Page
+---@return boolean
 local function page_matches(left, right)
     return left.__class == right.__class and left.key == right.key
 end
 
+---@param page Page
 local function validate_page(page)
     if not std.isinstance(page, Page) then
         raise(std.TypeError('Navigator pages must be Page values'))
@@ -124,26 +137,31 @@ local function validate_pages(pages)
     end
 end
 
----@class _PopupPageOptions : _PageOptions
----@field barrier_color Color?
+---@class _PopupPageOptions: _PageOptions
+---@field barrier_color       Color?
 ---@field barrier_dismissible boolean?
 
----@class PopupPage : Page
----@field barrier_color Color?
+---@class PopupPage: Page
+---@field barrier_color       Color?
 ---@field barrier_dismissible boolean
 ---@overload fun(options: _PopupPageOptions): self
 local PopupPage = std.class.new('PopupPage', Page)
 
+---@param options _PopupPageOptions
 function PopupPage:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('PopupPage expects an options table'))
     end
+    ---@type table<string, any> copied options are validated by Page
     local page_options = {}
     for key, value in pairs(options) do
         page_options[key] = value
     end
     page_options.opaque = false
-    std.super(PopupPage, self, Page).__init(self, page_options)
+    std.super(PopupPage, self, Page).__init(
+        self,
+        page_options --[[@as _PageOptions]]
+    )
     if options.barrier_color ~= nil and not dataclass.isinstance(options.barrier_color, Color) then
         raise(std.TypeError('PopupPage.barrier_color must be a Color or nil'))
     end
@@ -154,21 +172,22 @@ function PopupPage:__init(options)
     self.barrier_dismissible = options.barrier_dismissible ~= false
 end
 
---== modal barrier ==========================================================
+-- == modal barrier ==========================================================
 
 ---@class _ModalBarrierOptions
----@field color Color?
+---@field color       Color?
 ---@field dismissible boolean?
----@field on_dismiss fun()?
----@field key any?
+---@field on_dismiss  fun()?
+---@field key         any?
 
----@class ModalBarrier : StatelessWidget
----@field color Color?
+---@class ModalBarrier: StatelessWidget
+---@field color       Color?
 ---@field dismissible boolean
----@field on_dismiss fun()?
+---@field on_dismiss  fun()?
 ---@overload fun(options?: _ModalBarrierOptions): self
 local ModalBarrier = std.class.new('ModalBarrier', StatelessWidget)
 
+---@param options _ModalBarrierOptions?
 function ModalBarrier:__init(options)
     options = options or {}
     self.key = options.key
@@ -183,14 +202,12 @@ function ModalBarrier:__init(options)
     end
 end
 
+---@return Widget?
 function ModalBarrier:build()
-    local handlers = {
-        on_down = function() end,
-        on_up = function() end,
-    }
+    local handlers = { on_down = function () end, on_up = function () end }
     if self.dismissible then
         local on_dismiss = self.on_dismiss
-        handlers.on_click = function()
+        handlers.on_click = function ()
             if on_dismiss then
                 on_dismiss()
             end
@@ -199,11 +216,11 @@ function ModalBarrier:build()
     return GestureDetector(Container({ color = self.color }), handlers)
 end
 
---== result ================================================================
+-- == result ================================================================
 
----@class RouteResult : std.object
----@field complete boolean
----@field value any?
+---@class RouteResult: std.object
+---@field complete   boolean
+---@field value      any?
 ---@field _listeners table<fun(value: any?), true>
 ---@overload fun(): self
 local RouteResult = std.class.new('RouteResult')
@@ -222,13 +239,13 @@ function RouteResult:add_listener(callback)
     end
     if self.complete then
         callback(self.value)
-        return function()
+        return function ()
             return false
         end
     end
     self._listeners[callback] = true
     local active = true
-    return function()
+    return function ()
         if not active then
             return false
         end
@@ -257,21 +274,21 @@ function RouteResult:finish(value)
     return true
 end
 
---== routes ================================================================
+-- == routes ================================================================
 
----@class Route : std.object
----@field page Page
----@field navigator NavigatorState
----@field result RouteResult
+---@class Route: std.object
+---@field page          Page
+---@field navigator     NavigatorState
+---@field result        RouteResult
 ---@field content_entry OverlayEntry
----@field status 'active'|'popping'|'popped'|'disposed'
----@field _pop_value any?
----@field _finalized table<OverlayEntry, true>
----@field _entry_count integer
+---@field status        'active' | 'popping' | 'popped' | 'disposed'
+---@field _pop_value    any?
+---@field _finalized    table<OverlayEntry, true>
+---@field _entry_count  integer
 ---@overload fun(page: Page, navigator: NavigatorState): self
 local Route = std.class.new('Route')
 
----@param page Page
+---@param page      Page
 ---@param navigator NavigatorState
 function Route:__init(page, navigator)
     validate_page(page)
@@ -286,12 +303,12 @@ function Route:__init(page, navigator)
         key = self,
         opaque = page.opaque,
         maintain_state = page.maintain_state,
-        on_dispose = function()
+        on_dispose = function ()
             self:_entry_finalized(self.content_entry)
         end,
-        builder = function(context)
+        builder = function (context)
             return self.page:build(context)
-        end,
+        end
     })
 end
 
@@ -371,12 +388,14 @@ function Route:dispose()
     return self:begin_pop(nil)
 end
 
----@class PopupRoute : Route
----@field page PopupPage
+---@class PopupRoute: Route
+---@field page          PopupPage
 ---@field barrier_entry OverlayEntry
 ---@overload fun(page: PopupPage, navigator: NavigatorState): self
 local PopupRoute = std.class.new('PopupRoute', Route)
 
+---@param page      PopupPage
+---@param navigator NavigatorState
 function PopupRoute:__init(page, navigator)
     if not std.isinstance(page, PopupPage) then
         raise(std.TypeError('PopupRoute.page must be a PopupPage'))
@@ -387,25 +406,27 @@ function PopupRoute:__init(page, navigator)
         key = {},
         opaque = false,
         maintain_state = false,
-        on_dispose = function()
+        on_dispose = function ()
             self:_entry_finalized(self.barrier_entry)
         end,
-        builder = function()
+        builder = function ()
             return ModalBarrier({
                 color = self.page.barrier_color,
                 dismissible = self.page.barrier_dismissible,
-                on_dismiss = function()
+                on_dismiss = function ()
                     self.navigator:pop()
-                end,
+                end
             })
-        end,
+        end
     })
 end
 
+---@return OverlayEntry[]
 function PopupRoute:entries()
     return { self.barrier_entry, self.content_entry }
 end
 
+---@param page PopupPage
 function PopupRoute:update_page(page)
     if not std.isinstance(page, PopupPage) then
         raise(std.TypeError('PopupRoute.page must remain a PopupPage'))
@@ -414,20 +435,21 @@ function PopupRoute:update_page(page)
     self.barrier_entry:mark_needs_build()
 end
 
---== navigator scope =========================================================
+-- == navigator scope =========================================================
 
 ---@class _NavigatorScopeOptions
 ---@field state NavigatorState
 ---@field child Widget?
----@field key any?
+---@field key   any?
 
----@class NavigatorScope : InheritedWidget
+---@class NavigatorScope: InheritedWidget
 ---@field state NavigatorState
 ---@field child Widget?
 ---@overload fun(options: _NavigatorScopeOptions): self
 local NavigatorScope = std.class.new('NavigatorScope', InheritedWidget)
 local NavigatorScopeClass = NavigatorScope --[[@as std.class]]
 
+---@param options _NavigatorScopeOptions
 function NavigatorScope:__init(options)
     options = options or {}
     self.key = options.key
@@ -439,6 +461,7 @@ function NavigatorScope:__init(options)
 end
 
 ---@param old_widget NavigatorScope
+---@return boolean
 function NavigatorScope:update_should_notify(old_widget)
     return self.state ~= old_widget.state
 end
@@ -456,17 +479,18 @@ function NavigatorScope.of(context)
     return scope.state
 end
 
---== Navigator ===============================================================
+-- == Navigator ===============================================================
 
 ---@class _NavigatorOptions
 ---@field pages Page[]?
----@field key any?
+---@field key   any?
 
----@class Navigator : StatefulWidget
+---@class Navigator: StatefulWidget
 ---@field pages Page[]
 ---@overload fun(options?: _NavigatorOptions): self
 local Navigator = std.class.new('Navigator', StatefulWidget)
 
+---@param options _NavigatorOptions?
 function Navigator:__init(options)
     options = options or {}
     self.key = options.key
@@ -474,9 +498,9 @@ function Navigator:__init(options)
     validate_pages(self.pages)
 end
 
----@class NavigatorState : State
+---@class NavigatorState: State
 ---@field routes Route[]
----@field pages Page[]
+---@field pages  Page[]
 ---@overload fun(): self
 local NavigatorState = std.class.new('NavigatorState', State)
 
@@ -486,6 +510,8 @@ function NavigatorState:__init()
     self.pages = {}
 end
 
+---@param page Page
+---@return Route
 function NavigatorState:_create_route(page)
     if std.isinstance(page, PopupPage) then
         return PopupRoute(page, self)
@@ -493,7 +519,7 @@ function NavigatorState:_create_route(page)
     return Route(page, self)
 end
 
----@param pages Page[]
+---@param pages    Page[]
 ---@param schedule boolean
 function NavigatorState:_reconcile(pages, schedule)
     validate_pages(pages)
@@ -538,6 +564,7 @@ function NavigatorState:init_state()
     self:_reconcile(navigator.pages, false)
 end
 
+---@param old_widget StatefulWidget
 function NavigatorState:did_update_widget(old_widget)
     local navigator = self.widget --[[@as Navigator]]
     self:_reconcile(navigator.pages, false)
@@ -618,18 +645,18 @@ function NavigatorState:pages_snapshot()
     return copy_array(self.pages)
 end
 
----@param event KeyEvent|string
+---@param event KeyEvent | string
 ---@return boolean
 function NavigatorState:handle_key(event)
     local key = type(event) == 'string' and event or event and event.key
     local event_type = type(event) == 'table' and event.type or 'press'
-    if (key == 'ESC' or key == 'ESCAPE' or key == 'escape')
-        and (event_type == 'down' or event_type == 'press') then
+    if (key == 'ESC' or key == 'ESCAPE' or key == 'escape') and (event_type == 'down' or event_type == 'press') then
         return self:maybe_pop()
     end
     return false
 end
 
+---@return Widget?
 function NavigatorState:build()
     local entries = {}
     for _, route in ipairs(self.routes) do
@@ -641,8 +668,8 @@ function NavigatorState:build()
         state = self,
         child = Theatre({
             key = 'navigator-theatre',
-            initial_entries = entries,
-        }),
+            initial_entries = entries
+        })
     })
 end
 
@@ -654,6 +681,7 @@ function NavigatorState:dispose()
     self.pages = {}
 end
 
+---@return NavigatorState
 function Navigator:create_state()
     return NavigatorState()
 end

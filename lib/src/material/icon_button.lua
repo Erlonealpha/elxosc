@@ -13,11 +13,11 @@ local copy_options = base.copy_options
 local Color = color.Color
 local EdgeInsets = geometry.EdgeInsets
 
----@class material._IconButtonOptions : material._ButtonBaseOptions
----@field icon Widget?
+---@class material._IconButtonOptions: material._ButtonBaseOptions
+---@field icon   Widget?
 ---@field radius number?
 
----@class material.IconButton : material.ButtonBase
+---@class material.IconButton: material.ButtonBase
 ---@overload fun(options: _IconButtonOptions?): self
 local IconButton = std.class.new('IconButton', ButtonBase)
 ---@param options _IconButtonOptions?
@@ -25,13 +25,14 @@ function IconButton:__init(options)
     options = options or {}
     local config = copy_options(options)
     config.child = config.child or config.icon
-    config.style = config.style or ButtonStyle({
-        foreground_color = Color.rgba255(235, 235, 235),
-        hover_color = Color.rgba255(55, 55, 55),
-        pressed_color = Color.rgba255(75, 75, 75),
-        radius = config.radius or 20,
-        padding = config.padding or EdgeInsets.all(8),
-    })
+    config.style = config.style
+        or ButtonStyle({
+            foreground_color = Color.rgba255(235, 235, 235),
+            hover_color = Color.rgba255(55, 55, 55),
+            pressed_color = Color.rgba255(75, 75, 75),
+            radius = config.radius or 20,
+            padding = config.padding or EdgeInsets.all(8)
+        })
     ButtonBase.__init(self, config)
 end
 

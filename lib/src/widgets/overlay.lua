@@ -20,6 +20,10 @@ local state_mod = require 'src.widgets.state'
 local stack_mod = require 'src.widgets.stack'
 local offstage_mod = require 'src.widgets.visibility'
 
+local ipairs = ipairs
+local table = table
+local type = type
+
 local StatefulWidget = widget_mod.StatefulWidget
 local InheritedWidget = widget_mod.InheritedWidget
 local StatelessWidget = widget_mod.StatelessWidget
@@ -32,6 +36,9 @@ local raise = std.raise
 ---@class mod.src.widgets.overlay
 local M = {}
 
+---@generic T
+---@param values T[]?
+---@return T[]
 local function copy_array(values)
     local out = {}
     for index, value in ipairs(values or {}) do
@@ -40,30 +47,31 @@ local function copy_array(values)
     return out
 end
 
---== entries ================================================================
+-- == entries ================================================================
 
 ---@class _OverlayEntryOptions
----@field builder ContextBuilder
----@field opaque boolean?
+---@field builder        ContextBuilder
+---@field opaque         boolean?
 ---@field maintain_state boolean?
----@field visible boolean?
----@field key any?
----@field on_dispose fun(entry: OverlayEntry)? internal lifecycle hook
+---@field visible        boolean?
+---@field key            any?
+---@field on_dispose     fun(entry: OverlayEntry)? internal lifecycle hook
 
----@class OverlayEntry : std.object
----@field builder ContextBuilder
----@field opaque boolean
----@field maintain_state boolean
----@field visible boolean
----@field key any
----@field private _overlay OverlayState?
----@field private _mounted boolean
----@field private _disposed boolean
----@field private _finalized boolean
+---@class OverlayEntry: std.object
+---@field builder             ContextBuilder
+---@field opaque              boolean
+---@field maintain_state      boolean
+---@field visible             boolean
+---@field key                 any
+---@field private _overlay    OverlayState?
+---@field private _mounted    boolean
+---@field private _disposed   boolean
+---@field private _finalized  boolean
 ---@field private _on_dispose fun(entry: OverlayEntry)?
 ---@overload fun(options: _OverlayEntryOptions): self
 local OverlayEntry = std.class.new('OverlayEntry')
 
+---@param options _OverlayEntryOptions
 function OverlayEntry:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('OverlayEntry expects an options table'))
@@ -104,6 +112,7 @@ function OverlayEntry:_mark_removed()
     self._disposed = true
 end
 
+---@return boolean
 function OverlayEntry:_finalize()
     if self._finalized then
         return false
@@ -197,6 +206,7 @@ function OverlayEntry:set_maintain_state(maintain_state)
     return true
 end
 
+---@return boolean
 function OverlayEntry:mark_needs_build()
     if self._overlay then
         self._overlay:_entry_changed(self)
@@ -216,29 +226,32 @@ function OverlayEntry:_attach(state)
     self._overlay = state
 end
 
+---@param state OverlayState
 function OverlayEntry:_detach(state)
     if self._overlay == state then
         self._overlay = nil
     end
 end
 
+---@param mounted boolean
 function OverlayEntry:_set_mounted(mounted)
     self._mounted = mounted
 end
 
---== mounted entry widget ===================================================
+-- == mounted entry widget ===================================================
 
 ---@class _OverlayEntryWidgetOptions
----@field entry OverlayEntry
+---@field entry         OverlayEntry
 ---@field paint_visible boolean
----@field key any?
+---@field key           any?
 
----@class OverlayEntryWidget : StatefulWidget
----@field entry OverlayEntry
+---@class OverlayEntryWidget: StatefulWidget
+---@field entry         OverlayEntry
 ---@field paint_visible boolean
 ---@overload fun(options: _OverlayEntryWidgetOptions): self
 local OverlayEntryWidget = std.class.new('OverlayEntryWidget', StatefulWidget)
 
+---@param options _OverlayEntryWidgetOptions
 function OverlayEntryWidget:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('OverlayEntryWidget expects an options table'))
@@ -251,9 +264,9 @@ function OverlayEntryWidget:__init(options)
     end
 end
 
----@class OverlayEntryMountState : State
+---@class OverlayEntryMountState: State
 ---@field widget OverlayEntryWidget
----@field entry OverlayEntry?
+---@field entry  OverlayEntry?
 ---@overload fun(): self
 local OverlayEntryMountState = std.class.new('OverlayEntryMountState', State)
 
@@ -268,6 +281,7 @@ function OverlayEntryMountState:init_state()
     entry:_set_mounted(true)
 end
 
+---@param old_widget OverlayEntryWidget
 function OverlayEntryMountState:did_update_widget(old_widget)
     local old = old_widget --[[@as OverlayEntryWidget]]
     local next_widget = self.widget --[[@as OverlayEntryWidget]]
@@ -285,7 +299,7 @@ function OverlayEntryMountState:dispose()
         entry:_set_mounted(false)
         local owner = self.context and self.context.owner
         if owner then
-            owner:after_finalize(function()
+            owner:after_finalize(function ()
                 entry:_finalize()
             end)
         else
@@ -295,34 +309,37 @@ function OverlayEntryMountState:dispose()
     end
 end
 
+---@param context Element
+---@return Widget?
 function OverlayEntryMountState:build(context)
     local widget = self.widget --[[@as OverlayEntryWidget]]
-    local child = builder_mod.call_context(
-        widget.entry.builder, context, 'OverlayEntry.builder')
+    local child = builder_mod.call_context(widget.entry.builder, context, 'OverlayEntry.builder')
     return Offstage({
         offstage = not widget.paint_visible,
-        child = child,
+        child = child
     })
 end
 
+---@return OverlayEntryMountState
 function OverlayEntryWidget:create_state()
     return OverlayEntryMountState()
 end
 
---== scope ==================================================================
+-- == scope ==================================================================
 
 ---@class _OverlayScopeOptions
 ---@field state OverlayState
 ---@field child Widget?
----@field key any?
+---@field key   any?
 
----@class OverlayScope : InheritedWidget
+---@class OverlayScope: InheritedWidget
 ---@field state OverlayState
 ---@field child Widget?
 ---@overload fun(options: _OverlayScopeOptions): self
 local OverlayScope = std.class.new('OverlayScope', InheritedWidget)
 local OverlayScopeClass = OverlayScope --[[@as std.class]]
 
+---@param options _OverlayScopeOptions
 function OverlayScope:__init(options)
     if type(options) ~= 'table' then
         raise(std.TypeError('OverlayScope expects an options table'))
@@ -336,6 +353,7 @@ function OverlayScope:__init(options)
 end
 
 ---@param old_widget OverlayScope
+---@return boolean
 function OverlayScope:update_should_notify(old_widget)
     return self.state ~= old_widget.state
 end
@@ -353,19 +371,20 @@ function OverlayScope.of(context)
     return scope.state
 end
 
---== overlay ================================================================
+-- == overlay ================================================================
 
 ---@class _OverlayOptions
 ---@field initial_entries OverlayEntry[]?
----@field on_plan fun(plan: OverlayPlan)?
----@field key any?
+---@field on_plan         fun(plan: OverlayPlan)?
+---@field key             any?
 
----@class Overlay : StatefulWidget
+---@class Overlay: StatefulWidget
 ---@field initial_entries OverlayEntry[]
----@field on_plan fun(plan: OverlayPlan)?
+---@field on_plan         fun(plan: OverlayPlan)?
 ---@overload fun(options?: _OverlayOptions): self
 local Overlay = std.class.new('Overlay', StatefulWidget)
 
+---@param options _OverlayOptions?
 function Overlay:__init(options)
     options = options or {}
     self.key = options.key
@@ -377,23 +396,23 @@ function Overlay:__init(options)
 end
 
 ---@class OverlayPlanEntry
----@field entry OverlayEntry
----@field index integer
----@field visible boolean
+---@field entry    OverlayEntry
+---@field index    integer
+---@field visible  boolean
 ---@field occluded boolean
----@field paint boolean
----@field input boolean
----@field mounted boolean
+---@field paint    boolean
+---@field input    boolean
+---@field mounted  boolean
 
 ---@class OverlayPlan
 ---@field generation integer
----@field entries OverlayPlanEntry[]
+---@field entries    OverlayPlanEntry[]
 
----@class OverlayState : State
----@field widget Overlay
----@field entries OverlayEntry[]
+---@class OverlayState: State
+---@field widget     Overlay
+---@field entries    OverlayEntry[]
 ---@field generation integer
----@field last_plan OverlayPlan?
+---@field last_plan  OverlayPlan?
 ---@overload fun(): self
 local OverlayState = std.class.new('OverlayState', State)
 
@@ -467,6 +486,7 @@ end
 
 ---@param entry OverlayEntry
 ---@return boolean
+---@param index integer?
 function OverlayState:insert(entry, index)
     if not std.isinstance(entry, OverlayEntry) then
         raise(std.TypeError('Overlay.insert expects an OverlayEntry'))
@@ -477,8 +497,7 @@ function OverlayState:insert(entry, index)
     if index == nil then
         index = #self.entries + 1
     end
-    if type(index) ~= 'number' or index < 1 or index > #self.entries + 1
-        or index % 1 ~= 0 then
+    if type(index) ~= 'number' or index < 1 or index > #self.entries + 1 or index % 1 ~= 0 then
         raise(std.ValueError('Overlay.insert index must be an entry position'))
     end
     entry:_attach(self)
@@ -560,7 +579,7 @@ function OverlayState:_notify_plan()
             paint = paint,
             input = paint,
             mounted = entry:is_mounted(),
-            keep = keep,
+            keep = keep
         }
         if entry.visible and entry.opaque then
             occluded = true
@@ -579,6 +598,7 @@ function OverlayState:_notify_plan()
     end
 end
 
+---@return Widget?
 function OverlayState:build()
     local occluded = false
     local children = {}
@@ -589,7 +609,7 @@ function OverlayState:build()
             children[index] = OverlayEntryWidget({
                 entry = entry,
                 paint_visible = paint_visible,
-                key = entry.key,
+                key = entry.key
             })
         end
         if entry.visible and entry.opaque then
@@ -604,7 +624,7 @@ function OverlayState:build()
     end
     return OverlayScope({
         state = self,
-        child = Stack({ children = ordered }),
+        child = Stack({ children = ordered })
     })
 end
 
@@ -615,7 +635,7 @@ function OverlayState:dispose()
         entry:_mark_removed()
         if not entry:is_mounted() then
             if owner then
-                owner:after_finalize(function()
+                owner:after_finalize(function ()
                     entry:_finalize()
                 end)
             else
@@ -627,6 +647,7 @@ function OverlayState:dispose()
     self.last_plan = nil
 end
 
+---@return OverlayState
 function Overlay:create_state()
     return OverlayState()
 end

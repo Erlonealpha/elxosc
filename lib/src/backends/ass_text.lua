@@ -4,13 +4,16 @@
 ---@namespace elxosc
 ---@using elxosc
 
+local string = string
+local table = table
+
 local format = string.format
 local concat = table.concat
 
 ---@class mod.src.backends.ass_text
 local M = {}
 
----@param style TextStyle
+---@param style               TextStyle
 ---@param default_font_family string?
 ---@return string
 function M.shape_tags(style, default_font_family)
@@ -38,10 +41,10 @@ end
 ---@return string
 function M.escape_line(text)
     text = text:gsub('\\', '\\\226\128\128'):gsub('{', '\\{')
-    text = text:gsub('^ +', function(spaces)
+    text = text:gsub('^ +', function (spaces)
         return string.rep('\\h', #spaces)
     end)
-    text = text:gsub(' +$', function(spaces)
+    text = text:gsub(' +$', function (spaces)
         return string.rep('\\h', #spaces)
     end)
     return text

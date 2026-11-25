@@ -14,7 +14,7 @@ export('text', require 'src.text.grapheme', true)
 export('text', require 'src.text.text_layout', true)
 export('text', require 'src.text.text_style', true)
 
----@class mod.text : mod.src.text.paragraph, mod.src.text.grapheme, mod.src.text.text_layout, mod.src.text.text_style
+---@class mod.text: mod.src.text.paragraph, mod.src.text.grapheme, mod.src.text.text_layout, mod.src.text.text_style
 local M = exports.get('text')
 
 return M

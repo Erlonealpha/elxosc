@@ -14,7 +14,7 @@ export('scheduler', require 'src.scheduler.scheduler', true)
 export('scheduler', require 'src.scheduler.scheduler_binding', true)
 export('scheduler', require 'src.scheduler.ticker', true)
 
----@class mod.scheduler :
+---@class mod.scheduler:
 --- mod.src.scheduler.frame_clock,
 --- mod.src.scheduler.scheduler,
 --- mod.src.scheduler.scheduler_binding, mod.src.scheduler.ticker

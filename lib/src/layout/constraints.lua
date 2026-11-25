@@ -25,6 +25,8 @@
 local dataclass = require 'elxlibs.dataclass'
 local geometry = require 'src.foundation.geometry'
 
+local string = string
+
 local Size = geometry.Size
 local math = math
 local min = math.min
@@ -35,8 +37,8 @@ local huge = math.huge
 local M = {}
 
 ---@param value number
----@param low number
----@param high number
+---@param low   number
+---@param high  number
 ---@return number
 local function clamp(value, low, high)
     if value < low then
@@ -48,9 +50,9 @@ local function clamp(value, low, high)
     return value
 end
 
----@class Constraints : dataclass.Object
----@field min_width number
----@field max_width number
+---@class Constraints: dataclass.Object
+---@field min_width  number
+---@field max_width  number
 ---@field min_height number
 ---@field max_height number
 ---@overload fun(min_width: number?, max_width: number?, min_height: number?, max_height: number?): self
@@ -58,9 +60,13 @@ local Constraints = dataclass.new('Constraints', nil, { eq = false, repr = false
     dataclass.field('min_width', 0),
     dataclass.field('max_width', huge),
     dataclass.field('min_height', 0),
-    dataclass.field('max_height', huge),
+    dataclass.field('max_height', huge)
 })
 
+---@param min_width  number?
+---@param max_width  number?
+---@param min_height number?
+---@param max_height number?
 function Constraints:__init(min_width, max_width, min_height, max_height)
     self.min_width = min_width or 0
     self.max_width = max_width or huge
@@ -68,9 +74,11 @@ function Constraints:__init(min_width, max_width, min_height, max_height)
     self.max_height = max_height or huge
 end
 
+---@return string
 function Constraints:__tostring()
-    return string.format('Constraints(%g..%g, %g..%g)',
-        self.min_width, self.max_width, self.min_height, self.max_height)
+    return string.format(
+        'Constraints(%g..%g, %g..%g)', self.min_width, self.max_width, self.min_height, self.max_height
+    )
 end
 
 ---@param other Constraints
@@ -169,7 +177,8 @@ function Constraints:enforce(constraints)
         clamp(self.min_width, constraints.min_width, constraints.max_width),
         clamp(self.max_width, constraints.min_width, constraints.max_width),
         clamp(self.min_height, constraints.min_height, constraints.max_height),
-        clamp(self.max_height, constraints.min_height, constraints.max_height))
+        clamp(self.max_height, constraints.min_height, constraints.max_height)
+    )
 end
 
 --- Tighten one or both axes to a specific value, as close as the current
@@ -200,8 +209,8 @@ function Constraints:deflate(insets)
     local h = insets:horizontal()
     local v = insets:vertical()
     return Constraints(
-        max(0, self.min_width - h), max(0, self.max_width - h),
-        max(0, self.min_height - v), max(0, self.max_height - v))
+        max(0, self.min_width - h), max(0, self.max_width - h), max(0, self.min_height - v), max(0, self.max_height - v)
+    )
 end
 
 --- Relax the minimums to zero so a child may be smaller than us.
@@ -245,7 +254,7 @@ function Constraints:constrain_size_and_attempt_to_preserve_aspect_ratio(size)
     return Size(width, height)
 end
 
----@param width number
+---@param width  number
 ---@param height number
 ---@return Constraints
 function Constraints.tight(width, height)
@@ -258,7 +267,7 @@ function Constraints.tight_size(size)
     return Constraints(size.width, size.width, size.height, size.height)
 end
 
----@param width number
+---@param width  number
 ---@param height number
 ---@return Constraints
 function Constraints.loose(width, height)
@@ -277,7 +286,7 @@ end
 --- (Flutter's `BoxConstraints.expand`). The tightly-infinite constraints it
 --- builds are only ever meaningful once passed through `enforce`, which is
 --- exactly how `Container`'s childless branch and `SizedBox.expand` use it.
----@param width number?
+---@param width  number?
 ---@param height number?
 ---@return Constraints
 function Constraints.expand(width, height)
@@ -293,8 +302,9 @@ function Constraints.tight_for(options)
     local width = options.width
     local height = options.height
     return Constraints(
-        width == nil and 0 or width, width == nil and huge or width,
-        height == nil and 0 or height, height == nil and huge or height)
+        width == nil and 0 or width, width == nil and huge or width, height == nil and 0 or height,
+        height == nil and huge or height
+    )
 end
 
 dataclass.finish(Constraints)

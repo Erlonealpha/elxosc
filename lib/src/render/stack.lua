@@ -28,14 +28,15 @@ local huge = math.huge
 local M = {}
 
 ---@class StackOpts
----@field children RenderObject[]?
+---@field children  RenderObject[]?
 ---@field alignment Offset?
 
----@class RenderStack : RenderObject
+---@class RenderStack: RenderObject
 ---@field alignment Offset
 ---@overload fun(options: StackOpts?): self
 local RenderStack = std.class.new('RenderStack', RenderObject)
 
+---@param options StackOpts?
 function RenderStack:__init(options)
     RenderObject.__init(self)
     options = options or {}
@@ -45,6 +46,7 @@ function RenderStack:__init(options)
     end
 end
 
+---@param constraints Constraints
 function RenderStack:__perform_layout(constraints)
     local children = self._children
     local width, height = 0, 0
@@ -70,8 +72,7 @@ function RenderStack:__perform_layout(constraints)
         if data.positioned == true then
             local left, right = data.left, data.right
             local top, bottom = data.top, data.bottom
-            local child_constraints = Constraints(
-                0, self.size.width, 0, self.size.height)
+            local child_constraints = Constraints(0, self.size.width, 0, self.size.height)
             local width_value = data.width
             local height_value = data.height
             if width_value == nil and left ~= nil and right ~= nil then
@@ -90,8 +91,9 @@ function RenderStack:__perform_layout(constraints)
                 if right ~= nil then
                     max_width = max(0, max_width - right)
                 end
-                child_constraints = Constraints(0, max_width,
-                    child_constraints.min_height, child_constraints.max_height)
+                child_constraints = Constraints(
+                    0, max_width, child_constraints.min_height, child_constraints.max_height
+                )
             end
             if height_value ~= nil then
                 child_constraints = child_constraints:tighten({ height = height_value })
@@ -103,8 +105,7 @@ function RenderStack:__perform_layout(constraints)
                 if bottom ~= nil then
                     max_height = max(0, max_height - bottom)
                 end
-                child_constraints = Constraints(child_constraints.min_width,
-                    child_constraints.max_width, 0, max_height)
+                child_constraints = Constraints(child_constraints.min_width, child_constraints.max_width, 0, max_height)
             end
             child:layout(child_constraints)
             local x = left
@@ -125,7 +126,8 @@ function RenderStack:__perform_layout(constraints)
         else
             child.parent_data.offset = Offset(
                 (self.size.width - child.size.width) * self.alignment.x,
-                (self.size.height - child.size.height) * self.alignment.y)
+                (self.size.height - child.size.height) * self.alignment.y
+            )
         end
     end
 end
@@ -135,6 +137,8 @@ end
 -- routing needs the topmost child that actually declares a pointer handler.
 -- This keeps a full-screen Main/background layer from swallowing extension or
 -- popup controls while preserving the normal paint order.
+---@param path { node: RenderObject, point: Offset } []
+---@return boolean
 local function path_has_pointer_target(path)
     for _, entry in ipairs(path) do
         local node = entry.node
@@ -149,11 +153,12 @@ end
 -- A hover-only layer (for example a tooltip) may sit above a clickable child.
 -- Keep it in the move path, but continue looking for the first child that can
 -- receive a down/up/wheel event so hover overlays do not swallow clicks.
+---@param path { node: RenderObject, point: Offset } []
+---@return boolean
 local function path_has_action_target(path)
     for _, entry in ipairs(path) do
         local node = entry.node
-        if node:wants_pointer('down') or node:wants_pointer('up')
-            or node:wants_pointer('wheel') then
+        if node:wants_pointer('down') or node:wants_pointer('up') or node:wants_pointer('wheel') then
             return true
         end
     end
@@ -161,8 +166,8 @@ local function path_has_action_target(path)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderStack:pointer_path(point, out)
     out = out or {}
     if not self:__hit_test_bounds(point) then

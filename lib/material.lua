@@ -41,11 +41,11 @@ local values = {
     TextStyle = text_style.TextStyle,
     Matrix2D = transform.Matrix2D,
     Anchor = anchor.Anchor,
-    TextPaint = text_paint.TextPaint,
+    TextPaint = text_paint.TextPaint
 }
 export('material', values, true)
 
----@class mod.material :
+---@class mod.material:
 --- mod.widgets,
 --- material.ValueExports,
 --- mod.src.material.button,
@@ -57,7 +57,7 @@ export('material', values, true)
 --- mod.src.material.outlined_button,
 --- mod.src.material.text_button,
 --- mod.src.material.theme
----@field Slider material.Slider
+---@field Slider                  material.Slider
 ---@field LinearProgressIndicator material.LinearProgressIndicator
 local M = exports.get('material')
 

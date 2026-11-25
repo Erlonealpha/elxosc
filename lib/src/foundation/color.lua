@@ -14,6 +14,9 @@
 local std = require 'elxlibs.std'
 local dataclass = require 'elxlibs.dataclass'
 
+local tonumber = tonumber
+local tostring = tostring
+
 local raise = std.raise
 local math = math
 local string = string
@@ -29,15 +32,20 @@ local function to_byte(channel)
     return floor(channel * 255 + 0.5)
 end
 
+---@param value number?
+---@return number
 local function default_channel(value)
     return value or 0
 end
 
+---@param value number?
+---@return number
 local function default_alpha(value)
+    ---@cast value number
     return value == nil and 1 or value
 end
 
----@class Color : dataclass.Object
+---@class Color: dataclass.Object
 ---@field r number 0..1
 ---@field g number 0..1
 ---@field b number 0..1
@@ -47,9 +55,10 @@ local Color = dataclass.new('Color', nil, { init = true, eq = false, repr = fals
     dataclass.field('r', 0, { converter = default_channel }),
     dataclass.field('g', 0, { converter = default_channel }),
     dataclass.field('b', 0, { converter = default_channel }),
-    dataclass.field('a', 1, { converter = default_alpha }),
+    dataclass.field('a', 1, { converter = default_alpha })
 })
 
+---@return string
 function Color:__tostring()
     return format('Color(%.3f, %.3f, %.3f, %.3f)', self.r, self.g, self.b, self.a)
 end
@@ -57,8 +66,7 @@ end
 ---@param other Color
 ---@return boolean
 function Color:__eq(other)
-    return self.r == other.r and self.g == other.g
-        and self.b == other.b and self.a == other.a
+    return self.r == other.r and self.g == other.g and self.b == other.b and self.a == other.a
 end
 
 ---@param alpha number 0..1
@@ -83,9 +91,9 @@ function Color:to_rgba255()
     return to_byte(self.r), to_byte(self.g), to_byte(self.b), to_byte(self.a)
 end
 
----@param r number 0..255
----@param g number 0..255
----@param b number 0..255
+---@param r number  0..255
+---@param g number  0..255
+---@param b number  0..255
 ---@param a number? 0..255, defaults to 255
 ---@return Color
 function Color.rgba255(r, g, b, a)
@@ -120,6 +128,9 @@ end
 ---@return Color
 function Color.hex(hex)
     local s = hex:gsub('#', '')
+    ---@param i     integer
+    ---@param width integer
+    ---@return integer
     local function part(i, width)
         local digits = s:sub(i, i + width - 1)
         if width == 1 then

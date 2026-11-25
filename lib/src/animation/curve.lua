@@ -37,11 +37,6 @@ function M.ease_in_out(t)
     return 1 - 2 * inverse * inverse
 end
 
-M.Curves = {
-    linear = M.linear,
-    ease_in = M.ease_in,
-    ease_out = M.ease_out,
-    ease_in_out = M.ease_in_out,
-}
+M.Curves = { linear = M.linear, ease_in = M.ease_in, ease_out = M.ease_out, ease_in_out = M.ease_in_out }
 
 return M

@@ -38,10 +38,11 @@ export('render', require 'src.render.transform_box', true)
 
 export('render', {
     normalize_slider = require 'src.render.slider'.normalize,
-    normalize_progress_indicator = require 'src.render.progress_indicator'.normalize,
-}, true)
+    normalize_progress_indicator = require 'src.render.progress_indicator'.normalize
+}, true
+)
 
----@class mod.render :
+---@class mod.render:
 --- mod.src.render.align,
 --- mod.src.render.constrained_box,
 --- mod.src.render.custom_paint,
@@ -65,10 +66,10 @@ export('render', {
 --- mod.src.render.stack,
 --- mod.src.render.text,
 --- mod.src.render.transform_box
----@field RenderSlider RenderSlider
+---@field RenderSlider                  RenderSlider
 ---@field RenderLinearProgressIndicator RenderLinearProgressIndicator
----@field normalize_slider fun(options: _RenderSliderOptions): _RenderSliderOptions
----@field normalize_progress_indicator fun(options: _RenderLinearProgressIndicatorOptions): _RenderLinearProgressIndicatorOptions
+---@field normalize_slider              fun(options: _RenderSliderOptions): _RenderSliderOptions
+---@field normalize_progress_indicator  fun(options: _RenderLinearProgressIndicatorOptions): _RenderLinearProgressIndicatorOptions
 local M = get('render')
 
 return M

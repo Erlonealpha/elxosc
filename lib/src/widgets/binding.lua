@@ -15,6 +15,12 @@ local std = require 'elxlibs.std'
 local binding_base = require 'src.foundation.binding_base'
 local build_owner_mod = require 'src.widgets.build_owner'
 local widget_mod = require 'src.widgets.framework'
+
+local error = error
+local ipairs = ipairs
+local pairs = pairs
+local pcall = pcall
+
 -- Loading the element module also installs `Widget:create_element` (see the
 -- wiring section at the bottom of src.widgets.element).
 require 'src.widgets.element'
@@ -26,22 +32,22 @@ local can_update = widget_mod.can_update
 ---@class mod.src.widgets.binding
 local M = {}
 
----@class WidgetTree : std.object
----@field binding WidgetsBinding
----@field render_owner RenderOwner
----@field build_owner BuildOwner
----@field scheduler Scheduler?
----@field root_element Element?
----@field on_dirty fun()?
----@field _disposed boolean
+---@class WidgetTree: std.object
+---@field binding              WidgetsBinding
+---@field render_owner         RenderOwner
+---@field build_owner          BuildOwner
+---@field scheduler            Scheduler?
+---@field root_element         Element?
+---@field on_dirty             fun()?
+---@field _disposed            boolean
 ---@field _owns_pipeline_owner boolean
 ---@overload fun(binding: WidgetsBinding, root_widget: Widget, render_owner: RenderOwner, scheduler: Scheduler?): self
 local WidgetTree = std.class.new('WidgetTree')
 
----@param binding WidgetsBinding
----@param root_widget Widget
+---@param binding      WidgetsBinding
+---@param root_widget  Widget
 ---@param render_owner RenderOwner
----@param scheduler Scheduler?
+---@param scheduler    Scheduler?
 function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.binding = binding
     self.render_owner = render_owner
@@ -51,7 +57,7 @@ function WidgetTree:__init(binding, root_widget, render_owner, scheduler)
     self.on_dirty = nil
     self._disposed = false
     self._owns_pipeline_owner = false
-    self.build_owner.on_dirty = function()
+    self.build_owner.on_dirty = function ()
         if self.on_dirty then
             self.on_dirty()
         end
@@ -118,6 +124,7 @@ function WidgetTree:flush_build()
 end
 
 --- Unmount the tree and detach its render root.
+---@return boolean
 function WidgetTree:dispose()
     if self._disposed then
         return false
@@ -154,7 +161,7 @@ function WidgetTree:dispose()
     return true
 end
 
----@class WidgetsBinding : BindingBase
+---@class WidgetsBinding: BindingBase
 ---@field _trees table<WidgetTree, true>
 ---@overload fun(): self
 local WidgetsBinding = std.class.new('WidgetsBinding', BindingBase)
@@ -167,7 +174,7 @@ end
 
 ---@return WidgetsBinding
 function WidgetsBinding.ensure_initialized()
-    return BindingBase.ensure_initialized(function()
+    return BindingBase.ensure_initialized(function ()
         return WidgetsBinding()
     end) --[[@as WidgetsBinding]]
 end
@@ -178,6 +185,8 @@ function WidgetsBinding.instance()
 end
 
 ---@return BuildOwner
+---@param render_owner RenderOwner
+---@param scheduler    Scheduler?
 function WidgetsBinding:create_build_owner(render_owner, scheduler)
     self:assert_alive()
     return BuildOwner(render_owner, scheduler)
@@ -191,9 +200,9 @@ function WidgetsBinding:create_pipeline_owner(root)
     return pipeline_owner.PipelineOwner(root)
 end
 
----@param root_widget Widget
+---@param root_widget  Widget
 ---@param render_owner RenderOwner?
----@param scheduler Scheduler?
+---@param scheduler    Scheduler?
 ---@return WidgetTree
 function WidgetsBinding:attach(root_widget, render_owner, scheduler)
     self:assert_alive()
@@ -230,6 +239,7 @@ function WidgetsBinding:flush_build(tree)
     end
 end
 
+---@return boolean
 function WidgetsBinding:dispose()
     if self._disposed or self._disposing then
         return false

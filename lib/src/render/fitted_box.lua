@@ -17,6 +17,9 @@ local constraints_mod = require 'src.layout.constraints'
 local transform_mod = require 'src.foundation.transform'
 local render_object = require 'src.render.render_object'
 
+local tostring = tostring
+local type = type
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Rect = geometry.Rect
@@ -41,24 +44,24 @@ local M = {}
 --- | 'scale_down'
 
 ---@class FittedBoxOpts
----@field fit FittedBoxFit?
+---@field fit       FittedBoxFit?
 ---@field alignment Offset?
----@field clip boolean? clip the transformed child to this box
+---@field clip      boolean?      clip the transformed child to this box
 
----@class RenderFittedBox : RenderObject
----@field fit string
+---@class RenderFittedBox: RenderObject
+---@field fit       string
 ---@field alignment Offset
----@field clip boolean
+---@field clip      boolean
 ---@overload fun(child: RenderObject?, options: FittedBoxOpts?): self
 local RenderFittedBox = std.class.new('RenderFittedBox', RenderObject)
 
 ---@class FittedBoxMapping
----@field transform Matrix2D
----@field inverse Matrix2D
+---@field transform   Matrix2D
+---@field inverse     Matrix2D
 ---@field source_rect Rect
----@field dest_rect Rect
----@field scale_x number
----@field scale_y number
+---@field dest_rect   Rect
+---@field scale_x     number
+---@field scale_y     number
 
 local FITS = {
     contain = true,
@@ -67,9 +70,11 @@ local FITS = {
     fit_width = true,
     fit_height = true,
     none = true,
-    scale_down = true,
+    scale_down = true
 }
 
+---@param child   RenderObject?
+---@param options FittedBoxOpts?
 function RenderFittedBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
@@ -91,6 +96,7 @@ function RenderFittedBox:__init(child, options)
     end
 end
 
+---@param constraints Constraints
 function RenderFittedBox:__perform_layout(constraints)
     local child = self._children[1]
     if child == nil then
@@ -107,9 +113,10 @@ function RenderFittedBox:__perform_layout(constraints)
     end
 end
 
----@param size Size
----@param rect Rect
+---@param size      Size
+---@param rect      Rect
 ---@return Rect
+---@param alignment Offset
 local function inscribe(size, rect, alignment)
     -- `alignment` here is a 0..1 fraction (this framework's convention), not
     -- Flutter's -1..1 `Alignment`.
@@ -120,7 +127,7 @@ end
 
 --- The `applyBoxFit` result: which part of the child maps where.
 ---@param child_size Size
----@param size Size
+---@param size       Size
 ---@return Size source
 ---@return Size destination
 function RenderFittedBox:fit_sizes(child_size, size)
@@ -155,13 +162,11 @@ end
 ---@return FittedBoxMapping?
 function RenderFittedBox:_mapping()
     local child = self._children[1]
-    if child == nil or self.size.width <= 0 or self.size.height <= 0
-        or child.size.width <= 0 or child.size.height <= 0 then
+    if child == nil or self.size.width <= 0 or self.size.height <= 0 or child.size.width <= 0 or child.size.height <= 0 then
         return nil
     end
     local source, destination = self:fit_sizes(child.size, self.size)
-    if source.width <= 0 or source.height <= 0
-        or destination.width <= 0 or destination.height <= 0 then
+    if source.width <= 0 or source.height <= 0 or destination.width <= 0 or destination.height <= 0 then
         return nil
     end
     local source_rect = inscribe(source, Rect.from_offset_size(Offset.zero(), child.size), self.alignment)
@@ -186,18 +191,19 @@ function RenderFittedBox:_mapping()
         source_rect = source_rect,
         dest_rect = dest_rect,
         scale_x = scale_x,
-        scale_y = scale_y,
+        scale_y = scale_y
     }
 end
 
 ---@param canvas PaintingContext
+---@param offset Offset
 function RenderFittedBox:__paint(canvas, offset)
     local child = self._children[1]
     local mapping = self:_mapping()
     if child == nil or mapping == nil then
         return
     end
-    canvas:with_save(function()
+    canvas:with_save(function ()
         if self.clip then
             canvas:clip_rect(Rect.from_offset_size(offset, self.size))
         end
@@ -227,8 +233,8 @@ function RenderFittedBox:hit_test(position)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderFittedBox:pointer_path(point, out)
     out = out or {}
     if not self:__hit_test_bounds(point) then
@@ -246,9 +252,9 @@ function RenderFittedBox:pointer_path(point, out)
     return out
 end
 
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderFittedBox:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
@@ -257,8 +263,9 @@ function RenderFittedBox:collect_pointer_regions(out, local_to_root, ancestor_cl
     local child = self._children[1]
     local mapping = self:_mapping()
     if child and mapping then
-        child:_collect_clipped_pointer_regions(out, local_to_root:multiply(mapping.transform),
-            self:_pointer_child_clip(local_to_root, ancestor_clip))
+        child:_collect_clipped_pointer_regions(
+            out, local_to_root:multiply(mapping.transform), self:_pointer_child_clip(local_to_root, ancestor_clip)
+        )
     end
     return out
 end

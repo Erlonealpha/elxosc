@@ -16,10 +16,13 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 ---@class mod.src.widgets.gesture_detector
 local M = {}
 
----@class GestureDetector : SingleChildRenderObjectWidget
+---@class GestureDetector: SingleChildRenderObjectWidget
+---@field handlers GestureHandlers
 ---@overload fun(child: Widget?, options: GestureHandlers?): self
 local GestureDetector = std.class.new('GestureDetector', SingleChildRenderObjectWidget)
 
+---@param child   Widget?
+---@param options GestureHandlers?
 function GestureDetector:__init(child, options)
     options = options or {}
     self.key = options.key
@@ -27,6 +30,7 @@ function GestureDetector:__init(child, options)
     self.handlers = options
 end
 
+---@return RenderGesture
 function GestureDetector:create_render_object()
     return RenderGesture(nil, self.handlers)
 end

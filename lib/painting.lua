@@ -15,7 +15,7 @@ export('painting', require 'src.painting.painting_binding', true)
 export('painting', require 'src.painting.path', true)
 export('painting', require 'src.painting.text_paint', true)
 
----@class mod.painting :
+---@class mod.painting:
 --- mod.src.painting.canvas,
 --- mod.src.painting.paint,
 --- mod.src.painting.painting_binding, mod.src.painting.path, mod.src.painting.text_paint

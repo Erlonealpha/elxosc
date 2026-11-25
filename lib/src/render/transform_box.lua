@@ -12,6 +12,9 @@ local geometry = require 'src.foundation.geometry'
 local transform_mod = require 'src.foundation.transform'
 local render_object = require 'src.render.render_object'
 
+local math = math
+local type = type
+
 local Offset = geometry.Offset
 local Rect = geometry.Rect
 local Size = geometry.Size
@@ -30,14 +33,14 @@ local function is_finite(value)
 end
 
 ---@class _RenderTransformBoxOptions
----@field scale Size? positive axis scales; defaults to 1x1
----@field alignment Offset? 0..1 pivot inside the layout box; defaults to center
----@field clip boolean? clip transformed paint to the layout box; defaults false
+---@field scale     Size?    positive axis scales; defaults to 1x1
+---@field alignment Offset?  0..1 pivot inside the layout box; defaults to center
+---@field clip      boolean? clip transformed paint to the layout box; defaults false
 
----@class RenderTransformBox : RenderObject
----@field scale Size
----@field alignment Offset
----@field clip boolean
+---@class RenderTransformBox: RenderObject
+---@field scale            Size
+---@field alignment        Offset
+---@field clip             boolean
 ---@field _scale_animation table?
 ---@overload fun(child: RenderObject?, options?: _RenderTransformBoxOptions): self
 local RenderTransformBox = std.class.new('RenderTransformBox', RenderObject)
@@ -45,12 +48,10 @@ local RenderTransformBox = std.class.new('RenderTransformBox', RenderObject)
 ---@param scale Size
 ---@return Size
 local function validate_scale(scale)
-    if type(scale) ~= 'table'
-        or type(scale.width) ~= 'number' or type(scale.height) ~= 'number' then
+    if type(scale) ~= 'table' or type(scale.width) ~= 'number' or type(scale.height) ~= 'number' then
         raise(std.TypeError('RenderTransformBox.scale must be a Size'))
     end
-    if not is_finite(scale.width) or not is_finite(scale.height)
-        or scale.width <= 0 or scale.height <= 0 then
+    if not is_finite(scale.width) or not is_finite(scale.height) or scale.width <= 0 or scale.height <= 0 then
         raise(std.ValueError('RenderTransformBox.scale must contain positive finite values'))
     end
     return scale
@@ -59,26 +60,23 @@ end
 ---@param alignment Offset
 ---@return Offset
 local function validate_alignment(alignment)
-    if type(alignment) ~= 'table'
-        or type(alignment.x) ~= 'number' or type(alignment.y) ~= 'number' then
+    if type(alignment) ~= 'table' or type(alignment.x) ~= 'number' or type(alignment.y) ~= 'number' then
         raise(std.TypeError('RenderTransformBox.alignment must be an Offset'))
     end
-    if not is_finite(alignment.x) or not is_finite(alignment.y)
-        or alignment.x < 0 or alignment.x > 1
-        or alignment.y < 0 or alignment.y > 1 then
+    if not is_finite(alignment.x) or not is_finite(alignment.y) or alignment.x < 0 or alignment.x > 1 or alignment.y < 0
+        or alignment.y > 1 then
         raise(std.ValueError('RenderTransformBox.alignment must be between 0 and 1'))
     end
     return alignment
 end
 
----@param child RenderObject?
+---@param child   RenderObject?
 ---@param options _RenderTransformBoxOptions?
 function RenderTransformBox:__init(child, options)
     RenderObject.__init(self)
     options = options or {}
     self.scale = validate_scale(options.scale == nil and Size(1, 1) or options.scale)
-    self.alignment = validate_alignment(
-        options.alignment == nil and Offset(0.5, 0.5) or options.alignment)
+    self.alignment = validate_alignment(options.alignment == nil and Offset(0.5, 0.5) or options.alignment)
     if options.clip == nil then
         self.clip = false
     else
@@ -158,7 +156,7 @@ function RenderTransformBox:__paint(canvas, offset)
         return
     end
     local origin = Offset(self.size.width * self.alignment.x, self.size.height * self.alignment.y)
-    canvas:with_save(function()
+    canvas:with_save(function ()
         if self.clip then
             canvas:clip_rect(Rect.from_offset_size(offset, self.size))
         end
@@ -187,8 +185,8 @@ function RenderTransformBox:hit_test(position)
 end
 
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderTransformBox:pointer_path(point, out)
     out = out or {}
     if not self:__hit_test_bounds(point) then
@@ -206,9 +204,9 @@ function RenderTransformBox:pointer_path(point, out)
     return out
 end
 
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderTransformBox:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
@@ -217,15 +215,16 @@ function RenderTransformBox:collect_pointer_regions(out, local_to_root, ancestor
     local child = self._children[1]
     if child then
         local mapping = self:_mapping()
-        child:_collect_clipped_pointer_regions(out, local_to_root:multiply(mapping),
-            self:_pointer_child_clip(local_to_root, ancestor_clip))
+        child:_collect_clipped_pointer_regions(
+            out, local_to_root:multiply(mapping), self:_pointer_child_clip(local_to_root, ancestor_clip)
+        )
     end
     return out
 end
 RenderTransformBox._clipped_region_collector = RenderTransformBox.collect_pointer_regions
 
 ---@param controller AnimationController?
----@param tween Tween<Size>?
+---@param tween      Tween<Size>?
 function RenderTransformBox:set_scale_animation(controller, tween)
     local current = self._scale_animation
     if current and current.controller == controller and current.tween == tween then
@@ -235,7 +234,7 @@ function RenderTransformBox:set_scale_animation(controller, tween)
     if controller == nil or tween == nil then
         return
     end
-    local listener = function()
+    local listener = function ()
         self:set_scale(tween:value_at(controller.value))
     end
     controller:add_listener(listener)

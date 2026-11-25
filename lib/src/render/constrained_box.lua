@@ -17,6 +17,8 @@ local geometry = require 'src.foundation.geometry'
 local constraints_mod = require 'src.layout.constraints'
 local render_object = require 'src.render.render_object'
 
+local math = math
+
 local Offset = geometry.Offset
 local Size = geometry.Size
 local Constraints = constraints_mod.Constraints
@@ -25,11 +27,13 @@ local RenderObject = render_object.RenderObject
 ---@class mod.src.render.constrained_box
 local M = {}
 
----@class RenderConstrainedBox : RenderObject
+---@class RenderConstrainedBox: RenderObject
 ---@field additional Constraints
 ---@overload fun(additional: Constraints, child: RenderObject?): self
 local RenderConstrainedBox = std.class.new('RenderConstrainedBox', RenderObject)
 
+---@param additional Constraints
+---@param child      RenderObject?
 function RenderConstrainedBox:__init(additional, child)
     std.super(RenderConstrainedBox, self, RenderObject).__init(self)
     self.additional = additional
@@ -38,6 +42,7 @@ function RenderConstrainedBox:__init(additional, child)
     end
 end
 
+---@param constraints Constraints
 function RenderConstrainedBox:__perform_layout(constraints)
     local inner = self.additional:enforce(constraints)
     local child = self._children[1]
@@ -50,12 +55,15 @@ function RenderConstrainedBox:__perform_layout(constraints)
     end
 end
 
----@class RenderLimitedBox : RenderObject
----@field max_width number
+---@class RenderLimitedBox: RenderObject
+---@field max_width  number
 ---@field max_height number
 ---@overload fun(max_width: number?, max_height: number?, child: RenderObject?): self
 local RenderLimitedBox = std.class.new('RenderLimitedBox', RenderObject)
 
+---@param max_width  number?
+---@param max_height number?
+---@param child      RenderObject?
 function RenderLimitedBox:__init(max_width, max_height, child)
     std.super(RenderLimitedBox, self, RenderObject).__init(self)
     self.max_width = max_width or math.huge
@@ -69,14 +77,14 @@ end
 ---@param constraints Constraints
 ---@return Constraints
 function RenderLimitedBox:limit_constraints(constraints)
-    local max_width = constraints:has_bounded_width()
-        and constraints.max_width or constraints:constrain_width(self.max_width)
-    local max_height = constraints:has_bounded_height()
-        and constraints.max_height or constraints:constrain_height(self.max_height)
-    return Constraints(
-        constraints.min_width, max_width, constraints.min_height, max_height)
+    local max_width = constraints:has_bounded_width() and constraints.max_width
+        or constraints:constrain_width(self.max_width)
+    local max_height = constraints:has_bounded_height() and constraints.max_height
+        or constraints:constrain_height(self.max_height)
+    return Constraints(constraints.min_width, max_width, constraints.min_height, max_height)
 end
 
+---@param constraints Constraints
 function RenderLimitedBox:__perform_layout(constraints)
     local inner = self:limit_constraints(constraints)
     local child = self._children[1]

@@ -19,21 +19,22 @@ local StatelessWidget = widget_mod.StatelessWidget
 ---@class mod.src.widgets.visibility
 local M = {}
 
---== Opacity ================================================================
+-- == Opacity ================================================================
 
 ---@class _OpacityOptions
----@field opacity number? paint-only alpha from 0 to 1
----@field hidden boolean? suppress paint/input while retaining layout
----@field child Widget?
----@field key any?
+---@field opacity number?  paint-only alpha from 0 to 1
+---@field hidden  boolean? suppress paint/input while retaining layout
+---@field child   Widget?
+---@field key     any?
 
----@class Opacity : SingleChildRenderObjectWidget
+---@class Opacity: SingleChildRenderObjectWidget
 ---@field opacity number
----@field hidden boolean
----@field child Widget?
+---@field hidden  boolean
+---@field child   Widget?
 ---@overload fun(options?: _OpacityOptions): self
 local Opacity = std.class.new('Opacity', SingleChildRenderObjectWidget)
 
+---@param options _OpacityOptions?
 function Opacity:__init(options)
     options = options or {}
     self.key = options.key
@@ -42,6 +43,7 @@ function Opacity:__init(options)
     self.child = options.child
 end
 
+---@return RenderOpacity
 function Opacity:create_render_object()
     return RenderOpacity(self.opacity, nil, self.hidden)
 end
@@ -52,19 +54,20 @@ function Opacity:update_render_object(render_object)
     render_object:set_hidden(self.hidden)
 end
 
---== Offstage ===============================================================
+-- == Offstage ===============================================================
 
 ---@class _OffstageOptions
 ---@field offstage boolean?
----@field child Widget?
----@field key any?
+---@field child    Widget?
+---@field key      any?
 
----@class Offstage : SingleChildRenderObjectWidget
+---@class Offstage: SingleChildRenderObjectWidget
 ---@field offstage boolean
----@field child Widget?
+---@field child    Widget?
 ---@overload fun(options?: _OffstageOptions): self
 local Offstage = std.class.new('Offstage', SingleChildRenderObjectWidget)
 
+---@param options _OffstageOptions?
 function Offstage:__init(options)
     options = options or {}
     self.key = options.key
@@ -72,6 +75,7 @@ function Offstage:__init(options)
     self.child = options.child
 end
 
+---@return RenderOffstage
 function Offstage:create_render_object()
     return RenderOffstage(self.offstage)
 end
@@ -81,21 +85,22 @@ function Offstage:update_render_object(render_object)
     render_object:set_offstage(self.offstage)
 end
 
---== Visibility =============================================================
+-- == Visibility =============================================================
 
 ---@class _VisibilityOptions
----@field visible boolean?
+---@field visible        boolean?
 ---@field maintain_state boolean?
----@field child Widget?
----@field key any?
+---@field child          Widget?
+---@field key            any?
 
----@class Visibility : StatelessWidget
----@field visible boolean
+---@class Visibility: StatelessWidget
+---@field visible        boolean
 ---@field maintain_state boolean
----@field child Widget?
+---@field child          Widget?
 ---@overload fun(options?: _VisibilityOptions): self
 local Visibility = std.class.new('Visibility', StatelessWidget)
 
+---@param options _VisibilityOptions?
 function Visibility:__init(options)
     options = options or {}
     self.key = options.key
@@ -104,10 +109,12 @@ function Visibility:__init(options)
     self.child = options.child
 end
 
+---@return Widget[]
 function Visibility:child_widgets()
     return self.child and { self.child } or {}
 end
 
+---@return Widget?
 function Visibility:build()
     if self.visible then
         return self.child

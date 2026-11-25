@@ -13,11 +13,13 @@ local M = {}
 ---@class PaintingBindingRole
 local PaintingBinding = {}
 
+---@return WidgetsBinding
 function PaintingBinding.ensure_initialized()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.ensure_initialized()
 end
 
+---@return WidgetsBinding?
 function PaintingBinding.instance()
     local widgets_binding = require 'src.widgets.binding'
     return widgets_binding.WidgetsBinding.instance()

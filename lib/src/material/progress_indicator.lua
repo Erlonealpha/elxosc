@@ -5,34 +5,43 @@
 
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
-local State = require('src.widgets.state').State
+local state_mod = require 'src.widgets.state'
 local render_mod = require 'src.render.progress_indicator'
+local color_mod = require 'src.foundation.color'
+
+local State = state_mod.State
+local Color = color_mod.Color
+local pairs = pairs
+
 local RenderLinearProgressIndicator = render_mod.RenderLinearProgressIndicator
 local LeafRenderObjectWidget = widget_mod.LeafRenderObjectWidget
 local StatefulWidget = widget_mod.StatefulWidget
-local Color = require('src.foundation.color').Color
 
----@class material._LinearProgressIndicatorOptions : _ProgressValueOptions
----@field color Color?
+---@class material._LinearProgressIndicatorOptions: _ProgressValueOptions
+---@field color            Color?
 ---@field background_color Color?
----@field min_height number? default 4
----@field border_radius number? default 2
+---@field min_height       number? default 4
+---@field border_radius    number? default 2
 
 ---@param options _LinearProgressIndicatorOptions?
 ---@return _RenderLinearProgressIndicatorOptions
 local function normalize(options)
     options = options or {}
-    return render_mod.normalize({ key = options.key, value = options.value,
+    return render_mod.normalize({
+        key = options.key,
+        value = options.value,
         color = options.color or Color.rgba255(70, 150, 240),
         background_color = options.background_color or Color.rgba255(255, 255, 255, 45),
         min_height = options.min_height == nil and 4 or options.min_height,
-        border_radius = options.border_radius == nil and 2 or options.border_radius })
+        border_radius = options.border_radius == nil and 2 or options.border_radius
+    })
 end
 
----@class material.LinearProgressIndicator : StatefulWidget, _RenderLinearProgressIndicatorOptions
+---@class material.LinearProgressIndicator: StatefulWidget, _RenderLinearProgressIndicatorOptions
 ---@overload fun(options?: _LinearProgressIndicatorOptions): self
 local LinearProgressIndicator = std.class.new('LinearProgressIndicator', StatefulWidget)
 
+---@param options _LinearProgressIndicatorOptions?
 function LinearProgressIndicator:__init(options)
     local config = normalize(options)
     for name, value in pairs(config) do
@@ -40,19 +49,21 @@ function LinearProgressIndicator:__init(options)
     end
 end
 
----@class material._ProgressIndicatorOptions : _RenderLinearProgressIndicatorOptions
+---@class material._ProgressIndicatorOptions: _RenderLinearProgressIndicatorOptions
 ---@field phase number
 
----@class material._ProgressIndicator : LeafRenderObjectWidget, material._ProgressIndicatorOptions
+---@class material._ProgressIndicator: LeafRenderObjectWidget, material._ProgressIndicatorOptions
 ---@overload fun(options: _ProgressIndicatorOptions): self
 local ProgressIndicator = std.class.new('_ProgressIndicator', LeafRenderObjectWidget)
 
+---@param options _ProgressIndicatorOptions
 function ProgressIndicator:__init(options)
     for name, value in pairs(options) do
         self[name] = value
     end
 end
 
+---@return RenderLinearProgressIndicator
 function ProgressIndicator:create_render_object()
     local render = RenderLinearProgressIndicator(self)
     render:set_phase(self.phase)
@@ -65,9 +76,9 @@ function ProgressIndicator:update_render_object(render)
     render:set_phase(self.phase)
 end
 
----@class material.LinearProgressIndicatorState : State
+---@class material.LinearProgressIndicatorState: State
 ---@field _ticker Ticker?
----@field _phase number
+---@field _phase  number
 ---@overload fun(): self
 local LinearProgressIndicatorState = std.class.new('LinearProgressIndicatorState', State)
 
@@ -80,7 +91,7 @@ function LinearProgressIndicatorState:_sync_ticker()
     local widget = self.widget --[[@as LinearProgressIndicator]]
     if widget.value == nil then
         if not self._ticker then
-            self._ticker = self:create_ticker(function(dt)
+            self._ticker = self:create_ticker(function (dt)
                 self._phase = (self._phase + dt / 1.8) % 1
                 local render = self.context and self.context:first_render_object()
                 if render then
@@ -95,6 +106,7 @@ function LinearProgressIndicatorState:_sync_ticker()
     end
 end
 
+---@param _old_widget StatefulWidget
 function LinearProgressIndicatorState:did_update_widget(_old_widget)
     self:_sync_ticker()
 end
@@ -105,18 +117,28 @@ function LinearProgressIndicatorState:dispose()
     end
 end
 
+---@return Widget?
 function LinearProgressIndicatorState:build()
     local widget = self.widget --[[@as LinearProgressIndicator]]
-    return ProgressIndicator({ value = widget.value, color = widget.color,
-        background_color = widget.background_color, min_height = widget.min_height,
-        border_radius = widget.border_radius, phase = self._phase })
+    return ProgressIndicator({
+        value = widget.value,
+        color = widget.color,
+        background_color = widget.background_color,
+        min_height = widget.min_height,
+        border_radius = widget.border_radius,
+        phase = self._phase
+    })
 end
 
+---@return LinearProgressIndicatorState
 function LinearProgressIndicator:create_state()
     return LinearProgressIndicatorState()
 end
 
 ---@class mod.src.material.progress_indicator
-local M = { LinearProgressIndicator = LinearProgressIndicator, normalize = normalize }
+local M = {
+    LinearProgressIndicator = LinearProgressIndicator,
+    normalize = normalize
+}
 
 return M

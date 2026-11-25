@@ -14,12 +14,12 @@ local RenderStack = stack_mod.RenderStack
 local MultiChildRenderObjectWidget = widget_mod.MultiChildRenderObjectWidget
 
 ---@class _StackOptions
----@field children? Widget[]
+---@field children?  Widget[]
 ---@field alignment? Offset
----@field key? any
+---@field key?       any
 
----@class Stack : MultiChildRenderObjectWidget
----@field children Widget[]
+---@class Stack: MultiChildRenderObjectWidget
+---@field children  Widget[]
 ---@field alignment Offset
 ---@overload fun(options?: _StackOptions): self
 local Stack = std.class.new('Stack', MultiChildRenderObjectWidget)
@@ -33,6 +33,7 @@ function Stack:__init(options)
     self.alignment = options.alignment or Offset(0, 0)
 end
 
+---@return RenderStack
 function Stack:create_render_object()
     return RenderStack({ alignment = self.alignment })
 end
@@ -44,6 +45,8 @@ function Stack:update_render_object(render_object)
 end
 
 ---@class mod.src.widgets.stack
-local M = { Stack = Stack }
+local M = {
+    Stack = Stack
+}
 
 return M

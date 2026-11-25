@@ -13,48 +13,42 @@
 local dataclass = require 'elxlibs.dataclass'
 local color = require 'src.foundation.color'
 
+local string = string
+local tostring = tostring
+
 local Color = color.Color
 
 ---@class mod.src.painting.paint
 local M = {}
 
 ---@alias PaintStyle
---- | 'fill'
 --- | 'stroke'
+--- | 'fill'
+
 ---@alias StrokeCap
 --- | 'butt'
 --- | 'round'
 --- | 'square'
+
 ---@alias StrokeJoin
 --- | 'miter'
 --- | 'round'
 --- | 'bevel'
 
-M.Style = {
-    FILL = 'fill',
-    STROKE = 'stroke',
-}
+M.Style = { FILL = 'fill', STROKE = 'stroke' }
 
-M.StrokeCap = {
-    BUTT = 'butt',
-    ROUND = 'round',
-    SQUARE = 'square',
-}
+M.StrokeCap = { BUTT = 'butt', ROUND = 'round', SQUARE = 'square' }
 
-M.StrokeJoin = {
-    MITER = 'miter',
-    ROUND = 'round',
-    BEVEL = 'bevel',
-}
+M.StrokeJoin = { MITER = 'miter', ROUND = 'round', BEVEL = 'bevel' }
 
----@class Paint : dataclass.Object
----@field color Color
----@field style PaintStyle
----@field stroke_width number only used when `style == 'stroke'`
----@field stroke_cap StrokeCap
----@field stroke_join StrokeJoin
----@field antialias boolean hint for backends that support it
----@field blur_radius number non-negative backend-neutral blur intent
+---@class Paint: dataclass.Object
+---@field color        Color
+---@field style        PaintStyle
+---@field stroke_width number     only used when `style == 'stroke'`
+---@field stroke_cap   StrokeCap
+---@field stroke_join  StrokeJoin
+---@field antialias    boolean    hint for backends that support it
+---@field blur_radius  number     non-negative backend-neutral blur intent
 ---@overload fun(color: Color?, style: PaintStyle?, stroke_width: number?): self
 local Paint = dataclass.new('Paint', nil, { eq = false, repr = false })({
     dataclass.field('color', nil),
@@ -63,9 +57,12 @@ local Paint = dataclass.new('Paint', nil, { eq = false, repr = false })({
     dataclass.field('stroke_cap', M.StrokeCap.BUTT),
     dataclass.field('stroke_join', M.StrokeJoin.MITER),
     dataclass.field('antialias', true),
-    dataclass.field('blur_radius', 0),
+    dataclass.field('blur_radius', 0)
 })
 
+---@param style        PaintStyle?
+---@param stroke_width number?
+---@param color_       Color?
 function Paint:__init(color_, style, stroke_width)
     self.color = color_ or Color.argb(0xFF000000)
     self.style = style or M.Style.FILL
@@ -76,6 +73,7 @@ function Paint:__init(color_, style, stroke_width)
     self.blur_radius = 0
 end
 
+---@return string
 function Paint:__tostring()
     return string.format('Paint(%s, %s)', self.style, tostring(self.color))
 end

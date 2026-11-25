@@ -17,6 +17,14 @@ local pointer_event = require 'src.foundation.pointer_event'
 local painting_context = require 'src.render.painting_context'
 local region_snapshot = require 'src.render.region_snapshot'
 
+local error = error
+local ipairs = ipairs
+local next = next
+local pairs = pairs
+local pcall = pcall
+local table = table
+local type = type
+
 local Offset = geometry.Offset
 local Constraints = constraints_mod.Constraints
 local PointerEvent = pointer_event.PointerEvent
@@ -29,7 +37,7 @@ local POINTER_BUTTONS = { left = true, middle = true, right = true }
 local M = {}
 
 ---@param value boolean?
----@param name string
+---@param name  string
 local function validate_result_field(value, name)
     if value ~= nil and type(value) ~= 'boolean' then
         raise(std.TypeError('DispatchResult.' .. name .. ' must be a boolean'))
@@ -44,11 +52,7 @@ local function normalize_dispatch_result(value, event)
         return { handled = false, capture = false, stop_propagation = false }
     end
     if value == true then
-        return {
-            handled = true,
-            capture = event.type == 'down',
-            stop_propagation = event.type ~= 'move',
-        }
+        return { handled = true, capture = event.type == 'down', stop_propagation = event.type ~= 'move' }
     end
     if type(value) ~= 'table' then
         raise(std.TypeError('pointer dispatch must return boolean or DispatchResult'))
@@ -59,7 +63,7 @@ local function normalize_dispatch_result(value, event)
     return {
         handled = value.handled == true,
         capture = value.capture == true,
-        stop_propagation = value.stop_propagation == true,
+        stop_propagation = value.stop_propagation == true
     }
 end
 
@@ -83,7 +87,7 @@ local function pointer_button(event)
     return nil
 end
 
----@param path {node: RenderObject, point: Offset}[]
+---@param path   { node: RenderObject, point: Offset } []
 ---@param target RenderObject
 ---@return Offset?
 local function local_point_for(path, target)
@@ -95,19 +99,26 @@ local function local_point_for(path, target)
     return nil
 end
 
----@class RenderOwner : std.object
----@field root RenderObject?
----@field viewport Constraints
----@field on_dirty fun()?
----@field private _input_generation integer
----@field private _region_snapshot RegionSnapshot?
----@field private _cancelled_buttons table<PointerButton, true>
----@field private _prepare_callbacks table<fun(), true>
----@field private _prepare_order fun()[]
----@field private _active_prepare table<fun(), true>?
+---@class RenderOwner: std.object
+---@field root                        RenderObject?
+---@field viewport                    Constraints
+---@field on_dirty                    fun()?
+---@field _needs_layout               boolean                    internal dirty state; inspected by regression consumers
+---@field _needs_paint                boolean                    internal dirty state; inspected by regression consumers
+---@field private _hovered            table<RenderObject, true>
+---@field private _capture            RenderObject?
+---@field private _capture_buttons    table<PointerButton, true>
+---@field private _cancelled_sequence boolean
+---@field private _input_generation   integer
+---@field private _region_snapshot    RegionSnapshot?
+---@field private _cancelled_buttons  table<PointerButton, true>
+---@field private _prepare_callbacks  table<fun(), true>
+---@field private _prepare_order      fun()[]
+---@field private _active_prepare     table<fun(), true>?
 ---@overload fun(root: RenderObject?): self
 local RenderOwner = std.class.new('RenderOwner')
 
+---@param root RenderObject?
 function RenderOwner:__init(root)
     self.root = nil
     -- A host that never calls `set_viewport` gets an unbounded box (Flutter's
@@ -135,8 +146,8 @@ function RenderOwner:__init(root)
     end
 end
 
----@param root RenderObject?
----@param notify boolean? whether the replacement should schedule layout
+---@param root   RenderObject?
+---@param notify boolean?      whether the replacement should schedule layout
 function RenderOwner:set_root(root, notify)
     -- Root replacement invalidates both sides of pointer state. Send leave and
     -- cancel while the old tree still has its owner, then detach it.
@@ -305,10 +316,10 @@ function RenderOwner:dispose()
     end
 end
 
---== pointer routing ======================================================
+-- == pointer routing ======================================================
 
 ---@param point Offset
----@return {node: RenderObject, point: Offset}[]
+---@return { node: RenderObject, point: Offset } []
 function RenderOwner:pointer_path(point)
     if not self.root then
         return {}
@@ -327,7 +338,7 @@ function RenderOwner:region_snapshot()
         self._region_snapshot = RegionSnapshot({
             generation = self._input_generation,
             root = self.root,
-            regions = self.root and self.root:collect_pointer_regions() or {},
+            regions = self.root and self.root:collect_pointer_regions() or {}
         })
     end
     return self._region_snapshot
@@ -360,9 +371,9 @@ end
 --- Route a structured pointer event down the tree. `move` bubbles and drives
 --- hover tracking (`enter`/`leave`); other events honor structured propagation
 --- results while retaining the legacy boolean behavior.
----@param event PointerEvent|string
+---@param event PointerEvent | string
 ---@param point Offset?
----@param data any?
+---@param data  any?
 ---@return DispatchResult
 ---@overload fun(event: PointerEvent): DispatchResult
 function RenderOwner:dispatch_pointer_result(event, point, data)
@@ -371,7 +382,9 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         if pointer_event.is_instance(event) then
             pointer = event --[[@as PointerEvent]]
         else
-            pointer = PointerEvent(event --[[@as _PointerEventFields]])
+            pointer = PointerEvent(
+                event --[[@as _PointerEventFields]]
+            )
         end
     else
         pointer = PointerEvent(event, point, data)
@@ -385,8 +398,7 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
             self._cancelled_buttons[button] = nil
         end
     end
-    if pointer.type == 'up' and (self._cancelled_sequence
-        or (button and self._cancelled_buttons[button])) then
+    if pointer.type == 'up' and (self._cancelled_sequence or (button and self._cancelled_buttons[button])) then
         self._cancelled_sequence = false
         if button then
             self._cancelled_buttons[button] = nil
@@ -401,7 +413,8 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         if self._capture then
             local captured = self._capture
             local result = normalize_dispatch_result(
-                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer
+            )
             result.handled = true
             result.capture = true
             result.stop_propagation = true
@@ -411,7 +424,8 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         for _, entry in ipairs(path) do
             if entry.node.owner == self then
                 local entry_result = normalize_dispatch_result(
-                    entry.node:on_pointer_event(pointer, entry.point), pointer)
+                    entry.node:on_pointer_event(pointer, entry.point), pointer
+                )
                 merge_dispatch_result(result, entry_result)
                 if entry_result.stop_propagation then
                     break
@@ -427,7 +441,8 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
             local captured = self._capture
             self._capture_buttons[button] = true
             local result = normalize_dispatch_result(
-                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer
+            )
             result.handled = true
             result.capture = true
             result.stop_propagation = true
@@ -446,7 +461,8 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
         local captured = self._capture
         if captured then
             local result = normalize_dispatch_result(
-                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer)
+                captured:on_pointer_event(pointer, local_point_for(path, captured)), pointer
+            )
             if pointer.type == 'cancel' then
                 self._capture = nil
                 self._capture_buttons = {}
@@ -470,11 +486,9 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
 
     local result = { handled = false, capture = false, stop_propagation = false }
     for _, entry in ipairs(path) do
-        local entry_result = normalize_dispatch_result(
-            entry.node:on_pointer_event(pointer, entry.point), pointer)
+        local entry_result = normalize_dispatch_result(entry.node:on_pointer_event(pointer, entry.point), pointer)
         merge_dispatch_result(result, entry_result)
-        if pointer.type == 'down' and entry_result.capture
-            and entry.node.owner == self and self._capture == nil then
+        if pointer.type == 'down' and entry_result.capture and entry.node.owner == self and self._capture == nil then
             self._capture = entry.node
             self._capture_buttons = {}
             button = pointer_button(pointer)
@@ -490,9 +504,9 @@ function RenderOwner:dispatch_pointer_result(event, point, data)
 end
 
 --- Compatibility wrapper retaining the historical boolean return value.
----@param event PointerEvent|string
+---@param event PointerEvent | string
 ---@param point Offset?
----@param data any?
+---@param data  any?
 ---@return boolean handled
 ---@overload fun(event: PointerEvent): boolean
 function RenderOwner:dispatch_pointer(event, point, data)
@@ -552,7 +566,7 @@ function RenderOwner:_cleanup_detached_pointer_state()
     return detached_capture
 end
 
----@param path {node: RenderObject, point: Offset}[]
+---@param path    { node: RenderObject, point: Offset } []
 ---@param pointer PointerEvent
 function RenderOwner:_update_hover(path, pointer)
     local current = {}

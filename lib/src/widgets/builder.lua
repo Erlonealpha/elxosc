@@ -11,13 +11,15 @@
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
+local type = type
+
 local Widget = widget_mod.Widget
 local raise = std.raise
 
 ---@class mod.src.widgets.builder
 local M = {}
 
----@param name any
+---@param name     any
 ---@param fallback string
 ---@return string
 local function operation_name(name, fallback)
@@ -28,7 +30,7 @@ end
 ---@alias WidgetBuildCallback fun(context: BuildContext): Widget?
 
 ---@param callback any
----@param name string
+---@param name     string
 ---@return function
 function M.validate_callback(callback, name)
     name = operation_name(name, 'Builder')
@@ -39,19 +41,18 @@ function M.validate_callback(callback, name)
 end
 
 ---@param context any
----@param name string
+---@param name    string
 ---@return BuildContext
 function M.validate_context(context, name)
     name = operation_name(name, 'ContextBuilder')
-    if type(context) ~= 'table' or type(context.is_active) ~= 'function'
-        or not context:is_active() then
+    if type(context) ~= 'table' or type(context.is_active) ~= 'function' or not context:is_active() then
         raise(std.RuntimeError(name .. ' requires a mounted BuildContext'))
     end
     return context --[[@as BuildContext]]
 end
 
 ---@param result any
----@param name string
+---@param name   string
 ---@return Widget?
 function M.validate_result(result, name)
     name = operation_name(name, 'Builder')
@@ -62,8 +63,8 @@ function M.validate_result(result, name)
 end
 
 ---@param callback ContextBuilder
----@param context BuildContext
----@param name string
+---@param context  BuildContext
+---@param name     string
 ---@return Widget?
 function M.call_context(callback, context, name)
     name = operation_name(name, 'ContextBuilder')

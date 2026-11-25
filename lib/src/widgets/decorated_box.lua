@@ -14,14 +14,14 @@ local SingleChildRenderObjectWidget = widget_mod.SingleChildRenderObjectWidget
 
 ---@class _DecoratedBoxOptions
 ---@field decoration? Decoration
----@field key? any
+---@field key?        any
 
----@class DecoratedBox : SingleChildRenderObjectWidget
+---@class DecoratedBox: SingleChildRenderObjectWidget
 ---@field decoration Decoration
 ---@overload fun(child: Widget?, options?: _DecoratedBoxOptions): self
 local DecoratedBox = std.class.new('DecoratedBox', SingleChildRenderObjectWidget)
 
----@param child Widget?
+---@param child    Widget?
 ---@param options? _DecoratedBoxOptions
 function DecoratedBox:__init(child, options)
     options = options or {}
@@ -30,6 +30,7 @@ function DecoratedBox:__init(child, options)
     self.decoration = options.decoration or Decoration()
 end
 
+---@return RenderDecoratedBox
 function DecoratedBox:create_render_object()
     return RenderDecoratedBox(self.decoration)
 end
@@ -41,6 +42,9 @@ function DecoratedBox:update_render_object(render_object)
 end
 
 ---@class mod.src.widgets.decorated_box
-local M = { Decoration = Decoration, DecoratedBox = DecoratedBox }
+local M = {
+    Decoration = Decoration,
+    DecoratedBox = DecoratedBox
+}
 
 return M

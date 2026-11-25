@@ -17,6 +17,8 @@ local transform_mod = require 'src.foundation.transform'
 local pointer_event = require 'src.foundation.pointer_event'
 local painting_context = require 'src.render.painting_context'
 
+local math = math
+
 local Offset = geometry.Offset
 local Rect = geometry.Rect
 local Size = geometry.Size
@@ -37,37 +39,37 @@ local M = {}
 
 --- Per-child layout data written by the parent (Flutter's `BoxParentData`).
 ---@class BoxParentData
----@field offset Offset
----@field flex number? main-axis flex weight (see RenderFlex)
----@field fit FlexFit? flex fit (see RenderFlex)
+---@field offset     Offset
+---@field flex       number?  main-axis flex weight (see RenderFlex)
+---@field fit        FlexFit? flex fit (see RenderFlex)
 ---@field positioned boolean? root-relative Stack parent data
----@field left number?
----@field top number?
----@field right number?
----@field bottom number?
----@field width number?
----@field height number?
+---@field left       number?
+---@field top        number?
+---@field right      number?
+---@field bottom     number?
+---@field width      number?
+---@field height     number?
 
 ---@class PointerRegion
----@field node RenderObject
----@field rect Rect root-space input bounds
----@field down boolean
+---@field node  RenderObject
+---@field rect  Rect         root-space input bounds
+---@field down  boolean
 ---@field wheel boolean
 
 ---@class DispatchResult
----@field handled boolean whether a node handled the event
----@field capture boolean whether a down event requests pointer capture
+---@field handled          boolean whether a node handled the event
+---@field capture          boolean whether a down event requests pointer capture
 ---@field stop_propagation boolean whether ancestor dispatch should stop
 
----@class RenderObject : std.object
----@field parent RenderObject?
----@field owner RenderOwner?
----@field parent_data BoxParentData
----@field size Size
----@field constraints Constraints?
+---@class RenderObject: std.object
+---@field parent       RenderObject?
+---@field owner        RenderOwner?
+---@field parent_data  BoxParentData
+---@field size         Size
+---@field constraints  Constraints?
 ---@field needs_layout boolean
----@field needs_paint boolean
----@field _children RenderObject[]
+---@field needs_paint  boolean
+---@field _children    RenderObject[]
 ---@overload fun(): self
 local RenderObject = std.class.new('RenderObject')
 
@@ -162,7 +164,7 @@ function RenderObject:_set_owner(owner)
     end
 end
 
---== layout ===============================================================
+-- == layout ===============================================================
 
 --- Lay this node (and its subtree) out under `constraints`. A node whose
 --- constraints are unchanged and that is not dirty is left untouched.
@@ -194,19 +196,22 @@ function RenderObject:__perform_layout(constraints)
     self.size = constraints:constrain_size(self.size)
 end
 
---== painting =============================================================
+-- == painting =============================================================
 
----@param canvas Canvas|PaintingContext
----@param offset Offset top-left of this node in canvas space
+---@param canvas Canvas | PaintingContext
+---@param offset Offset                   top-left of this node in canvas space
 function RenderObject:paint(canvas, offset)
     ---@type PaintingContext
     local context
     if canvas.canvas == nil then
-        context = PaintingContext(canvas --[[@as Canvas]])
+        context = PaintingContext(
+            canvas --[[@as Canvas]]
+        )
     else
         context = canvas --[[@as PaintingContext]]
     end
-    self:__paint(context --[[@as PaintingContext]], offset)
+    ---@cast context PaintingContext
+    self:__paint(context, offset)
     self.needs_paint = false
 end
 
@@ -224,7 +229,7 @@ function RenderObject:paint_children(canvas, offset)
     canvas:paint_children(self._children, offset)
 end
 
---== hit testing ==========================================================
+-- == hit testing ==========================================================
 
 ---@param position Offset #in this node's coordinate space
 ---@return RenderObject? the deepest node under the point, or nil
@@ -249,15 +254,14 @@ end
 ---@param position Offset
 ---@return boolean
 function RenderObject:__hit_test_bounds(position)
-    return position.x >= 0 and position.y >= 0
-        and position.x < self.size.width and position.y < self.size.height
+    return position.x >= 0 and position.y >= 0 and position.x < self.size.width and position.y < self.size.height
 end
 
 --- Nodes containing `point`, deepest first, each paired with the point
 --- converted into that node's local coordinate space.
 ---@param point Offset
----@param out {node: RenderObject, point: Offset}[]?
----@return {node: RenderObject, point: Offset}[]
+---@param out   { node: RenderObject, point: Offset } []?
+---@return { node: RenderObject, point: Offset } []
 function RenderObject:pointer_path(point, out)
     out = out or {}
     if not self:__hit_test_bounds(point) then
@@ -282,9 +286,9 @@ end
 --- result to constrain mpv sections without making the render layer depend on
 --- mpv. Subclasses with paint/input transforms override this method to compose
 --- their local-to-parent mapping.
----@param out PointerRegion[]?
+---@param out           PointerRegion[]?
 ---@param local_to_root Matrix2D?
----@param ancestor_clip Rect? internal ancestor clipping bounds
+---@param ancestor_clip Rect?            internal ancestor clipping bounds
 ---@return PointerRegion[]
 function RenderObject:collect_pointer_regions(out, local_to_root, ancestor_clip)
     out = out or {}
@@ -297,17 +301,17 @@ function RenderObject:collect_pointer_regions(out, local_to_root, ancestor_clip)
         local child_offset = child.parent_data and child.parent_data.offset or Offset.zero()
         local child_mapping = local_to_root
         if child_offset.x == 0 and child_offset.y == 0
-            and child.collect_pointer_regions == child._clipped_region_collector
-            and local_to_root.multiply == Matrix2D.multiply then
+            and child.collect_pointer_regions == child._clipped_region_collector and local_to_root.multiply
+                == Matrix2D.multiply then
             -- Built-in collectors only read the incoming mapping. Custom ones
             -- still receive an independent matrix through their legacy path.
         elseif local_to_root.multiply == Matrix2D.multiply then
             local a, b, c, d = local_to_root.a, local_to_root.b, local_to_root.c, local_to_root.d
             child_mapping = Matrix2D(
-                a * 1 + c * 0, b * 1 + d * 0,
-                a * 0 + c * 1, b * 0 + d * 1,
+                a * 1 + c * 0, b * 1 + d * 0, a * 0 + c * 1, b * 0 + d * 1,
                 a * child_offset.x + c * child_offset.y + local_to_root.tx,
-                b * child_offset.x + d * child_offset.y + local_to_root.ty)
+                b * child_offset.x + d * child_offset.y + local_to_root.ty
+            )
         else
             child_mapping = local_to_root:multiply(Matrix2D.translation(child_offset.x, child_offset.y))
         end
@@ -324,7 +328,7 @@ function RenderObject:_pointer_child_clip(local_to_root, ancestor_clip)
     return ancestor_clip and clip:intersect(ancestor_clip) or clip
 end
 
----@param out PointerRegion[]
+---@param out           PointerRegion[]
 ---@param local_to_root Matrix2D
 ---@param ancestor_clip Rect?
 function RenderObject:_collect_clipped_pointer_regions(out, local_to_root, ancestor_clip)
@@ -348,8 +352,9 @@ function RenderObject:_collect_clipped_pointer_regions(out, local_to_root, ances
 end
 RenderObject._clipped_region_collector = RenderObject.collect_pointer_regions
 
----@param out PointerRegion[]
+---@param out           PointerRegion[]
 ---@param local_to_root Matrix2D
+---@param ancestor_clip Rect?
 function RenderObject:_append_pointer_region(out, local_to_root, ancestor_clip)
     local wants_down = self:wants_pointer('down') or self:wants_pointer('up')
     local wants_wheel = self:wants_pointer('wheel')
@@ -363,16 +368,11 @@ function RenderObject:_append_pointer_region(out, local_to_root, ancestor_clip)
     if rect:is_empty() then
         return
     end
-    out[#out + 1] = {
-        node = self,
-        rect = rect,
-        down = wants_down,
-        wheel = wants_wheel,
-    }
+    out[#out + 1] = { node = self, rect = rect, down = wants_down, wheel = wants_wheel }
 end
 
----@param out PointerRegion[]
----@param start integer number of entries already present before this node's children
+---@param out           PointerRegion[]
+---@param start         integer         number of entries already present before this node's children
 ---@param local_to_root Matrix2D
 function RenderObject:_clip_pointer_regions(out, start, local_to_root)
     if #out == start then
@@ -394,7 +394,7 @@ function RenderObject:input_region_rect()
     return Rect.from_offset_size(Offset.zero(), self.size)
 end
 
---== pointer events =======================================================
+-- == pointer events =======================================================
 
 --- Hook invoked by `RenderOwner:dispatch_pointer_result`. `point` is in this
 --- node's local space; `event.point` remains in root space. Return a boolean
@@ -402,7 +402,7 @@ end
 --- and propagation. The default adapts to `on_pointer`.
 ---@param event PointerEvent
 ---@param point Offset?
----@return boolean|DispatchResult|nil
+---@return boolean | DispatchResult | nil
 function RenderObject:on_pointer_event(event, point)
     local handled = self:on_pointer(event.type, point, legacy_pointer_data(event))
     return handled and true or false
@@ -411,7 +411,7 @@ end
 --- Legacy pointer hook retained for existing RenderObject implementations.
 ---@param event PointerEvents
 ---@param point Offset?
----@param data any? wheel delta
+---@param data  any?          wheel delta
 ---@return boolean handled
 function RenderObject:on_pointer(event, point, data)
     return false
@@ -432,7 +432,7 @@ function RenderObject:wants_pointer(event)
     return false
 end
 
---== dirty tracking =======================================================
+-- == dirty tracking =======================================================
 
 --- Call when paint-only geometry or event eligibility changes.
 function RenderObject:mark_needs_input()

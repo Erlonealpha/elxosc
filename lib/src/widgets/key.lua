@@ -15,6 +15,9 @@
 local std = require 'elxlibs.std'
 local foundation_key = require 'src.foundation.key'
 
+local error = error
+local pairs = pairs
+
 local string = string
 local rawequal = rawequal
 local tostring = tostring
@@ -22,13 +25,14 @@ local kindof = std.kindof
 local LocalKey = foundation_key.LocalKey
 local Key = foundation_key.Key
 
----@class mod.src.widgets.key : mod.src.foundation.key
+---@class mod.src.widgets.key: mod.src.foundation.key
 local M = {}
 
----@class ObjectKey : LocalKey
+---@class ObjectKey: LocalKey
 ---@overload fun(value: any): self
 local ObjectKey = std.class.new('ObjectKey', LocalKey)
 
+---@param value any
 function ObjectKey:__init(value)
     self.value = value
 end
@@ -36,21 +40,21 @@ end
 ---@param other any
 ---@return boolean
 function ObjectKey:__eq(other)
-    return kindof(other, 'object')
-        and other.__class == self.__class
-        and rawequal(self.value, other.value)
+    return kindof(other, 'object') and other.__class == self.__class and rawequal(self.value, other.value)
 end
 
+---@return string
 function ObjectKey:__tostring()
     return string.format('ObjectKey(%s)', tostring(self.value))
 end
 
----@class GlobalKey : Key
----@field debug_label string?
+---@class GlobalKey: Key
+---@field debug_label    string?
 ---@field _registrations table<BuildOwner, Element>
 ---@overload fun(debug_label: string?): self
 local GlobalKey = std.class.new('GlobalKey', Key)
 
+---@param debug_label string?
 function GlobalKey:__init(debug_label)
     self.value = nil
     self.debug_label = debug_label
@@ -63,6 +67,7 @@ function GlobalKey:__eq(other)
     return rawequal(self, other)
 end
 
+---@return string
 function GlobalKey:__tostring()
     if self.debug_label then
         return string.format('GlobalKey(%s)', self.debug_label)
@@ -70,7 +75,7 @@ function GlobalKey:__tostring()
     return 'GlobalKey'
 end
 
----@param owner BuildOwner
+---@param owner   BuildOwner
 ---@param element Element
 function GlobalKey:_register(owner, element)
     local current = self._registrations[owner]
@@ -80,7 +85,7 @@ function GlobalKey:_register(owner, element)
     self._registrations[owner] = element
 end
 
----@param owner BuildOwner
+---@param owner   BuildOwner
 ---@param element Element
 function GlobalKey:_unregister(owner, element)
     if self._registrations[owner] == element then

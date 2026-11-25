@@ -15,6 +15,10 @@
 
 local std = require 'elxlibs.std'
 
+local ipairs = ipairs
+local next = next
+local pairs = pairs
+
 ---@class mod.src.scheduler.scheduler
 local M = {}
 
@@ -30,9 +34,14 @@ local function snapshot(set)
     return arr
 end
 
----@class Scheduler : std.object
----@field clock FrameClock
----@field _disposed boolean
+---@class Scheduler: std.object
+---@field clock               FrameClock
+---@field _disposed           boolean
+---@field private _transient  table<fun(dt: number, time: number), true>
+---@field private _persistent table<fun(dt: number, time: number), true>
+---@field private _post_frame fun()[]
+---@field private _scheduled  boolean
+---@field private _last_time  number?
 ---@overload fun(clock: FrameClock): self
 local Scheduler = std.class.new('Scheduler')
 
@@ -48,7 +57,7 @@ function Scheduler:__init(clock)
     self._scheduled = false
     self._last_time = nil
     self._disposed = false
-    clock:set_handler(function(time)
+    clock:set_handler(function (time)
         self:_handle_frame(time)
     end)
 end
@@ -136,6 +145,7 @@ function Scheduler:_handle_frame(time)
 end
 
 --- Stop the frame pipeline and release all registered callbacks.
+---@return boolean
 function Scheduler:dispose()
     if self._disposed then
         return false

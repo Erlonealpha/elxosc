@@ -13,6 +13,10 @@
 local std = require 'elxlibs.std'
 local widget_mod = require 'src.widgets.framework'
 
+local string = string
+local tostring = tostring
+local type = type
+
 local raise = std.raise
 local InheritedWidget = widget_mod.InheritedWidget
 
@@ -21,22 +25,23 @@ local M = {}
 
 ---@class _ProviderOptions
 ---@field child Widget?
----@field key any?
+---@field key   any?
 
----@class Provider : InheritedWidget
+---@class Provider: InheritedWidget
 ---@field child Widget?
----@field key any?
+---@field key   any?
 ---@overload fun(options: _ProviderOptions?): self
 local Provider = std.class.new('Provider', InheritedWidget)
 
+---@param options _ProviderOptions?
 function Provider:__init(options)
     options = options or {}
     self.key = options.key
     self.child = options.child
 end
 
----@param context BuildContext|std.class
----@param provider_class std.class|BuildContext?
+---@param context        BuildContext | std.class
+---@param provider_class std.class | BuildContext?
 ---@return Provider?
 function Provider.maybe_of(context, provider_class)
     ---@type BuildContext
@@ -50,8 +55,7 @@ function Provider.maybe_of(context, provider_class)
         target_context = context --[[@as BuildContext]]
         target_class = provider_class --[[@as std.class?]]
     end
-    if target_context == nil
-        or type(target_context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
+    if target_context == nil or type(target_context.depend_on_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('Provider lookup expects a BuildContext'))
     end
     target_class = target_class or Provider
@@ -61,8 +65,8 @@ function Provider.maybe_of(context, provider_class)
     return target_context:depend_on_inherited_widget_of_exact_type(target_class) --[[@as Provider?]]
 end
 
----@param context BuildContext|std.class
----@param provider_class std.class|BuildContext?
+---@param context        BuildContext | std.class
+---@param provider_class std.class | BuildContext?
 ---@return Provider?
 function Provider.maybe_read(context, provider_class)
     local target_context, target_class
@@ -73,8 +77,7 @@ function Provider.maybe_read(context, provider_class)
         target_context = context --[[@as BuildContext]]
         target_class = provider_class --[[@as std.class?]]
     end
-    if target_context == nil
-        or type(target_context.get_inherited_widget_of_exact_type) ~= 'function' then
+    if target_context == nil or type(target_context.get_inherited_widget_of_exact_type) ~= 'function' then
         raise(std.TypeError('Provider lookup expects a BuildContext'))
     end
     target_class = target_class or Provider
@@ -84,8 +87,8 @@ function Provider.maybe_read(context, provider_class)
     return target_context:get_inherited_widget_of_exact_type(target_class) --[[@as Provider?]]
 end
 
----@param context BuildContext|std.class
----@param provider_class std.class|BuildContext?
+---@param context        BuildContext | std.class
+---@param provider_class std.class | BuildContext?
 ---@return Provider
 function Provider.of(context, provider_class)
     local target_class = provider_class
@@ -94,14 +97,13 @@ function Provider.of(context, provider_class)
     end
     local provider = Provider.maybe_of(context, provider_class)
     if not provider then
-        raise(std.RuntimeError(string.format(
-            'no %s ancestor was found', tostring(target_class or Provider))))
+        raise(std.RuntimeError(string.format('no %s ancestor was found', tostring(target_class or Provider))))
     end
     return provider
 end
 
----@param context BuildContext|std.class
----@param provider_class std.class|BuildContext?
+---@param context        BuildContext | std.class
+---@param provider_class std.class | BuildContext?
 ---@return Provider
 function Provider.read(context, provider_class)
     local target_class = provider_class
@@ -110,8 +112,7 @@ function Provider.read(context, provider_class)
     end
     local provider = Provider.maybe_read(context, provider_class)
     if not provider then
-        raise(std.RuntimeError(string.format(
-            'no %s ancestor was found', tostring(target_class or Provider))))
+        raise(std.RuntimeError(string.format('no %s ancestor was found', tostring(target_class or Provider))))
     end
     return provider
 end

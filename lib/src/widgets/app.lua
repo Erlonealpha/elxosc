@@ -3,27 +3,32 @@
 ---@using elxosc
 
 local std = require 'elxlibs.std'
-local TextStyle = require('src.text.text_style').TextStyle
-local StatelessWidget = require('src.widgets.framework').StatelessWidget
+local text_style_mod = require 'src.text.text_style'
+local framework_mod = require 'src.widgets.framework'
 local ambient_mod = require 'src.widgets.ambient'
-local SizedBox = require('src.widgets.sized_box').SizedBox
+local sized_box_mod = require 'src.widgets.sized_box'
+
+local TextStyle = text_style_mod.TextStyle
+local StatelessWidget = framework_mod.StatelessWidget
+local SizedBox = sized_box_mod.SizedBox
 local DisplaySnapshot = ambient_mod.DisplaySnapshot
 local DisplayScope = ambient_mod.DisplayScope
 local DefaultTextStyle = ambient_mod.DefaultTextStyle
 
 ---@class _WidgetsAppOptions
----@field child Widget?
----@field display DisplaySnapshot?
+---@field child              Widget?
+---@field display            DisplaySnapshot?
 ---@field default_text_style TextStyle?
----@field key any?
+---@field key                any?
 
----@class WidgetsApp : StatelessWidget
----@field child Widget?
----@field display DisplaySnapshot
+---@class WidgetsApp: StatelessWidget
+---@field child              Widget?
+---@field display            DisplaySnapshot
 ---@field default_text_style TextStyle
 ---@overload fun(options?: _WidgetsAppOptions): self
 local WidgetsApp = std.class.new('WidgetsApp', StatelessWidget)
 
+---@param options _WidgetsAppOptions?
 function WidgetsApp:__init(options)
     options = options or {}
     self.key = options.key
@@ -38,16 +43,19 @@ function WidgetsApp:__init(options)
     end
 end
 
+---@return Widget?
 function WidgetsApp:build()
     return DisplayScope({
         snapshot = self.display,
         child = DefaultTextStyle({
             style = self.default_text_style,
-            child = self.child or SizedBox.shrink(),
-        }),
+            child = self.child or SizedBox.shrink()
+        })
     })
 end
 
 ---@class mod.src.widgets.app
-local M = { WidgetsApp = WidgetsApp }
+local M = {
+    WidgetsApp = WidgetsApp
+}
 return M

@@ -13,7 +13,7 @@ export('backends', require 'src.backends.ass_canvas', true)
 export('backends', require 'src.backends.ass_text_layout', true)
 export('backends', require 'src.backends.record', true)
 
----@class mod.backends :
+---@class mod.backends:
 --- mod.src.backends.ass_canvas,
 --- mod.src.backends.ass_text_layout,
 --- mod.src.backends.record

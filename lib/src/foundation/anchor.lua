@@ -10,6 +10,9 @@
 local std = require 'elxlibs.std'
 local geometry = require 'src.foundation.geometry'
 
+local tostring = tostring
+local type = type
+
 local Offset = geometry.Offset
 local raise = std.raise
 
@@ -36,7 +39,7 @@ local Anchor = {
     CENTER_RIGHT = 'center_right',
     BOTTOM_LEFT = 'bottom_left',
     BOTTOM_CENTER = 'bottom_center',
-    BOTTOM_RIGHT = 'bottom_right',
+    BOTTOM_RIGHT = 'bottom_right'
 }
 
 local FRACTIONS = {
@@ -48,7 +51,7 @@ local FRACTIONS = {
     center_right = { 1, 0.5 },
     bottom_left = { 0, 1 },
     bottom_center = { 0.5, 1 },
-    bottom_right = { 1, 1 },
+    bottom_right = { 1, 1 }
 }
 
 ---@param anchor AnchorName
