@@ -28,6 +28,7 @@ local mpv_player_context = require 'host.mpv_player_context'
 local player_context = require 'player.src.context'
 local main_layout = require 'player.src.composition'
 
+local tonumber = tonumber
 local MpDefine = mpv_define.MpDefine
 local MpPlayerContext = mpv_player_context.MpPlayerContext
 local PlayerStore = player_context.PlayerStore
@@ -37,7 +38,7 @@ local PlayerStore = player_context.PlayerStore
 -- starters closes it early.
 local define_window = 0.5
 
---== debug =================================================================
+-- == debug =================================================================
 
 -- The entry supplies diagnostic globals used by `host/mpv_input.lua`.
 local debug_enabled = true
@@ -58,14 +59,14 @@ function debug_msgf(arg0, ...)
     end
 end
 
---== start =================================================================
+-- == start =================================================================
 
 local player_store = PlayerStore()
 local player_updates = MpPlayerContext(player_store)
-player_updates:observe('user-data/elxosc-demo-count', function(value, current)
+player_updates:observe('user-data/elxosc-demo-count', function (value, current)
     return current:copy({ demo_count = tonumber(value) or 0 })
 end)
-player_updates:observe('user-data/elxosc-demo-event', function(value, current)
+player_updates:observe('user-data/elxosc-demo-event', function (value, current)
     return current:copy({ demo_event = value or 'ready' })
 end)
 local define = MpDefine({ player_store = player_store })
@@ -87,7 +88,7 @@ end
 
 local app = mpv_app.start(build_app, {
     player_store = player_store,
-    player_context = player_updates,
+    player_context = player_updates
 })
 
 --- Assemble the sealed contributions into a fresh application description and
@@ -105,7 +106,7 @@ define.on_sealed = remount
 
 -- Backstop: seal anyway once the window is over, so a script that forgets its
 -- `define_end` cannot keep the session open (dev/design/HOST.md).
-local define_timer = mp.add_timeout(define_window, function()
+local define_timer = mp.add_timeout(define_window, function ()
     if shutting_down then
         return
     end
@@ -119,7 +120,7 @@ end)
 
 ---@type fun(ev: table)
 local shutdown_callback
-shutdown_callback = function(_event)
+function shutdown_callback(_event)
     shutting_down = true
     if define_timer and define_timer.kill then
         define_timer:kill()
@@ -130,16 +131,3 @@ shutdown_callback = function(_event)
     define:shutdown()
 end
 mp.register_event('shutdown', shutdown_callback)
-
-if not _G.mp_event_loop_wrap then
-    local ev_loop = _G.mp_event_loop
-    _G.mp_event_loop = function ()
-        -- Ensure that the type of the thrown exception is a string.
-        local ok, err = xpcall(ev_loop, std.traceback)
-        if err then
-            error(tostring(err), 0)
-        end
-    end
-    _G.mp_event_loop_wrap = true
-    _G.mp_event_loop_wrap_origin = ev_loop
-end

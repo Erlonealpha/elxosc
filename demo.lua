@@ -22,6 +22,9 @@ local extension_controls_mod = require 'player.src.extension_controls'
 local tween_mod = require 'src.animation.tween'
 local navigation_mod = require 'src.widgets.navigation'
 
+local tostring = tostring
+local string = string
+local math = math
 local Color = color.Color
 local Anchor = anchor_mod.Anchor
 local Offset = geometry.Offset
@@ -157,6 +160,7 @@ function DemoState:dispose()
   end
 end
 
+---@param name string
 function DemoState:_set_event(name)
   self:set_state(function ()
     self.selected = name
@@ -340,6 +344,9 @@ function DemoState:build(context)
   local display_count = snapshot and snapshot:get('demo_count') or self.count
   local display_event = snapshot and snapshot:get('demo_event') or self.selected
 
+  ---@param label string
+  ---@param anchor AnchorName
+  ---@param background Color
   local function anchor_cell(label, anchor, background)
     return Container({
       width = 64,
@@ -553,30 +560,36 @@ function DemoState:build(context)
   if not self.widget.on_close then
     return body
   end
-  return Stack({ children = {
-    body,
-    Positioned({
-      right = 16, top = 64, width = 112, height = 32,
-      child = OutlinedButton({
-        key = 'demo-close',
-        label = 'Close Demo',
-        on_click = self.widget.on_close
+  return Stack({
+    children = {
+      body,
+      Positioned({
+        right = 16,
+        top = 64,
+        width = 112,
+        height = 32,
+        child = OutlinedButton({
+          key = 'demo-close',
+          label = 'Close Demo',
+          on_click = self.widget.on_close
+        })
       })
-    })
-  } })
+    }
+  })
 end
 
 ---@class _DemoOptions
 ---@field navigator NavigatorState?
----@field on_close fun()?
+---@field on_close  fun()?
 ---@field key       any?
 
 ---@class Demo: StatefulWidget
 ---@field navigator NavigatorState?
----@field on_close fun()?
+---@field on_close  fun()?
 ---@overload fun(options?: _DemoOptions): self
 local Demo = std.class.new('Demo', StatefulWidget)
 
+---@param options _DemoOptions
 function Demo:__init(options)
   options = options or {}
   self.key = options.key
@@ -605,116 +618,116 @@ function M.initial_pages(on_close)
 end
 
 ---@class _DemoLauncherOptions
----@field key any?
+---@field key        any?
 ---@field controller _DemoControlLink?
 
----@class _DemoControlLink : std.object
+---@class _DemoControlLink: std.object
 ---@field open fun()?
 ---@overload fun(): self
 local DemoControlLink = std.class.new('_DemoControlLink')
 
 function DemoControlLink:__init()
-    self.open = nil
+  self.open = nil
 end
 
----@class DemoLauncher : StatefulWidget
+---@class DemoLauncher: StatefulWidget
 ---@field controller _DemoControlLink
 ---@overload fun(options?: _DemoLauncherOptions): self
 local DemoLauncher = std.class.new('DemoLauncher', StatefulWidget)
 
 ---@param options _DemoLauncherOptions?
 function DemoLauncher:__init(options)
-    self.key = options and options.key or 'demo-launcher'
-    self.controller = options and options.controller or DemoControlLink()
+  self.key = options and options.key or 'demo-launcher'
+  self.controller = options and options.controller or DemoControlLink()
 end
 
----@class DemoLauncherState : State
+---@class DemoLauncherState: State
 ---@field opened boolean
----@field pages Page[]
+---@field pages  Page[]
 ---@overload fun(): self
 local DemoLauncherState = std.class.new('DemoLauncherState', State)
 
 function DemoLauncherState:init_state()
-    self.opened = false
-    local widget = self.widget --[[@as DemoLauncher]]
-    widget.controller.open = function()
-        self:open()
-    end
-    self.pages = M.initial_pages(function()
-        self:set_state(function()
-            self.opened = false
-        end)
-        mp.set_property('user-data/elxosc-demo-open', 'false')
-    end)
-    mp.register_script_message('elxosc-demo-open', function()
-        self:open()
+  self.opened = false
+  local widget = self.widget --[[@as DemoLauncher]]
+  widget.controller.open = function ()
+    self:open()
+  end
+  self.pages = M.initial_pages(function ()
+    self:set_state(function ()
+      self.opened = false
     end)
     mp.set_property('user-data/elxosc-demo-open', 'false')
+  end)
+  mp.register_script_message('elxosc-demo-open', function ()
+    self:open()
+  end)
+  mp.set_property('user-data/elxosc-demo-open', 'false')
 end
 
 function DemoLauncherState:open()
-    if self.opened then
-        return
-    end
-    self:set_state(function()
-        self.opened = true
-    end)
-    mp.set_property('user-data/elxosc-demo-open', 'true')
+  if self.opened then
+    return
+  end
+  self:set_state(function ()
+    self.opened = true
+  end)
+  mp.set_property('user-data/elxosc-demo-open', 'true')
 end
 
 function DemoLauncherState:dispose()
-    mp.unregister_script_message('elxosc-demo-open')
-    local widget = self.widget --[[@as DemoLauncher]]
-    widget.controller.open = nil
+  mp.unregister_script_message('elxosc-demo-open')
+  local widget = self.widget --[[@as DemoLauncher]]
+  widget.controller.open = nil
 end
 
 function DemoLauncherState:build()
-    local navigator = Navigator({ key = 'demo-navigator', pages = self.opened and self.pages or {} })
-    if not self.opened then
-        return navigator
+  local navigator = Navigator({ key = 'demo-navigator', pages = self.opened and self.pages or {} })
+  if not self.opened then
+    return navigator
+  end
+  return GestureDetector(navigator, {
+    on_down = function ()
+    end,
+    on_up = function ()
     end
-    return GestureDetector(navigator, {
-        on_down = function()
-        end,
-        on_up = function()
-        end,
-    })
+  })
 end
 
 function DemoLauncher:create_state()
-    return DemoLauncherState()
+  return DemoLauncherState()
 end
 
 ---@class _DemoButtonOptions
 ---@field controller _DemoControlLink
 
----@class DemoButton : StatelessWidget
+---@class DemoButton: StatelessWidget
 ---@field controller _DemoControlLink
 ---@overload fun(options: _DemoButtonOptions): self
 local DemoButton = std.class.new('DemoButton', widget_mod.StatelessWidget)
 
 ---@param options _DemoButtonOptions
 function DemoButton:__init(options)
-    self.controller = options and options.controller or DemoControlLink()
+  self.controller = options and options.controller or DemoControlLink()
 end
 
 function DemoButton:build(context)
-    return extension_controls_mod.PlayerControlButton({
-        key = 'demo-launch-button',
-        icon = 'science',
-        on_click = function()
-            if self.controller.open then
-                self.controller.open()
-            end
-        end,
-    })
+  return extension_controls_mod.PlayerControlButton({
+    key = 'demo-launch-button',
+    icon = 'science',
+    on_click = function ()
+      if self.controller.open then
+        self.controller.open()
+      end
+    end
+  })
 end
 
 ---@return DemoLauncher
 ---@return DemoButton
 function M.create_content()
-    local controller = DemoControlLink()
-    return DemoLauncher({ controller = controller }), DemoButton({ controller = controller })
+  local controller = DemoControlLink()
+  return DemoLauncher({ controller = controller }), DemoButton({ controller = controller })
 end
 
 -- Construction goes through the normal initialization-only Define payload.
